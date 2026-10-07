@@ -59,7 +59,7 @@ O jeito mais simples é o Netlify Drop:
 3. Você recebe um endereço como `nome-aleatorio.netlify.app`. Em **Site configuration > Change site name** dá para trocar, por exemplo para `peladadosabado.netlify.app`.
 4. De volta ao Firebase, abra **Authentication > Configurações > Domínios autorizados**, clique em **Adicionar domínio** e cole o endereço do Netlify (sem `https://`).
 
-Sempre que alterar o `index.html`, arraste a pasta de novo em **Deploys** no Netlify.
+Esse é o caminho da primeira instalação. Depois, o site passa a ser publicado pelo GitHub (veja "Como as versões novas vão para o ar"), e não se arrasta mais a pasta.
 
 ## 6. Primeiro acesso
 
@@ -197,13 +197,33 @@ Notas, contatos, caixa, mensalidade, diária, chave Pix e o tipo do jogador (men
 
 Quanto ao custo, o plano gratuito do Firebase (Spark) permite dezenas de milhares de leituras e gravações por dia, muito acima do que uma pelada usa. O Netlify também é gratuito nesse volume.
 
-## Atualizando uma versão anterior
+## Como as versões novas vão para o ar
 
-Sempre que receber uma versão nova:
+Desde outubro de 2026 o código fica no GitHub (`kleberkoch-coder/nosso-jogo`, privado), e a publicação é automática:
 
-1. Cole de novo o `firestore.rules` em **Firestore > Regras > Publicar**. As regras mudam junto com o site; sem atualizar, partes dele deixam de funcionar.
-2. Arraste a pasta de novo no Netlify (**Deploys**).
-3. Nas próximas mudanças no `index.html`, troque também o número em `VERSION` no começo do `sw.js` (agora está em `pelada-v12`) para os celulares receberem a atualização.
+1. **Proposta:** cada versão nova chega como uma proposta de mudança (*pull request*) no GitHub, com o resumo do que mudou.
+2. **Testes:** o GitHub roda sozinho o roteiro de testes (`testes/testes_app.py`) em modo demonstração. O resultado aparece na proposta: ✓ verde (passou) ou ✕ vermelho (falhou).
+3. **Prévia:** o Netlify cria um link de prévia com a versão nova (aparece na proposta como "Deploy Preview"). O site oficial não muda nessa etapa.
+4. **Sua aprovação:** abra a prévia no celular e, se estiver tudo certo, clique em **Merge pull request** e depois em **Confirm merge**.
+5. **No ar:**
+   - o Netlify publica o site oficial em cerca de 1 minuto;
+   - se o `firestore.rules` mudou, o GitHub publica as regras no Firebase sozinho (automação "Publicar regras do Firebase").
+
+Não arraste mais a pasta no Netlify: a próxima publicação pelo GitHub sobrescreveria o que foi arrastado.
+
+**Onde fica cada coisa no repositório:**
+- `site/`: o que vai para o ar (`index.html`, `sw.js`, `manifest.webmanifest` e `icons/`);
+- `firestore.rules`: as regras do Firebase;
+- `testes/`: o roteiro e o script de testes;
+- `docs/`: a visão do produto e o Design System;
+- `.github/workflows/`: as duas automações (testes e regras).
+
+**Se algo der errado:**
+- **Testes em vermelho:** não clique em Merge. Peça na conversa do projeto para corrigir.
+- **Regras não publicadas:** veja a aba **Actions** do repositório. A causa mais comum é o segredo `FIREBASE_SERVICE_ACCOUNT` ausente ou vencido.
+- **Voltar uma versão:** no Netlify, abra **Deploys**, clique numa publicação anterior e em **Publish deploy**.
+
+A cada mudança no app, o número em `VERSION` no começo do `site/sw.js` sobe (agora está em `pelada-v12`), para os celulares receberem a atualização.
 
 **Versão `pelada-v12`: visual novo e tema claro ou escuro.**
 - **O que mudou:**

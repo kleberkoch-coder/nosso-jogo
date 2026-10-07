@@ -1,0 +1,11 @@
+# Netlify publica só a pasta "site". Não há etapa de build.
+[build]
+  publish = "site"
+  command = ""
+
+# O service worker nunca fica guardado no cache do navegador,
+# para que a versão nova chegue rápido a todos.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"

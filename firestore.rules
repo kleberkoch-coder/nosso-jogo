@@ -1,0 +1,132 @@
+rules_version = '2';
+// Regras de segurança do site da pelada (vários grupos).
+// Cole este conteúdo inteiro em: Firebase > Firestore Database > Regras > Publicar.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signed() { return request.auth != null; }
+    function realUser() { return signed() && request.auth.token.firebase.sign_in_provider != 'anonymous'; }
+    function grp(gid) { return /databases/$(database)/documents/grupos/$(gid); }
+    function isMember(gid) {
+      return realUser() && exists(/databases/$(database)/documents/grupos/$(gid)/membros/$(request.auth.uid));
+    }
+    function isOwner(gid) { return realUser() && get(grp(gid)).data.owner == request.auth.uid; }
+    function grpAtivo(gid) { return get(grp(gid)).data.get('ativo', true) == true; }
+    // A chave Pix fica em /privado/caixa. No documento público do grupo ela não pode
+    // ser criada nem alterada (grupos antigos podem manter a que já tinham até a migração).
+    function pixOk() {
+      return !('pix' in request.resource.data.get('cfg', {}))
+        || (resource != null && request.resource.data.cfg.pix == resource.data.get('cfg', {}).get('pix', null));
+    }
+    function rod(gid, rid) { return /databases/$(database)/documents/grupos/$(gid)/rodadas/$(rid); }
+    // Rodada aceitando confirmações: grupo ativo e lista aberta (ou jogo fixo ainda sem documento).
+    function presencaAberta(gid, rid) {
+      return signed() && grpAtivo(gid) && (
+        (!exists(rod(gid, rid)) && rid.matches('f-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{4}'))
+        || (exists(rod(gid, rid))
+          && get(rod(gid, rid)).data.get('locked', false) == false
+          && get(rod(gid, rid)).data.get('cancelada', false) == false)
+      );
+    }
+    function presencaValida() {
+      return request.resource.data.keys().hasOnly(['s', 't', 'by', 'dev', 'nome', 'avulso', 'pos'])
+        && request.resource.data.s in ['in', 'out']
+        && request.resource.data.by == request.auth.uid
+        && (!('nome' in request.resource.data) || (request.resource.data.nome is string && request.resource.data.nome.size() <= 40))
+        && (!('pos' in request.resource.data) || (request.resource.data.pos is string && request.resource.data.pos.size() <= 4));
+    }
+
+    // Lista "Meus grupos" de cada conta: só a própria pessoa lê e grava.
+    match /usuarios/{uid} {
+      allow read, write: if realUser() && request.auth.uid == uid;
+    }
+
+    match /grupos/{gid} {
+      // Nome e configurações do grupo aparecem nos links públicos.
+      allow read: if true;
+      allow create: if realUser() && request.resource.data.owner == request.auth.uid && pixOk();
+      // Dono e data de criação não mudam; só o organizador ativa ou inativa o grupo.
+      allow update: if isMember(gid)
+        && request.resource.data.owner == resource.data.owner
+        && request.resource.data.get('createdAt', 0) == resource.data.get('createdAt', 0)
+        && (request.resource.data.get('ativo', true) == resource.data.get('ativo', true) || isOwner(gid))
+        && pixOk();
+      allow delete: if isOwner(gid);
+
+      // Administradores do grupo.
+      match /membros/{uid} {
+        allow read: if isMember(gid) || (signed() && request.auth.uid == uid);
+        allow create: if realUser() && request.auth.uid == uid && request.resource.data.uid == uid && (
+          // quem criou o grupo vira organizador
+          (request.resource.data.role == 'owner' && get(grp(gid)).data.owner == uid)
+          // ou quem tem o link de convite válido vira administrador
+          || (request.resource.data.role == 'admin'
+              && exists(/databases/$(database)/documents/grupos/$(gid)/privado/convite)
+              && request.resource.data.token == get(/databases/$(database)/documents/grupos/$(gid)/privado/convite).data.token)
+        );
+        allow update: if false;
+        allow delete: if isOwner(gid) || (realUser() && request.auth.uid == uid && get(grp(gid)).data.owner != uid);
+      }
+
+      // Notas, pares separados, contatos, link de convite e caixa (valores, Pix, tipo do jogador): só administradores.
+      match /privado/{doc} {
+        allow read, write: if isMember(gid);
+      }
+
+      match /jogadores/{id} {
+        allow read: if true;
+        allow write: if isMember(gid);
+      }
+
+      // Avulsos que já jogaram: o nome e a posição aparecem no link público
+      // para quem volta não precisar se cadastrar de novo. Nota e contato ficam em /privado.
+      match /avulsos/{id} {
+        allow read: if true;
+        allow write: if isMember(gid);
+      }
+
+      match /rodadas/{rid} {
+        allow read: if true;
+        allow write: if isMember(gid);
+
+        // Presença: qualquer pessoa com o link confirma (login anônimo automático).
+        // 'dev' guarda o aparelho que respondeu primeiro e não pode ser trocado por outro aparelho.
+        // 'by' é sempre quem gravou por último. Assim o administrador vê quando alguém
+        // mudou a resposta de outra pessoa.
+        match /presencas/{pid} {
+          allow read: if true;
+          allow create: if isMember(gid) || (
+            presencaAberta(gid, rid) && presencaValida()
+            && request.resource.data.get('dev', '') == request.auth.uid
+          );
+          allow update: if isMember(gid) || (
+            presencaAberta(gid, rid) && presencaValida()
+            && ((('dev' in resource.data) && request.resource.data.get('dev', '') == resource.data.dev)
+              || (!('dev' in resource.data) && request.resource.data.get('dev', '') == request.auth.uid))
+          );
+          allow delete: if isMember(gid);
+        }
+      }
+
+      match /caixa/{id} {
+        allow read, write: if isMember(gid);
+      }
+
+      match /votacoes/{vid} {
+        allow read: if true;
+        allow write: if isMember(gid);
+
+        // Um voto por aparelho, só enquanto a votação estiver aberta.
+        // Cada aparelho lê só o próprio voto; a contagem é vista pelos administradores.
+        match /votos/{uid} {
+          allow read: if isMember(gid) || (signed() && request.auth.uid == uid);
+          allow create, update: if signed() && request.auth.uid == uid
+            && grpAtivo(gid)
+            && get(/databases/$(database)/documents/grupos/$(gid)/votacoes/$(vid)).data.open == true
+            && request.resource.data.keys().hasOnly(['pid', 'v', 't']);
+          allow delete: if isMember(gid);
+        }
+      }
+    }
+  }
+}

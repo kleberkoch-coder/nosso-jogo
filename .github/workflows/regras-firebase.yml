@@ -1,0 +1,28 @@
+# Publica as regras do Firebase quando o firestore.rules muda na main
+# (ou seja, depois que o Kleber aprova a mudança com Merge).
+name: Publicar regras do Firebase
+on:
+  push:
+    branches: [main]
+    paths: [firestore.rules]
+  workflow_dispatch:
+
+concurrency: regras-firebase
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Publicar regras
+        env:
+          CHAVE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          test -n "$CHAVE" || { echo "Falta o segredo FIREBASE_SERVICE_ACCOUNT no GitHub."; exit 1; }
+          echo "$CHAVE" > "$RUNNER_TEMP/chave.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/chave.json"
+          npx --yes firebase-tools@13 deploy --only firestore:rules --project nosso-jogo-f4762 --non-interactive
+          rm -f "$RUNNER_TEMP/chave.json"

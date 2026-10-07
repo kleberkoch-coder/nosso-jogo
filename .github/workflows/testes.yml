@@ -1,0 +1,46 @@
+# Roda o roteiro de testes em modo demonstração a cada proposta de mudança.
+name: Testes do app
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar o navegador de testes
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Preparar o modo demonstração
+        run: |
+          mkdir -p /tmp/demo
+          cp -r site/. /tmp/demo/
+          python - <<'PY'
+          import re, pathlib
+          p = pathlib.Path('/tmp/demo/index.html')
+          s = p.read_text(encoding='utf-8')
+          s2, n = re.subn(r'window\.FIREBASE_CONFIG\s*=\s*\{.*?\};', 'window.FIREBASE_CONFIG = {};', s, count=1, flags=re.S)
+          assert n == 1, 'Não achei window.FIREBASE_CONFIG no index.html'
+          p.write_text(s2, encoding='utf-8')
+          PY
+      - name: Rodar os testes
+        run: |
+          (cd /tmp/demo && python -m http.server 8765 >/dev/null 2>&1 &)
+          sleep 2
+          cd testes && python testes_app.py http://127.0.0.1:8765/index.html fotos
+      - name: Guardar fotos e resultado
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultado-dos-testes
+          path: |
+            testes/fotos
+            testes/resultado.json

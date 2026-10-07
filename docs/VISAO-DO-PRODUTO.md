@@ -18,7 +18,14 @@ Plataforma para **qualquer pessoa no mundo** organizar seus jogos recorrentes ou
 6. **Celular primeiro e funcionando com sinal fraco** (PWA, com placar e cronômetro offline; ao abrir, espera no máximo 3 segundos pela rede antes de usar a cópia salva). A página só recarrega sozinha quando uma versão nova substitui a antiga (pelo botão "Atualizar"), nunca na primeira visita.
 
 ## Infraestrutura atual
-- **Hospedagem:** Netlify (`nossosjogos.netlify.app`), publicada arrastando a pasta. O projeto precisa estar como público no Netlify.
+- **Código e publicação (decisão de 7 out. 2026):**
+  - o código fica no GitHub, em `kleberkoch-coder/nosso-jogo` (privado);
+  - cada versão nova chega como proposta de mudança (*pull request*) e roda os testes automáticos;
+  - o Netlify gera um link de prévia de cada proposta;
+  - o Kleber aprova com **Merge**. Só então o Netlify publica o site e, se o `firestore.rules` mudou, o GitHub publica as regras no Firebase. A chave usada (conta `publicar-regras-github`) só publica regras e não lê dados dos grupos;
+  - não se arrasta mais a pasta no Netlify;
+  - os documentos deste projeto espelham a versão proposta mais recente.
+- **Hospedagem:** Netlify (`nossosjogos.netlify.app`, site `nossosjogos`), ligado ao GitHub (pasta `site/`). O projeto precisa estar como público no Netlify.
 - **Banco e login:** Firebase, projeto `nosso-jogo-f4762`, com Firestore e Authentication (provedores E-mail/senha, Google e Anônimo ativados).
 - **Código:** um único `index.html` (HTML, CSS e JavaScript puros, Firebase compat v10 via CDN), mais `firestore.rules`, `sw.js`, `manifest.webmanifest` e `icons/`.
 - **Modo demonstração:** quando a configuração do Firebase está vazia, os dados ficam só no navegador. É usado para testar.
@@ -181,11 +188,11 @@ Migração (v10): grupos antigos com valores e Pix em `cfg` e `tipo` nos jogador
 
 ## Ideias e pendências
 - Revisar o texto "Quanto custa?" da página de vendas se o produto passar a ser cobrado.
-- Reorganizar o código em projeto de software (arquivos separados, GitHub, publicação automática no Netlify, regras publicadas via Firebase CLI) quando o produto crescer.
+- Separar o `index.html` em arquivos menores quando o produto crescer (o GitHub e a publicação automática já estão prontos).
 - Política de senha também no Firebase (Authentication > Configurações), se disponível.
 - **Ícones do app:**
   - na `pelada-v12` foram recriados com as cores novas: verde-gramado `#1F5A40`, círculo em cal e ponto limão;
-  - os arquivos de imagem não ficam nos documentos do projeto; a referência da pasta `icons/` é o pacote `pelada-site.zip` mais recente.
+  - os arquivos de imagem não ficam nos documentos do projeto; a referência é a pasta `site/icons/` do GitHub.
 - **Limites conhecidos:**
   - a votação permite votar de novo em outro navegador;
   - a presença pode ser marcada por qualquer pessoa com o link (registrado e avisado).

@@ -3,7 +3,8 @@
 Usado pelo agente de Qualidade e por quem construir uma versão nova. O script `testes/testes_app.py` faz tudo automaticamente.
 
 ## Como rodar
-1. Copie `index.html`, `sw.js` e `manifest.webmanifest` do projeto para uma pasta.
+1. Copie `index.html`, `sw.js` e `manifest.webmanifest` para uma pasta. Eles estão na pasta `site/` do GitHub e na pasta `app/` do projeto no Claude.
+   - O GitHub também roda este roteiro sozinho em toda proposta de mudança (automação "Testes do app").
 2. No `index.html`, troque `window.FIREBASE_CONFIG = {...}` por `window.FIREBASE_CONFIG = {}` (modo demonstração: os dados ficam só no navegador de teste e nada vai para o Firebase de verdade).
 3. Na pasta, rode `python3 -m http.server 8765`.
 4. Rode `python3 testes_app.py http://127.0.0.1:8765/index.html fotos`.

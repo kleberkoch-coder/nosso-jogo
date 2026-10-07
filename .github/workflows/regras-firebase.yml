@@ -20,9 +20,26 @@ jobs:
       - name: Publicar regras
         env:
           CHAVE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        shell: bash
         run: |
-          test -n "$CHAVE" || { echo "Falta o segredo FIREBASE_SERVICE_ACCOUNT no GitHub."; exit 1; }
+          test -n "$CHAVE" || { echo "::error::Falta o segredo FIREBASE_SERVICE_ACCOUNT no GitHub."; exit 1; }
           echo "$CHAVE" > "$RUNNER_TEMP/chave.json"
+          python3 - "$RUNNER_TEMP/chave.json" <<'PY2'
+          import json, sys
+          try:
+              d = json.load(open(sys.argv[1]))
+          except Exception as e:
+              print(f"::error::O segredo não é um JSON válido ({e.__class__.__name__}). Cole o conteúdo inteiro do arquivo .json.")
+              sys.exit(1)
+          print(f"::notice::Chave da conta {d.get('client_email','?')} no projeto {d.get('project_id','?')}")
+          PY2
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/chave.json"
-          npx --yes firebase-tools@13 deploy --only firestore:rules --project nosso-jogo-f4762 --non-interactive
+          set +e
+          npx --yes firebase-tools@13 deploy --only firestore:rules --project nosso-jogo-f4762 --non-interactive 2>&1 | tee "$RUNNER_TEMP/saida.txt"
+          status=${PIPESTATUS[0]}
           rm -f "$RUNNER_TEMP/chave.json"
+          if [ "$status" -ne 0 ]; then
+            grep -iE "error|erro|permission|denied|forbidden|not enabled|has not been used" "$RUNNER_TEMP/saida.txt" | tail -8 | while IFS= read -r l; do echo "::error::$l"; done
+            exit "$status"
+          fi
+          echo "::notice::Regras publicadas no Firebase."

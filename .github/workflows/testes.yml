@@ -10,15 +10,15 @@ jobs:
   testes:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Imagem oficial do Playwright: já vem com o navegador instalado.
+    container: mcr.microsoft.com/playwright/python:v1.47.0-jammy
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Instalar o navegador de testes
+      - name: Conferir o navegador de testes
+        timeout-minutes: 5
         run: |
-          pip install playwright
-          python -m playwright install --with-deps chromium
+          pip install playwright==1.47.0
+          python -c "import playwright; print('Playwright pronto')"
       - name: Preparar o modo demonstração
         run: |
           mkdir -p /tmp/demo
@@ -32,6 +32,7 @@ jobs:
           p.write_text(s2, encoding='utf-8')
           PY
       - name: Rodar os testes
+        timeout-minutes: 10
         run: |
           (cd /tmp/demo && python -m http.server 8765 >/dev/null 2>&1 &)
           sleep 2

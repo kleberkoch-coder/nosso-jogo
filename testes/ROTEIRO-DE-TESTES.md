@@ -46,7 +46,12 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
   - com times sorteados, mudar presença pede confirmação (Cancelar não muda);
   - o aviso mostra quem saiu e quem entrou, continua depois de recarregar e some com "Tirar do time", "Pôr no time", "Manter os times assim" ou "Sortear de novo";
   - contraste do aviso.
-- **Regras de negócio com teste próprio** (`npm run regras`, roda no GitHub antes da montagem): lista × times (9 casos).
+- **Jogadores por time e posições fora do sorteio (v16, casos CT-KAN-94 e CT-KAN-95):**
+  - novo grupo vem com o padrão do esporte, trocar o esporte troca o padrão, número inválido não salva;
+  - 14 confirmados com time de 4: sugere 3 times, prévia "3 times de 4 + 2 reservas", 4 times divide por igual; reserva é quem confirmou por último; reservas no time, no link e no WhatsApp;
+  - "Marcar como titular" e pôr num time completo (entra como reserva);
+  - tirar e devolver a posição GOL; sorteio sem goleiros; a escolha fica salva; contraste e sem rolagem lateral.
+- **Regras de negócio com teste próprio** (`npm run regras`, roda no GitHub antes da montagem): lista × times (9 casos) e jogadores por time e reservas (7 casos).
 - **Idiomas:** nenhum texto da tela sem tradução no dicionário.
 - **Erros de JavaScript:** nenhum. Erros de fontes e ícones são ignorados, porque o ambiente de teste pode bloquear a internet.
 
@@ -64,3 +69,4 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
 | pelada-v13 | 08/10/2026 | 49 de 49 passaram |
 | pelada-v14 | 08/10/2026 | 61 de 61 passaram |
 | pelada-v15 | 08/10/2026 | 80 de 80 passaram, mais 9 de 9 na regra lista × times |
+| pelada-v16 | 08/10/2026 | 101 de 101 passaram, mais 16 de 16 nas regras |

@@ -83,13 +83,15 @@ Plataforma para **qualquer pessoa no mundo** organizar seus jogos recorrentes ou
 | Futebol, Society, Futsal | GOL, DEF, MEI, ATA (posição-chave: GOL) | Gol, com gol contra |
 | Basquete | ARM, ALA, PIV | +1, +2, +3 |
 | Vôlei | LEV, PON, CEN, OPO, LIB (posição-chave: LEV) | Ponto |
-| Vôlei de praia, Futevôlei, Beach tennis | Sem posição, **sorteio em duplas** | Ponto ou Game |
+| Vôlei de praia, Futevôlei, Beach tennis | Sem posição (padrão: duplas) | Ponto ou Game |
 | Handebol | GOL, ARM, PON, PIV | Gol, com gol contra |
 | Futebol americano | QB, ATQ, LIN, DEF | TD 6, Extra 1, 2 pts, FG 3, Safety 2 |
 | Flag football | QB, ATQ, DEF | TD 6, Extra 1 ou 2 |
 | Rugby | FOR, BAC | Try 5, Conversão 2, Penal 3, Drop 3 |
 | Hóquei | GOL, DEF, ATA | Gol, com gol contra |
 | Outro | O nome do esporte é escrito pelo usuário | Ponto |
+
+**Jogadores por time** (pelada-v16, decisão de 8 out. 2026): é do grupo, não do esporte. O catálogo só dá o padrão (futebol 11, society 6, futsal 5, vôlei 6, basquete 5, handebol 7, hóquei 6, flag 5, rugby 15, futebol americano 11, vôlei de praia, futevôlei e beach tennis 2, outro 5). O grupo ajusta na criação ou em Editar grupo. **2 = duplas** ("Dupla 1, Dupla 2"); qualquer outro número forma times com cor de colete.
 
 Cada grupo pode **criar posições próprias** (sigla de até 4 letras e nome) em Grupo > Posições, somadas às do esporte.
 
@@ -130,8 +132,10 @@ Cada grupo pode **criar posições próprias** (sigla de até 4 letras e nome) e
 - **Depois do sorteio:**
   - o administrador vê a diferença de nota, a distribuição da posição-chave, as separações respeitadas e o percentual de parcerias novas;
   - pode mover jogadores e trocar a cor do colete.
+- **Quantos times e reservas** (pelada-v16): o app sugere quantos times completos cabem e o administrador escolhe. Os sorteados são divididos por igual. Se um time passar do tamanho do grupo, o excedente fica como **reserva** (quem confirmou por último naquele time). Ex.: 16 confirmados, time de 5: 4 times → 4 de 4; 3 times → 6, 5 e 5 com 1 reserva. Reserva aparece nos times, no link e no WhatsApp; o ⇄ marca titular ou reserva; quem é posto num time completo entra como reserva.
+- **Posições fora do sorteio** (pelada-v16): na tela do sorteio, tocar numa posição deixa todos dela de fora (ex.: goleiros fixos). Fica salvo no grupo para o próximo sorteio. É a regra geral no lugar de tratar goleiro por esporte.
 - **Sortear fecha a lista** (pelada-v15) e guarda a "foto" dos confirmados daquele momento.
-- **Pôr direto no time** (pelada-v15): com os times gerados, o administrador põe uma pessoa num time ("+ Pôr no time") e ela já entra confirmada. Não existe em esportes de dupla.
+- **Pôr direto no time** (pelada-v15): com os times gerados, o administrador põe uma pessoa num time ("+ Pôr no time") e ela já entra confirmada. Não existe quando o grupo joga em duplas (2 por time).
 - **Lista diferente dos times** (pelada-v15):
   - se a lista for reaberta, mudar presença no app pede confirmação;
   - a aba Rodada avisa quem não vai mais (estava num time) e quem confirmou depois do sorteio, venha a mudança do app ou do link; no link nada muda;

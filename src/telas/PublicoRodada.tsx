@@ -11,7 +11,7 @@ import { S as estado } from '../nucleo/estado.js';
 import { $, fdate, main } from '../nucleo/util.js';
 import { myLocal } from './publico-rodada.js';
 
-type Rodada = { id: string; date: string; time?: string; place?: string; locked?: boolean; cancelada?: boolean; times?: { c: number; players: string[] }[] | null };
+type Rodada = { id: string; date: string; time?: string; place?: string; locked?: boolean; cancelada?: boolean; times?: { c: number; players: string[]; res?: string[] }[] | null };
 type Presenca = { s?: 'in' | 'out'; nome?: string };
 
 // O estado do app ainda é JavaScript sem tipos; aqui ele é lido como um objeto livre.
@@ -24,15 +24,16 @@ function Pos({ id }: { id: string }) {
   return <span class={'pos ' + (k === sport().key ? 'GOL' : '')} title={posLabel(k)}>{k}</span>;
 }
 
-function Time({ t }: { t: { c: number; players: string[] } }) {
+function Time({ t }: { t: { c: number; players: string[]; res?: string[] } }) {
   const c = COL[(t.c || 0) % COL.length], pares = !!(sport() as { pairs?: boolean }).pairs;
   const ordem = (id: string) => { const i = sport().pos.findIndex((x: string[]) => x[0] === ppos(id)); return i < 0 ? 99 : i; };
-  const ps = t.players.slice().sort((a, b) => ordem(a) - ordem(b));
+  const rs = (id: string) => ((t.res || []).includes(id) ? 1 : 0);
+  const ps = t.players.slice().sort((a, b) => rs(a) - rs(b) || ordem(a) - ordem(b));
   return (
     <div class="team">
       <div class={'band' + (c.n === 'Branco' && !pares ? ' branco' : '')} style={{ background: c.c }}></div>
       <div class="th"><b>{tn(t.c)}</b><span class="tag">{t.players.length}</span></div>
-      <ul>{ps.map(id => <li key={id}><Pos id={id} /><span class="pn">{pname(id)}</span></li>)}</ul>
+      <ul>{ps.map(id => <li key={id} class={rs(id) ? 'reserva' : ''}><Pos id={id} /><span class="pn">{pname(id)}{rs(id) ? <> <span class="tag">· {tx('times.reserva')}</span></> : null}</span></li>)}</ul>
     </div>
   );
 }

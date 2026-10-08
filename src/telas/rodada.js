@@ -42,10 +42,10 @@ function vRodada(){
     <div class="row" style="margin-top:12px"><button class="btn sm" data-a="shareTimes">Mandar times no WhatsApp</button><button class="btn sm" data-a="tab" data-v="partida">Ir para a partida</button></div>`:''}
   </div></div>`}
 function teamCard(t,ti,admin){const R=rat(),c=col(t.c);
-  const ps=t.players.slice().sort((a,b)=>posIdx(ppos(a))-posIdx(ppos(b)));
+  const rs=id=>(t.res||[]).includes(id)?1:0,ps=t.players.slice().sort((a,b)=>rs(a)-rs(b)||posIdx(ppos(a))-posIdx(ppos(b)));
   const avg=t.players.reduce((s,id)=>s+lvl(id),0)/Math.max(1,t.players.length);
   return `<div class="team"><div class="band${c.n==='Branco'&&!sport().pairs?' branco':''}" style="background:${c.c}"></div><div class="th"><b>${tn(t.c)}</b>${admin&&!sport().pairs?`<button class="btn sm ghost" data-a="color" data-v="${ti}">Cor</button>`:`<span class="tag">${t.players.length}</span>`}</div>
-  <ul>${ps.map(id=>`<li>${posTag(id)}<span class="pn">${esc(pname(id))}</span>${admin?`<button class="btn sm ghost" data-a="move" data-v="${ti}" data-p="${id}" title="Mover">⇄</button>`:''}</li>`).join('')}</ul>
+  <ul>${ps.map(id=>`<li class="${rs(id)?'reserva':''}">${posTag(id)}<span class="pn">${esc(pname(id))}${rs(id)?` <span class="tag">· ${tx('times.reserva')}</span>`:''}</span>${admin?`<button class="btn sm ghost" data-a="move" data-v="${ti}" data-p="${id}" title="Mover">⇄</button>`:''}</li>`).join('')}</ul>
   ${admin?`<div class="row between small muted" style="padding:0 14px 12px"><span>Nota média ${fmtL(Math.round(avg*10)/10)}</span>${sport().pairs?'':`<button class="btn sm ghost" data-a="porTime" data-v="${ti}">${tx('porTime.botao')}</button>`}</div>`:''}</div>`}
 
 /* Aviso de lista diferente dos times (pelada-v15). Some sozinho quando a lista e os times voltam a bater. */

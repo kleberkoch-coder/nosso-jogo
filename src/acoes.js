@@ -1,9 +1,10 @@
 import { abrirHist, buscarHist, estadoHist } from './telas/historico.js';
 import { CAIXA_K, cfg, editPc, ptipo } from './dominio/caixa.js';
-import { APP, COL, SPORTS, col, hasPos, posKeys, posLabel, posTag, sport, tn } from './dominio/esportes.js';
+import { APP, COL, SPORTS, col, hasPos, porTime, porTimePadrao, posKeys, posLabel, posTag, sport, tn } from './dominio/esportes.js';
 import { attendance, curRodada, dupName, fdia, fixos, fmtL, freq, gname, grpAtivo, isAvulso, lvl, lvlIn, normName, players, pname, ppos, rodById, rodadas, setLvl } from './dominio/grupo.js';
 import { draw } from './dominio/sorteio.js';
 import { foraDosTimes, fotoDoSorteio } from './dominio/divergencia.ts';
+import { reservas, sugerirTimes, titulares } from './dominio/times.ts';
 import { tp, tx } from './i18n/index.js';
 import { shareDlg, txtConvite, txtTimes } from './dominio/whatsapp.js';
 import { copyText, semConexao } from './eventos.js';
@@ -14,7 +15,7 @@ import { linkConvite, linkProxima, linkRodada, linkVoto } from './nucleo/links.j
 import { $, DIAS, brl, cl, esc, fdate, fmonth, inAppBrowser, key, toast, today, uid } from './nucleo/util.js';
 import { upMyGroup } from './rotas.js';
 import { pendencias } from './telas/caixa.js';
-import { groupForm, readGroupForm, schedRow } from './telas/grupo-form.js';
+import { groupForm, porTimeAjuda, readGroupForm, schedRow } from './telas/grupo-form.js';
 import { AUTH_CANCEL, authMsg, pwOk } from './telas/login.js';
 import { actx, elapsed, setActx, sumPts } from './telas/partida.js';
 import { MEK, myLocal } from './telas/publico-rodada.js';
@@ -27,7 +28,8 @@ import { LOCAL } from './i18n/formatos.js';
 /* =================== ações =================== */
 /* Põe a pessoa direto num time (sai de qualquer outro) e a inclui na foto do sorteio, para não gerar aviso. */
 function porNoTime(ti,pid){const r=curRodada(),t=r.times[ti];toast(tx('porTime.posto',{nome:pname(pid),time:tn(t.c)}));
-  return editRod(r.id,x=>{x.times.forEach(t=>{t.players=t.players.filter(p=>p!==pid)});x.times[ti].players.push(pid);
+  return editRod(r.id,x=>{x.times.forEach(t=>{t.players=t.players.filter(p=>p!==pid);if(t.res)t.res=t.res.filter(p=>p!==pid)});const alvo=x.times[ti];
+    if(titulares(alvo).length>=porTime())alvo.res=(alvo.res||[]).concat(pid);alvo.players.push(pid);
     x.info=x.info||{};x.info[pid]={n:pname(pid),p:ppos(pid)};const b=x.base||[...fotoDoSorteio(x)];if(!b.includes(pid))b.push(pid);x.base=b})}
 /* Escolher o time de quem confirmou depois do sorteio. */
 function escolherTime(pid){const r=curRodada();
@@ -61,7 +63,7 @@ const ACT={
   rmSched:el=>{const rows=document.querySelectorAll('#sched .srow');if(rows.length<=1){toast('Deixe pelo menos um dia, ou marque o grupo como esporádico.');return}el.closest('.srow').remove()},
   saveGroup:()=>{const g=readGroupForm(S.gid);if(!g)return;const wasFix=fixos().map(x=>x.dow+'|'+x.ini).join(),willFix=g.fixos.map(x=>x.dow+'|'+x.ini).join();
     if(wasFix&&wasFix!==willFix&&!confirm('Mudar dias ou horários fixos reinicia a confirmação da próxima rodada fixa. Continuar?'))return;
-    const p=editApp(a=>{a.name=g.name;a.sport=g.sport;a.sportName=g.sportName;a.freq=g.freq;a.cfg.fixos=g.fixos;if(g.fixos[0]&&g.fixos[0].place)a.cfg.place=g.fixos[0].place});
+    const p=editApp(a=>{a.name=g.name;a.sport=g.sport;a.sportName=g.sportName;a.freq=g.freq;a.cfg.fixos=g.fixos;a.cfg.porTime=g.porTime;if(g.fixos[0]&&g.fixos[0].place)a.cfg.place=g.fixos[0].place});
     upMyGroup(S.gid,{name:g.name,sport:g.sport,sportName:g.sportName});S.rid=null;closeDlg();toast('Grupo atualizado.');return p},
   addPos:()=>openDlg(`<h3>Nova posição</h3><div class="row"><label class="f" style="width:110px"><span>Sigla</span><input class="inp" id="psg" maxlength="4" placeholder="Ex.: VOL" style="text-transform:uppercase"></label>
     <label class="f" style="flex:1"><span>Nome</span><input class="inp" id="pnmx" maxlength="24" placeholder="Ex.: Volante"></label></div><p class="small muted" style="margin-top:-6px">A sigla aparece nas listas e nos times (até 4 letras).</p>
@@ -89,9 +91,10 @@ const ACT={
     catch(e){console.error(e);toast('Não foi possível duplicar. Tente de novo.')}},
   toggleAtivo:()=>{const on=!grpAtivo();if(!on&&!confirm('Inativar "'+gname()+'"? Os links públicos deixam de aceitar confirmações e votos, e a rodada fixa para de ser criada. Tudo continua guardado e você pode reativar depois.'))return;
     const p=editApp(a=>{a.ativo=on;if(on)delete a.inativadoEm;else a.inativadoEm=Date.now()});upMyGroup(S.gid,{ativo:on});toast(on?'Grupo reativado.':'Grupo inativado.');return p},
-  pickSport:el=>{const box=el.closest('[data-sp]');box.dataset.sp=el.dataset.v;box.querySelectorAll('[data-a=pickSport]').forEach(b=>b.setAttribute('aria-pressed',b===el));const o=box.querySelector('#ngoW,#csoW');if(o)o.hidden=el.dataset.v!=='outro'},
+  pickSport:el=>{const box=el.closest('[data-sp]');box.dataset.sp=el.dataset.v;box.querySelectorAll('[data-a=pickSport]').forEach(b=>b.setAttribute('aria-pressed',b===el));const o=box.querySelector('#ngoW,#csoW');if(o)o.hidden=el.dataset.v!=='outro';
+    const nt=box.querySelector('#ngt');if(nt){const ant=box.dataset.spAnt||'';if(!ant||+nt.value===porTimePadrao(ant))nt.value=porTimePadrao(el.dataset.v);box.dataset.spAnt=el.dataset.v;$('#ngtHelp').textContent=porTimeAjuda(el.dataset.v)}},
   createGroup:async el=>{const g=readGroupForm(null);if(!g)return;const gid=B.newId(),uid=S.user.uid,now=Date.now();
-    try{await B.set('grupos/'+gid,{name:g.name,sport:g.sport,sportName:g.sportName,freq:g.freq,ativo:true,cfg:{minutes:SPORTS[g.sport].min,fixos:g.fixos,place:(g.fixos[0]&&g.fixos[0].place)||''},owner:uid,createdAt:now});
+    try{await B.set('grupos/'+gid,{name:g.name,sport:g.sport,sportName:g.sportName,freq:g.freq,ativo:true,cfg:{minutes:SPORTS[g.sport].min,porTime:g.porTime,fixos:g.fixos,place:(g.fixos[0]&&g.fixos[0].place)||''},owner:uid,createdAt:now});
       await B.set('grupos/'+gid+'/membros/'+uid,{uid,email:S.user.email,role:'owner',at:now});
       await upMyGroup(gid,{name:g.name,role:'owner',sport:g.sport,sportName:g.sportName,ativo:true,criado:now});closeDlg();location.hash='#/g/'+gid}
     catch(e){console.error(e);toast('Não foi possível criar o grupo. Tente de novo.')}},
@@ -150,28 +153,38 @@ const ACT={
     const ps=[w(GB.set('avulsos/'+id,o)),editRat(a=>setLvl(a,id,+$('#plv').value))];const c=saveContato(id,val('ptel'),'');if(c)ps.push(c);closeDlg();toast('Avulso atualizado.');return Promise.all(ps)},
   delAvulso:el=>{const id=el.dataset.p;if(!confirm('Esquecer este avulso? Ele some da lista de "já jogaram aqui". O histórico de partidas continua.'))return;delete S.avul[id];changed();closeDlg();return w(GB.del('avulsos/'+id))},
   promote:el=>{const id=el.dataset.p,p=S.avul?.[id]||{nome:S.pres[id]?.nome,pos:S.pres[id]?.pos};playerDlg(null,{id,name:p?.nome,pos:p?.pos,tipo:'diarista'});$('[data-a=savePlayer]').dataset.p='';$('[data-a=savePlayer]').dataset.new=id},
-  drawDlg:()=>{const a=attendance(),k=a.inn.length,n=k>=20?3:2;
-    openDlg(`<div id="drawBox" data-n="${Math.min(n,Math.floor(k/2))}" data-nov="${cfg().novelty}"><h3>${sport().pairs?'Sortear duplas':'Sortear times'}</h3>
-    <div class="f" ${sport().pairs?'hidden':''}><span class="lbl">Quantos times</span><span class="seg">${[2,3,4,5,6].filter(x=>x*2<=k).map(x=>`<button data-a="dN" data-v="${x}">${x}</button>`).join('')}</span></div>
+  drawDlg:()=>{const a=attendance(),T=porTime(),fora=new Set(cfg().foraPos||[]),k=a.inn.length,dentro=a.inn.filter(id=>!(hasPos()&&fora.has(ppos(id)))).length,
+      n=sport().pairs?Math.max(1,Math.floor(dentro/2)):sugerirTimes(dentro,T);
+    openDlg(`<div id="drawBox" data-n="${n}" data-nov="${cfg().novelty}" data-fora="${esc([...fora].join(','))}"><h3>${sport().pairs?'Sortear duplas':'Sortear times'}</h3>
+    <p class="small muted" style="margin-top:-6px">${sport().pairs?tx('sorteio.infoDuplas'):tx('sorteio.info',{n:T})}</p>
+    <div class="f" ${sport().pairs?'hidden':''}><span class="lbl">Quantos times</span><span class="seg">${[2,3,4,5,6,7,8].filter(x=>x*2<=k).map(x=>`<button data-a="dN" data-v="${x}">${x}</button>`).join('')}</span></div>
+    ${hasPos()?`<div class="f" style="margin-top:12px"><span class="lbl">${tx('sorteio.foraPos')}</span><span class="seg seg-wrap">${posKeys().map(p=>`<button data-a="dFora" data-v="${esc(p)}" aria-pressed="${fora.has(p)}" title="${esc(posLabel(p))}">${esc(p)}</button>`).join('')}</span>
+      <p class="small muted" style="margin:6px 0 0">${tx('sorteio.foraPosAjuda')}</p></div>`:''}
     <p id="drawPrev" style="font-weight:600"></p>
     <div class="f"><span class="lbl">Variar parceiros (com base no histórico)</span><span class="seg">${['Não','Pouco','Médio','Muito'].map((l,i)=>`<button data-a="dNov" data-v="${i}">${l}</button>`).join('')}</span></div>
-    <details><summary>Quem entra no sorteio (${k})</summary><div class="chk">${a.inn.map(id=>`<label><input type="checkbox" class="dp" value="${id}" checked>${esc(pname(id))}</label>`).join('')}</div></details>
+    <details><summary>Quem entra no sorteio (<span id="drawK">${dentro}</span> de ${k})</summary><div class="chk">${a.inn.map(id=>`<label><input type="checkbox" class="dp" value="${id}" data-pos="${esc(ppos(id)||'')}" ${hasPos()&&fora.has(ppos(id))?'':'checked'}>${esc(pname(id))}${hasPos()&&ppos(id)?` <span class="tag">· ${esc(ppos(id))}</span>`:''}</label>`).join('')}</div></details>
     <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn bib" id="drawGo" data-a="doDraw">Sortear</button></div></div>`);drawPreview()},
+  /* Deixar uma posição inteira fora do sorteio (ex.: goleiros fixos). A escolha fica salva no grupo ao sortear. */
+  dFora:el=>{const box=$('#drawBox'),p=el.dataset.v,f=new Set((box.dataset.fora||'').split(',').filter(Boolean)),on=!f.has(p);on?f.add(p):f.delete(p);box.dataset.fora=[...f].join(',');
+    el.setAttribute('aria-pressed',on);box.querySelectorAll('.dp').forEach(c=>{if(c.dataset.pos===p)c.checked=!on});
+    if(!sport().pairs){const k=box.querySelectorAll('.dp:checked').length;box.dataset.n=sugerirTimes(k,porTime())}drawPreview()},
   dN:el=>{$('#drawBox').dataset.n=el.dataset.v;drawPreview()},
   dNov:el=>{$('#drawBox').dataset.nov=el.dataset.v;drawPreview()},
-  doDraw:()=>{const box=$('#drawBox'),n=+box.dataset.n,nov=+box.dataset.nov,ids=[...box.querySelectorAll('.dp:checked')].map(x=>x.value);if(ids.length<n*2)return;
-    return sleep(40).then(()=>{const cap=[];cap.close=false;setCAP(cap);try{ACT._draw(ids,n,nov)}finally{setCAP(null)}return Promise.allSettled(cap).then(()=>closeDlgNow())})},
-  _draw:(ids,n,nov)=>{
-    const r=curRodada(),T=draw(ids,n,nov,r.id);
-    editRod(r.id,x=>{const old=x.times||[];x.times=T.map((p,i)=>({c:old[i]?.c??i,players:p}));x.info={};ids.forEach(id=>x.info[id]={n:pname(id),p:ppos(id)});x.drawnAt=Date.now();
+  doDraw:()=>{const box=$('#drawBox'),n=+box.dataset.n,nov=+box.dataset.nov,fora=(box.dataset.fora||'').split(',').filter(Boolean),ids=[...box.querySelectorAll('.dp:checked')].map(x=>x.value);if(ids.length<n*2)return;
+    return sleep(40).then(()=>{const cap=[];cap.close=false;setCAP(cap);try{ACT._draw(ids,n,nov,fora)}finally{setCAP(null)}return Promise.allSettled(cap).then(()=>closeDlgNow())})},
+  _draw:(ids,n,nov,fora)=>{
+    const r=curRodada(),T=draw(ids,n,nov,r.id),PT=porTime(),quando=id=>(S.pres[id]||{}).t||0;
+    editRod(r.id,x=>{const old=x.times||[];x.times=T.map((p,i)=>{const t={c:old[i]?.c??i,players:p},rs=reservas(p,PT,quando);if(rs.length)t.res=rs;return t});x.info={};ids.forEach(id=>x.info[id]={n:pname(id),p:ppos(id)});x.drawnAt=Date.now();
       /* pelada-v15: sortear fecha a lista e guarda a foto dos confirmados, para avisar se a lista mudar depois. */
       x.locked=true;x.base=attendance().inn});
-    if(nov!==cfg().novelty)editApp(a=>{a.cfg.novelty=nov});S.live=null;closeDlg();toast(tx('lista.sorteadoFechada'))},
+    if(nov!==cfg().novelty||(fora&&fora.join()!==(cfg().foraPos||[]).join()))editApp(a=>{a.cfg.novelty=nov;if(fora)a.cfg.foraPos=fora});S.live=null;closeDlg();toast(tx('lista.sorteadoFechada'))},
   color:el=>{const ti=+el.dataset.v;editRod(curRodada().id,x=>{const used=x.times.map(t=>t.c);let c=x.times[ti].c;for(let k=0;k<COL.length;k++){c=(c+1)%COL.length;if(!used.includes(c))break}x.times[ti].c=c})},
-  move:el=>{const r=curRodada(),f=+el.dataset.v,pid=el.dataset.p;openDlg(`<h3>Mover ${esc(pname(pid))}</h3><div class="vgrid">${r.times.map((t,i)=>i===f?'':`<button class="opt" data-a="doMove" data-v="${i}" data-f="${f}" data-p="${pid}"><span class="dot" style="background:${col(t.c).c}"></span>${tn(t.c)}</button>`).join('')}</div><div class="dlg-f"><button class="btn" data-a="close">Cancelar</button></div>`)},
-  doMove:el=>{const to=+el.dataset.v,f=+el.dataset.f,pid=el.dataset.p;editRod(curRodada().id,x=>{x.times[f].players=x.times[f].players.filter(p=>p!==pid);x.times[to].players.push(pid)});closeDlg()},
+  move:el=>{const r=curRodada(),f=+el.dataset.v,pid=el.dataset.p;openDlg(`<h3>Mover ${esc(pname(pid))}</h3><div class="vgrid">${r.times.map((t,i)=>i===f?'':`<button class="opt" data-a="doMove" data-v="${i}" data-f="${f}" data-p="${pid}"><span class="dot" style="background:${col(t.c).c}"></span>${tn(t.c)}</button>`).join('')}</div>
+    <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn" data-a="toggleRes" data-v="${f}" data-p="${pid}">${(r.times[f].res||[]).includes(pid)?tx('times.marcarTitular'):tx('times.marcarReserva')}</button></div>`)},
+  toggleRes:el=>{const f=+el.dataset.v,pid=el.dataset.p;closeDlg();return editRod(curRodada().id,x=>{const t=x.times[f],r=t.res||[];t.res=r.includes(pid)?r.filter(p=>p!==pid):r.concat(pid);if(!t.res.length)delete t.res})},
+  doMove:el=>{const to=+el.dataset.v,f=+el.dataset.f,pid=el.dataset.p;editRod(curRodada().id,x=>{x.times[f].players=x.times[f].players.filter(p=>p!==pid);if(x.times[f].res){x.times[f].res=x.times[f].res.filter(p=>p!==pid);if(!x.times[f].res.length)delete x.times[f].res}x.times[to].players.push(pid)});closeDlg()},
   /* ---- lista × times (pelada-v15) ---- */
-  divTirar:el=>{const pid=el.dataset.p;toast(tx('div.tirado',{nome:pname(pid)}));return editRod(curRodada().id,x=>{x.times.forEach(t=>{t.players=t.players.filter(p=>p!==pid)})})},
+  divTirar:el=>{const pid=el.dataset.p;toast(tx('div.tirado',{nome:pname(pid)}));return editRod(curRodada().id,x=>{x.times.forEach(t=>{t.players=t.players.filter(p=>p!==pid);if(t.res)t.res=t.res.filter(p=>p!==pid)})})},
   divPor:el=>escolherTime(el.dataset.p),
   divManter:()=>{toast(tx('div.mantidos'));return editRod(curRodada().id,x=>{x.base=attendance().inn})},
   porTime:el=>{const r=curRodada(),ti=+el.dataset.v,t=r.times[ti],a=attendance();

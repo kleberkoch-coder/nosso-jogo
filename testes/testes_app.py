@@ -60,6 +60,9 @@ with sync_playwright() as pw:
     ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2, has_touch=True, color_scheme='light', service_workers='block')
     pg = ctx.new_page()
     pg.on('pageerror', lambda e: errs.append(str(e)))
+    # Janelas de confirmação (confirm): recusadas, a não ser quando o teste liga aceitar['v'].
+    aceitar = {'v': False}
+    pg.on('dialog', lambda d: d.accept() if aceitar['v'] else d.dismiss())
     pg.on('console', lambda m: errs.append('console: ' + m.text) if m.type == 'error' else None)
     sem_traducao = []
     pg.on('console', lambda m: sem_traducao.append(m.text) if m.type == 'warning' and m.text.startswith('Texto sem tradução') else None)
@@ -104,6 +107,56 @@ with sync_playwright() as pw:
     ok(hsm >= 36, f'botões pequenos com 36px ou mais ({hsm:.0f}px)')
     shot('02-rodada-claro'); contraste(pg, 'Rodada (claro)')
     sortear(pg); ok(pg.locator('.team').count() >= 2, 'times de futebol sorteados'); shot('03-times')
+
+    # ---------- v15 (KAN-90 a KAN-92): lista fechada, sorteio fecha a lista, aviso de lista diferente dos times e pôr no time
+    mark = lambda pid, v: pg.click(f'[data-a=mark][data-p="{pid}"][data-v={v}]')
+    ok(pg.evaluate("!!S.rod[S.rid].locked"), 'CT-KAN-91-01: sortear fecha a lista')
+    ok(pg.locator('[data-a=mark]').count() == 0 and 'Lista fechada pelo sorteio' in pg.inner_text('main'), 'CT-KAN-90-01: com a lista fechada o administrador não marca presença')
+    ok(pg.locator('[data-a=addAvulso]').count() == 0, 'CT-KAN-90-01: com a lista fechada some o "Adicionar avulso" da presença')
+    ok(pg.locator('.warn-div').count() == 0, 'CT-KAN-91-03: logo depois do sorteio não há aviso de divergência')
+    # Pôr direto no time com a lista fechada
+    conf0 = pg.evaluate("Object.values(S.pres).filter(p=>p.s==='in').length")
+    pg.locator('[data-a=porTime]').first.click(); pg.wait_for_timeout(300)
+    ok('A pessoa entra direto neste time' in pg.inner_text('#dlg'), 'CT-KAN-92-01: "+ Pôr no time" abre a escolha de jogador')
+    novo = pg.locator('#dlg [data-a=doPorTime]').first.get_attribute('data-p')
+    pg.locator('#dlg [data-a=doPorTime]').first.click(); pg.wait_for_timeout(800)
+    st = pg.evaluate("(id)=>[S.rod[S.rid].times[0].players.includes(id),(S.pres[id]||{}).s,Object.values(S.pres).filter(p=>p.s==='in').length]", novo)
+    ok(st[0] and st[1] == 'in' and st[2] == conf0 + 1, f'CT-KAN-92-02: quem é posto no time entra no time e na lista de confirmados ({conf0} → {st[2]})')
+    ok(pg.locator('.warn-div').count() == 0, 'CT-KAN-92-02: pôr no time não gera aviso de divergência')
+    # Reabrir a lista e mudar presença com times sorteados
+    aceitar['v'] = True; pg.click('[data-a=lock]'); pg.wait_for_timeout(600)
+    ok(pg.locator('[data-a=mark]').count() > 0, 'CT-KAN-90-02: reabrir a lista volta a permitir marcar presença')
+    t0p = pg.evaluate("S.rod[S.rid].times[0].players[0]")
+    aceitar['v'] = False; mark(t0p, 'out'); pg.wait_for_timeout(500)
+    ok(pg.evaluate("(id)=>S.pres[id].s", t0p) == 'in', 'CT-KAN-91-02: com times sorteados, mudar presença pede confirmação (Cancelar não muda)')
+    aceitar['v'] = True; mark(t0p, 'out'); pg.wait_for_timeout(600)
+    fora = pg.evaluate("Object.keys(S.jog).find(id=>!S.pres[id])")
+    mark(fora, 'in'); pg.wait_for_timeout(600)
+    aviso = pg.inner_text('.warn-div') if pg.locator('.warn-div').count() else ''
+    ok('A lista mudou depois do sorteio' in aviso and 'não vai mais' in aviso and 'confirmou depois do sorteio' in aviso, 'CT-KAN-91-03: aviso mostra quem saiu e quem entrou depois do sorteio')
+    shot('14-lista-diferente-dos-times'); contraste(pg, 'aviso de lista diferente dos times')
+    pg.click(f'.warn-div [data-a=divTirar][data-p="{t0p}"]'); pg.wait_for_timeout(600)
+    ok(pg.evaluate("(id)=>!S.rod[S.rid].times.some(t=>t.players.includes(id))", t0p) and 'não vai mais' not in pg.inner_text('main'), 'CT-KAN-91-04: "Tirar do time" tira só essa pessoa e o aviso dela some')
+    pg.click(f'.warn-div [data-a=divPor][data-p="{fora}"]'); pg.wait_for_timeout(300)
+    pg.locator('#dlg [data-a=doPorTime]').last.click(); pg.wait_for_timeout(700)
+    ok(pg.evaluate("(id)=>S.rod[S.rid].times.some(t=>t.players.includes(id))", fora) and pg.locator('.warn-div').count() == 0, 'CT-KAN-91-04: "Pôr no time" coloca quem entrou e o aviso some')
+    outro = pg.evaluate("S.rod[S.rid].times[1].players[0]")
+    mark(outro, 'out'); pg.wait_for_timeout(600)
+    ok(pg.locator('.warn-div').count() == 1, 'CT-KAN-91-03: aviso volta quando a lista muda de novo')
+    pg.click('.warn-div [data-a=divManter]'); pg.wait_for_timeout(600)
+    ok(pg.locator('.warn-div').count() == 0, 'CT-KAN-91-04: "Manter os times assim" apaga o aviso')
+    mark(outro, 'in'); pg.wait_for_timeout(600)
+    ok(pg.locator('.warn-div').count() == 0, 'CT-KAN-91-04: depois de "Manter", quem volta a confirmar e já está no time não gera aviso')
+    mark(pg.evaluate("S.rod[S.rid].times[0].players[1]"), 'out'); pg.wait_for_timeout(600)
+    pg.reload(); pg.wait_for_timeout(1200); pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(400)
+    ok(pg.locator('.warn-div').count() == 1, 'CT-KAN-91-03: aviso continua depois de recarregar (vale para mudança vinda do link)')
+    pg.click('.warn-div [data-a=drawDlg]'); pg.wait_for_timeout(300); pg.click('#drawGo'); pg.wait_for_timeout(2500)
+    ok(pg.locator('.warn-div').count() == 0 and pg.evaluate("!!S.rod[S.rid].locked"), 'CT-KAN-91-04: "Sortear de novo" refaz os times, fecha a lista e apaga o aviso')
+    # Link público com a lista fechada pelo sorteio
+    pg.goto(URL + '#/p/' + gid_fut); pg.wait_for_timeout(900)
+    ok(pg.locator('.mk.lg button').count() == 0 and 'Lista fechada' in pg.inner_text('main') and pg.locator('.team').count() >= 2, 'CT-KAN-91-01: link mostra a lista fechada e os times')
+    pg.goto(URL + '#/g/' + gid_fut); pg.wait_for_timeout(900); pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(400)
+    pg.click('[data-a=lock]'); pg.wait_for_timeout(600)  # reabre para os testes do link público abaixo
 
     # ---------- Partida, ranking, caixa, votação
     pg.click('[data-a=tab][data-v=partida]'); pg.wait_for_timeout(400)

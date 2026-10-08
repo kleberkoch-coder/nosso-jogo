@@ -15,10 +15,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Conferir tipos e montar o site (inclui o orçamento de tamanho)
+      - name: Conferir tipos, testar as regras de negócio e montar o site (inclui o orçamento de tamanho)
         run: |
           npm install --no-audit --no-fund
           npm run checar
+          npm run regras
           npm run build
       - uses: actions/upload-artifact@v4
         with:

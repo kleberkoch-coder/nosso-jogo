@@ -197,6 +197,7 @@ Migração (v10): grupos antigos com valores e Pix em `cfg` e `tipo` nos jogador
   - **desempenho (feito na v14):** o link do jogador carrega só a próxima rodada; a aba Rodada mostra as próximas e as últimas 4, e a presença de cada rodada só carrega ao escolher; a **aba Histórico** busca rodadas antigas por mês ou período e mostra lista, times, partidas e votação de cada uma;
   - **desempenho (planejado, v15):** partidas numa subpasta da rodada; ranking e caixa com totais prontos por mês e botão Recalcular;
   - **gravação da rodada (feito na v14):** só os campos que mudaram, para dois administradores não apagarem o trabalho um do outro; funciona sem internet (por isso não usamos transações);
+  - **linguagem e dívida técnica (D12):** ficamos em JavaScript, migrando para TypeScript; toda tela mexida vira componente na mesma entrega, cada pacote leva um cartão técnico, e um painel medido a cada versão acompanha a evolução;
   - **cobrança por partes do serviço** (intenção de out. 2026): o plano de cada grupo será gravado só pelo servidor (Cloud Functions ligadas ao pagamento) e conferido nas regras do Firebase, nunca só na tela.
 - Política de senha também no Firebase (Authentication > Configurações), se disponível.
 - **Ícones do app:**

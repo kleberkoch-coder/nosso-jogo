@@ -100,6 +100,27 @@ Medido a cada versão, no celular de 390px:
 - **Limite consciente:** enquanto não houver servidor, quem calcula é o celular do administrador; as regras garantem quem grava, não a conta. Com as Cloud Functions (D5), o recálculo passa para o servidor.
 - **Depende de:** D4 (transações) e D10 (partidas em subpasta).
 
+### D12. Ficar em JavaScript/TypeScript e pagar a dívida técnica aos poucos (8 out. 2026)
+- **Contexto:** a dúvida era se valeria trocar de linguagem para não acumular dívida técnica.
+- **Decisão:** não trocar. Todo app web roda em JavaScript; o caminho certo é o **TypeScript** (JavaScript com tipos conferidos antes de ir para o ar), que já começou na v14. As funções no servidor, quando vierem, também serão em TypeScript: uma linguagem só no produto inteiro.
+- **Onde está a dívida de verdade:** telas montadas como texto (`innerHTML`, onde um escape esquecido vira brecha), código sem tipos, um estado global que qualquer parte altera e regras de negócio sem teste próprio.
+- **Como pagar, sem parar o produto:**
+  1. **Tela mexida, tela migrada:** toda tela tocada por uma funcionalidade vira componente TypeScript + Preact na mesma entrega.
+  2. **Uma fatia fixa por pacote:** cada entrega leva pelo menos um cartão de dívida técnica, indicado pelo arquiteto.
+  3. **Painel medido a cada versão** (a montagem calcula sozinha; ver abaixo). Número que piora sem justificativa segura o Merge.
+  4. **Prioridade:** primeiro o caixa e o link de votação (dinheiro e dados de pessoas de fora), e testes próprios das regras do sorteio e do ranking (o coração do produto).
+- **Prazo estimado:** com 1 a 2 telas por entrega, todo o app em TypeScript em 8 a 10 pacotes.
+- **O que faria mudar:** decisão de negócio por apps nativos nas lojas com recursos que o app web não tem. Mesmo assim, há caminhos que reaproveitam o código atual.
+
+### Painel da dívida técnica
+A montagem (`npm run build`) imprime estes números. Eles são registrados aqui a cada versão, e o arquiteto acompanha a tendência.
+
+| Versão | Arquivos em TypeScript | Telas como componente | Pontos com `innerHTML` | Regras de negócio com teste próprio (de 5) | App comprimido |
+|---|---|---|---|---|---|
+| pelada-v14 | 1 de 39 | 1 de 15 | 28 | 0 | cerca de 67 KB |
+
+As 5 regras de negócio com teste próprio previsto: sorteio, ranking, pendências do caixa, rodadas fixas (próxima data) e apuração da votação. Os testes ficarão em `testes/regras/`.
+
 ## Mapa do código (pasta `src/`)
 | Pasta | O que tem |
 |---|---|
@@ -123,7 +144,7 @@ Os agentes leem o app pelo projeto do Claude, e não pelo GitHub. Por isso, toda
 
 | No projeto do Claude | Vem de (GitHub) | Quando |
 |---|---|---|
-| `app/index.html` | `dist/index.html` (resultado do `npm run build`) | toda versão |
+| `app/index.html` | `dist/index.html` (resultado do `npm run build`) | toda versão (anotar também a linha do Painel da dívida técnica) |
 | `app/sw.js` e `app/manifest.webmanifest` | `site/sw.js` e `site/manifest.webmanifest` | toda versão (o `sw.js` muda a `VERSION`) |
 | `app/firestore.rules` | `firestore.rules` | quando as regras mudarem |
 | `app/LEIA-ME.md` | `LEIA-ME.md` | quando o uso mudar |

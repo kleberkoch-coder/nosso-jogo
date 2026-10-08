@@ -115,6 +115,13 @@ Medido a cada versão, no celular de 390px:
   - a regra fica em `src/dominio/resumos.ts`, com teste próprio (`testes/regras/ranking.test.mjs`, compara com o cálculo antigo);
   - riscos aceitos: Recalcular ao mesmo tempo que outro administrador salva uma partida pode sobrescrever aquele incremento (basta recalcular de novo); aparelho com a v17 em cache que encerrar votação ou apagar rodada não ajusta as fichas até alguém usar Recalcular.
 
+### D14. Docker: não agora (8 out. 2026)
+- **Contexto:** surgiu a pergunta se o Docker (o "contêiner" que embala um programa com tudo de que ele precisa para rodar num servidor) se encaixa no Nosso Jogo.
+- **Decisão:** não usar Docker para rodar o app. O Nosso Jogo não tem servidor próprio: o site é entregue pelo Netlify e banco e login ficam no Firebase, administrados pelo Google. Criar um servidor só para usar contêiner aumentaria custo, manutenção e superfície de ataque, sem ganho para o jogador.
+- **Onde ele já aparece (e continua):** só como ferramenta de teste, nos testes automáticos do GitHub (imagem pronta do Playwright, com o navegador instalado).
+- **Quando reavaliar:** se surgir um serviço próprio que o Firebase não cobre (pagamentos com regras complexas, relatórios pesados, integração com sistema externo). Mesmo assim, o primeiro passo continua sendo as funções do Firebase (D5), sem servidor e sem Docker. Contêiner só entra se esse serviço precisar de máquina dedicada, e de preferência num serviço gerenciado (ex.: Cloud Run), sem administrar servidor.
+- **Para os agentes:** não sugerir Docker, Kubernetes ou servidor próprio antes de existir uma necessidade que se enquadre no "quando reavaliar".
+
 ### D13. Regras do Firebase testadas no emulador antes do Merge (8 out. 2026, pelada-v19, KAN-104)
 - **Contexto:** as regras vão ao ar sozinhas no Merge, e o modo demonstração não as aplica.
 - **Decisão:** tarefa `regras-firebase` no GitHub (`.github/workflows/testes.yml`) roda o emulador do Firestore com `testes/regras-firebase/regras.test.mjs` (21 casos: partidas, resumos, caixa, privado, Pix, presença pelo link, administradores). A proposta só fica verde se todos passarem; o resumo aparece como aviso na tarefa.

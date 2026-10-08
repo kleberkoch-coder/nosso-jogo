@@ -19,6 +19,15 @@ const r = await esbuild.build({
   legalComments: 'none',
   charset: 'utf8',
   logLevel: 'warning',
+  // Componentes em TypeScript + Preact (arquivos .tsx): JSX vira chamadas do Preact.
+  jsx: 'automatic',
+  jsxImportSource: 'preact',
+  // Só para montar sem acesso ao npm: PREACT_SRC aponta para o código-fonte do Preact (mesma versão do package.json).
+  alias: process.env.PREACT_SRC ? {
+    'preact/jsx-runtime': process.env.PREACT_SRC + '/jsx-runtime/src/index.js',
+    'preact/hooks': process.env.PREACT_SRC + '/hooks/src/index.js',
+    'preact': process.env.PREACT_SRC + '/src/index.js',
+  } : {},
 });
 const pick = ext => r.outputFiles.find(f => f.path.endsWith(ext)).text;
 const js = pick('.js'), css = pick('.css');

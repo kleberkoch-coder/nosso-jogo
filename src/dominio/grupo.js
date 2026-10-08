@@ -35,7 +35,16 @@ function rodById(id){if(!id)return null;if(S.rod[id])return Object.assign({id},S
 function rodadas(){const docs=Object.entries(S.rod).map(([id,v])=>Object.assign({id},v));const ids=new Set(docs.map(d=>d.id));
   return docs.concat(virtualFixos().filter(v=>!ids.has(v.id))).sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.time||'').localeCompare(a.time||'')||(b.createdAt||0)-(a.createdAt||0))}
 function upcoming(){const now=Date.now();return rodadas().filter(r=>!r.cancelada&&endTs(r)>now).sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')))}
-function info(id){for(const r of Object.values(S.rod)){if(r.info&&r.info[id])return r.info[id]}return null}
+/* Rodadas mostradas na aba Rodada (D10): as próximas e as últimas 4. */
+const ULTIMAS=4;
+function rodadasJanela(){const now=Date.now(),rs=rodadas(),fut=rs.filter(r=>endTs(r)>now),pas=rs.filter(r=>endTs(r)<=now).slice(0,ULTIMAS);return fut.concat(pas)}
+/* Todas as rodadas do grupo: só carregadas quando o ranking é aberto (S.rodAll). */
+function rodadasTodas(){if(!S.rodAll)return rodadas();return Object.entries(S.rodAll).map(([id,v])=>Object.assign({id},v)).sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.time||'').localeCompare(a.time||''))}
+/* Rodadas de um mês (caixa): carregadas sob demanda em S.rodMes. */
+function rodadasDoMes(m){const fonte=S.rodMesM===m?Object.entries(S.rodMes||{}).map(([id,v])=>Object.assign({id},v)):rodadas();return fonte.filter(r=>(r.date||'').slice(0,7)===m)}
+/* Ficha de uma rodada que pode estar fora da janela (votação antiga, histórico). */
+function rodDoc(id){return S.rod[id]||(S.rodAll||{})[id]||(S.rodX||{})[id]||((S.hist&&S.hist.docs)||{})[id]||null}
+function info(id){for(const fonte of [S.rod,S.rodAll||{},S.rodX||{},(S.hist&&S.hist.docs)||{}])for(const r of Object.values(fonte)){if(r&&r.info&&r.info[id])return r.info[id]}return null}
 function pname(id){return S.jog[id]?.name||S.avul?.[id]?.nome||S.pres[id]?.nome||info(id)?.n||'Avulso'}
 function ppos(id){if(!hasPos())return '';const k=S.jog[id]?.pos||S.avul?.[id]?.pos||S.pres[id]?.pos||info(id)?.p;if(k&&posKeys().includes(k))return k;const ks=posKeys().filter(x=>x!==sport().key);return ks[Math.floor(ks.length/2)]||posKeys()[0]}
 function isAvulso(id){return !S.jog[id]}
@@ -46,4 +55,4 @@ function curRodada(){const rs=rodadas();if(!rs.length)return null;if(S.rid){cons
 function attendance(){const a=Object.entries(S.pres).map(([id,v])=>Object.assign({id},v));
   return{inn:a.filter(x=>x.s==='in').sort((x,y)=>x.t-y.t).map(x=>x.id),out:a.filter(x=>x.s==='out').map(x=>x.id)}}
 
-export { attendance, curRodada, dupName, fdia, fixos, fmtL, freq, gname, grpAtivo, isAdmin, isAvulso, isOwnerMe, lvl, lvlIn, lvlTag, normName, players, pname, ppos, rat, rodById, rodadas, schedTxt, setLvl, upcoming };
+export { ULTIMAS, attendance, curRodada, endTs, ymd, dupName, fdia, fixos, fmtL, freq, gname, grpAtivo, isAdmin, isAvulso, isOwnerMe, lvl, lvlIn, lvlTag, normName, players, pname, ppos, rat, rodById, rodDoc, rodadas, rodadasDoMes, rodadasJanela, rodadasTodas, schedTxt, setLvl, upcoming };

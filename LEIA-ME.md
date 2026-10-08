@@ -225,7 +225,15 @@ Não arraste mais a pasta no Netlify: a próxima publicação pelo GitHub sobres
 - **Regras não publicadas:** veja a aba **Actions** do repositório. A causa mais comum é o segredo `FIREBASE_SERVICE_ACCOUNT` ausente ou vencido.
 - **Voltar uma versão:** no Netlify, abra **Deploys**, clique numa publicação anterior e em **Publish deploy**.
 
-A cada mudança no app, o número em `VERSION` no começo do `site/sw.js` sobe (agora está em `pelada-v13`), para os celulares receberem a atualização.
+A cada mudança no app, o número em `VERSION` no começo do `site/sw.js` sobe (agora está em `pelada-v14`), para os celulares receberem a atualização.
+
+**Versão `pelada-v14`: mais rápida e com a aba Histórico.**
+- **O que mudou:**
+  - o link do jogador carrega só a próxima rodada, e não mais a história inteira do grupo: abre mais rápido, principalmente com sinal fraco;
+  - a aba Rodada mostra as próximas rodadas e as últimas 4. Os jogos mais antigos ficam na nova aba **Histórico**, com busca por mês ou por período; cada rodada mostra lista, times, partidas e votação;
+  - dois administradores mexendo na mesma rodada ao mesmo tempo (um salva a partida, outro fecha a lista) não apagam mais o que o outro fez;
+  - por dentro: o link do jogador é o primeiro componente em TypeScript e Preact.
+- **O que fazer:** só aprovar a proposta de mudança. As regras do Firebase **não mudaram**.
 
 **Versão `pelada-v13`: código reorganizado.**
 - **O que mudou:** por dentro, o app foi dividido em módulos e ganhou a base para vários idiomas. Por fora, nada muda para organizadores e jogadores.

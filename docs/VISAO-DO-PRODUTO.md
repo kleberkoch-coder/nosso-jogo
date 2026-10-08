@@ -1,6 +1,6 @@
 # Nosso Jogo — visão do produto e decisões
 
-Última atualização: outubro de 2026 (versão `pelada-v13` do `sw.js`: código reorganizado em módulos, com o mesmo funcionamento da v12).
+Última atualização: outubro de 2026 (versão `pelada-v14` do `sw.js`: link do jogador mais leve, aba Histórico e gravação da rodada só no que mudou).
 
 ## O produto
 Plataforma para **qualquer pessoa no mundo** organizar seus jogos recorrentes ou esporádicos, de **qualquer esporte**. Uma mesma pessoa costuma organizar mais de um jogo e praticar mais de um esporte, então cada conta pode ter **vários grupos**.
@@ -27,7 +27,7 @@ Plataforma para **qualquer pessoa no mundo** organizar seus jogos recorrentes ou
   - os documentos deste projeto espelham a versão proposta mais recente.
 - **Hospedagem:** Netlify (`nossosjogos.netlify.app`, site `nossosjogos`), ligado ao GitHub (pasta `site/`). O projeto precisa estar como público no Netlify.
 - **Banco e login:** Firebase, projeto `nosso-jogo-f4762`, com Firestore e Authentication (provedores E-mail/senha, Google e Anônimo ativados).
-- **Código (pelada-v13):** JavaScript, HTML e CSS puros (Firebase compat v10 via CDN), em módulos na pasta `src/`, montados pelo esbuild num único `index.html`. Detalhes e decisões técnicas em `docs/ARQUITETURA.md`.
+- **Código (pelada-v14):** JavaScript, HTML e CSS (o link do jogador já em TypeScript + Preact) (Firebase compat v10 via CDN), em módulos na pasta `src/`, montados pelo esbuild num único `index.html`. Detalhes e decisões técnicas em `docs/ARQUITETURA.md`.
 - **Modo demonstração:** quando a configuração do Firebase está vazia, os dados ficam só no navegador. É usado para testar.
 
 ## Rotas (endereços)
@@ -194,7 +194,9 @@ Migração (v10): grupos antigos com valores e Pix em `cfg` e `tipo` nos jogador
   - vários idiomas: textos num dicionário por idioma (base `pt-BR`); feito para as telas públicas e avisos, as demais telas migram junto com a componentização;
   - próximos passos técnicos: transações na gravação da rodada (sorteio e placar), Firebase App Check e limites contra abuso antes de começar a cobrar;
   - banco: ficamos no Firestore; outros bancos só como apoio (BigQuery para relatórios, PostgreSQL se o financeiro pedir), cada dado com um único banco dono;
-  - **desempenho (planejado):** o link do jogador carrega só a próxima rodada; a aba Rodada mostra as próximas e as últimas 4, e o conteúdo de cada rodada só carrega ao escolher; uma **nova aba Histórico** busca rodadas antigas por período e mostra lista, times, partidas e votação de cada uma; ranking e caixa passam a usar totais prontos por mês, com botão Recalcular;
+  - **desempenho (feito na v14):** o link do jogador carrega só a próxima rodada; a aba Rodada mostra as próximas e as últimas 4, e a presença de cada rodada só carrega ao escolher; a **aba Histórico** busca rodadas antigas por mês ou período e mostra lista, times, partidas e votação de cada uma;
+  - **desempenho (planejado, v15):** partidas numa subpasta da rodada; ranking e caixa com totais prontos por mês e botão Recalcular;
+  - **gravação da rodada (feito na v14):** só os campos que mudaram, para dois administradores não apagarem o trabalho um do outro; funciona sem internet (por isso não usamos transações);
   - **cobrança por partes do serviço** (intenção de out. 2026): o plano de cada grupo será gravado só pelo servidor (Cloud Functions ligadas ao pagamento) e conferido nas regras do Firebase, nunca só na tela.
 - Política de senha também no Firebase (Authentication > Configurações), se disponível.
 - **Ícones do app:**

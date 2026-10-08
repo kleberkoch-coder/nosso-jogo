@@ -28,7 +28,8 @@ O produto vai ganhar muitas funcionalidades e passará a **cobrar por partes do 
 - **Contexto:** o app inteiro estava num único `index.html` com cerca de 500 funções. Cada mudança ficava mais arriscada.
 - **Decisão:** dividir em etapas, sempre com o app idêntico por fora e os testes passando:
   - **Etapa 1 (pelada-v13, feita):** código dividido em 33 módulos por assunto, CSS em arquivo próprio, montagem pelo esbuild, base de idiomas e de formatos (moeda, datas).
-  - **Etapa 2 em diante:** cada tela vira componente com **TypeScript** e **Preact** (versão leve do React, boa para celular), uma tela por entrega, começando pelo link público do jogador (a tela mais acessada).
+  - **Etapa 2 em diante:** cada tela vira componente com **TypeScript** e **Preact** (versão leve do React, boa para celular), uma tela por entrega. **Começou na pelada-v14** com o link público do jogador (`src/telas/PublicoRodada.tsx`). Nos componentes, o Preact escapa os textos sozinho: não há `innerHTML`.
+  - O TypeScript é conferido em toda proposta (`npm run checar`). Componentes leem o estado do app só dentro das funções (regra de ordem).
 - **Por quê:** fazer em etapas mantém o risco baixo. Os testes automáticos simulam o usuário, então valem durante toda a migração.
 
 ### D3. Vários idiomas desde a reorganização (8 out. 2026)
@@ -37,10 +38,12 @@ O produto vai ganhar muitas funcionalidades e passará a **cobrar por partes do 
 - **Como migra:** na etapa 1 entraram a base, os formatos, os avisos de conexão e as duas telas públicas (link da rodada e da votação), que são o que o jogador vê. As demais telas migram junto com a componentização de cada uma. Texto novo já nasce no dicionário.
 - **Por quê:** a visão é "qualquer pessoa no mundo". Fazer agora custa pouco; depois custaria refazer telas inteiras.
 
-### D4. Rodada gravada com transações (planejado)
-- **Contexto:** sorteio e placar ficam no mesmo registro da rodada. Dois administradores mexendo ao mesmo tempo podem sobrescrever um ao outro (vale a última gravação).
-- **Decisão:** usar transações do Firestore (gravação que confere a versão antes de salvar) nesse registro.
-- **Quando:** no próximo pacote, junto com D10, com teste automático de duas gravações simultâneas.
+### D4. Rodada gravada só no que mudou (8 out. 2026, feito na pelada-v14)
+- **Contexto:** sorteio, placar e lista ficam no mesmo registro da rodada. Antes, cada gravação reescrevia o registro inteiro: se dois administradores mexiam ao mesmo tempo, a última gravação apagava a outra.
+- **Decisão:** gravar só os campos que mudaram (`editRod` compara antes e depois). As partidas são acrescentadas e apagadas uma a uma (`addMatch` e `delMatch`), sem reescrever a lista.
+- **Por que não "transações":** a ideia inicial era usar transações do Firestore, mas elas **não funcionam sem internet**, e o placar precisa ser salvo na quadra com sinal fraco. A gravação por campo funciona offline e resolve o caso comum (cada pessoa mexendo numa coisa diferente).
+- **Limite consciente:** se duas pessoas mudarem o mesmo campo ao mesmo tempo (as duas sorteando os times, por exemplo), vale a última gravação.
+- **Teste:** com uma cópia desatualizada da rodada, fechar a lista não apaga uma partida salva antes.
 
 ### D5. Recursos pagos controlados no servidor (planejado)
 - **Decisão:** quando houver cobrança, o que cada grupo pode usar (o "plano") fica num registro que **só o servidor grava** (Cloud Function ligada ao meio de pagamento). As regras do Firebase conferem o plano antes de liberar cada recurso pago. A tela só esconde ou mostra; quem garante é a regra.
@@ -54,7 +57,7 @@ O produto vai ganhar muitas funcionalidades e passará a **cobrar por partes do 
 
 ### D7. Orçamento de desempenho (8 out. 2026)
 Medido a cada versão, no celular de 390px:
-- **Tamanho do app transferido** (comprimido): até **80 KB**, sem contar a biblioteca do Firebase. A montagem falha se passar. Na pelada-v13: 53,6 KB (era 49,4 KB na v12; a diferença é a formatação legível do código).
+- **Tamanho do app transferido** (comprimido): até **80 KB**, sem contar a biblioteca do Firebase. A montagem falha se passar. Na pelada-v13: 53,6 KB (era 49,4 KB na v12; a diferença é a formatação legível do código). Na pelada-v14: cerca de 60 KB com o Preact e a aba Histórico (o número exato sai na montagem do GitHub).
 - **Primeira tela desenhada** em modo demonstração: até **1,5 segundo** no ambiente de testes. É uma das verificações do roteiro. Na pelada-v13: cerca de 0,5 segundo.
 - Passar desses limites exige justificativa registrada aqui.
 
@@ -72,14 +75,20 @@ Medido a cada versão, no celular de 390px:
 - **Regra:** cada dado tem um único banco dono; os outros recebem cópias.
 - **Proteção contra dependência:** toda a conversa com o banco fica em `nucleo/backend.js`. Trocar de banco mexeria principalmente nesse módulo.
 
-### D10. Carregar só o que está na tela (8 out. 2026, planejado)
+### D10. Carregar só o que está na tela (8 out. 2026; link do jogador, aba Rodada e Histórico feitos na pelada-v14; partidas em subpasta planejadas)
 - **Contexto:** o link do jogador e a gestão do grupo baixavam todas as rodadas da história do grupo. Isso deixa o app mais lento a cada mês, principalmente com sinal fraco, e aumenta as leituras cobradas pelo Firebase.
 - **Decisão:**
   - **Link do jogador:** busca só a próxima rodada (e a presença dela).
   - **Aba Rodada (administrador):** as próximas rodadas já criadas e as **últimas 4**. Presença, times e partidas de uma rodada só carregam quando ela é escolhida.
   - **Nova aba Histórico:** busca rodadas por período (mês ou intervalo de datas), de 20 em 20. Ao abrir uma rodada, mostra a lista, os times, as partidas e a votação dela.
   - **Partidas** saem da ficha da rodada e vão para uma subpasta (`rodadas/{id}/partidas`), como já acontece com as presenças. A ficha da rodada fica leve.
-- **Muda as regras do Firebase:** sim (novo caminho das partidas). Rodadas antigas são migradas na primeira vez que um administrador abre o grupo.
+- **Como ficou na pelada-v14:**
+  - link do jogador: consulta as rodadas a partir de ontem, no máximo 6;
+  - aba Rodada: duas consultas, as próximas (até 12) e as recentes (até 5, para mostrar as últimas 4 mais o jogo de hoje);
+  - ranking: carrega todas as rodadas só enquanto a aba está aberta (até os totais por mês da D11); caixa: só as rodadas do mês escolhido; votação antiga: só a rodada dela;
+  - Histórico: busca paginada (`B.pagina`), sem ficar ouvindo o banco;
+  - sorteio: a variação de parceiros passa a considerar as rodadas da janela (as mais recentes, que já eram as de maior peso).
+- **Muda as regras do Firebase:** a parte feita na v14, não. As partidas em subpasta (próxima etapa), sim. Rodadas antigas serão migradas na primeira vez que um administrador abrir o grupo.
 
 ### D11. Totais prontos por mês (8 out. 2026, planejado)
 - **Contexto:** ranking e caixa são calculados lendo todas as partidas e lançamentos a cada abertura.
@@ -100,7 +109,7 @@ Medido a cada versão, no celular de 390px:
 | `nucleo/` | `util.js` (utilidades, sem dependências), `links.js`, `estado.js` (estado e assinaturas do banco), `backend.js` (Firebase ou demonstração, carregando dos botões), `edicoes.js` (gravações otimistas e presença) |
 | `dominio/` | Regras de negócio sem tela: `esportes.js` (catálogo), `grupo.js`, `rodadas.js`, `caixa.js`, `sorteio.js`, `whatsapp.js` (textos para compartilhar) |
 | `ui/` | `render.js` (desenho da tela e abas), `tema.js`, `dialogos.js` |
-| `telas/` | Uma tela por arquivo: `apresentacao`, `login`, `convite`, `grupos`, `rodada`, `grupo-form`, `grupo`, `jogadores`, `partida`, `ranking`, `caixa`, `votacao`, `publico-rodada`, `publico-voto` |
+| `telas/` | Uma tela por arquivo: `apresentacao`, `login`, `convite`, `grupos`, `rodada`, `historico`, `grupo-form`, `grupo`, `jogadores`, `partida`, `ranking`, `caixa`, `votacao`, `publico-voto` e o componente `PublicoRodada.tsx` (link do jogador; `publico-rodada.js` guarda o "quem sou eu" do aparelho) |
 | `acoes.js` | O que cada botão (`data-a`) faz |
 | `eventos.js` | Cliques, teclas e campos: liga a tela às ações, com o carregando dos botões |
 | `rotas.js` | Endereços (`#/p/...`, `#/g/...`) e carregamento de dados por tela |

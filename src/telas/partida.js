@@ -4,6 +4,8 @@ import { curRodada, pname } from '../dominio/grupo.js';
 import { S } from '../nucleo/estado.js';
 import { esc } from '../nucleo/util.js';
 import { rodadaPicker } from './rodada.js';
+import { partidasDe } from '../nucleo/partidas.js';
+import { tx } from '../i18n/index.js';
 
 /* ---------- Partida ---------- */
 function vPartida(){
@@ -15,7 +17,7 @@ function vPartida(){
   const gt=t=>L.goals.filter(g=>g.t===t).map(g=>(g.pid?esc(pname(g.pid))+(g.og?' (contra)':''):'—')+((g.pts||1)>1?` (${g.pts})`:'')).join(', ');
   const sbtn=t=>SP.score.map(([l,v],i)=>`<button class="btn bib${SP.score.length>2?' sm':''}" data-a="goal" data-v="${t}" data-i="${i}">${SP.score.length===1?'+ '+l:l}</button>`).join('');
   const opt=(sel,skip)=>r.times.map((t,i)=>`<option value="${i}" ${i===sel?'selected':''} ${i===skip?'disabled':''}>${tn(t.c)}</option>`).join('');
-  const ms=r.matches||[];
+  const ms=partidasDe(r.id),carregou=S.partsRid===r.id&&S.loaded.parts;
   return `<div class="stack">${rodadaPicker(r)}
   <div class="board"><div class="sides">
     <div><div class="tn"><span class="dot" style="background:${ca.c}"></span>${tn(ta.c)}</div><div class="sc">${ga}</div><div class="goals">${gt('a')}</div><div class="row" style="justify-content:center;gap:6px">${sbtn('a')}</div></div>
@@ -29,7 +31,7 @@ function vPartida(){
     <label class="f" style="margin:0;width:110px"><span>Minutos</span><select class="sel" data-c="dur">${[5,7,8,10,12,15,20,25,30,45].map(m=>`<option ${m*60===L.dur?'selected':''}>${m}</option>`).join('')}</select></label></div>
     <div class="row" style="margin-top:12px"><button class="btn primary" data-a="saveMatch">Encerrar e salvar partida</button>${r.times.length>2?'<span class="small muted">Depois de salvar, o vencedor fica e entra o próximo.</span>':''}</div></div>
   <div class="panel"><h3>Partidas desta rodada</h3>${ms.length?`<ul class="plist wrap">${ms.map((m,i)=>`<li><span class="num">${i+1}</span><span class="pn"><span class="dot" style="background:${col(m.ca).c}"></span> ${tn(m.ca)} <b>${m.ga} × ${m.gb}</b> ${tn(m.cb)} <span class="dot" style="background:${col(m.cb).c}"></span>
-    <span class="small muted">${m.goals.filter(g=>g.pid&&!g.og).length?' — '+sport().word.toLowerCase()+': '+m.goals.filter(g=>g.pid&&!g.og).map(g=>esc(pname(g.pid))+((g.pts||1)>1?' ('+g.pts+')':'')).join(', '):''}</span></span><button class="btn sm ghost danger" data-a="delMatch" data-v="${i}">Apagar</button></li>`).join('')}</ul>`:'<p class="muted small">Nenhuma partida salva ainda.</p>'}</div></div>`}
+    <span class="small muted">${m.goals.filter(g=>g.pid&&!g.og).length?' — '+sport().word.toLowerCase()+': '+m.goals.filter(g=>g.pid&&!g.og).map(g=>esc(pname(g.pid))+((g.pts||1)>1?' ('+g.pts+')':'')).join(', '):''}</span></span><button class="btn sm ghost danger" data-a="delMatch" data-v="${esc(m.id)}">Apagar</button></li>`).join('')}</ul>`:`<p class="muted small">${carregou?'Nenhuma partida salva ainda.':tx('comum.carregando')}</p>`}</div></div>`}
 function sumPts(gs,t){return gs.filter(g=>g.t===t).reduce((s,g)=>s+(g.pts||1),0)}
 function elapsed(){const L=S.live;return L.el+(L.run?(Date.now()-L.st)/1000:0)}
 function tick(){const el=document.getElementById('clock');if(!el||!S.live)return;const rem=S.live.dur-elapsed(),a=Math.abs(rem);

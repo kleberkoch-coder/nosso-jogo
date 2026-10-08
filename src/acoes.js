@@ -9,7 +9,8 @@ import { tp, tx } from './i18n/index.js';
 import { shareDlg, txtConvite, txtTimes } from './dominio/whatsapp.js';
 import { copyText, semConexao } from './eventos.js';
 import { B, setCAP, sleep } from './nucleo/backend.js';
-import { addMatch, delMatch as apagarPartida, editApp, editRat, editRod, saveContato, setPres } from './nucleo/edicoes.js';
+import { editApp, editRat, editRod, saveContato, setPres } from './nucleo/edicoes.js';
+import { addMatch, apagarLanc, apagarPartidasDaRodada, delMatch as apagarPartida, gravarVotacao, recalcular, salvarLanc } from './nucleo/partidas.js';
 import { GB, S, clean, w } from './nucleo/estado.js';
 import { linkConvite, linkProxima, linkRodada, linkVoto } from './nucleo/links.js';
 import { $, DIAS, brl, cl, esc, fdate, fmonth, inAppBrowser, key, toast, today, uid } from './nucleo/util.js';
@@ -115,9 +116,10 @@ const ACT={
   newRod:()=>rodDlg(null),editRod:()=>rodDlg(curRodada()),
   saveRod:el=>{const d=val('rdt');if(!d){toast('Escolha a data.');return}const id=el.dataset.v;
     if(id)editRod(id,r=>Object.assign(r,{date:d,time:val('rtm'),fim:val('rfm'),place:val('rpl')}));
-    else{const nid=B.newId();S.rid=nid;editRod(nid,r=>Object.assign(r,{date:d,time:val('rtm'),fim:val('rfm'),place:val('rpl'),locked:false,times:null,info:{},matches:[],createdAt:Date.now()}));editApp(a=>{a.cfg.place=val('rpl');a.cfg.time=val('rtm')})}
+    else{const nid=B.newId();S.rid=nid;editRod(nid,r=>Object.assign(r,{date:d,time:val('rtm'),fim:val('rfm'),place:val('rpl'),locked:false,times:null,info:{},createdAt:Date.now()}));editApp(a=>{a.cfg.place=val('rpl');a.cfg.time=val('rtm')})}
     closeDlg()},
-  delRod:()=>{const r=curRodada();if(!confirm('Excluir a rodada de '+fdate(r.date)+'? As partidas dela saem do ranking.'))return;Object.keys(S.pres).forEach(p=>GB.del('rodadas/'+r.id+'/presencas/'+p));w(GB.del('rodadas/'+r.id));delete S.rod[r.id];S.rid=null;changed()},
+  delRod:()=>{const r=curRodada();if(!confirm('Excluir a rodada de '+fdate(r.date)+'? As partidas dela saem do ranking.'))return;Object.keys(S.pres).forEach(p=>GB.del('rodadas/'+r.id+'/presencas/'+p));
+    return apagarPartidasDaRodada(r.id,r.date).then(()=>{w(GB.del('rodadas/'+r.id));delete S.rod[r.id];S.rid=null;changed()})},
   shareFixo:()=>{const f=fixos();shareDlg('Link permanente',`⚽ *${gname()}*\n${f.map(x=>`Toda ${DIAS[x.dow].toLowerCase()}, ${x.ini}${x.fim?' às '+x.fim:''}${x.place?' — '+x.place:''}`).join('\n')}\n\nConfirme sua presença sempre neste link:\n${linkProxima()}`)},
   copyFixo:()=>copyText(linkProxima()),
   cancelRod:()=>{const r=curRodada();if(!r.cancelada&&!confirm('Cancelar o jogo de '+fdate(r.date)+'? O link permanente passa a mostrar a rodada seguinte.'))return;editRod(r.id,x=>{x.cancelada=!x.cancelada});if(!r.cancelada)toast('Data cancelada.')},
@@ -237,7 +239,9 @@ const ACT={
     addMatch(r.id,{id:uid(),ca:ta.c,cb:tb.c,pa:ta.players.slice(),pb:tb.players.slice(),ga,gb,goals:L.goals.map(g=>({t:g.t,pid:g.pid,og:g.og,pts:g.pts||1})),at:Date.now()});
     let na=L.a,nb=L.b;if(r.times.length>2){const win=ga>gb?L.a:gb>ga?L.b:L.a,out=win===L.a?L.b:L.a,next=[...Array(r.times.length).keys()].filter(i=>i!==L.a&&i!==L.b);na=win;nb=next.concat(out)[0]}
     S.live={rid:r.id,a:na,b:nb,goals:[],dur:L.dur,el:0,run:false,st:0,beeped:false};toast(`Salvo: ${tn(ta.c)} ${ga} × ${gb} ${tn(tb.c)}`)},
-  delMatch:el=>{if(confirm('Apagar esta partida?'))return apagarPartida(curRodada().id,+el.dataset.v)},
+  delMatch:el=>{if(confirm('Apagar esta partida?'))return apagarPartida(curRodada().id,el.dataset.v)},
+  /* Recalcular os totais (KAN-87): ranking (ano, mês ou tudo) ou caixa (mês). */
+  recalc:el=>{const p=el.dataset.v;if(!confirm(tx('resumo.confirmaRecalcular')))return;return recalcular(p).catch(e=>{console.warn(e);toast(tx('resumo.erroRecalcular'))})},
   addLan:()=>{const o=players().map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');openDlg(`<h3>Novo lançamento</h3>
     <label class="f"><span>Tipo</span><select class="sel" id="lk"><option value="mensal">Mensalidade</option><option value="diaria">Diária</option><option value="entrada">Outra entrada</option><option value="despesa">Despesa (quadra, bola, coletes…)</option></select></label>
     <label class="f"><span>Jogador (opcional para despesa)</span><select class="sel" id="lp2"><option value="">—</option>${o}</select></label>
@@ -246,9 +250,9 @@ const ACT={
     <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveLan">Lançar</button></div>`)},
   saveLan:()=>{const k=val('lk'),v=+val('lv');if(!(v>0)){toast('Informe um valor.');return}if((k==='mensal'||k==='diaria')&&!val('lp2')){toast('Escolha o jogador.');return}
     const d=val('ld')||today();let ref=d.slice(0,7);if(k==='diaria'){const r=rodadas().find(r=>r.date===d);ref=r?r.id:d}
-    const id=B.newId(),o={k,pid:val('lp2')||null,v,d,ref,note:val('ln')};S.caixa[id]=o;changed();w(GB.set('caixa/'+id,o));closeDlg();toast('Lançamento salvo.')},
-  payPend:el=>{const p=pendencias(S.month)[+el.dataset.v];if(!p)return;const id=B.newId(),o={k:p.k,pid:p.pid,v:p.v,d:today(),ref:p.ref,note:''};S.caixa[id]=o;changed();w(GB.set('caixa/'+id,o))},
-  delLan:el=>{if(confirm('Apagar este lançamento?')){delete S.caixa[el.dataset.v];changed();w(GB.del('caixa/'+el.dataset.v))}},
+    const id=B.newId(),o={k,pid:val('lp2')||null,v,d,ref,note:val('ln')};closeDlg();toast('Lançamento salvo.');return salvarLanc(id,o)},
+  payPend:el=>{const p=pendencias(S.month)[+el.dataset.v];if(!p)return;const id=B.newId(),o={k:p.k,pid:p.pid,v:p.v,d:today(),ref:p.ref,note:''};return salvarLanc(id,o)},
+  delLan:el=>{if(confirm('Apagar este lançamento?'))return apagarLanc(el.dataset.v)},
   shareCob:()=>{const by={};pendencias(S.month).forEach(x=>(by[x.pid]=by[x.pid]||[]).push(x));
     let t=`💰 *${gname()} — pendências de ${fmonth(S.month).toLowerCase()}*\n\n`+Object.entries(by).map(([pid,xs])=>`• ${pname(pid)}: ${brl(xs.reduce((s,x)=>s+x.v,0))} (${xs.map(x=>x.label).join(', ')})`).join('\n');
     if(cfg().pix)t+=`\n\nPix: ${cfg().pix}`;shareDlg('Cobrança',t)},
@@ -267,8 +271,8 @@ const ACT={
     if(sel.includes('worst'))cats.push({id:'worst',name:'Bagre da rodada',pos:null,neg:true});
     if(!cats.length){toast('Escolha ao menos uma categoria.');return}
     const id=B.newId(),o={rid:val('vr'),rdate:(rodById(val('vr'))||{}).date||'',title:val('vt')||'Votação',cats,open:true,selfVote:$('#vsf').checked,createdAt:Date.now()};S.vot[id]=o;S.vid=id;changed();w(GB.set('votacoes/'+id,o));/* A janela troca para o link da votação; não fecha ao terminar de salvar. */shareDlg('Link da votação',`🗳️ *${o.title}*\nVote aqui: ${linkVoto(id)}`)},
-  toggleVote:()=>{const v=cl(S.vot[S.vid]);if(v.open){v.open=false;v.resultado=tally(v,S.votos)}else v.open=true;S.vot[S.vid]=v;changed();w(GB.set('votacoes/'+S.vid,v))},
-  delVote:()=>{if(!confirm('Excluir esta votação?'))return;Object.keys(S.votos).forEach(u=>GB.del('votacoes/'+S.vid+'/votos/'+u));w(GB.del('votacoes/'+S.vid));delete S.vot[S.vid];S.vid=null;changed()},
+  toggleVote:()=>{const antes=S.vot[S.vid],v=cl(antes);if(v.open){v.open=false;v.resultado=tally(v,S.votos)}else v.open=true;S.vot[S.vid]=v;return gravarVotacao(S.vid,antes,v)},
+  delVote:()=>{if(!confirm('Excluir esta votação?'))return;const vid=S.vid,antes=S.vot[vid];Object.keys(S.votos).forEach(u=>GB.del('votacoes/'+vid+'/votos/'+u));delete S.vot[vid];S.vid=null;return gravarVotacao(vid,antes,null)},
   shareVote:()=>{const v=S.vot[S.vid];let t=`🗳️ *${v.title}*\n`;if(v.open)t+=`Vote aqui: ${linkVoto(S.vid)}`;else t+='\n'+v.cats.map(c=>`🏅 ${c.name}: ${(v.resultado?.[c.id]?.winners||[]).map(pname).join(' e ')||'sem votos'}`).join('\n');shareDlg('Votação',t)},
   /* histórico (KAN-85) */
   histModo:el=>{estadoHist().modo=el.dataset.v;render()},

@@ -10,6 +10,7 @@ import { tx } from '../i18n/index.js';
 import { S as estado } from '../nucleo/estado.js';
 import { $, fdate, main } from '../nucleo/util.js';
 import { myLocal } from './publico-rodada.js';
+import { partidasDe } from '../nucleo/partidas.js';
 
 type Rodada = { id: string; date: string; time?: string; place?: string; locked?: boolean; cancelada?: boolean; times?: { c: number; players: string[]; res?: string[] }[] | null };
 type Presenca = { s?: 'in' | 'out'; nome?: string };
@@ -59,6 +60,17 @@ function Linha({ id, r, me }: { id: string; r: Rodada; me: string | null }) {
   );
 }
 
+/* Placar das partidas já salvas (pelada-v18): só leitura para o jogador. */
+function Placar({ rid }: { rid: string }) {
+  const ms = partidasDe(rid) as { id: string; ca: number; cb: number; ga: number; gb: number }[];
+  if (!ms.length) return null;
+  return (
+    <div class="panel"><h3>{tx('publico.partidas')}</h3>
+      <ul class="plist wrap">{ms.map((m, i) => <li key={m.id}><span class="num">{i + 1}</span><span class="pn"><span class="dot" style={{ background: COL[(m.ca || 0) % COL.length].c }}></span> {tn(m.ca)} <b>{m.ga} × {m.gb}</b> {tn(m.cb)} <span class="dot" style={{ background: COL[(m.cb || 0) % COL.length].c }}></span></span></li>)}</ul>
+    </div>
+  );
+}
+
 function PublicoRodada() {
   const S = st();
   const r = rodById(S.route.id) as Rodada | null;
@@ -87,6 +99,7 @@ function PublicoRodada() {
         <ul class="plist">{lista.length ? lista.map(id => <Linha key={id} id={id} r={r} me={me} />) : <li class="muted small">{tx('publico.listaVazia')}</li>}</ul>
         {!r.locked && <div class="row" style={{ marginTop: '14px' }}><span class="small muted" style={{ flex: 1 }}>{tx('publico.semNome')}</span><button class="btn primary" data-a="pubAdd">{tx('publico.adicionarNome')}</button></div>}
       </div>
+      <Placar rid={r.id} />
       {a.inn.length > 0 && <div class="panel"><h3>{tx('publico.confirmadosTitulo')}</h3><ol class="plist">{a.inn.map((id, i) => <li key={id}><span class="num">{i + 1}</span><span class="pn">{pname(id)}</span><Pos id={id} /></li>)}</ol></div>}
       <div class="foot"><a href="#/">{tx('publico.rodape', { app: APP })}</a></div>
     </div>

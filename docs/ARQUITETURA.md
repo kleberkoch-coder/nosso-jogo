@@ -75,7 +75,7 @@ Medido a cada versão, no celular de 390px:
 - **Regra:** cada dado tem um único banco dono; os outros recebem cópias.
 - **Proteção contra dependência:** toda a conversa com o banco fica em `nucleo/backend.js`. Trocar de banco mexeria principalmente nesse módulo.
 
-### D10. Carregar só o que está na tela (8 out. 2026; link do jogador, aba Rodada e Histórico feitos na pelada-v14; partidas em subpasta planejadas)
+### D10. Carregar só o que está na tela (8 out. 2026; link do jogador, aba Rodada e Histórico feitos na pelada-v14; partidas em subpasta na pelada-v18)
 - **Contexto:** o link do jogador e a gestão do grupo baixavam todas as rodadas da história do grupo. Isso deixa o app mais lento a cada mês, principalmente com sinal fraco, e aumenta as leituras cobradas pelo Firebase.
 - **Decisão:**
   - **Link do jogador:** busca só a próxima rodada (e a presença dela).
@@ -88,9 +88,15 @@ Medido a cada versão, no celular de 390px:
   - ranking: carrega todas as rodadas só enquanto a aba está aberta (até os totais por mês da D11); caixa: só as rodadas do mês escolhido; votação antiga: só a rodada dela;
   - Histórico: busca paginada (`B.pagina`), sem ficar ouvindo o banco;
   - sorteio: a variação de parceiros passa a considerar as rodadas da janela (as mais recentes, que já eram as de maior peso).
-- **Muda as regras do Firebase:** a parte feita na v14, não. As partidas em subpasta (próxima etapa), sim. Rodadas antigas serão migradas na primeira vez que um administrador abrir o grupo.
+- **Muda as regras do Firebase:** a parte feita na v14, não. As partidas em subpasta (v18), sim.
+- **Como ficou na pelada-v18 (KAN-86):**
+  - partida em `rodadas/{id}/partidas/{idPartida}`; a ficha da rodada guarda só a contagem `np`;
+  - a aba Partida ouve só as partidas da rodada aberta; o Histórico lê as partidas ao abrir a rodada; o link do jogador mostra o placar (só leitura);
+  - regras: leitura aberta como a da rodada; só administradores gravam; **partida só é criada se não existe e só é apagada se existe** (nunca editada). Assim, se dois aparelhos fazem a mesma coisa, o segundo lote é recusado inteiro e nada conta em dobro;
+  - migração: na primeira abertura de um administrador depois da atualização, lendo do servidor (nunca só do aparelho), copia as partidas antigas para a subpasta, tira da ficha só os itens copiados e grava `privado/migracao` = `{v:18}`. Pode rodar em dois aparelhos ao mesmo tempo; se falhar, tenta de novo depois de 1 minuto;
+  - transição: um aparelho ainda com a v17 em cache que salvar partida dentro da ficha tem a partida movida na hora pelo próximo administrador com a v18.
 
-### D11. Totais prontos por mês (8 out. 2026, planejado)
+### D11. Totais prontos por mês (8 out. 2026; feito na pelada-v18)
 - **Contexto:** ranking e caixa são calculados lendo todas as partidas e lançamentos a cada abertura.
 - **Decisão:** cada grupo ganha uma ficha de resumo por mês (`resumos/{AAAA-MM}`): por jogador, jogos, vitórias, empates, derrotas, gols ou pontos, destaques e bagres; e os totais do caixa.
   - Salvar ou apagar uma partida (ou um lançamento) atualiza o resumo do mês na mesma gravação segura (D4).
@@ -99,6 +105,14 @@ Medido a cada versão, no celular de 390px:
   - Grupos existentes ganham os resumos na primeira abertura do ranking depois da atualização.
 - **Limite consciente:** enquanto não houver servidor, quem calcula é o celular do administrador; as regras garantem quem grava, não a conta. Com as Cloud Functions (D5), o recálculo passa para o servidor.
 - **Depende de:** D4 (transações) e D10 (partidas em subpasta).
+- **Como ficou na pelada-v18 (KAN-87):**
+  - ficha `resumos/{AAAA-MM}`: `jog.{pid}` (j, v, e, d, g, mvp, bagre), `jogos.{idPartida}` (placar, para o histórico do ranking) e `cx` (entradas e saídas em centavos);
+  - cada partida, lançamento e votação encerrada/reaberta grava num **lote** (tudo ou nada, também sem internet) junto com o ajuste da ficha, usando o **incremento do servidor**: dois administradores ao mesmo tempo somam os dois (no lugar das transações da D4, que não funcionam sem internet);
+  - o Ranking ganhou filtro de **ano** (até 12 fichas) e **mês** (1 ficha), além de "Todos os anos"; o padrão é o ano atual;
+  - **Recalcular** (aba Ranking) refaz as fichas do período lendo as partidas no servidor;
+  - **Caixa:** saldo, entradas e saídas continuam calculados dos lançamentos, que a tela já carrega inteiros por causa das pendências (exato mesmo com aparelho antigo). A ficha `cx` é mantida para quando o caixa passar a carregar só o mês;
+  - a regra fica em `src/dominio/resumos.ts`, com teste próprio (`testes/regras/ranking.test.mjs`, compara com o cálculo antigo);
+  - riscos aceitos: Recalcular ao mesmo tempo que outro administrador salva uma partida pode sobrescrever aquele incremento (basta recalcular de novo); aparelho com a v17 em cache que encerrar votação ou apagar rodada não ajusta as fichas até alguém usar Recalcular.
 
 ### D12. Ficar em JavaScript/TypeScript e pagar a dívida técnica aos poucos (8 out. 2026)
 - **Contexto:** a dúvida era se valeria trocar de linguagem para não acumular dívida técnica.
@@ -121,6 +135,7 @@ A montagem (`npm run build`) imprime estes números. Eles são registrados aqui 
 | pelada-v15 | 2 de 40 | 1 de 15 | 28 | 0 | 68,8 KB |
 | pelada-v16 | 3 de 41 | 1 de 15 | 28 | 0 | 70,8 KB |
 | pelada-v17 | 4 de 42 | 1 de 15 | 28 | 1 (rodadas fixas) | 72,9 KB |
+| pelada-v18 | 5 de 44 | 1 de 15 | 28 | 2 (+ ranking) | 77,3 KB ⚠️ perto do limite de 80 KB |
 
 As 5 regras de negócio com teste próprio previsto: sorteio, ranking, pendências do caixa, rodadas fixas (próxima data) e apuração da votação. Os testes ficam em `testes/regras/` com o nome da regra (`sorteio.test.mjs`, `ranking.test.mjs`, `caixa.test.mjs`, `rodadas-fixas.test.mjs`, `votacao.test.mjs`) e rodam com `npm run regras` (testador do próprio Node, que lê TypeScript direto). Desde a pelada-v15 já existe o primeiro teste de regra, lista × times (`lista-sorteio.test.mjs`), e na v16 entrou jogadores por time e reservas (`times.test.mjs`); eles não entram na conta das 5. Para uma regra ganhar teste, ela precisa sair do código que lê o estado, como foi feito em `src/dominio/divergencia.ts`.
 

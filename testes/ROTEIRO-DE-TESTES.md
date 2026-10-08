@@ -55,7 +55,14 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
   - botão do Google com o G colorido oficial e "Continuar com o Google";
   - Mostrar/Ocultar senha (mantém o cursor no campo), também em "Confirme a senha", com contraste;
   - administrador mostra "E-mail e senha" e o campo fica gravado; ficha do grupo mostra jogadores por time.
-- **Regras de negócio com teste próprio** (`npm run regras`, roda no GitHub antes da montagem): lista × times (9 casos), jogadores por time e reservas (7 casos) e rodadas fixas: próxima data (8 casos, uma das 5 da D12).
+- **Partidas e totais por mês (v18, casos CT-KAN-86 e CT-KAN-87):**
+  - partida gravada na subpasta da rodada (ficha só com a contagem) e listada na aba Partida; jogador vê o placar pelo link, sem apagar;
+  - grupo com partidas no formato antigo é migrado na abertura, e os totais somam antigas e novas;
+  - ranking lê só as fichas do ano; partida salva já conta; apagar desconta; ficha estragada é corrigida com Recalcular; contraste;
+  - caixa: saldo, entradas e saídas batem com os lançamentos e a ficha do mês guarda as entradas em centavos;
+  - fechar a lista com cópia desatualizada não mexe na contagem de partidas (CT-KAN-83 adaptado).
+  - **Não coberto pelo modo demonstração:** as regras do Firebase (criar só se não existe, apagar só se existe, resumos só para administradores). Revisadas por um agente independente; teste no emulador fica como cartão.
+- **Regras de negócio com teste próprio** (`npm run regras`, roda no GitHub antes da montagem): lista × times (9 casos), jogadores por time e reservas (7 casos), rodadas fixas: próxima data (8 casos) e ranking e totais por mês (10 casos, compara com o cálculo antigo) — 2 das 5 da D12.
 - **Idiomas:** nenhum texto da tela sem tradução no dicionário.
 - **Erros de JavaScript:** nenhum. Erros de fontes e ícones são ignorados, porque o ambiente de teste pode bloquear a internet.
 
@@ -75,3 +82,4 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
 | pelada-v15 | 08/10/2026 | 80 de 80 passaram, mais 9 de 9 na regra lista × times |
 | pelada-v16 | 08/10/2026 | 101 de 101 passaram, mais 16 de 16 nas regras |
 | pelada-v17 | 08/10/2026 | 109 de 109 passaram, mais 24 de 24 nas regras |
+| pelada-v18 | 08/10/2026 | 122 de 122 passaram, mais 34 de 34 nas regras |

@@ -149,7 +149,8 @@ Cada grupo pode **criar posições próprias** (sigla de até 4 letras e nome) e
   - placar com os botões de pontuação do esporte e autor de cada ponto;
   - cronômetro com alarme;
   - com 3 ou mais times, quem ganha fica e o próximo time entra.
-- **Ranking:** pontos (3 por vitória, 1 por empate), jogos, vitórias, empates, derrotas, aproveitamento, gols ou pontos do esporte, destaques e bagres das votações. Também mostra o histórico de rodadas.
+- **Ranking:** pontos (3 por vitória, 1 por empate), jogos, vitórias, empates, derrotas, aproveitamento, gols ou pontos do esporte, destaques e bagres das votações. Também mostra o histórico de placares. **Filtro de ano (padrão: ano atual) e de mês**, além de "Todos os anos" (pelada-v18). Os números vêm de totais prontos por mês, atualizados a cada partida e votação; o botão **Recalcular** refaz os totais do período.
+- **Placar no link do jogador** (pelada-v18): o link da rodada mostra as partidas já salvas, só para ver.
 - **Votação:**
   - categorias: melhor jogador, melhor da posição-chave, melhor por posição, bagre e categoria livre;
   - um voto por aparelho, pelo link; cada aparelho lê só o próprio voto (limite conhecido: outro navegador pode votar de novo);

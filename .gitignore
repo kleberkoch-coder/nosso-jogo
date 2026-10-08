@@ -1,6 +1,7 @@
 *.zip
 __pycache__/
 dist/
+montagem-legivel/
 node_modules/
 testes/fotos/
 testes/resultado.json

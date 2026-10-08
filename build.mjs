@@ -7,15 +7,22 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 
 const OUT = 'dist';
+const LEGIVEL = 'montagem-legivel'; // cópia sem compactar, para os agentes (vai para app/index.html no projeto)
 const t0 = Date.now();
-const r = await esbuild.build({
+/* Versão do app: vem do VERSION do site/sw.js (fonte única) e aparece nas telas (pelada-v19). */
+const VERSAO = (/VERSION\s*=\s*'([^']+)'/.exec(fs.readFileSync('site/sw.js', 'utf8')) || [])[1];
+if (!VERSAO) throw new Error('Não achei o VERSION em site/sw.js.');
+const montar = minify => esbuild.build({
   entryPoints: ['src/main.js'],
   bundle: true,
   format: 'iife',
   target: ['es2020'],
   outdir: OUT,
   write: false,
-  minify: false,          // código legível no index.html: os agentes de Segurança e UX leem este arquivo
+  /* Publicado compactado (KAN-105); a cópia legível sai em montagem-legivel/ para os agentes de Segurança e UX. */
+  minify,
+  sourcemap: minify ? 'linked' : false, // mapa de origem (main.js.map) para depurar o código compactado
+  define: { __VERSAO__: JSON.stringify(VERSAO) },
   legalComments: 'none',
   charset: 'utf8',
   logLevel: 'warning',
@@ -29,24 +36,31 @@ const r = await esbuild.build({
     'preact': process.env.PREACT_SRC + '/src/index.js',
   } : {},
 });
-const pick = ext => r.outputFiles.find(f => f.path.endsWith(ext)).text;
-const js = pick('.js'), css = pick('.css');
-if (/<\/script/i.test(js)) throw new Error('O código contém "</script": não pode ser embutido no HTML.');
-
-let html = fs.readFileSync('site/index.html', 'utf8');
-for (const mark of ['<!--ESTILOS-->', '<!--CODIGO-->']) if (!html.includes(mark)) throw new Error('Marcador ausente em site/index.html: ' + mark);
-html = html.replace('<!--ESTILOS-->', () => '<style>\n' + css + '</style>')
-           .replace('<!--CODIGO-->', () => '<script>\n' + js + '</script>');
+const modelo = fs.readFileSync('site/index.html', 'utf8');
+for (const mark of ['<!--ESTILOS-->', '<!--CODIGO-->']) if (!modelo.includes(mark)) throw new Error('Marcador ausente em site/index.html: ' + mark);
+function pagina(r) {
+  const pick = ext => r.outputFiles.find(f => f.path.endsWith(ext)).text;
+  const js = pick('.js'), css = pick('.css');
+  if (/<\/script/i.test(js)) throw new Error('O código contém "</script": não pode ser embutido no HTML.');
+  return modelo.replace('<!--ESTILOS-->', () => '<style>\n' + css + '</style>').replace('<!--CODIGO-->', () => '<script>\n' + js + '</script>');
+}
+const [rMin, rLeg] = await Promise.all([montar(true), montar(false)]);
+const html = pagina(rMin), legivel = pagina(rLeg);
+const mapas = rMin.outputFiles.filter(f => f.path.endsWith('.map'));
 
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(OUT, { recursive: true });
 fs.writeFileSync(path.join(OUT, 'index.html'), html);
+for (const m of mapas) fs.writeFileSync(path.join(OUT, path.basename(m.path)), m.text);
+fs.rmSync(LEGIVEL, { recursive: true, force: true }); fs.mkdirSync(LEGIVEL, { recursive: true });
+fs.writeFileSync(path.join(LEGIVEL, 'index.html'), legivel);
 for (const f of ['sw.js', 'manifest.webmanifest']) fs.copyFileSync(path.join('site', f), path.join(OUT, f));
 fs.cpSync('site/icons', path.join(OUT, 'icons'), { recursive: true });
 
 const kb = n => (n / 1024).toFixed(1) + ' KB';
 const gz = zlib.gzipSync(html, { level: 9 }).length;
-console.log(`Site montado em ${OUT}/ em ${Date.now() - t0} ms · index.html ${kb(Buffer.byteLength(html))} (${kb(gz)} comprimido)`);
+const gzLeg = zlib.gzipSync(legivel, { level: 9 }).length;
+console.log(`Site ${VERSAO} montado em ${OUT}/ em ${Date.now() - t0} ms · index.html ${kb(Buffer.byteLength(html))} (${kb(gz)} comprimido; sem compactar seria ${kb(gzLeg)}) · cópia legível em ${LEGIVEL}/`);
 
 /* Painel da dívida técnica (docs/ARQUITETURA.md, D12): números que devem melhorar a cada versão. */
 const arquivos = [];

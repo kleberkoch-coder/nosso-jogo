@@ -1,3 +1,5 @@
+import { tx } from '../i18n/index.js';
+import { numeroVersao } from '../nucleo/versao.js';
 import { APP, SPORTS } from '../dominio/esportes.js';
 import { themeDef, themeLabel } from '../ui/tema.js';
 
@@ -54,7 +56,7 @@ function vLanding(){
     <div style="text-align:center;margin-top:26px"><a class="btn bib ld-big" href="#/criar">Criar meu grupo grátis</a></div></div></section>
   <section class="ld-sec alt"><div class="ld-wrap ld-faq"><h2 class="ld-h2">Perguntas frequentes</h2>${faq.map(([q,a])=>`<details><summary>${q}</summary><p>${a}</p></details>`).join('')}</div></section>
   <section class="ld-final"><div class="ld-wrap"><h2>Seu próximo jogo começa organizado.</h2><div class="row" style="justify-content:center"><a class="btn bib ld-big" href="#/criar">Criar conta grátis</a><a class="btn ld-ghost ld-big" href="#/entrar">Entrar</a></div></div></section>
-  <footer class="ld-foot"><div class="ld-wrap">© ${new Date().getFullYear()} ${APP}</div></footer>
+  <footer class="ld-foot"><div class="ld-wrap">© ${new Date().getFullYear()} ${APP} · <span class="versao">${tx('comum.versaoCurta',{n:numeroVersao()})}</span></div></footer>
   </div>`}
 
 export { vLanding };

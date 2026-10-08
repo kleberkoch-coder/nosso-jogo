@@ -260,6 +260,7 @@ dialog::backdrop{background:rgba(5,20,12,.55)}
 .bar-upd{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:60;background:var(--ink);color:var(--bg);border-radius:12px;padding:10px 12px 10px 16px;display:flex;gap:12px;align-items:center;font-size:14px;box-shadow:var(--shadow-float);max-width:92vw}
 .bar-upd .btn{padding:6px 12px}
 .foot{text-align:center;margin-top:28px}
+.versao{text-align:center;margin:16px 0 4px}
 .foot a{color:var(--muted);font-size:13px}
 .toprow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 @media (display-mode:standalone){.top{padding-top:calc(14px + env(safe-area-inset-top,0px))}:root{padding-top:0}}

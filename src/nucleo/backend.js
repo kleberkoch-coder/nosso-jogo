@@ -5,7 +5,13 @@ import { cl, uid } from './util.js';
 function FirebaseBackend(cfg){
   firebase.initializeApp(cfg);const auth=firebase.auth(),fs=firebase.firestore();try{fs.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(e){}
   return{demo:false,
-    onAuth:cb=>auth.onAuthStateChanged(u=>cb(u?{uid:u.uid,email:u.email,anon:u.isAnonymous}:null)),
+    /* via = como entrou da última vez ('google' ou 'senha'), mostrado na lista de administradores (pelada-v17).
+       Vem primeiro dos provedores ligados à conta e é confirmado pelo token, sem atrasar a abertura do app. */
+    onAuth:cb=>auth.onAuthStateChanged(u=>{if(!u)return cb(null);
+      const ids=(u.providerData||[]).map(p=>p.providerId),g=ids.includes('google.com'),pw=ids.includes('password');
+      const o={uid:u.uid,email:u.email,anon:u.isAnonymous,via:g&&!pw?'google':pw&&!g?'senha':null};cb(o);
+      if(!u.isAnonymous)u.getIdTokenResult().then(r=>{const p=r.signInProvider,v=p==='google.com'?'google':p==='password'?'senha':null;
+        if(v&&v!==o.via){o.via=v;document.dispatchEvent(new Event('nj-via'))}}).catch(()=>{})}),
     login:(e,p)=>auth.signInWithEmailAndPassword(e,p),
     signup:(e,p)=>auth.createUserWithEmailAndPassword(e,p),
     reset:e=>auth.sendPasswordResetEmail(e),
@@ -51,7 +57,7 @@ function LocalBackend(){
   const filtrar=(path,q)=>{let e=Object.entries(read(path)).filter(([,d])=>d&&d[q.campo]!=null&&(!q.de||d[q.campo]>=q.de)&&(!q.ate||d[q.campo]<=q.ate));
     e.sort((x,y)=>String(x[1][q.campo]).localeCompare(String(y[1][q.campo]))*(q.ordem==='desc'?-1:1));return q.limite?e.slice(0,q.limite):e};
   const setU=u=>{user=u;try{localStorage.setItem(K+'-u',JSON.stringify(u))}catch(e){}acb.forEach(f=>f(u))};
-  const lg=async(e,p)=>{if(!e||!p)throw{code:'auth/invalid-credential'};setU({uid:'u-'+e.toLowerCase().replace(/[^a-z0-9]/g,''),email:e.toLowerCase(),anon:false})};
+  const lg=async(e,p)=>{if(!e||!p)throw{code:'auth/invalid-credential'};setU({uid:'u-'+e.toLowerCase().replace(/[^a-z0-9]/g,''),email:e.toLowerCase(),anon:false,via:p==='google'?'google':'senha'})};
   return{demo:true,
     onAuth(cb){acb.add(cb);setTimeout(()=>cb(user),0)},
     login:lg,signup:lg,reset:async()=>{},logout:async()=>setU(null),

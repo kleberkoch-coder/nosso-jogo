@@ -239,7 +239,18 @@ dialog::backdrop{background:rgba(5,20,12,.55)}
 .pwr li::before{content:"○ "}
 .pwr li.ok{color:var(--in)}.pwr li.ok::before{content:"✓ "}
 .gbtn{width:100%;justify-content:center;gap:10px;padding:11px 14px;font-size:15px}
-.gic{width:22px;height:22px;border-radius:50%;background:var(--primary);color:var(--on-primary);font:800 14px/22px var(--display);text-align:center;flex:none}
+.gic{width:20px;height:20px;flex:none}
+.via{display:inline-flex;align-items:center;gap:4px}
+/* Botão do Google no padrão de marca: fundo branco, borda cinza, texto escuro (no tema escuro: fundo #131314, borda #8E918F). */
+.gbtn{background:#fff;color:#1F1F1F;border:1px solid #747775;font-family:Roboto,Arial,sans-serif;font-weight:500}
+.gbtn:hover{background:#F2F2F2}
+:root[data-theme="dark"] .gbtn{background:#131314;color:#E3E3E3;border-color:#8E918F}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .gbtn{background:#131314;color:#E3E3E3;border-color:#8E918F}}
+/* Campo de senha com Mostrar/Ocultar */
+.pwbox{position:relative;display:block}
+.pwbox .inp{padding-right:84px}
+.pwver{position:absolute;right:4px;top:50%;transform:translateY(-50%);min-height:36px;padding:0 12px;border:0;border-radius:8px;background:transparent;color:var(--ink);font:600 13px var(--body,inherit);cursor:pointer}
+.pwver:hover{background:var(--line,rgba(0,0,0,.06))}
 .ou{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--muted);font-size:12px}
 .ou::before,.ou::after{content:"";flex:1;height:1px;background:var(--line)}
 .linkbtn{background:none;border:0;color:var(--in);font-weight:600;cursor:pointer;text-decoration:underline;padding:0;font-size:inherit}

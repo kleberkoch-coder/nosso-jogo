@@ -43,12 +43,14 @@ Plataforma para **qualquer pessoa no mundo** organizar seus jogos recorrentes ou
 
 ## Contas, login e navegação
 - **Entrar com Google** (decisão de outubro de 2026, v11): alternativa ao e-mail e senha, nunca substituta.
-  - O botão "Continuar com Google" aparece nas abas "Criar conta" e "Entrar" e na tela de convite.
+  - O botão "Continuar com o Google" aparece nas abas "Criar conta" e "Entrar" e na tela de convite, no padrão de marca do Google (G colorido, fundo branco com borda cinza; no tema escuro, fundo #131314) — pelada-v17.
+  - Na aba Grupo › Administradores, cada um mostra como entrou da última vez: "Google" ou "E-mail e senha" (pelada-v17). Fica gravado no cadastro do administrador (campo `via`), que só ele mesmo pode atualizar.
   - Abre a janela de escolha de conta; se o navegador bloquear janelas, usa o redirecionamento de página.
   - Em navegadores embutidos (Instagram, Facebook e similares), onde o Google bloqueia o login, o app orienta abrir no Chrome ou Safari.
   - O mesmo e-mail no Google e na senha é a mesma conta (mesmos grupos).
   - As regras do Firestore valem igual para qualquer login que não seja anônimo.
 - Erros de login aparecem em português abaixo do formulário. Fechar a janela do Google não mostra erro. Botões de login não têm limite de tempo (giram até a resposta), porque não existe "salvar para depois" em login.
+- Todo campo de senha tem o botão **Mostrar/Ocultar** dentro do campo (pelada-v17); o cursor continua no campo.
 - A senha exige no mínimo 8 caracteres, 1 maiúscula, 1 número e 1 caractere especial, com checklist ao vivo e confirmação de senha.
 - A tela de login tem as abas "Criar conta" e "Entrar". No primeiro acesso do aparelho, ela abre em "Criar conta".
 - Depois do login:
@@ -91,7 +93,7 @@ Plataforma para **qualquer pessoa no mundo** organizar seus jogos recorrentes ou
 | Hóquei | GOL, DEF, ATA | Gol, com gol contra |
 | Outro | O nome do esporte é escrito pelo usuário | Ponto |
 
-**Jogadores por time** (pelada-v16, decisão de 8 out. 2026): é do grupo, não do esporte. O catálogo só dá o padrão (futebol 11, society 6, futsal 5, vôlei 6, basquete 5, handebol 7, hóquei 6, flag 5, rugby 15, futebol americano 11, vôlei de praia, futevôlei e beach tennis 2, outro 5). O grupo ajusta na criação ou em Editar grupo. **2 = duplas** ("Dupla 1, Dupla 2"); qualquer outro número forma times com cor de colete.
+**Jogadores por time** (pelada-v16, decisão de 8 out. 2026): é do grupo, não do esporte. O catálogo só dá o padrão (futebol 11, society 6, futsal 5, vôlei 6, basquete 5, handebol 7, hóquei 6, flag 5, rugby 15, futebol americano 11, vôlei de praia, futevôlei e beach tennis 2, outro 5). O grupo ajusta na criação ou em Editar grupo, e a ficha da aba Grupo mostra o valor (e as posições fora do sorteio) sem precisar abrir Editar. **2 = duplas** ("Dupla 1, Dupla 2"); qualquer outro número forma times com cor de colete.
 
 Cada grupo pode **criar posições próprias** (sigla de até 4 letras e nome) em Grupo > Posições, somadas às do esporte.
 

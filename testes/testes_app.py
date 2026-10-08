@@ -144,6 +144,48 @@ with sync_playwright() as pw:
     pg.locator('#themeBtn').click(); pg.locator('.theme-menu [data-v=light]').click(); pg.wait_for_timeout(300)
     shot('09-link-publico-claro'); contraste(pg, 'link público (claro)')
 
+    # ---------- v14: carregar só o que está na tela e gravar só o que mudou (KAN-82 a KAN-85)
+    # 7 rodadas antigas gravadas direto no banco de demonstração (uma por semana para trás)
+    pg.evaluate("""(g)=>{const K='pelada-demo-v2',s=JSON.parse(localStorage.getItem(K)||'{}');
+      for(let i=1;i<=7;i++){const d=new Date();d.setHours(12);d.setDate(d.getDate()-7*i);const ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+        s['grupos/'+g+'/rodadas/antiga'+i]={date:ds,time:'20:00',place:'Quadra '+i,locked:false,times:null,info:{},matches:[],createdAt:Date.now()}}
+      localStorage.setItem(K,JSON.stringify(s))}""", gid_fut)
+    pg.goto(URL + '#/p/' + gid_fut); pg.reload(); pg.wait_for_timeout(900)
+    ok(pg.evaluate("""(()=>{const d=new Date();d.setDate(d.getDate()-1);const y=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      return Object.values(S.rod).every(r=>r.date>=y)})()"""), 'CT-KAN-82: link do jogador não carrega rodadas antigas')
+    ok(pg.locator('.mk.lg button').count() >= 2, 'CT-KAN-82: link do jogador continua mostrando a próxima rodada')
+    pg.goto(URL + '#/g/' + gid_fut); pg.wait_for_timeout(1000)
+    pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(400)
+    opts = ' | '.join(pg.locator('select[data-c=rid] option').all_inner_texts())
+    ok('Quadra 1' in opts and 'Quadra 4' in opts and 'Quadra 5' not in opts and 'Quadra 7' not in opts, 'CT-KAN-84: aba Rodada mostra as próximas e só as últimas 4')
+    ok(pg.evaluate("!('antiga7' in S.rod) && !('antiga6' in S.rod)"), 'CT-KAN-84: rodadas antigas não são carregadas na aba Rodada')
+    ok(pg.locator('[data-a=tab][data-v=historico]').count() >= 1, 'CT-KAN-84: atalho para o Histórico')
+    # Gravação por campo: com uma cópia desatualizada da rodada (sem a partida), fechar a lista não apaga a partida salva
+    rid = pg.evaluate("S.rid")
+    antes = pg.evaluate("(a)=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2'));return ((s['grupos/'+a[0]+'/rodadas/'+a[1]]||{}).matches||[]).length}", [gid_fut, rid])
+    pg.evaluate("S.rod[S.rid].matches=[]"); pg.click('[data-a=lock]'); pg.wait_for_timeout(700)
+    depois = pg.evaluate("(a)=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2'));const d=s['grupos/'+a[0]+'/rodadas/'+a[1]]||{};return [!!d.locked,(d.matches||[]).length]}", [gid_fut, rid])
+    ok(antes >= 1 and depois[0] and depois[1] == antes, f'CT-KAN-83: fechar a lista não apaga partida salva por outro aparelho ({antes} → {depois[1]})')
+    pg.click('[data-a=lock]'); pg.wait_for_timeout(500)
+    # Histórico
+    pg.click('[data-a=tab][data-v=historico]'); pg.wait_for_timeout(900); shot('12-historico')
+    ok(pg.locator('#hmes').count() == 1, 'CT-KAN-85: aba Histórico abre com a busca por mês')
+    pg.click('[data-a=histModo][data-v=periodo]'); pg.wait_for_timeout(200)
+    pg.evaluate("""()=>{const f=n=>{const d=new Date();d.setDate(d.getDate()+n);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+      document.getElementById('hde').value=f(-70);document.getElementById('hate').value=f(0)}""")
+    pg.click('[data-a=histBuscar]'); pg.wait_for_timeout(900)
+    txt = pg.inner_text('main')
+    ok(all(f'Quadra {i}' in txt for i in range(1, 8)), 'CT-KAN-85: busca por período encontra as rodadas antigas')
+    pg.locator('li', has_text='Quadra 6').locator('[data-a=histAbrir]').click(); pg.wait_for_timeout(700); shot('13-historico-rodada')
+    det = pg.inner_text('main')
+    ok(all(x in det for x in ['Confirmados', 'Times', 'Partidas', 'Votação', 'Quadra 6']), 'CT-KAN-85: rodada do histórico mostra lista, times, partidas e votação')
+    contraste(pg, 'Histórico (claro)')
+    pg.click('[data-a=histVoltar]'); pg.wait_for_timeout(300)
+    pg.evaluate("()=>{document.getElementById('hde').value='2001-01-01';document.getElementById('hate').value='2001-01-31'}")
+    pg.click('[data-a=histBuscar]'); pg.wait_for_timeout(700)
+    ok('Nenhum jogo nesse período.' in pg.inner_text('main'), 'CT-KAN-85: período sem jogos mostra mensagem clara')
+    ok(pg.evaluate("document.documentElement.scrollWidth<=innerWidth"), 'CT-KAN-85: Histórico sem rolagem lateral no celular')
+
     # ---------- Outros esportes: nada de futebol fixo
     pg.goto(URL + '#/g/' + gid_fut); pg.wait_for_timeout(800)
     novo_grupo(pg, 'Beach Domingo', 'beach_tennis')

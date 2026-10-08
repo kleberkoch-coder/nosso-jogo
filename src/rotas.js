@@ -1,8 +1,9 @@
+import { buscarHist, estadoHist } from './telas/historico.js';
 import { ACT } from './acoes.js';
 import { migrarPrivado } from './dominio/caixa.js';
-import { curRodada, isAdmin, upcoming } from './dominio/grupo.js';
+import { curRodada, isAdmin, upcoming, ymd } from './dominio/grupo.js';
 import { B } from './nucleo/backend.js';
-import { GB, S, SUBS, drop, dropAll, sub, subRaw } from './nucleo/estado.js';
+import { GB, S, SUBS, drop, dropAll, sub, subQ, subRaw } from './nucleo/estado.js';
 import { $, cl, toast } from './nucleo/util.js';
 import { closeDlgNow, dlg } from './ui/dialogos.js';
 import { render } from './ui/render.js';
@@ -12,6 +13,19 @@ function ensurePres(){const r=curRodada(),id=r?r.id:null;if(S.presRid===id)retur
 function regAvulsos(){if(!isAdmin()||!S.loaded.avul||!S.presRid)return;const r=S.rod[S.presRid],jogou=new Set(r&&r.times?r.times.flatMap(t=>t.players):[]);
   Object.entries(S.pres).forEach(([id,p])=>{if(jogou.has(id)&&p.avulso&&p.nome&&!S.jog[id]&&!S.avul[id]){const o={nome:p.nome,pos:p.pos||'',criado:Date.now()};S.avul[id]=o;GB.set('avulsos/'+id,o).catch(()=>{})}})}
 function ensureVotos(){const id=S.tab==='votacao'?(S.vid||Object.keys(S.vot).sort((a,b)=>(S.vot[b].createdAt||0)-(S.vot[a].createdAt||0))[0]):null;if(S.votosVid===id)return;S.votosVid=id;S.votos={};drop('votos');if(id)sub('votos','votacoes/'+id+'/votos',d=>{S.votos=d||{}})}
+/* Data relativa a hoje (AAAA-MM-DD). */
+const dia=n=>{const d=new Date();d.setDate(d.getDate()+n);return ymd(d)};
+/* Rodadas da janela da aba Rodada (D10): as próximas (a partir de ontem, para pegar o jogo que vira a meia-noite) e as recentes
+   (até hoje: as últimas 4 mais uma folga para o jogo de hoje). */
+const Q_PROX={campo:'date',ordem:'asc',limite:12},Q_REC={campo:'date',ordem:'desc',limite:5};
+function juntarRod(){S.rod=Object.assign({},S.rodP||{},S.rodF||{});regAvulsos()}
+/* Dados que só carregam quando a aba precisa deles (D10): todas as rodadas no ranking, as do mês no caixa e a rodada de uma votação antiga. */
+function ensureExtras(){
+  if(S.tab==='ranking'){if(!SUBS.rodAll)sub('rodAll','rodadas',d=>{S.rodAll=d||{}})}else if(SUBS.rodAll){drop('rodAll');S.rodAll=null}
+  if(S.tab==='caixa'){const m=S.month;if(S.rodMesM!==m){S.rodMesM=m;S.rodMes={};subQ('rodMes','rodadas',{campo:'date',de:m+'-01',ate:m+'-31',ordem:'asc'},d=>{S.rodMes=d||{}})}}
+  else if(SUBS.rodMes){drop('rodMes');S.rodMesM=null}
+  if(S.tab==='historico'){const h=estadoHist();if(!h.buscou&&!h.carregando&&!h.auto){h.auto=true;buscarHist(false)}}
+  if(S.tab==='votacao'){const v=S.vot[S.vid];const rid=v&&v.rid;if(rid&&!S.rod[rid]&&S.rodXid!==rid){S.rodXid=rid;sub('rodX','rodadas/'+rid,d=>{S.rodX=d?{[rid]:d}:{}})}}}
 function parseRoute(){const h=location.hash.replace(/^#\/?/,'').split('/');
   if(h[0]==='p'&&h[1]){if(h[2]==='r'&&h[3])return{n:'r',gid:h[1],id:h[3]};if(h[2]==='v'&&h[3])return{n:'v',gid:h[1],id:h[3]};return{n:'r',gid:h[1],id:null,next:true}}
   if(h[0]==='g'&&h[1])return{n:'admin',gid:h[1]};
@@ -28,14 +42,15 @@ function setupRoute(){
   if(R.n==='auth'){if(logged){location.hash='#/';return}S.authMode=R.mode}
   window.scrollTo(0,0);
   if(R.n==='r'||R.n==='v'){try{localStorage.setItem('pelada-last',location.hash)}catch(e){}}
-  Object.assign(S,{avul:{},cont:{},pc:null,migrando:false,gid:R.gid||null,app:null,mem:null,membros:{},convite:null,rat:null,caixa:{},presRid:undefined,votosVid:undefined,dataOn:false,rod:{},pres:{},vot:{},votos:{},myVote:null,jog:{},rid:null,vid:null,live:null});
+  Object.assign(S,{avul:{},cont:{},pc:null,migrando:false,gid:R.gid||null,app:null,mem:null,membros:{},convite:null,rat:null,caixa:{},presRid:undefined,votosVid:undefined,dataOn:false,rod:{},rodF:{},rodP:{},rodAll:null,rodMes:{},rodMesM:null,rodX:{},rodXid:null,hist:null,pres:{},vot:{},votos:{},myVote:null,jog:{},rid:null,vid:null,live:null});
   if(logged)subRaw('me','usuarios/'+S.user.uid,d=>{S.me=d||{grupos:{}};syncName();
     if(S.route.n==='home'&&!S.homeShown){S.homeShown=true;const all=Object.entries(S.me.grupos||{}),g=all.filter(([,v])=>v.ativo!==false).map(([k])=>k);if(g.length===1)location.hash='#/g/'+g[0];else if(!all.length)setTimeout(()=>{if(S.route.n==='home'&&!dlg.open)ACT.newGroup()},250)}});
   if(S.gid)sub('app','config/app',d=>{S.app=d;if(R.next)resolveNext();syncName();migrarPrivado()});
   const anon=()=>{if(!S.user)B.anon().catch(()=>toast('Não foi possível conectar. Recarregue a página.'))};
   if(R.n==='r'&&R.next){anon();
     sub('jog','jogadores',d=>{S.jog=d||{}});sub('avul','avulsos',d=>{S.avul=d||{}});
-    sub('rods','rodadas',d=>{S.rod=d||{};resolveNext()});
+    /* Link do jogador: só as próximas rodadas, nunca o histórico (KAN-82). */
+    subQ('rods','rodadas',Object.assign({de:dia(-1)},Q_PROX,{limite:6}),d=>{S.rod=d||{};resolveNext()});
   }else if(R.n==='r'){anon();
     sub('jog','jogadores',d=>{S.jog=d||{}});sub('avul','avulsos',d=>{S.avul=d||{}});
     sub('r','rodadas/'+R.id,d=>{if(d)S.rod={[R.id]:d};else S.rod={}});
@@ -54,8 +69,8 @@ function focusEmail(){let n=0;const t=setInterval(()=>{const i=$('#le');if(i){i.
 function resolveNext(){if(!S.loaded.app||!S.loaded.rods)return;const r=upcoming()[0],id=r?r.id:null;
   if(S.route.id!==id||S.presRid!==id){S.route.id=id;S.presRid=id;S.pres={};drop('pres');if(id)sub('pres','rodadas/'+id+'/presencas',d=>{S.pres=d||{}})}}
 function startData(){if(S.dataOn)return;S.dataOn=true;
-  sub('rat','privado/ratings',d=>{S.rat=d});sub('cont','privado/contatos',d=>{S.cont=d||{}});sub('avul','avulsos',d=>{S.avul=d||{};regAvulsos()});sub('jog','jogadores',d=>{S.jog=d||{};migrarPrivado()});sub('rod','rodadas',d=>{S.rod=d||{};regAvulsos()});
+  sub('rat','privado/ratings',d=>{S.rat=d});sub('cont','privado/contatos',d=>{S.cont=d||{}});sub('avul','avulsos',d=>{S.avul=d||{};regAvulsos()});sub('jog','jogadores',d=>{S.jog=d||{};migrarPrivado()});subQ('rodF','rodadas',Object.assign({de:dia(-1)},Q_PROX),d=>{S.rodF=d||{};juntarRod()});subQ('rodP','rodadas',Object.assign({ate:dia(0)},Q_REC),d=>{S.rodP=d||{};juntarRod()});
   sub('pc','privado/caixa',d=>{S.pc=d;migrarPrivado()});
   sub('caixa','caixa',d=>{S.caixa=d||{}});sub('vot','votacoes',d=>{S.vot=d||{}});sub('membros','membros',d=>{S.membros=d||{}});sub('convite','privado/convite',d=>{S.convite=d})}
 
-export { ensurePres, ensureVotos, setupRoute, upMyGroup };
+export { dia, ensureExtras, ensurePres, ensureVotos, setupRoute, upMyGroup };

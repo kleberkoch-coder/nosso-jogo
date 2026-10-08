@@ -1,5 +1,6 @@
+import { tx } from '../i18n/index.js';
 import { col, posIdx, posLabel, posTag, sport, tn } from '../dominio/esportes.js';
-import { attendance, curRodada, fmtL, freq, grpAtivo, isAvulso, lvl, lvlTag, players, pname, ppos, rat, rodadas } from '../dominio/grupo.js';
+import { attendance, curRodada, fmtL, freq, grpAtivo, isAvulso, lvl, lvlTag, players, pname, ppos, rat, rodadas, rodadasJanela } from '../dominio/grupo.js';
 import { hora } from '../dominio/rodadas.js';
 import { quality } from '../dominio/sorteio.js';
 import { presAlterada } from '../nucleo/edicoes.js';
@@ -8,7 +9,9 @@ import { esc, fdate } from '../nucleo/util.js';
 import { fixPanel } from './grupo-form.js';
 
 /* ---------- Rodada (admin) ---------- */
-function rodadaPicker(r){return `<div class="rsel"><select class="sel" data-c="rid" aria-label="Rodada">${rodadas().map(x=>`<option value="${x.id}" ${x.id===r.id?'selected':''}>${fdate(x.date)}${x.place?' — '+esc(x.place):''}${x.cancelada?' (cancelada)':x.fixo?' · fixo':''}</option>`).join('')}</select><button class="btn" data-a="newRod">Nova rodada</button></div>`}
+/* Seletor da aba Rodada (D10): as próximas e as últimas 4. As mais antigas ficam na aba Histórico. */
+function rodadaPicker(r){const rs=rodadasJanela();if(r&&!rs.some(x=>x.id===r.id))rs.push(r);
+  return `<div class="rsel"><select class="sel" data-c="rid" aria-label="Rodada">${rs.map(x=>`<option value="${x.id}" ${x.id===r.id?'selected':''}>${fdate(x.date)}${x.place?' — '+esc(x.place):''}${x.cancelada?' (cancelada)':x.fixo?' · fixo':''}</option>`).join('')}</select><button class="btn" data-a="newRod">Nova rodada</button><button class="btn ghost" data-a="tab" data-v="historico">${tx('hist.atalho')}</button></div>`}
 function vRodada(){
   const r=curRodada();
   if(!r)return `<div class="panel empty"><h2>Nenhuma rodada marcada</h2><p class="muted">${grpAtivo()?(freq()==='fixo'?'Os dias fixos do grupo ainda não foram definidos.':'Este grupo é esporádico: crie a rodada quando marcar o jogo.'):'Grupo inativo.'}</p><div class="row" style="justify-content:center">${freq()==='fixo'?'<button class="btn" data-a="editGroup">Dias e horários do grupo</button>':''}<button class="btn primary" data-a="newRod">Criar rodada</button></div></div>`;

@@ -1,12 +1,12 @@
 import { cfg, ptipo } from '../dominio/caixa.js';
-import { players, pname, rodadas } from '../dominio/grupo.js';
+import { players, pname, rodadas, rodadasDoMes } from '../dominio/grupo.js';
 import { S } from '../nucleo/estado.js';
 import { brl, esc, fdate, fmonth, today } from '../nucleo/util.js';
 
 /* ---------- Caixa ---------- */
 function pendencias(month){const lan=Object.values(S.caixa),c=cfg();
   const mens=players().filter(p=>ptipo(p.id)!=='diarista'&&!lan.some(l=>l.k==='mensal'&&l.pid===p.id&&l.ref===month)).map(p=>({pid:p.id,k:'mensal',ref:month,v:c.mensal,label:'Mensalidade'}));
-  const dia=[];rodadas().filter(r=>(r.date||'').slice(0,7)===month&&r.times).forEach(r=>r.times.forEach(t=>t.players.forEach(id=>{
+  const dia=[];rodadasDoMes(month).filter(r=>r.times).forEach(r=>r.times.forEach(t=>t.players.forEach(id=>{
     const tipo=S.jog[id]?ptipo(id):'avulso';if(tipo!=='mensalista'&&!lan.some(l=>l.k==='diaria'&&l.pid===id&&l.ref===r.id))dia.push({pid:id,k:'diaria',ref:r.id,v:c.diaria,label:'Diária '+fdate(r.date)})})));
   return mens.concat(dia)}
 function vCaixa(){const lan=Object.entries(S.caixa).map(([id,v])=>Object.assign({id},v)),m=S.month;

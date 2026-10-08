@@ -3,14 +3,14 @@
 Usado pelo agente de Qualidade e por quem construir uma versão nova. O script `testes/testes_app.py` faz tudo automaticamente.
 
 ## Como rodar
-1. Monte o site: `npm install` e `npm run build`. O resultado fica na pasta `dist/` (a pasta `app/` do projeto no Claude já é uma cópia montada).
+1. Monte o site: `npm install` e `npm run build` (e `npm run checar` para conferir os tipos do TypeScript). O resultado fica na pasta `dist/` (a pasta `app/` do projeto no Claude já é uma cópia montada).
 2. Copie o conteúdo de `dist/` para uma pasta de teste. No `index.html`, troque `window.FIREBASE_CONFIG = {...}` por `window.FIREBASE_CONFIG = {}` (modo demonstração: os dados ficam só no navegador de teste e nada vai para o Firebase de verdade).
 3. Na pasta, rode `python3 -m http.server 8765`.
 4. Rode `python3 testes_app.py http://127.0.0.1:8765/index.html fotos`.
 
 Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m playwright install chromium`). O GitHub faz tudo isso sozinho em toda proposta de mudança (automação "Testes do app").
 
-## O que é verificado (49 itens na pelada-v13)
+## O que é verificado (61 itens na pelada-v14)
 - **Página de apresentação:** abre em até 1,5 segundo; sem rolagem lateral no celular; botão de tema.
 - **Seletor de tema:**
   - o menu abre com o foco na opção atual e opções de 44px;
@@ -34,6 +34,11 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
 - **Contraste do texto na tela** (WCAG 2.2 AA): Rodada clara e escura, Partida escura, link público claro e escuro.
 - **Beach tennis:** sem siglas de posição, sorteio em duplas, placar com "Game" e nenhuma palavra de futebol na Rodada e na Partida.
 - **Basquete:** botões +1, +2 e +3; cesta de 3 soma 3 pontos; nenhuma palavra de futebol.
+- **Desempenho e Histórico (v14, casos CT-KAN-82 a CT-KAN-85):**
+  - o link do jogador não carrega rodadas antigas e continua mostrando a próxima;
+  - a aba Rodada mostra as próximas e só as últimas 4, sem carregar as antigas, e tem o atalho para o Histórico;
+  - com uma cópia desatualizada da rodada, fechar a lista não apaga uma partida salva antes (gravação por campo);
+  - a aba Histórico abre com a busca por mês, a busca por período encontra as rodadas antigas, a rodada aberta mostra lista, times, partidas e votação, período vazio mostra mensagem clara, contraste e sem rolagem lateral.
 - **Idiomas:** nenhum texto da tela sem tradução no dicionário.
 - **Erros de JavaScript:** nenhum. Erros de fontes e ícones são ignorados, porque o ambiente de teste pode bloquear a internet.
 
@@ -49,3 +54,4 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
 |---|---|---|
 | pelada-v12 | 07/10/2026 | 47 de 47 passaram |
 | pelada-v13 | 08/10/2026 | 49 de 49 passaram |
+| pelada-v14 | 08/10/2026 | 61 de 61 passaram |

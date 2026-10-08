@@ -6,7 +6,7 @@
 - 16 componentes com prévia nos dois temas;
 - as seções Acessibilidade e Como evolui.
 
-**No app:** os tokens são variáveis CSS com o mesmo nome no começo do `index.html` (`--primary`, `--field-border`, `--in-fill`…). O tema escuro vale para `prefers-color-scheme: dark` (sem `data-theme="light"`) e para `[data-theme="dark"]`. `--pitch-2` continua só na página de apresentação (faixa de esportes e marca).
+**No app:** os tokens são variáveis CSS com o mesmo nome no começo de `src/estilos/app.css` (no app montado, ficam no `<style>` do `index.html`) (`--primary`, `--field-border`, `--in-fill`…). O tema escuro vale para `prefers-color-scheme: dark` (sem `data-theme="light"`) e para `[data-theme="dark"]`. `--pitch-2` continua só na página de apresentação (faixa de esportes e marca).
 
 ## Identidade
 Campo e colete em tons suaves:
@@ -73,18 +73,8 @@ Times em pastel, sempre com o nome da cor: laranja #F4B183, azul #9DBBF0, amarel
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo; Enter envia.
 - **Valores novos** entram primeiro no Design System, com contraste medido nos dois temas.
 
-## Testes da v12 (modo demonstração, celular de 390px)
-31 verificações automáticas passaram, cobrindo:
-- tema: menu, Esc, toque fora, persistência e cor do navegador;
-- cadastro com cursor no e-mail e Enter;
-- criar grupo;
-- elenco de exemplo;
-- presença e sorteio;
-- placar com o aviso "Tempo esgotado";
-- ranking, caixa e votação;
-- aba Grupo;
-- link público com 44px e ✓ / ✕;
-- contraste do texto na Rodada (claro e escuro) e no link público.
+## Testes
+O roteiro automático (`testes/ROTEIRO-DE-TESTES.md`) confere o Design System em toda versão: tema (menu, Esc, toque fora, persistência e cor do navegador), alvos de toque de 44px e 36px, ✓ / ✕ no link público e contraste do texto (WCAG 2.2 AA) nos dois temas. Na pelada-v13: 49 de 49 verificações passaram.
 
 ## Manutenção
 O agente de UX/UI (tarefa agendada às segundas, 10h52) confere o app contra este sistema e abre cartões no épico **KAN-68 "Melhorias de UX/UI"** do Jira, com a etiqueta `ux-agente`.

@@ -80,3 +80,17 @@ Medido a cada versão, no celular de 390px:
 | `pwa.js` | Instalação do app, barra sem internet e atualização de versão |
 
 **Regra de ordem:** `nucleo/util.js`, `i18n/formatos.js` e `i18n/pt-BR.js` não importam nada do app. Código que roda direto ao carregar um módulo (fora de funções) só pode usar esses módulos. O resto do app roda dentro de funções, chamadas depois que tudo carregou.
+
+## Entrega: o que atualizar no projeto do Claude
+Os agentes leem o app pelo projeto do Claude, e não pelo GitHub. Por isso, toda proposta de mudança atualiza o projeto na mesma entrega, antes de o link ser passado ao Kleber:
+
+| No projeto do Claude | Vem de (GitHub) | Quando |
+|---|---|---|
+| `app/index.html` | `dist/index.html` (resultado do `npm run build`) | toda versão |
+| `app/sw.js` e `app/manifest.webmanifest` | `site/sw.js` e `site/manifest.webmanifest` | toda versão (o `sw.js` muda a `VERSION`) |
+| `app/firestore.rules` | `firestore.rules` | quando as regras mudarem |
+| `app/LEIA-ME.md` | `LEIA-ME.md` | quando o uso mudar |
+| `VISAO-DO-PRODUTO.md`, `docs/ARQUITETURA.md`, `DESIGN-SYSTEM.md` | `docs/` | quando mudarem |
+| `testes/ROTEIRO-DE-TESTES.md` e `testes/testes_app.py` | `testes/` | quando mudarem |
+
+Depois de enviar, conferir que cada arquivo do projeto ficou igual ao do GitHub.

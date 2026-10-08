@@ -1,6 +1,6 @@
 # Nosso Jogo — visão do produto e decisões
 
-Última atualização: outubro de 2026 (versão `pelada-v12` do `sw.js`, com o Design System v2 aplicado).
+Última atualização: outubro de 2026 (versão `pelada-v13` do `sw.js`: código reorganizado em módulos, com o mesmo funcionamento da v12).
 
 ## O produto
 Plataforma para **qualquer pessoa no mundo** organizar seus jogos recorrentes ou esporádicos, de **qualquer esporte**. Uma mesma pessoa costuma organizar mais de um jogo e praticar mais de um esporte, então cada conta pode ter **vários grupos**.
@@ -27,7 +27,7 @@ Plataforma para **qualquer pessoa no mundo** organizar seus jogos recorrentes ou
   - os documentos deste projeto espelham a versão proposta mais recente.
 - **Hospedagem:** Netlify (`nossosjogos.netlify.app`, site `nossosjogos`), ligado ao GitHub (pasta `site/`). O projeto precisa estar como público no Netlify.
 - **Banco e login:** Firebase, projeto `nosso-jogo-f4762`, com Firestore e Authentication (provedores E-mail/senha, Google e Anônimo ativados).
-- **Código:** um único `index.html` (HTML, CSS e JavaScript puros, Firebase compat v10 via CDN), mais `firestore.rules`, `sw.js`, `manifest.webmanifest` e `icons/`.
+- **Código (pelada-v13):** JavaScript, HTML e CSS puros (Firebase compat v10 via CDN), em módulos na pasta `src/`, montados pelo esbuild num único `index.html`. Detalhes e decisões técnicas em `docs/ARQUITETURA.md`.
 - **Modo demonstração:** quando a configuração do Firebase está vazia, os dados ficam só no navegador. É usado para testar.
 
 ## Rotas (endereços)
@@ -188,7 +188,12 @@ Migração (v10): grupos antigos com valores e Pix em `cfg` e `tipo` nos jogador
 
 ## Ideias e pendências
 - Revisar o texto "Quanto custa?" da página de vendas se o produto passar a ser cobrado.
-- Separar o `index.html` em arquivos menores quando o produto crescer (o GitHub e a publicação automática já estão prontos).
+- **Arquitetura (decisões de 8 out. 2026, detalhes em `docs/ARQUITETURA.md`):**
+  - sem microsserviços nem filas próprias por enquanto: o Firebase já cresce sozinho, e as gravações simultâneas mais comuns são separadas por documento;
+  - front-end em módulos (feito na v13) e, nas próximas entregas, telas como componentes em TypeScript e Preact, uma por vez, começando pelo link público;
+  - vários idiomas: textos num dicionário por idioma (base `pt-BR`); feito para as telas públicas e avisos, as demais telas migram junto com a componentização;
+  - próximos passos técnicos: transações na gravação da rodada (sorteio e placar), Firebase App Check e limites contra abuso antes de começar a cobrar;
+  - **cobrança por partes do serviço** (intenção de out. 2026): o plano de cada grupo será gravado só pelo servidor (Cloud Functions ligadas ao pagamento) e conferido nas regras do Firebase, nunca só na tela.
 - Política de senha também no Firebase (Authentication > Configurações), se disponível.
 - **Ícones do app:**
   - na `pelada-v12` foram recriados com as cores novas: verde-gramado `#1F5A40`, círculo em cal e ponto limão;

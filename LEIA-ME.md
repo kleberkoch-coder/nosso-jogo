@@ -212,10 +212,12 @@ Desde outubro de 2026 o código fica no GitHub (`kleberkoch-coder/nosso-jogo`, p
 Não arraste mais a pasta no Netlify: a próxima publicação pelo GitHub sobrescreveria o que foi arrastado.
 
 **Onde fica cada coisa no repositório:**
-- `site/`: o que vai para o ar (`index.html`, `sw.js`, `manifest.webmanifest` e `icons/`);
+- `src/`: o código do app, dividido em módulos (telas, regras de negócio, textos por idioma);
+- `site/`: o modelo da página e os arquivos fixos (`sw.js`, `manifest.webmanifest` e `icons/`);
+- `build.mjs` e `package.json`: a montagem (`npm run build` junta tudo em `dist/`, que é o que vai para o ar);
 - `firestore.rules`: as regras do Firebase;
 - `testes/`: o roteiro e o script de testes;
-- `docs/`: a visão do produto e o Design System;
+- `docs/`: a visão do produto, a arquitetura e o Design System;
 - `.github/workflows/`: as duas automações (testes e regras).
 
 **Se algo der errado:**
@@ -223,7 +225,11 @@ Não arraste mais a pasta no Netlify: a próxima publicação pelo GitHub sobres
 - **Regras não publicadas:** veja a aba **Actions** do repositório. A causa mais comum é o segredo `FIREBASE_SERVICE_ACCOUNT` ausente ou vencido.
 - **Voltar uma versão:** no Netlify, abra **Deploys**, clique numa publicação anterior e em **Publish deploy**.
 
-A cada mudança no app, o número em `VERSION` no começo do `site/sw.js` sobe (agora está em `pelada-v12`), para os celulares receberem a atualização.
+A cada mudança no app, o número em `VERSION` no começo do `site/sw.js` sobe (agora está em `pelada-v13`), para os celulares receberem a atualização.
+
+**Versão `pelada-v13`: código reorganizado.**
+- **O que mudou:** por dentro, o app foi dividido em módulos e ganhou a base para vários idiomas. Por fora, nada muda para organizadores e jogadores.
+- **O que fazer:** só aprovar a proposta de mudança no GitHub. As regras do Firebase **não mudaram**.
 
 **Versão `pelada-v12`: visual novo e tema claro ou escuro.**
 - **O que mudou:**

@@ -1,4 +1,4 @@
-# Roda o roteiro de testes em modo demonstração a cada proposta de mudança.
+# Monta o site e roda o roteiro de testes em modo demonstração a cada proposta de mudança.
 name: Testes do app
 on:
   pull_request:
@@ -7,13 +7,35 @@ on:
   workflow_dispatch:
 
 jobs:
+  montar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Montar o site (inclui o orçamento de tamanho)
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site-montado
+          path: dist
+
   testes:
+    needs: montar
     runs-on: ubuntu-latest
     timeout-minutes: 20
     # Imagem oficial do Playwright: já vem com o navegador instalado.
     container: mcr.microsoft.com/playwright/python:v1.47.0-jammy
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: site-montado
+          path: /tmp/demo
       - name: Conferir o navegador de testes
         timeout-minutes: 5
         run: |
@@ -21,8 +43,6 @@ jobs:
           python -c "import playwright; print('Playwright pronto')"
       - name: Preparar o modo demonstração
         run: |
-          mkdir -p /tmp/demo
-          cp -r site/. /tmp/demo/
           python - <<'PY'
           import re, pathlib
           p = pathlib.Path('/tmp/demo/index.html')

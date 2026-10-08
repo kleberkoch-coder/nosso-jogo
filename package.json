@@ -1,0 +1,12 @@
+{
+  "name": "nosso-jogo",
+  "private": true,
+  "type": "module",
+  "description": "Nosso Jogo: organize jogos de qualquer esporte.",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

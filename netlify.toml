@@ -1,7 +1,10 @@
-# Netlify publica só a pasta "site". Não há etapa de build.
+# O Netlify monta o site a partir de src/ (npm run build) e publica a pasta dist/.
 [build]
-  publish = "site"
-  command = ""
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
 
 # O service worker nunca fica guardado no cache do navegador,
 # para que a versão nova chegue rápido a todos.

@@ -1,7 +1,7 @@
 """Testes automáticos do Nosso Jogo (modo demonstração, celular de 390 x 844).
 
 Uso:
-  1. Copie index.html, sw.js e manifest.webmanifest para uma pasta.
+  1. Monte o site (npm run build) e copie o conteúdo da pasta dist/ para uma pasta de teste.
   2. No index.html, troque window.FIREBASE_CONFIG = {...} por window.FIREBASE_CONFIG = {} (modo demonstração).
   3. Sirva a pasta:  python3 -m http.server 8765
   4. Rode:           python3 testes_app.py http://127.0.0.1:8765/index.html pasta_das_fotos
@@ -61,10 +61,15 @@ with sync_playwright() as pw:
     pg = ctx.new_page()
     pg.on('pageerror', lambda e: errs.append(str(e)))
     pg.on('console', lambda m: errs.append('console: ' + m.text) if m.type == 'error' else None)
+    sem_traducao = []
+    pg.on('console', lambda m: sem_traducao.append(m.text) if m.type == 'warning' and m.text.startswith('Texto sem tradução') else None)
     shot = lambda n: pg.screenshot(path=f'{OUT}/{n}.png')
 
     # ---------- Página de apresentação e seletor de tema
-    pg.goto(URL); pg.wait_for_timeout(600); shot('01-apresentacao')
+    import time
+    t0 = time.time(); pg.goto(URL); pg.wait_for_selector('.ld-nav', timeout=10000); ms = (time.time() - t0) * 1000
+    ok(ms <= 1500, f'primeira tela desenhada em até 1,5 s (levou {ms:.0f} ms)')
+    pg.wait_for_timeout(600); shot('01-apresentacao')
     ok(pg.evaluate("document.documentElement.scrollWidth<=innerWidth"), 'apresentação sem rolagem lateral no celular')
     btn = pg.locator('.ld-nav [data-a=themeMenu]'); ok(btn.count() == 1, 'botão de tema na página de apresentação')
     btn.click(); pg.wait_for_timeout(200); ok(pg.locator('.theme-menu').count() == 1, 'menu de tema abre')
@@ -162,6 +167,7 @@ with sync_playwright() as pw:
     b.close()
 
 errs = [e for e in errs if not re.search(r'ERR_TUNNEL|fonts\.g|icons/|favicon|ERR_NAME|ERR_INTERNET|net::', e)]
+ok(not sem_traducao, 'todos os textos têm tradução no dicionário' + ('' if not sem_traducao else ': ' + ' | '.join(sem_traducao[:5])))
 ok(not errs, 'nenhum erro de JavaScript' + ('' if not errs else ': ' + ' | '.join(errs[:5])))
 falhas = [r for r in res if not r['ok']]
 json.dump({'total': len(res), 'falhas': len(falhas), 'resultados': res}, open(f'{OUT}/resultado.json', 'w'), ensure_ascii=False, indent=1)

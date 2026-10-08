@@ -109,10 +109,32 @@ service cloud.firestore {
           );
           allow delete: if isMember(gid);
         }
+
+        // Partidas da rodada (pelada-v18, KAN-86): placar e autor de cada ponto.
+        // Leitura aberta como a da rodada (o jogador vê o placar pelo link); só administradores gravam.
+        // Criar só se ainda não existe e apagar só se existe: assim, se dois aparelhos fazem a mesma coisa,
+        // o segundo lote é recusado inteiro e o ranking não conta em dobro. Partida não é editada.
+        match /partidas/{mid} {
+          allow read: if true;
+          allow create: if isMember(gid);
+          allow update: if false;
+          allow delete: if isMember(gid) && resource != null;
+        }
+      }
+
+      // Totais prontos por mês (pelada-v18, KAN-87): ranking e caixa. Só administradores leem e gravam.
+      match /resumos/{mes} {
+        allow read: if isMember(gid);
+        allow write: if isMember(gid)
+          && mes.matches('[0-9]{4}-[0-9]{2}')
+          && request.resource.data.keys().hasOnly(['mes', 'at', 'jog', 'jogos', 'cx'])
+          && request.resource.data.mes == mes;
       }
 
       match /caixa/{id} {
-        allow read, write: if isMember(gid);
+        allow read, create, update: if isMember(gid);
+        // Apagar só o que existe: um lançamento apagado duas vezes não desconta o resumo em dobro (pelada-v18).
+        allow delete: if isMember(gid) && resource != null;
       }
 
       match /votacoes/{vid} {

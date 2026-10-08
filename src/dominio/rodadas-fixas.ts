@@ -22,7 +22,7 @@ export function fixId(date: string, ini?: string): string {
 }
 
 export function virtualOf(fx: Fixo, date: string) {
-  return { id: fixId(date, fx.ini), date, time: fx.ini, fim: fx.fim, place: fx.place, fixo: true, virtual: true, locked: false, times: null, matches: [] };
+  return { id: fixId(date, fx.ini), date, time: fx.ini, fim: fx.fim, place: fx.place, fixo: true, virtual: true, locked: false, times: null };
 }
 
 /* Próxima rodada de cada horário fixo que ainda não tem documento gravado. */

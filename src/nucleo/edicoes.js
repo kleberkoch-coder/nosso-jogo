@@ -15,11 +15,6 @@ function editRod(id,fn){const existe=!!S.rod[id];
   const campos={};new Set(Object.keys(antes).concat(Object.keys(r))).forEach(k=>{
     if(!(k in r))campos[k]=op.apagar();else if(JSON.stringify(antes[k])!==JSON.stringify(r[k]))campos[k]=clean(r[k])});
   return Object.keys(campos).length?w(GB.patch('rodadas/'+id,campos)):Promise.resolve()}
-/* Partidas: acrescentar e apagar sem reescrever a lista inteira, para duas gravações ao mesmo tempo não se apagarem. */
-function addMatch(id,m){const existe=!!S.rod[id];editLocal(id,r=>{r.matches=(r.matches||[]).concat([m])});
-  return existe?w(GB.patch('rodadas/'+id,{matches:op.uniao([clean(m)])})):w(GB.set('rodadas/'+id,clean(S.rod[id])))}
-function delMatch(id,i){const m=((S.rod[id]||{}).matches||[])[i];if(!m)return Promise.resolve();
-  editLocal(id,r=>{r.matches.splice(i,1)});return w(GB.patch('rodadas/'+id,{matches:op.remover([clean(m)])}))}
 function editLocal(id,fn){const base=S.rod[id]||(()=>{const v=rodById(id)||{};const o=Object.assign({},v);delete o.id;delete o.virtual;o.createdAt=Date.now();return o})();
   const r=cl(base);fn(r);S.rod[id]=r;changed()}
 function editApp(fn){const a=cl(S.app)||{name:'Pelada',cfg:{}};a.cfg=a.cfg||{};fn(a);S.app=a;changed();return w(GB.set('config/app',clean(a)))}
@@ -35,4 +30,4 @@ function setPres(rid,pid,data){const cur=S.presRid===rid?S.pres[pid]:null,me=S.u
 /* Resposta mudada por um aparelho diferente do que respondeu primeiro (e que não é de administrador). */
 function presAlterada(id){const p=S.pres[id];return !!(p&&p.dev&&p.by&&p.by!==p.dev&&!(S.membros||{})[p.by])}
 
-export { addMatch, delMatch, editApp, editRat, editRod, presAlterada, saveContato, setPres, waUrl };
+export { editApp, editRat, editRod, presAlterada, saveContato, setPres, waUrl };

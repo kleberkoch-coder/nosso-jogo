@@ -43,7 +43,7 @@ document.addEventListener('change',e=>{const t=e.target;
   if(t.classList.contains('dp')){drawPreview();return}
   const el=t.closest('[data-c]');if(!el)return;const v=el.value,c=el.dataset.c;
   if(c==='rid'){S.rid=v;S.live=null}else if(c==='ta'){S.live.a=+v;S.live.goals=[]}else if(c==='tb'){S.live.b=+v;S.live.goals=[]}
-  else if(c==='dur'){S.live.dur=+v*60;S.live.beeped=false}else if(c==='rank')S.rankSort=v;else if(c==='month')S.month=v;else if(c==='vid')S.vid=v;
+  else if(c==='dur'){S.live.dur=+v*60;S.live.beeped=false}else if(c==='rank')S.rankSort=v;else if(c==='rankAno'){S.rankAno=v;S.rankMes=''}else if(c==='rankMes')S.rankMes=v;else if(c==='month')S.month=v;else if(c==='vid')S.vid=v;
   else if(c==='voter'){try{localStorage.setItem(MEK,v)}catch(x){}if(S.myVote)S.myVote.pid=v;else S.myVote={pid:v,v:{}}}
   render()});
 document.addEventListener('keydown',e=>{if(e.key!=='Enter')return;const id=e.target.id;if(['le','lp','lp2'].includes(id)){e.preventDefault();if(S.authMode==='signup'){const b=$('#sgBtn');if(b&&!b.disabled)b.click()}else $('[data-a=login]')?.click()}else if(id==='ngn'){e.preventDefault();$('[data-a=createGroup]')?.click()}});

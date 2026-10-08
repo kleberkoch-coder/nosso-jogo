@@ -1,4 +1,6 @@
 import { buscarHist, estadoHist } from './telas/historico.js';
+import { anoRank } from './telas/ranking.js';
+import { migrar, verificarRodadas } from './nucleo/partidas.js';
 import { ACT } from './acoes.js';
 import { migrarPrivado } from './dominio/caixa.js';
 import { curRodada, isAdmin, upcoming, ymd } from './dominio/grupo.js';
@@ -21,7 +23,16 @@ const Q_PROX={campo:'date',ordem:'asc',limite:12},Q_REC={campo:'date',ordem:'des
 function juntarRod(){S.rod=Object.assign({},S.rodP||{},S.rodF||{});regAvulsos()}
 /* Dados que só carregam quando a aba precisa deles (D10): todas as rodadas no ranking, as do mês no caixa e a rodada de uma votação antiga. */
 function ensureExtras(){
-  if(S.tab==='ranking'){if(!SUBS.rodAll)sub('rodAll','rodadas',d=>{S.rodAll=d||{}})}else if(SUBS.rodAll){drop('rodAll');S.rodAll=null}
+  if(S.route.n!=='admin'||!S.dataOn)return;
+  /* Partidas e totais por mês (pelada-v18): move dados antigos uma vez e mantém tudo no lugar novo. */
+  migrar();verificarRodadas();
+  /* Fichas de resumo: o ranking lê só as do ano escolhido (até 12). */
+  const want=S.tab==='ranking'?anoRank():null;
+  if(want){if(S.resK!==want){S.resK=want;S.res={};subQ('res','resumos',want==='todos'?{campo:'mes',ordem:'asc'}:{campo:'mes',de:want+'-01',ate:want+'-12',ordem:'asc'},d=>{S.res=d||{}})}}
+  else if(SUBS.res){drop('res');S.res=null;S.resK=null}
+  /* Partidas só da rodada aberta na aba Partida. */
+  if(S.tab==='partida'){const r=curRodada(),id=r&&r.id;if(id&&S.partsRid!==id){S.partsRid=id;S.parts={};sub('parts','rodadas/'+id+'/partidas',d=>{S.parts=d||{}})}}
+  else if(SUBS.parts){drop('parts');S.partsRid=null;S.parts={}}
   if(S.tab==='caixa'){const m=S.month;if(S.rodMesM!==m){S.rodMesM=m;S.rodMes={};subQ('rodMes','rodadas',{campo:'date',de:m+'-01',ate:m+'-31',ordem:'asc'},d=>{S.rodMes=d||{}})}}
   else if(SUBS.rodMes){drop('rodMes');S.rodMesM=null}
   if(S.tab==='historico'){const h=estadoHist();if(!h.buscou&&!h.carregando&&!h.auto){h.auto=true;buscarHist(false)}}
@@ -42,7 +53,7 @@ function setupRoute(){
   if(R.n==='auth'){if(logged){location.hash='#/';return}S.authMode=R.mode}
   window.scrollTo(0,0);
   if(R.n==='r'||R.n==='v'){try{localStorage.setItem('pelada-last',location.hash)}catch(e){}}
-  Object.assign(S,{avul:{},cont:{},pc:null,migrando:false,gid:R.gid||null,app:null,mem:null,membros:{},convite:null,rat:null,caixa:{},presRid:undefined,votosVid:undefined,dataOn:false,rod:{},rodF:{},rodP:{},rodAll:null,rodMes:{},rodMesM:null,rodX:{},rodXid:null,hist:null,pres:{},vot:{},votos:{},myVote:null,jog:{},rid:null,vid:null,live:null});
+  Object.assign(S,{avul:{},cont:{},pc:null,migrando:false,gid:R.gid||null,app:null,mem:null,membros:{},convite:null,rat:null,caixa:{},presRid:undefined,votosVid:undefined,dataOn:false,rod:{},rodF:{},rodP:{},rodAll:null,res:null,resK:null,parts:{},partsRid:null,migr:null,migrandoDados:false,rodMes:{},rodMesM:null,rodX:{},rodXid:null,hist:null,pres:{},vot:{},votos:{},myVote:null,jog:{},rid:null,vid:null,live:null});
   if(logged)subRaw('me','usuarios/'+S.user.uid,d=>{S.me=d||{grupos:{}};syncName();
     if(S.route.n==='home'&&!S.homeShown){S.homeShown=true;const all=Object.entries(S.me.grupos||{}),g=all.filter(([,v])=>v.ativo!==false).map(([k])=>k);if(g.length===1)location.hash='#/g/'+g[0];else if(!all.length)setTimeout(()=>{if(S.route.n==='home'&&!dlg.open)ACT.newGroup()},250)}});
   if(S.gid)sub('app','config/app',d=>{S.app=d;if(R.next)resolveNext();syncName();migrarPrivado()});
@@ -55,6 +66,7 @@ function setupRoute(){
     sub('jog','jogadores',d=>{S.jog=d||{}});sub('avul','avulsos',d=>{S.avul=d||{}});
     sub('r','rodadas/'+R.id,d=>{if(d)S.rod={[R.id]:d};else S.rod={}});
     S.presRid=R.id;sub('pres','rodadas/'+R.id+'/presencas',d=>{S.pres=d||{}});
+    S.partsRid=R.id;sub('parts','rodadas/'+R.id+'/partidas',d=>{S.parts=d||{}});
   }else if(R.n==='v'){anon();
     sub('jog','jogadores',d=>{S.jog=d||{}});
     sub('v','votacoes/'+R.id,d=>{S.vot=d?{[R.id]:d}:{};if(d&&!SUBS.rv)sub('rv','rodadas/'+d.rid,x=>{S.rod=x?{[d.rid]:x}:{}})});
@@ -70,10 +82,12 @@ function syncVia(){const m=S.mem,u=S.user;if(!m||!u||!u.via||m.via===u.via||!S.g
 document.addEventListener('nj-via',syncVia);
 function focusEmail(){let n=0;const t=setInterval(()=>{const i=$('#le');if(i){i.focus();clearInterval(t)}else if(++n>40)clearInterval(t)},50)}
 function resolveNext(){if(!S.loaded.app||!S.loaded.rods)return;const r=upcoming()[0],id=r?r.id:null;
-  if(S.route.id!==id||S.presRid!==id){S.route.id=id;S.presRid=id;S.pres={};drop('pres');if(id)sub('pres','rodadas/'+id+'/presencas',d=>{S.pres=d||{}})}}
+  if(S.route.id!==id||S.presRid!==id){S.route.id=id;S.presRid=id;S.pres={};drop('pres');if(id)sub('pres','rodadas/'+id+'/presencas',d=>{S.pres=d||{}});
+    S.partsRid=id;S.parts={};drop('parts');if(id)sub('parts','rodadas/'+id+'/partidas',d=>{S.parts=d||{}})}}
 function startData(){if(S.dataOn)return;S.dataOn=true;
   sub('rat','privado/ratings',d=>{S.rat=d});sub('cont','privado/contatos',d=>{S.cont=d||{}});sub('avul','avulsos',d=>{S.avul=d||{};regAvulsos()});sub('jog','jogadores',d=>{S.jog=d||{};migrarPrivado()});subQ('rodF','rodadas',Object.assign({de:dia(-1)},Q_PROX),d=>{S.rodF=d||{};juntarRod()});subQ('rodP','rodadas',Object.assign({ate:dia(0)},Q_REC),d=>{S.rodP=d||{};juntarRod()});
   sub('pc','privado/caixa',d=>{S.pc=d;migrarPrivado()});
+  sub('migr','privado/migracao',d=>{S.migr=d||{v:0}});
   sub('caixa','caixa',d=>{S.caixa=d||{}});sub('vot','votacoes',d=>{S.vot=d||{}});sub('membros','membros',d=>{S.membros=d||{}});sub('convite','privado/convite',d=>{S.convite=d})}
 
 export { dia, ensureExtras, ensurePres, ensureVotos, setupRoute, upMyGroup };

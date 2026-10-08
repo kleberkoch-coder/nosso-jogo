@@ -109,6 +109,7 @@ Cada grupo pode **criar posições próprias** (sigla de até 4 letras e nome) e
 - **Esporádico:** o administrador cria cada rodada (data, horário, término, local).
 - O jogador confirma no link com **Vou** ou **Não vou**. Quem não está na lista se adiciona como avulso.
 - O administrador pode marcar presença por quem respondeu fora do link e pode **fechar a lista**.
+- **Lista fechada vale para todos** (pelada-v15): nem o link nem a aba Rodada mudam presença. O administrador vê a situação de cada um e reabre a lista se precisar.
 - **Presença mudada por outro aparelho** (decisão de outubro de 2026: registrar e avisar em vez de travar, para não bloquear quem troca de navegador):
   - A resposta continua livre: qualquer pessoa com o link marca qualquer nome.
   - Cada presença guarda o aparelho que respondeu primeiro (`dev`) e quem gravou por último (`by`).
@@ -129,6 +130,13 @@ Cada grupo pode **criar posições próprias** (sigla de até 4 letras e nome) e
 - **Depois do sorteio:**
   - o administrador vê a diferença de nota, a distribuição da posição-chave, as separações respeitadas e o percentual de parcerias novas;
   - pode mover jogadores e trocar a cor do colete.
+- **Sortear fecha a lista** (pelada-v15) e guarda a "foto" dos confirmados daquele momento.
+- **Pôr direto no time** (pelada-v15): com os times gerados, o administrador põe uma pessoa num time ("+ Pôr no time") e ela já entra confirmada. Não existe em esportes de dupla.
+- **Lista diferente dos times** (pelada-v15):
+  - se a lista for reaberta, mudar presença no app pede confirmação;
+  - a aba Rodada avisa quem não vai mais (estava num time) e quem confirmou depois do sorteio, venha a mudança do app ou do link; no link nada muda;
+  - quem foi desmarcado de propósito na tela do sorteio não gera aviso;
+  - para resolver: "Sortear de novo", "Manter os times assim" ou, por pessoa, "Tirar do time" e "Pôr no time" (em duplas, só as duas primeiras).
 
 ## Partida, ranking, votação e caixa
 - **Partida:**

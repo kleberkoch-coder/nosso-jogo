@@ -55,7 +55,9 @@ const emTS = arquivos.filter(f => /\.tsx?$/.test(f)).length;
 const telas = arquivos.filter(f => f.includes(path.join('src', 'telas')) && !f.endsWith('publico-rodada.js'));
 const telasComp = telas.filter(f => f.endsWith('.tsx')).length;
 const innerHTML = arquivos.reduce((n, f) => n + (fs.readFileSync(f, 'utf8').match(/innerHTML/g) || []).length, 0);
-const testesRegra = fs.existsSync('testes/regras') ? fs.readdirSync('testes/regras').filter(f => /\.test\./.test(f)).length : 0;
+// Conta só as 5 regras previstas na D12 (outros testes de regra são bem-vindos, mas não entram nesta conta).
+const REGRAS = /^(sorteio|ranking|caixa|rodadas-fixas|votacao)\.test\./;
+const testesRegra = fs.existsSync('testes/regras') ? fs.readdirSync('testes/regras').filter(f => REGRAS.test(f)).length : 0;
 console.log(`Dívida técnica: ${emTS} de ${arquivos.length} arquivos em TypeScript · ${telasComp} de ${telas.length} telas como componente · innerHTML em ${innerHTML} pontos · ${testesRegra} de 5 regras de negócio com teste próprio`);
 
 /* Orçamento de desempenho (docs/ARQUITETURA.md, D7): até 80 KB comprimido, sem contar a biblioteca do Firebase. */

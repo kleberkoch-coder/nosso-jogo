@@ -5,7 +5,8 @@
   "description": "Nosso Jogo: organize jogos de qualquer esporte.",
   "scripts": {
     "build": "node build.mjs",
-    "checar": "tsc --noEmit -p tsconfig.json"
+    "checar": "tsc --noEmit -p tsconfig.json",
+    "regras": "node --test \"testes/regras/*.test.mjs\""
   },
   "devDependencies": {
     "esbuild": "0.28.2",

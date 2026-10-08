@@ -39,6 +39,14 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
   - a aba Rodada mostra as próximas e só as últimas 4, sem carregar as antigas, e tem o atalho para o Histórico;
   - com uma cópia desatualizada da rodada, fechar a lista não apaga uma partida salva antes (gravação por campo);
   - a aba Histórico abre com a busca por mês, a busca por período encontra as rodadas antigas, a rodada aberta mostra lista, times, partidas e votação, período vazio mostra mensagem clara, contraste e sem rolagem lateral.
+- **Lista e sorteio (v15, casos CT-KAN-90 a CT-KAN-92):**
+  - com a lista fechada o administrador não marca presença nem adiciona avulso; reabrir volta a permitir;
+  - sortear fecha a lista, e o link mostra a lista fechada com os times;
+  - "+ Pôr no time" põe a pessoa no time e na lista de confirmados, sem aviso;
+  - com times sorteados, mudar presença pede confirmação (Cancelar não muda);
+  - o aviso mostra quem saiu e quem entrou, continua depois de recarregar e some com "Tirar do time", "Pôr no time", "Manter os times assim" ou "Sortear de novo";
+  - contraste do aviso.
+- **Regras de negócio com teste próprio** (`npm run regras`, roda no GitHub antes da montagem): lista × times (9 casos).
 - **Idiomas:** nenhum texto da tela sem tradução no dicionário.
 - **Erros de JavaScript:** nenhum. Erros de fontes e ícones são ignorados, porque o ambiente de teste pode bloquear a internet.
 
@@ -55,3 +63,4 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
 | pelada-v12 | 07/10/2026 | 47 de 47 passaram |
 | pelada-v13 | 08/10/2026 | 49 de 49 passaram |
 | pelada-v14 | 08/10/2026 | 61 de 61 passaram |
+| pelada-v15 | 08/10/2026 | 80 de 80 passaram, mais 9 de 9 na regra lista × times |

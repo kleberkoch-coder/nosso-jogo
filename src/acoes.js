@@ -3,6 +3,8 @@ import { CAIXA_K, cfg, editPc, ptipo } from './dominio/caixa.js';
 import { APP, COL, SPORTS, col, hasPos, posKeys, posLabel, posTag, sport, tn } from './dominio/esportes.js';
 import { attendance, curRodada, dupName, fdia, fixos, fmtL, freq, gname, grpAtivo, isAvulso, lvl, lvlIn, normName, players, pname, ppos, rodById, rodadas, setLvl } from './dominio/grupo.js';
 import { draw } from './dominio/sorteio.js';
+import { foraDosTimes, fotoDoSorteio } from './dominio/divergencia.ts';
+import { tp, tx } from './i18n/index.js';
 import { shareDlg, txtConvite, txtTimes } from './dominio/whatsapp.js';
 import { copyText, semConexao } from './eventos.js';
 import { B, setCAP, sleep } from './nucleo/backend.js';
@@ -23,6 +25,14 @@ import { TEMA_K, applyTheme, closeThemeMenu, openThemeMenu, themeAnchor, themeMe
 import { LOCAL } from './i18n/formatos.js';
 
 /* =================== ações =================== */
+/* Põe a pessoa direto num time (sai de qualquer outro) e a inclui na foto do sorteio, para não gerar aviso. */
+function porNoTime(ti,pid){const r=curRodada(),t=r.times[ti];toast(tx('porTime.posto',{nome:pname(pid),time:tn(t.c)}));
+  return editRod(r.id,x=>{x.times.forEach(t=>{t.players=t.players.filter(p=>p!==pid)});x.times[ti].players.push(pid);
+    x.info=x.info||{};x.info[pid]={n:pname(pid),p:ppos(pid)};const b=x.base||[...fotoDoSorteio(x)];if(!b.includes(pid))b.push(pid);x.base=b})}
+/* Escolher o time de quem confirmou depois do sorteio. */
+function escolherTime(pid){const r=curRodada();
+  openDlg(`<h3>${esc(tx('porTime.qualTime',{nome:pname(pid)}))}</h3><div class="vgrid">${r.times.map((t,i)=>`<button class="opt" data-a="doPorTime" data-v="${i}" data-p="${pid}"><span class="dot" style="background:${col(t.c).c}"></span>${tn(t.c)}<span class="tag" style="margin-left:auto">${tp('porTime.jogadores',t.players.length)}</span></button>`).join('')}</div><div class="dlg-f"><button class="btn" data-a="close">Cancelar</button></div>`)}
+
 const ACT={
   tab:el=>{S.tab=el.dataset.v;render();window.scrollTo(0,0)},
   themeMenu:el=>{if(themeMenuEl&&themeAnchor===el){closeThemeMenu(true);return}openThemeMenu(el)},
@@ -108,25 +118,28 @@ const ACT={
   shareFixo:()=>{const f=fixos();shareDlg('Link permanente',`⚽ *${gname()}*\n${f.map(x=>`Toda ${DIAS[x.dow].toLowerCase()}, ${x.ini}${x.fim?' às '+x.fim:''}${x.place?' — '+x.place:''}`).join('\n')}\n\nConfirme sua presença sempre neste link:\n${linkProxima()}`)},
   copyFixo:()=>copyText(linkProxima()),
   cancelRod:()=>{const r=curRodada();if(!r.cancelada&&!confirm('Cancelar o jogo de '+fdate(r.date)+'? O link permanente passa a mostrar a rodada seguinte.'))return;editRod(r.id,x=>{x.cancelada=!x.cancelada});if(!r.cancelada)toast('Data cancelada.')},
-  lock:()=>{const r=curRodada();editRod(r.id,x=>{x.locked=!x.locked})},
+  lock:()=>{const r=curRodada();if(r.locked&&r.times&&!confirm(tx('lista.confirmaReabrir')))return;return editRod(r.id,x=>{x.locked=!x.locked})},
   shareConvite:()=>shareDlg('Convite da rodada',txtConvite(curRodada())),
   copyLink:()=>copyText(linkRodada(curRodada().id)),
   shareTimes:()=>shareDlg('Times sorteados',txtTimes(curRodada())),
   mark:el=>{const r=curRodada(),id=el.dataset.p,v=el.dataset.v,cur=S.pres[id];
+    if(r.locked)return;
+    if(r.times&&!confirm(tx('lista.confirmaMudar',{nome:pname(id)})))return;
     if(cur&&cur.s===v){if(isAvulso(id))setPres(r.id,id,Object.assign({},cur,{s:v==='in'?'out':'in'}));else{delete S.pres[id];changed();w(GB.del('rodadas/'+r.id+'/presencas/'+id))}}
     else setPres(r.id,id,Object.assign({},cur||{},{s:v}))},
-  addAvulso:()=>{const r=curRodada(),regs=Object.entries(S.avul||{}).filter(([id])=>!S.jog[id]&&S.pres[id]?.s!=='in').sort((a,b)=>(a[1].nome||'').localeCompare(b[1].nome||'',LOCAL));
+  addAvulso:el=>{const t=el&&el.dataset?el.dataset.t:null;S.alvoTime=t!=null&&t!==''?+t:null;const r=curRodada(),regs=Object.entries(S.avul||{}).filter(([id])=>!S.jog[id]&&S.pres[id]?.s!=='in').sort((a,b)=>(a[1].nome||'').localeCompare(b[1].nome||'',LOCAL));
     openDlg(`<h3>Adicionar avulso</h3>${regs.length?`<div class="f"><span class="lbl">Já jogou aqui? Escolha o nome</span>${regs.length>8?'<input class="inp" id="avq" placeholder="Buscar nome" style="margin-bottom:8px">':''}
       <div class="vgrid" id="avlist">${regs.map(([id,a])=>`<button class="opt" data-a="pickAvulso" data-p="${id}" data-n="${esc(normName(a.nome))}">${posTag(id)}<span>${esc(a.nome)}</span><span class="tag" style="margin-left:auto">${fmtL(lvl(id))}</span></button>`).join('')}</div></div>
       <p class="small muted" style="margin:4px 0 10px">Ou cadastre um avulso novo:</p>`:''}
     <label class="f"><span>Nome</span><input class="inp" id="anm" maxlength="40"></label>${posField('apos')}<div class="f"><span class="lbl">Nota de 1 a 10</span>${lvlIn(5)}</div>
     <label class="f"><span>Telefone / WhatsApp (opcional)</span><input class="inp" id="ptel" type="tel" inputmode="tel" maxlength="20"></label>
     <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveAvulso">Adicionar confirmado</button></div>`)},
-  pickAvulso:el=>{const id=el.dataset.p,a=S.avul[id];closeDlg();toast(a.nome+' confirmado.');return setPres(curRodada().id,id,{s:'in',nome:a.nome,avulso:true,pos:a.pos||''})},
+  pickAvulso:el=>{const id=el.dataset.p,a=S.avul[id];closeDlg();const ps=[setPres(curRodada().id,id,{s:'in',nome:a.nome,avulso:true,pos:a.pos||''})];
+    if(S.alvoTime!=null)ps.push(porNoTime(S.alvoTime,id));else toast(a.nome+' confirmado.');S.alvoTime=null;return Promise.all(ps)},
   saveAvulso:()=>{const n=val('anm');if(n.length<2){toast('Digite o nome.');return}
     const same=Object.entries(S.avul||{}).find(([,a])=>normName(a.nome)===normName(n));if(same&&confirm(n+' já jogou aqui antes. Usar o cadastro dele?'))return ACT.pickAvulso({dataset:{p:same[0]}});
     const id=B.newId(),v=+$('#plv').value,pos=val('apos'),o={nome:n,pos,criado:Date.now()};S.avul[id]=o;
-    const ps=[setPres(curRodada().id,id,{s:'in',nome:n,avulso:true,pos}),w(GB.set('avulsos/'+id,o)),editRat(a=>setLvl(a,id,v))];const c=saveContato(id,val('ptel'),'');if(c)ps.push(c);closeDlg();return Promise.all(ps)},
+    const ps=[setPres(curRodada().id,id,{s:'in',nome:n,avulso:true,pos}),w(GB.set('avulsos/'+id,o)),editRat(a=>setLvl(a,id,v))];if(S.alvoTime!=null){ps.push(porNoTime(S.alvoTime,id));S.alvoTime=null}const c=saveContato(id,val('ptel'),'');if(c)ps.push(c);closeDlg();return Promise.all(ps)},
   editAvulso:el=>{const id=el.dataset.p,a=S.avul[id]||{nome:pname(id),pos:ppos(id)},ct=(S.cont||{})[id]||{};
     openDlg(`<h3>Avulso: ${esc(a.nome)}</h3><label class="f"><span>Nome</span><input class="inp" id="anm" maxlength="40" value="${esc(a.nome)}"></label>${posField('apos',a.pos)}
     <div class="f"><span class="lbl">Nota de 1 a 10 (só administradores veem)</span>${lvlIn(lvl(id))}</div>
@@ -150,11 +163,26 @@ const ACT={
     return sleep(40).then(()=>{const cap=[];cap.close=false;setCAP(cap);try{ACT._draw(ids,n,nov)}finally{setCAP(null)}return Promise.allSettled(cap).then(()=>closeDlgNow())})},
   _draw:(ids,n,nov)=>{
     const r=curRodada(),T=draw(ids,n,nov,r.id);
-    editRod(r.id,x=>{const old=x.times||[];x.times=T.map((p,i)=>({c:old[i]?.c??i,players:p}));x.info={};ids.forEach(id=>x.info[id]={n:pname(id),p:ppos(id)});x.drawnAt=Date.now()});
-    if(nov!==cfg().novelty)editApp(a=>{a.cfg.novelty=nov});S.live=null;closeDlg();toast('Times sorteados.')},
+    editRod(r.id,x=>{const old=x.times||[];x.times=T.map((p,i)=>({c:old[i]?.c??i,players:p}));x.info={};ids.forEach(id=>x.info[id]={n:pname(id),p:ppos(id)});x.drawnAt=Date.now();
+      /* pelada-v15: sortear fecha a lista e guarda a foto dos confirmados, para avisar se a lista mudar depois. */
+      x.locked=true;x.base=attendance().inn});
+    if(nov!==cfg().novelty)editApp(a=>{a.cfg.novelty=nov});S.live=null;closeDlg();toast(tx('lista.sorteadoFechada'))},
   color:el=>{const ti=+el.dataset.v;editRod(curRodada().id,x=>{const used=x.times.map(t=>t.c);let c=x.times[ti].c;for(let k=0;k<COL.length;k++){c=(c+1)%COL.length;if(!used.includes(c))break}x.times[ti].c=c})},
   move:el=>{const r=curRodada(),f=+el.dataset.v,pid=el.dataset.p;openDlg(`<h3>Mover ${esc(pname(pid))}</h3><div class="vgrid">${r.times.map((t,i)=>i===f?'':`<button class="opt" data-a="doMove" data-v="${i}" data-f="${f}" data-p="${pid}"><span class="dot" style="background:${col(t.c).c}"></span>${tn(t.c)}</button>`).join('')}</div><div class="dlg-f"><button class="btn" data-a="close">Cancelar</button></div>`)},
   doMove:el=>{const to=+el.dataset.v,f=+el.dataset.f,pid=el.dataset.p;editRod(curRodada().id,x=>{x.times[f].players=x.times[f].players.filter(p=>p!==pid);x.times[to].players.push(pid)});closeDlg()},
+  /* ---- lista × times (pelada-v15) ---- */
+  divTirar:el=>{const pid=el.dataset.p;toast(tx('div.tirado',{nome:pname(pid)}));return editRod(curRodada().id,x=>{x.times.forEach(t=>{t.players=t.players.filter(p=>p!==pid)})})},
+  divPor:el=>escolherTime(el.dataset.p),
+  divManter:()=>{toast(tx('div.mantidos'));return editRod(curRodada().id,x=>{x.base=attendance().inn})},
+  porTime:el=>{const r=curRodada(),ti=+el.dataset.v,t=r.times[ti],a=attendance();
+    const conf=foraDosTimes(r,a.inn),outros=foraDosTimes(r,players().map(p=>p.id)).filter(id=>!conf.includes(id));
+    const opc=id=>`<button class="opt" data-a="doPorTime" data-v="${ti}" data-p="${id}">${posTag(id)}<span>${esc(pname(id))}</span></button>`;
+    openDlg(`<h3><span class="dot" style="background:${col(t.c).c}"></span> ${esc(tx('porTime.titulo',{time:tn(t.c)}))}</h3><p class="small muted">${tx('porTime.ajuda')}</p>
+    ${conf.length?`<div class="f"><span class="lbl">${tx('porTime.confirmados')}</span><div class="vgrid">${conf.map(opc).join('')}</div></div>`:''}
+    ${outros.length?`<div class="f"><span class="lbl">${tx('porTime.outros')}</span><div class="vgrid">${outros.map(opc).join('')}</div></div>`:(conf.length?'':`<p class="muted small">${tx('porTime.ninguem')}</p>`)}
+    <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn" data-a="addAvulso" data-t="${ti}">${tx('porTime.avulso')}</button></div>`)},
+  doPorTime:el=>{const ti=+el.dataset.v,pid=el.dataset.p,r=curRodada(),cur=S.pres[pid];closeDlg();
+    const ps=[];if(!cur||cur.s!=='in')ps.push(setPres(r.id,pid,Object.assign({},cur||{},{s:'in'})));ps.push(porNoTime(ti,pid));return Promise.all(ps)},
   addPlayer:()=>playerDlg(null),editPlayer:el=>playerDlg(el.dataset.p),
   star:()=>{},
   waLink:()=>{},

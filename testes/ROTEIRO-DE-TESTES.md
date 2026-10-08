@@ -3,16 +3,15 @@
 Usado pelo agente de Qualidade e por quem construir uma versão nova. O script `testes/testes_app.py` faz tudo automaticamente.
 
 ## Como rodar
-1. Copie `index.html`, `sw.js` e `manifest.webmanifest` para uma pasta. Eles estão na pasta `site/` do GitHub e na pasta `app/` do projeto no Claude.
-   - O GitHub também roda este roteiro sozinho em toda proposta de mudança (automação "Testes do app").
-2. No `index.html`, troque `window.FIREBASE_CONFIG = {...}` por `window.FIREBASE_CONFIG = {}` (modo demonstração: os dados ficam só no navegador de teste e nada vai para o Firebase de verdade).
+1. Monte o site: `npm install` e `npm run build`. O resultado fica na pasta `dist/` (a pasta `app/` do projeto no Claude já é uma cópia montada).
+2. Copie o conteúdo de `dist/` para uma pasta de teste. No `index.html`, troque `window.FIREBASE_CONFIG = {...}` por `window.FIREBASE_CONFIG = {}` (modo demonstração: os dados ficam só no navegador de teste e nada vai para o Firebase de verdade).
 3. Na pasta, rode `python3 -m http.server 8765`.
 4. Rode `python3 testes_app.py http://127.0.0.1:8765/index.html fotos`.
 
-Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m playwright install chromium`).
+Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m playwright install chromium`). O GitHub faz tudo isso sozinho em toda proposta de mudança (automação "Testes do app").
 
-## O que é verificado (47 itens na pelada-v12)
-- **Página de apresentação:** sem rolagem lateral no celular; botão de tema.
+## O que é verificado (49 itens na pelada-v13)
+- **Página de apresentação:** abre em até 1,5 segundo; sem rolagem lateral no celular; botão de tema.
 - **Seletor de tema:**
   - o menu abre com o foco na opção atual e opções de 44px;
   - Escuro aplica o tema e muda a cor do navegador;
@@ -35,6 +34,7 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
 - **Contraste do texto na tela** (WCAG 2.2 AA): Rodada clara e escura, Partida escura, link público claro e escuro.
 - **Beach tennis:** sem siglas de posição, sorteio em duplas, placar com "Game" e nenhuma palavra de futebol na Rodada e na Partida.
 - **Basquete:** botões +1, +2 e +3; cesta de 3 soma 3 pontos; nenhuma palavra de futebol.
+- **Idiomas:** nenhum texto da tela sem tradução no dicionário.
 - **Erros de JavaScript:** nenhum. Erros de fontes e ícones são ignorados, porque o ambiente de teste pode bloquear a internet.
 
 ## Regras
@@ -48,3 +48,4 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
 | Versão | Data | Resultado |
 |---|---|---|
 | pelada-v12 | 07/10/2026 | 47 de 47 passaram |
+| pelada-v13 | 08/10/2026 | 49 de 49 passaram |

@@ -1,5 +1,6 @@
+*.zip
+__pycache__/
+dist/
+node_modules/
 testes/fotos/
 testes/resultado.json
-__pycache__/
-node_modules/
-*.zip

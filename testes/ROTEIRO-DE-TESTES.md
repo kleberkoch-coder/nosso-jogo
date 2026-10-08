@@ -51,7 +51,11 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
   - 14 confirmados com time de 4: sugere 3 times, prévia "3 times de 4 + 2 reservas", 4 times divide por igual; reserva é quem confirmou por último; reservas no time, no link e no WhatsApp;
   - "Marcar como titular" e pôr num time completo (entra como reserva);
   - tirar e devolver a posição GOL; sorteio sem goleiros; a escolha fica salva; contraste e sem rolagem lateral.
-- **Regras de negócio com teste próprio** (`npm run regras`, roda no GitHub antes da montagem): lista × times (9 casos) e jogadores por time e reservas (7 casos).
+- **Login e aba Grupo (v17, casos CT-KAN-97 a CT-KAN-100):**
+  - botão do Google com o G colorido oficial e "Continuar com o Google";
+  - Mostrar/Ocultar senha (mantém o cursor no campo), também em "Confirme a senha", com contraste;
+  - administrador mostra "E-mail e senha" e o campo fica gravado; ficha do grupo mostra jogadores por time.
+- **Regras de negócio com teste próprio** (`npm run regras`, roda no GitHub antes da montagem): lista × times (9 casos), jogadores por time e reservas (7 casos) e rodadas fixas: próxima data (8 casos, uma das 5 da D12).
 - **Idiomas:** nenhum texto da tela sem tradução no dicionário.
 - **Erros de JavaScript:** nenhum. Erros de fontes e ícones são ignorados, porque o ambiente de teste pode bloquear a internet.
 
@@ -70,3 +74,4 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
 | pelada-v14 | 08/10/2026 | 61 de 61 passaram |
 | pelada-v15 | 08/10/2026 | 80 de 80 passaram, mais 9 de 9 na regra lista × times |
 | pelada-v16 | 08/10/2026 | 101 de 101 passaram, mais 16 de 16 nas regras |
+| pelada-v17 | 08/10/2026 | 109 de 109 passaram, mais 24 de 24 nas regras |

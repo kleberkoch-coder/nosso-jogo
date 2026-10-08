@@ -3,7 +3,7 @@ import { ACT } from './acoes.js';
 import { migrarPrivado } from './dominio/caixa.js';
 import { curRodada, isAdmin, upcoming, ymd } from './dominio/grupo.js';
 import { B } from './nucleo/backend.js';
-import { GB, S, SUBS, drop, dropAll, sub, subQ, subRaw } from './nucleo/estado.js';
+import { GB, S, SUBS, drop, dropAll, sub, subQ, subRaw, w } from './nucleo/estado.js';
 import { $, cl, toast } from './nucleo/util.js';
 import { closeDlgNow, dlg } from './ui/dialogos.js';
 import { render } from './ui/render.js';
@@ -60,11 +60,14 @@ function setupRoute(){
     sub('v','votacoes/'+R.id,d=>{S.vot=d?{[R.id]:d}:{};if(d&&!SUBS.rv)sub('rv','rodadas/'+d.rid,x=>{S.rod=x?{[d.rid]:x}:{}})});
     if(S.user)sub('mv','votacoes/'+R.id+'/votos/'+S.user.uid,d=>{const keep=S.myVote?.pid;S.myVote=d||(keep?{pid:keep,v:{}}:null)});
   }else if((R.n==='admin'||R.n==='inv')&&logged){
-    sub('mem','membros/'+S.user.uid,d=>{S.mem=d;if(d&&R.n==='admin')startData();syncName()});
+    sub('mem','membros/'+S.user.uid,d=>{S.mem=d;if(d&&R.n==='admin')startData();syncName();syncVia()});
   }
   render();
   if(R.n==='auth'||(R.n==='inv'&&!logged))focusEmail();
 }
+/* Grava no cadastro do administrador como ele entrou (Google ou e-mail e senha). Só muda esse campo. */
+function syncVia(){const m=S.mem,u=S.user;if(!m||!u||!u.via||m.via===u.via||!S.gid)return;w(GB.patch('membros/'+u.uid,{via:u.via}))}
+document.addEventListener('nj-via',syncVia);
 function focusEmail(){let n=0;const t=setInterval(()=>{const i=$('#le');if(i){i.focus();clearInterval(t)}else if(++n>40)clearInterval(t)},50)}
 function resolveNext(){if(!S.loaded.app||!S.loaded.rods)return;const r=upcoming()[0],id=r?r.id:null;
   if(S.route.id!==id||S.presRid!==id){S.route.id=id;S.presRid=id;S.pres={};drop('pres');if(id)sub('pres','rodadas/'+id+'/presencas',d=>{S.pres=d||{}})}}

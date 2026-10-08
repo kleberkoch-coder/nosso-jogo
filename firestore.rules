@@ -64,7 +64,10 @@ service cloud.firestore {
               && exists(/databases/$(database)/documents/grupos/$(gid)/privado/convite)
               && request.resource.data.token == get(/databases/$(database)/documents/grupos/$(gid)/privado/convite).data.token)
         );
-        allow update: if false;
+        // O próprio administrador grava só como entrou da última vez (Google ou e-mail e senha). Nada mais muda.
+        allow update: if realUser() && request.auth.uid == uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['via'])
+          && request.resource.data.via in ['google', 'senha'];
         allow delete: if isOwner(gid) || (realUser() && request.auth.uid == uid && get(grp(gid)).data.owner != uid);
       }
 

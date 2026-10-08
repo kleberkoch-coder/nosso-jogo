@@ -80,7 +80,7 @@ const ACT={
   doDupGroup:async()=>{const name=val('dgn');$('#dgErr').textContent='';if(name.length<2){$('#dgErr').textContent='Dê um nome ao grupo.';return}if(dupName(name,null)){$('#dgErr').textContent='Você já tem um grupo com esse nome.';return}
     const withEl=$('#dgel').checked,a=S.app,gid=B.newId(),uid=S.user.uid,now=Date.now(),base='grupos/'+gid,nc=cl(a.cfg)||{},c0=cfg();CAIXA_K.forEach(k=>delete nc[k]);
     try{await B.set(base,clean({name,sport:a.sport||'futebol',sportName:a.sportName||'',freq:freq(),posx:a.posx||[],ativo:true,cfg:nc,owner:uid,createdAt:now,origem:S.gid}));
-      await B.set(base+'/membros/'+uid,{uid,email:S.user.email,role:'owner',at:now});
+      await B.set(base+'/membros/'+uid,Object.assign({uid,email:S.user.email,role:'owner',at:now},S.user.via?{via:S.user.via}:{}));
       const pcN={mensal:c0.mensal,diaria:c0.diaria,pix:c0.pix,tipos:{}};if(withEl)players().forEach(p=>{pcN.tipos[p.id]=ptipo(p.id)});await B.set(base+'/privado/caixa',clean(pcN));
       if(withEl){const keep=new Set(players().map(p=>p.id).concat(Object.keys(S.avul||{})));const ps=[];
         players().forEach(p=>{const d=Object.assign({},S.jog[p.id],{criado:now});delete d.tipo;ps.push(B.set(base+'/jogadores/'+p.id,clean(d)))});
@@ -95,14 +95,14 @@ const ACT={
     const nt=box.querySelector('#ngt');if(nt){const ant=box.dataset.spAnt||'';if(!ant||+nt.value===porTimePadrao(ant))nt.value=porTimePadrao(el.dataset.v);box.dataset.spAnt=el.dataset.v;$('#ngtHelp').textContent=porTimeAjuda(el.dataset.v)}},
   createGroup:async el=>{const g=readGroupForm(null);if(!g)return;const gid=B.newId(),uid=S.user.uid,now=Date.now();
     try{await B.set('grupos/'+gid,{name:g.name,sport:g.sport,sportName:g.sportName,freq:g.freq,ativo:true,cfg:{minutes:SPORTS[g.sport].min,porTime:g.porTime,fixos:g.fixos,place:(g.fixos[0]&&g.fixos[0].place)||''},owner:uid,createdAt:now});
-      await B.set('grupos/'+gid+'/membros/'+uid,{uid,email:S.user.email,role:'owner',at:now});
+      await B.set('grupos/'+gid+'/membros/'+uid,Object.assign({uid,email:S.user.email,role:'owner',at:now},S.user.via?{via:S.user.via}:{}));
       await upMyGroup(gid,{name:g.name,role:'owner',sport:g.sport,sportName:g.sportName,ativo:true,criado:now});closeDlg();location.hash='#/g/'+gid}
     catch(e){console.error(e);toast('Não foi possível criar o grupo. Tente de novo.')}},
   groupsDlg:()=>{const gs=Object.entries((S.me&&S.me.grupos)||{}).filter(([k,v])=>v.ativo!==false||k===S.gid).sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||'',LOCAL));
     openDlg(`<h3>Seus grupos</h3><ul class="plist">${gs.map(([gid,g])=>`<li><span class="gem">${(SPORTS[g.sport]||SPORTS.futebol).e}</span><span class="pn"><b>${esc(g.name)}</b>${gid===S.gid?' <span class="tag">· aberto</span>':''}<br><span class="tag">${esc(g.sportName||(SPORTS[g.sport]||SPORTS.futebol).n)}</span></span>${gid===S.gid?'':`<a class="btn sm primary" href="#/g/${gid}">Abrir</a>`}</li>`).join('')}</ul>
     <div class="dlg-f"><a class="btn" href="#/">Ver todos</a><button class="btn primary" data-a="newGroup">Novo grupo</button></div>`)},
   acceptInv:async el=>{el.disabled=true;const R=S.route,uid=S.user.uid;
-    try{await B.set('grupos/'+R.gid+'/membros/'+uid,{uid,email:S.user.email,role:'admin',token:R.token,at:Date.now()});await upMyGroup(R.gid,{name:gname(),role:'admin',sport:S.app.sport||'futebol',sportName:S.app.sportName||'',ativo:S.app.ativo!==false,criado:S.app.createdAt||null});location.hash='#/g/'+R.gid}
+    try{await B.set('grupos/'+R.gid+'/membros/'+uid,Object.assign({uid,email:S.user.email,role:'admin',token:R.token,at:Date.now()},S.user.via?{via:S.user.via}:{}));await upMyGroup(R.gid,{name:gname(),role:'admin',sport:S.app.sport||'futebol',sportName:S.app.sportName||'',ativo:S.app.ativo!==false,criado:S.app.createdAt||null});location.hash='#/g/'+R.gid}
     catch(e){console.error(e);el.disabled=false;toast('Convite inválido ou expirado. Peça um novo link ao organizador.')}},
   inviteLink:()=>{let t=S.convite?.token;if(!t){t=B.newId()+B.newId();S.convite={token:t};w(GB.set('privado/convite',{token:t}))}
     shareDlg('Convite para administrador',`Oi! Te convidei para administrar o grupo *${gname()}* no ${APP}.\nAbra o link, crie sua conta (ou entre) e aceite:\n${linkConvite(t)}`)},
@@ -183,6 +183,9 @@ const ACT={
     <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn" data-a="toggleRes" data-v="${f}" data-p="${pid}">${(r.times[f].res||[]).includes(pid)?tx('times.marcarTitular'):tx('times.marcarReserva')}</button></div>`)},
   toggleRes:el=>{const f=+el.dataset.v,pid=el.dataset.p;closeDlg();return editRod(curRodada().id,x=>{const t=x.times[f],r=t.res||[];t.res=r.includes(pid)?r.filter(p=>p!==pid):r.concat(pid);if(!t.res.length)delete t.res})},
   doMove:el=>{const to=+el.dataset.v,f=+el.dataset.f,pid=el.dataset.p;editRod(curRodada().id,x=>{x.times[f].players=x.times[f].players.filter(p=>p!==pid);if(x.times[f].res){x.times[f].res=x.times[f].res.filter(p=>p!==pid);if(!x.times[f].res.length)delete x.times[f].res}x.times[to].players.push(pid)});closeDlg()},
+  /* Mostrar/ocultar a senha enquanto digita (pelada-v17). */
+  verSenha:el=>{const i=$('#'+el.dataset.v);if(!i)return;const on=i.type==='password';i.type=on?'text':'password';el.setAttribute('aria-pressed',String(on));
+    el.textContent=tx(on?'login.ocultar':'login.mostrar');el.setAttribute('aria-label',tx(on?'login.ocultarSenha':'login.mostrarSenha'));i.focus()},
   /* ---- lista × times (pelada-v15) ---- */
   divTirar:el=>{const pid=el.dataset.p;toast(tx('div.tirado',{nome:pname(pid)}));return editRod(curRodada().id,x=>{x.times.forEach(t=>{t.players=t.players.filter(p=>p!==pid);if(t.res)t.res=t.res.filter(p=>p!==pid)})})},
   divPor:el=>escolherTime(el.dataset.p),

@@ -62,6 +62,8 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
   - caixa: saldo, entradas e saídas batem com os lançamentos e a ficha do mês guarda as entradas em centavos;
   - fechar a lista com cópia desatualizada não mexe na contagem de partidas (CT-KAN-83 adaptado).
   - **Não coberto pelo modo demonstração:** as regras do Firebase (criar só se não existe, apagar só se existe, resumos só para administradores). Revisadas por um agente independente; teste no emulador fica como cartão.
+- **Versão do app (v19, CT-KAN-107):** apresentação, login e aba Grupo mostram a mesma versão do service worker. Desde a v19 o roteiro roda sobre o site **compactado** (o mesmo publicado).
+- **Regras do Firebase no emulador (v19, KAN-104):** tarefa `regras-firebase` no GitHub, 21 casos em `testes/regras-firebase/regras.test.mjs` (partidas criar/apagar só uma vez, lote repetido recusado inteiro, resumos só para administradores, caixa, Pix, presença com lista aberta/fechada, campo `via` dos administradores). Toda mudança nas regras entra com casos novos ali.
 - **Regras de negócio com teste próprio** (`npm run regras`, roda no GitHub antes da montagem): lista × times (9 casos), jogadores por time e reservas (7 casos), rodadas fixas: próxima data (8 casos) e ranking e totais por mês (10 casos, compara com o cálculo antigo) — 2 das 5 da D12.
 - **Idiomas:** nenhum texto da tela sem tradução no dicionário.
 - **Erros de JavaScript:** nenhum. Erros de fontes e ícones são ignorados, porque o ambiente de teste pode bloquear a internet.
@@ -83,3 +85,4 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
 | pelada-v16 | 08/10/2026 | 101 de 101 passaram, mais 16 de 16 nas regras |
 | pelada-v17 | 08/10/2026 | 109 de 109 passaram, mais 24 de 24 nas regras |
 | pelada-v18 | 08/10/2026 | 122 de 122 passaram, mais 34 de 34 nas regras |
+| pelada-v19 | 08/10/2026 | 125 de 125 passaram, 34 de 34 nas regras de negócio e 21 de 21 nas regras do Firebase |

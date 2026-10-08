@@ -1,3 +1,4 @@
+import { linhaVersao } from '../nucleo/versao.js';
 import { SPORTS } from '../dominio/esportes.js';
 import { fdia } from '../dominio/grupo.js';
 import { S } from '../nucleo/estado.js';
@@ -13,6 +14,6 @@ function vHome(){
   return `<div class="stack"><div class="row between"><h2>Meus grupos</h2><button class="btn primary" data-a="newGroup">Novo grupo</button></div>
   ${act.length?`<div class="panel"><ul class="plist">${act.map(li).join('')}</ul></div>`:'<div class="panel empty"><p class="muted">Nenhum grupo ativo.</p></div>'}
   ${ina.length?`<details class="panel"><summary>Grupos inativos (${ina.length})</summary><ul class="plist" style="margin-top:8px">${ina.map(li).join('')}</ul></details>`:''}
-  <p class="small muted">Conectado como ${esc(S.user.email)}</p></div>`}
+  <p class="small muted">Conectado como ${esc(S.user.email)}</p>${linhaVersao()}</div>`}
 
 export { vHome };

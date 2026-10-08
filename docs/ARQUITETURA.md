@@ -58,6 +58,7 @@ O produto vai ganhar muitas funcionalidades e passará a **cobrar por partes do 
 ### D7. Orçamento de desempenho (8 out. 2026)
 Medido a cada versão, no celular de 390px:
 - **Tamanho do app transferido** (comprimido): até **80 KB**, sem contar a biblioteca do Firebase. A montagem falha se passar. Na pelada-v13: 53,6 KB (era 49,4 KB na v12; a diferença é a formatação legível do código). Na pelada-v14: cerca de 60 KB com o Preact e a aba Histórico (o número exato sai na montagem do GitHub).
+- **Desde a pelada-v19 (KAN-105)** o site publicado vai **compactado** (65,5 KB; sem compactar seriam 77,6 KB), com mapa de origem (`main.js.map`) para depurar. A cópia legível sai em `montagem-legivel/index.html` e é a que vai para `app/index.html` no projeto, para os agentes lerem.
 - **Primeira tela desenhada** em modo demonstração: até **1,5 segundo** no ambiente de testes. É uma das verificações do roteiro. Na pelada-v13: cerca de 0,5 segundo.
 - Passar desses limites exige justificativa registrada aqui.
 
@@ -114,6 +115,11 @@ Medido a cada versão, no celular de 390px:
   - a regra fica em `src/dominio/resumos.ts`, com teste próprio (`testes/regras/ranking.test.mjs`, compara com o cálculo antigo);
   - riscos aceitos: Recalcular ao mesmo tempo que outro administrador salva uma partida pode sobrescrever aquele incremento (basta recalcular de novo); aparelho com a v17 em cache que encerrar votação ou apagar rodada não ajusta as fichas até alguém usar Recalcular.
 
+### D13. Regras do Firebase testadas no emulador antes do Merge (8 out. 2026, pelada-v19, KAN-104)
+- **Contexto:** as regras vão ao ar sozinhas no Merge, e o modo demonstração não as aplica.
+- **Decisão:** tarefa `regras-firebase` no GitHub (`.github/workflows/testes.yml`) roda o emulador do Firestore com `testes/regras-firebase/regras.test.mjs` (21 casos: partidas, resumos, caixa, privado, Pix, presença pelo link, administradores). A proposta só fica verde se todos passarem; o resumo aparece como aviso na tarefa.
+- **Regra de trabalho:** toda mudança nas regras entra com casos novos nesse arquivo.
+
 ### D12. Ficar em JavaScript/TypeScript e pagar a dívida técnica aos poucos (8 out. 2026)
 - **Contexto:** a dúvida era se valeria trocar de linguagem para não acumular dívida técnica.
 - **Decisão:** não trocar. Todo app web roda em JavaScript; o caminho certo é o **TypeScript** (JavaScript com tipos conferidos antes de ir para o ar), que já começou na v14. As funções no servidor, quando vierem, também serão em TypeScript: uma linguagem só no produto inteiro.
@@ -136,6 +142,7 @@ A montagem (`npm run build`) imprime estes números. Eles são registrados aqui 
 | pelada-v16 | 3 de 41 | 1 de 15 | 28 | 0 | 70,8 KB |
 | pelada-v17 | 4 de 42 | 1 de 15 | 28 | 1 (rodadas fixas) | 72,9 KB |
 | pelada-v18 | 5 de 44 | 1 de 15 | 28 | 2 (+ ranking) | 77,3 KB ⚠️ perto do limite de 80 KB |
+| pelada-v19 | 5 de 45 | 1 de 15 | 28 | 2 | 65,5 KB (compactado) |
 
 As 5 regras de negócio com teste próprio previsto: sorteio, ranking, pendências do caixa, rodadas fixas (próxima data) e apuração da votação. Os testes ficam em `testes/regras/` com o nome da regra (`sorteio.test.mjs`, `ranking.test.mjs`, `caixa.test.mjs`, `rodadas-fixas.test.mjs`, `votacao.test.mjs`) e rodam com `npm run regras` (testador do próprio Node, que lê TypeScript direto). Desde a pelada-v15 já existe o primeiro teste de regra, lista × times (`lista-sorteio.test.mjs`), e na v16 entrou jogadores por time e reservas (`times.test.mjs`); eles não entram na conta das 5. Para uma regra ganhar teste, ela precisa sair do código que lê o estado, como foi feito em `src/dominio/divergencia.ts`.
 
@@ -162,7 +169,7 @@ Os agentes leem o app pelo projeto do Claude, e não pelo GitHub. Por isso, toda
 
 | No projeto do Claude | Vem de (GitHub) | Quando |
 |---|---|---|
-| `app/index.html` | `dist/index.html` (resultado do `npm run build`) | toda versão (anotar também a linha do Painel da dívida técnica) |
+| `app/index.html` | `montagem-legivel/index.html` (cópia legível gerada pelo `npm run build`; o `dist/` publicado vai compactado) | toda versão (anotar também a linha do Painel da dívida técnica) |
 | `app/sw.js` e `app/manifest.webmanifest` | `site/sw.js` e `site/manifest.webmanifest` | toda versão (o `sw.js` muda a `VERSION`) |
 | `app/firestore.rules` | `firestore.rules` | quando as regras mudarem |
 | `app/LEIA-ME.md` | `LEIA-ME.md` | quando o uso mudar |

@@ -26,6 +26,31 @@ jobs:
           name: site-montado
           path: dist
 
+  # Regras do Firebase no emulador (KAN-104): as regras vão ao ar sozinhas no Merge, então são testadas antes.
+  regras-firebase:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Instalar o emulador e a biblioteca de testes
+        run: npm install --no-save --no-audit --no-fund firebase-tools@13 @firebase/rules-unit-testing@3 firebase@10
+      - name: Testar as regras no emulador
+        shell: bash
+        run: |
+          set -o pipefail
+          npx firebase emulators:exec --only firestore --project demo-nosso-jogo "node --test testes/regras-firebase/*.test.mjs" 2>&1 | tee "$RUNNER_TEMP/regras.txt"
+          pass=$(grep -oE '^# pass [0-9]+' "$RUNNER_TEMP/regras.txt" | grep -oE '[0-9]+' | tail -1)
+          fail=$(grep -oE '^# fail [0-9]+' "$RUNNER_TEMP/regras.txt" | grep -oE '[0-9]+' | tail -1)
+          test "${pass:-0}" -gt 0 || { echo "::error::Nenhum teste de regra rodou."; exit 1; }
+          echo "::notice::Regras do Firebase no emulador: ${pass} passaram, ${fail:-0} falharam."
+
   testes:
     needs: montar
     runs-on: ubuntu-latest

@@ -74,6 +74,9 @@ with sync_playwright() as pw:
     ok(ms <= 1500, f'primeira tela desenhada em até 1,5 s (levou {ms:.0f} ms)')
     pg.wait_for_timeout(600); shot('01-apresentacao')
     ok(pg.evaluate("document.documentElement.scrollWidth<=innerWidth"), 'apresentação sem rolagem lateral no celular')
+    # v19: a versão do app aparece e é a mesma do service worker (fonte única: VERSION do sw.js)
+    VER = pg.evaluate("fetch('sw.js',{cache:'no-store'}).then(r=>r.text()).then(t=>(/VERSION\\s*=\\s*'pelada-v(\\d+)'/.exec(t)||[])[1])")
+    ok(bool(VER) and f'versão {VER}' in pg.inner_text('.ld-foot'), f'CT-KAN-107-01: apresentação mostra a versão {VER} do app')
     btn = pg.locator('.ld-nav [data-a=themeMenu]'); ok(btn.count() == 1, 'botão de tema na página de apresentação')
     btn.click(); pg.wait_for_timeout(200); ok(pg.locator('.theme-menu').count() == 1, 'menu de tema abre')
     ok(pg.evaluate("document.activeElement.getAttribute('aria-checked')") == 'true', 'foco vai para a opção atual do tema')
@@ -94,6 +97,7 @@ with sync_playwright() as pw:
     # ---------- Cadastro e grupo de futebol
     pg.goto(URL + '#/criar'); pg.wait_for_timeout(500)
     ok(pg.evaluate("document.activeElement.id") == 'le', 'cursor no e-mail no cadastro')
+    ok(f'Nosso Jogo · versão {VER}' in pg.inner_text('main'), 'CT-KAN-107-01: tela de login e cadastro mostra a versão do app')
     ok(pg.locator('#themeBtn').is_visible(), 'chip de tema no cabeçalho do cadastro')
     # v17: botão do Google no padrão e Mostrar senha
     ok(pg.locator('.gbtn svg.gic path').count() == 4 and 'Continuar com o Google' in pg.inner_text('.gbtn'), 'CT-KAN-99-01: botão do Google com o G colorido oficial')
@@ -210,6 +214,7 @@ with sync_playwright() as pw:
     # ---------- Aba Grupo e tema escuro na gestão
     pg.click('[data-a=tab][data-v=grupo]'); pg.wait_for_timeout(300)
     ok(pg.locator('.theme-seg').count() == 1, 'painel Aparência na aba Grupo')
+    ok(f'versão {VER}' in pg.inner_text('main .versao'), 'CT-KAN-107-01: depois de entrar, a aba Grupo mostra a versão do app')
     ficha = pg.inner_text('.ficha')
     ok('Jogadores por time' in ficha and '11' in ficha, 'CT-KAN-100-01: aba Grupo mostra jogadores por time sem abrir Editar')
     ok('E-mail e senha' in pg.inner_text('.plist .via'), 'CT-KAN-98-01: administrador mostra que entrou com e-mail e senha')

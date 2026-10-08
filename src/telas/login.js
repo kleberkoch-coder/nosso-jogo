@@ -1,3 +1,4 @@
+import { linhaVersao } from '../nucleo/versao.js';
 import { tx } from '../i18n/index.js';
 import { S } from '../nucleo/estado.js';
 import { $ } from '../nucleo/util.js';
@@ -41,7 +42,7 @@ function vAuth(msg){const m=S.authMode;
     <p class="small" style="text-align:center;margin:12px 0 0"><button class="linkbtn" data-a="reset">Esqueci a senha</button></p>
     <p class="small muted" style="text-align:center;margin:10px 0 0">Primeira vez aqui? <button class="linkbtn" data-a="authMode" data-v="signup">Criar conta grátis</button></p>`;
   return `<div class="auth">${msg?`<div class="panel" style="margin-bottom:12px">${msg}</div>`:''}
-  <div class="panel"><div class="seg" style="display:flex;margin-bottom:16px"><button style="flex:1" aria-pressed="${m==='signup'}" data-a="authMode" data-v="signup">Criar conta</button><button style="flex:1" aria-pressed="${m==='login'}" data-a="authMode" data-v="login">Entrar</button></div>${form}</div></div>`}
+  <div class="panel"><div class="seg" style="display:flex;margin-bottom:16px"><button style="flex:1" aria-pressed="${m==='signup'}" data-a="authMode" data-v="signup">Criar conta</button><button style="flex:1" aria-pressed="${m==='login'}" data-a="authMode" data-v="login">Entrar</button></div>${form}</div>${linhaVersao()}</div>`}
 /* Ícone neutro (não é a marca do Google): uma letra G no estilo do app. */
 /* Campo de senha com o botão Mostrar/Ocultar (pelada-v17). */
 function pwBox(id,ac){return `<div class="pwbox"><input class="inp" id="${id}" type="password" autocomplete="${ac}"><button type="button" class="pwver" data-a="verSenha" data-v="${id}" aria-pressed="false" aria-label="${tx('login.mostrarSenha')}">${tx('login.mostrar')}</button></div>`}

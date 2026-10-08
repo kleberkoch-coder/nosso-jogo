@@ -3,6 +3,8 @@
 export default {
   /* comum */
   'comum.carregando': 'Carregando…',
+  'comum.versao': 'Nosso Jogo · versão {n}',
+  'comum.versaoCurta': 'versão {n}',
   'comum.copiado': 'Copiado.',
   'comum.copieLink': 'Copie o link:',
   'comum.semInternetBarra': 'Sem internet. O que você fizer agora é enviado quando a conexão voltar.',

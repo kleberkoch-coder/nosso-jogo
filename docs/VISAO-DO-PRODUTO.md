@@ -193,6 +193,8 @@ Migração (v10): grupos antigos com valores e Pix em `cfg` e `tipo` nos jogador
   - front-end em módulos (feito na v13) e, nas próximas entregas, telas como componentes em TypeScript e Preact, uma por vez, começando pelo link público;
   - vários idiomas: textos num dicionário por idioma (base `pt-BR`); feito para as telas públicas e avisos, as demais telas migram junto com a componentização;
   - próximos passos técnicos: transações na gravação da rodada (sorteio e placar), Firebase App Check e limites contra abuso antes de começar a cobrar;
+  - banco: ficamos no Firestore; outros bancos só como apoio (BigQuery para relatórios, PostgreSQL se o financeiro pedir), cada dado com um único banco dono;
+  - **desempenho (planejado):** o link do jogador carrega só a próxima rodada; a aba Rodada mostra as próximas e as últimas 4, e o conteúdo de cada rodada só carrega ao escolher; uma **nova aba Histórico** busca rodadas antigas por período e mostra lista, times, partidas e votação de cada uma; ranking e caixa passam a usar totais prontos por mês, com botão Recalcular;
   - **cobrança por partes do serviço** (intenção de out. 2026): o plano de cada grupo será gravado só pelo servidor (Cloud Functions ligadas ao pagamento) e conferido nas regras do Firebase, nunca só na tela.
 - Política de senha também no Firebase (Authentication > Configurações), se disponível.
 - **Ícones do app:**

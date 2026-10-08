@@ -40,7 +40,7 @@ O produto vai ganhar muitas funcionalidades e passará a **cobrar por partes do 
 ### D4. Rodada gravada com transações (planejado)
 - **Contexto:** sorteio e placar ficam no mesmo registro da rodada. Dois administradores mexendo ao mesmo tempo podem sobrescrever um ao outro (vale a última gravação).
 - **Decisão:** usar transações do Firestore (gravação que confere a versão antes de salvar) nesse registro.
-- **Quando:** numa das próximas entregas, com teste automático de duas gravações simultâneas.
+- **Quando:** no próximo pacote, junto com D10, com teste automático de duas gravações simultâneas.
 
 ### D5. Recursos pagos controlados no servidor (planejado)
 - **Decisão:** quando houver cobrança, o que cada grupo pode usar (o "plano") fica num registro que **só o servidor grava** (Cloud Function ligada ao meio de pagamento). As regras do Firebase conferem o plano antes de liberar cada recurso pago. A tela só esconde ou mostra; quem garante é a regra.
@@ -63,6 +63,34 @@ Medido a cada versão, no celular de 390px:
 - **Por quê:** menos pacotes de terceiros significa menos risco de um pacote comprometido entrar no app. Ele já entende TypeScript e JSX, então serve também para a etapa 2 (Preact).
 - **Detalhe para os testes:** em modo demonstração, o estado do app fica visível em `window.S`, para os testes automáticos ajustarem o cronômetro. Com o Firebase ligado, isso não existe.
 
+### D9. Firestore como banco principal; outros bancos só como apoio (8 out. 2026)
+- **Contexto:** avaliamos trocar o Firestore pelo MongoDB.
+- **Decisão:** ficar no Firestore. Ele permite que o celular fale direto com o banco, protegido pelas regras (sem servidor próprio), funciona com sinal fraco (guarda no aparelho e envia depois) e atualiza as telas ao vivo. No MongoDB, isso exigiria construir e manter um servidor, e o equivalente ao modo offline (Atlas Device Sync) e o acesso direto pelo navegador (Data API) foram descontinuados em setembro de 2025.
+- **Bancos híbridos, quando houver necessidade real:**
+  - BigQuery para relatórios e análises do negócio (cópia automática, sem mexer no app);
+  - PostgreSQL só se o financeiro da cobrança pedir (notas fiscais, conciliação).
+- **Regra:** cada dado tem um único banco dono; os outros recebem cópias.
+- **Proteção contra dependência:** toda a conversa com o banco fica em `nucleo/backend.js`. Trocar de banco mexeria principalmente nesse módulo.
+
+### D10. Carregar só o que está na tela (8 out. 2026, planejado)
+- **Contexto:** o link do jogador e a gestão do grupo baixavam todas as rodadas da história do grupo. Isso deixa o app mais lento a cada mês, principalmente com sinal fraco, e aumenta as leituras cobradas pelo Firebase.
+- **Decisão:**
+  - **Link do jogador:** busca só a próxima rodada (e a presença dela).
+  - **Aba Rodada (administrador):** as próximas rodadas já criadas e as **últimas 4**. Presença, times e partidas de uma rodada só carregam quando ela é escolhida.
+  - **Nova aba Histórico:** busca rodadas por período (mês ou intervalo de datas), de 20 em 20. Ao abrir uma rodada, mostra a lista, os times, as partidas e a votação dela.
+  - **Partidas** saem da ficha da rodada e vão para uma subpasta (`rodadas/{id}/partidas`), como já acontece com as presenças. A ficha da rodada fica leve.
+- **Muda as regras do Firebase:** sim (novo caminho das partidas). Rodadas antigas são migradas na primeira vez que um administrador abre o grupo.
+
+### D11. Totais prontos por mês (8 out. 2026, planejado)
+- **Contexto:** ranking e caixa são calculados lendo todas as partidas e lançamentos a cada abertura.
+- **Decisão:** cada grupo ganha uma ficha de resumo por mês (`resumos/{AAAA-MM}`): por jogador, jogos, vitórias, empates, derrotas, gols ou pontos, destaques e bagres; e os totais do caixa.
+  - Salvar ou apagar uma partida (ou um lançamento) atualiza o resumo do mês na mesma gravação segura (D4).
+  - O ranking do ano soma até 12 resumos.
+  - Corrigir algo antigo recalcula só aquele mês. O administrador tem um botão **Recalcular** como rede de segurança.
+  - Grupos existentes ganham os resumos na primeira abertura do ranking depois da atualização.
+- **Limite consciente:** enquanto não houver servidor, quem calcula é o celular do administrador; as regras garantem quem grava, não a conta. Com as Cloud Functions (D5), o recálculo passa para o servidor.
+- **Depende de:** D4 (transações) e D10 (partidas em subpasta).
+
 ## Mapa do código (pasta `src/`)
 | Pasta | O que tem |
 |---|---|
@@ -80,3 +108,17 @@ Medido a cada versão, no celular de 390px:
 | `pwa.js` | Instalação do app, barra sem internet e atualização de versão |
 
 **Regra de ordem:** `nucleo/util.js`, `i18n/formatos.js` e `i18n/pt-BR.js` não importam nada do app. Código que roda direto ao carregar um módulo (fora de funções) só pode usar esses módulos. O resto do app roda dentro de funções, chamadas depois que tudo carregou.
+
+## Entrega: o que atualizar no projeto do Claude
+Os agentes leem o app pelo projeto do Claude, e não pelo GitHub. Por isso, toda proposta de mudança atualiza o projeto na mesma entrega, antes de o link ser passado ao Kleber:
+
+| No projeto do Claude | Vem de (GitHub) | Quando |
+|---|---|---|
+| `app/index.html` | `dist/index.html` (resultado do `npm run build`) | toda versão |
+| `app/sw.js` e `app/manifest.webmanifest` | `site/sw.js` e `site/manifest.webmanifest` | toda versão (o `sw.js` muda a `VERSION`) |
+| `app/firestore.rules` | `firestore.rules` | quando as regras mudarem |
+| `app/LEIA-ME.md` | `LEIA-ME.md` | quando o uso mudar |
+| `VISAO-DO-PRODUTO.md`, `docs/ARQUITETURA.md`, `DESIGN-SYSTEM.md` | `docs/` | quando mudarem |
+| `testes/ROTEIRO-DE-TESTES.md` e `testes/testes_app.py` | `testes/` | quando mudarem |
+
+Depois de enviar, conferir que cada arquivo do projeto ficou igual ao do GitHub.

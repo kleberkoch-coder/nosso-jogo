@@ -3,6 +3,9 @@ import { LOCAL, MOEDA } from '../i18n/formatos.js';
 const $=s=>document.querySelector(s);
 const main=$('#main');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* Identificador seguro (KAN-76): só letras, números, _ e -. Nome de documento fora disso é ignorado na leitura,
+   para nunca chegar ao HTML um identificador com aspas ou tags. */
+const idOk=s=>typeof s==='string'&&/^[A-Za-z0-9_-]{1,64}$/.test(s);
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const cl=o=>o==null?null:JSON.parse(JSON.stringify(o));
 const key=(a,b)=>a<b?a+'|'+b:b+'|'+a;
@@ -17,4 +20,4 @@ function nextSat(){const d=new Date();d.setDate(d.getDate()+((6-d.getDay()+7)%7)
 const inAppBrowser=()=>/FBAN|FBAV|FB_IAB|Instagram|Line\/|MicroMessenger|; wv\)/i.test(navigator.userAgent);
 const DIAS=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 
-export { $, DIAS, brl, cl, esc, fdate, fmonth, inAppBrowser, key, main, nextSat, shuffle, toast, today, uid };
+export { $, brl, cl, DIAS, esc, fdate, fmonth, idOk, inAppBrowser, key, main, nextSat, shuffle, toast, today, uid };

@@ -16,7 +16,7 @@ Atualizado a cada entrega (quando a proposta é aberta) e de novo depois do Merg
 
 | Versão | Proposta | Testes do app | Regras de negócio | Regras do Firebase (emulador) | Tamanho | Mapa de origem | Regras publicadas | No ar |
 |---|---|---|---|---|---|---|---|---|
-| pelada-v21 | [#16](https://github.com/kleberkoch-coder/nosso-jogo/pull/16) | ✅ 140 de 140 (site compactado) | ✅ 34 de 34 | ✅ 21 de 21 | 66,1 KB | ✅ | não mudaram | ⏳ aguardando Merge ([prévia em modo demonstração](https://deploy-preview-16--nossosjogos.netlify.app)) |
+| pelada-v21 | [#16](https://github.com/kleberkoch-coder/nosso-jogo/pull/16) | ✅ 140 de 140 (site compactado) | ✅ 34 de 34 | ✅ 21 de 21 | 66,1 KB | ✅ | não mudaram | ✅ Merge 09/10 10h41 |
 | pelada-v20 | [#15](https://github.com/kleberkoch-coder/nosso-jogo/pull/15) | ✅ 140 de 140 (site compactado) | ✅ 34 de 34 | ✅ 21 de 21 | 65,9 KB | ✅ | não mudaram | ✅ Merge 09/10 10h10 |
 | pelada-v19 | [#12](https://github.com/kleberkoch-coder/nosso-jogo/pull/12) | ✅ 125 de 125 (site compactado) | ✅ 34 de 34 | ✅ 21 de 21 | 65,5 KB | ✅ `main.js.map` e `main.css.map` no `dist/` | não mudaram | ✅ Merge 08/10 17h47 |
 | pelada-v18 | [#11](https://github.com/kleberkoch-coder/nosso-jogo/pull/11) | ✅ 122 de 122 | ✅ 34 de 34 | (não existia) | 77,3 KB | — | ✅ publicadas no Merge | ✅ Merge 08/10 17h00 |

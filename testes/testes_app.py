@@ -315,6 +315,8 @@ with sync_playwright() as pw:
     ok(pg.locator('main .pos').count() == 0, 'beach tennis sem siglas de posição')
     sortear(pg)
     ok('Dupla 1' in pg.inner_text('main'), 'beach tennis sorteia em duplas')
+    av = pg.inner_text('.lista-fechada') if pg.locator('.lista-fechada').count() else ''
+    ok('sorteie de novo' in av and 'Pôr no time' not in av, f'CT-KAN-110-01: em duplas o aviso da lista fechada não cita "+ Pôr no time" ({av[:60]})')
     ok(not FUTEBOL.search(pg.inner_text('main')), 'Rodada do beach tennis sem palavras de futebol')
     pg.click('[data-a=tab][data-v=partida]'); pg.wait_for_timeout(400)
     ok(pg.locator('[data-a=goal]').first.inner_text().strip() == '+ Game', 'placar do beach tennis conta Game')
@@ -376,6 +378,38 @@ with sync_playwright() as pw:
     pg.locator('[data-a=porTime]').first.click(); pg.wait_for_timeout(300); pg.click(f'#dlg [data-a=doPorTime][data-p="{gol}"]'); pg.wait_for_timeout(700)
     ok(pg.evaluate("(id)=>(S.rod[S.rid].times[0].res||[]).includes(id)", gol), 'CT-KAN-94-03: pôr alguém num time completo entra como reserva')
     ok(pg.evaluate("document.documentElement.scrollWidth<=innerWidth"), 'CT-KAN-94: sem rolagem lateral no celular')
+
+    # ---------- v22: correções dos defeitos abertos pela Qualidade (KAN-76, KAN-108, KAN-109, KAN-112)
+    pg.goto(URL + '#/g/' + gid_fut); pg.wait_for_timeout(1000); pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(500)
+    rid_x = pg.evaluate("S.rid")
+    # KAN-76: presença gravada com identificador malicioso não chega à tela (nem do administrador nem do link)
+    pg.evaluate("""(a)=>{const K='pelada-demo-v2',s=JSON.parse(localStorage.getItem(K));
+      s['grupos/'+a[0]+'/rodadas/'+a[1]+'/presencas/x"><img src=x onerror="window.__xss=1">']={s:'in',t:1,nome:'Invasor',avulso:true,by:'z',dev:'z'};
+      localStorage.setItem(K,JSON.stringify(s))}""", [gid_fut, rid_x])
+    pg.reload(); pg.wait_for_timeout(1200); pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(600)
+    ok(pg.evaluate("!window.__xss && !document.querySelector('img[src=\"x\"]') && !document.body.innerText.includes('Invasor')"), 'CT-KAN-76-01: identificador com código é ignorado na aba Rodada (nada é executado)')
+    pg.click('[data-a=tab][data-v=jogadores]'); pg.wait_for_timeout(500)
+    ok(pg.evaluate("!window.__xss && !document.querySelector('img[src=\"x\"]')"), 'CT-KAN-76-02: nada é executado na aba Jogadores')
+    pg.goto(URL + '#/p/' + gid_fut + '/r/' + rid_x); pg.wait_for_timeout(1200)
+    ok(pg.evaluate("!window.__xss && !document.body.innerText.includes('Invasor')"), 'CT-KAN-76-03: nada é executado no link do jogador')
+    # KAN-108: trocar a cor com os times desatualizados não desfaz um sorteio feito por outro administrador
+    pg.goto(URL + '#/g/' + gid_fut); pg.wait_for_timeout(1000); pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(500)
+    if pg.evaluate("!!(S.rod[S.rid]&&S.rod[S.rid].times)"):
+        # tela deste aparelho desatualizada (times antigos); no banco estão os times do outro administrador
+        novo = pg.evaluate("(a)=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2'));return JSON.stringify(s['grupos/'+a[0]+'/rodadas/'+a[1]].times.map(t=>t.players))}", [gid_fut, rid_x])
+        pg.evaluate("S.rod[S.rid]=Object.assign({},S.rod[S.rid],{times:S.rod[S.rid].times.map(t=>Object.assign({},t,{players:t.players.slice().reverse()}))})")
+        pg.locator('.team [data-a=color]').first.click(); pg.wait_for_timeout(800)
+        depois = pg.evaluate("(a)=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2')),d=s['grupos/'+a[0]+'/rodadas/'+a[1]];return [JSON.stringify(d.times.map(t=>t.players)),d.cores&&d.cores['0']!=null]}", [gid_fut, rid_x])
+        ok(depois[0] == novo and depois[1], 'CT-KAN-108-01: a cor nova é gravada sem desfazer o sorteio do outro administrador')
+    else:
+        ok(False, 'CT-KAN-108-01: rodada sem times para testar a cor')
+    # KAN-109: enquanto a presença carrega, mostra "Carregando…" e não "Ninguém confirmou ainda"
+    pg.evaluate("S.loaded.pres=false"); pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(200)
+    txt = pg.inner_text('main')
+    ok('Carregando' in txt and 'Ninguém confirmou ainda' not in txt, 'CT-KAN-109-01: presença carregando mostra "Carregando…"')
+    pg.evaluate("S.loaded.pres=true"); pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(200)
+    # KAN-112: o aviso "Abra no navegador" usa o mesmo texto do botão
+    ok('Continuar com Google' not in pg.content(), 'CT-KAN-112-01: nenhum texto "Continuar com Google" sem o "o" no app')
 
     # ---------- Sugestões da Qualidade (09/10): versão em todas as telas, convite e tema escuro
     pg.goto(URL + '#/'); pg.wait_for_timeout(900)

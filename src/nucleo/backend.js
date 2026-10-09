@@ -1,5 +1,5 @@
 import { cfg } from '../dominio/caixa.js';
-import { cl, uid } from './util.js';
+import { cl, idOk, uid } from './util.js';
 
 /* =================== backends =================== */
 function FirebaseBackend(cfg,appCheckKey){
@@ -30,17 +30,17 @@ function FirebaseBackend(cfg,appCheckKey){
       catch(e){if(e&&['auth/popup-blocked','auth/operation-not-supported-in-this-environment','auth/web-storage-unsupported'].includes(e.code)){await auth.signInWithRedirect(pv);return new Promise(()=>{})}throw e}},
     redirectResult:()=>auth.getRedirectResult(),
     sub(path,cb,err){
-      if(path.split('/').length%2)return fs.collection(path).onSnapshot(s=>{const o={};s.forEach(d=>o[d.id]=d.data());cb(o)},err);
+      if(path.split('/').length%2)return fs.collection(path).onSnapshot(s=>{const o={};s.forEach(d=>{if(idOk(d.id))o[d.id]=d.data()});cb(o)},err);
       return fs.doc(path).onSnapshot({includeMetadataChanges:false},s=>{if(!s.exists&&s.metadata.fromCache&&path.startsWith('usuarios/')&&navigator.onLine)return;cb(s.exists?s.data():null)},err)},
     /* Consulta ao vivo com filtro de data e limite (D10): q = {campo, de, ate, ordem:'asc'|'desc', limite}. */
-    query(path,q,cb,err){return fsQuery(fs,path,q).onSnapshot(s=>{const o={};s.forEach(d=>o[d.id]=d.data());cb(o)},err)},
+    query(path,q,cb,err){return fsQuery(fs,path,q).onSnapshot(s=>{const o={};s.forEach(d=>{if(idOk(d.id))o[d.id]=d.data()});cb(o)},err)},
     /* Uma página de resultados, sem ficar ouvindo (Histórico). cursor vem da página anterior. */
     async pagina(path,q,cursor){let x=fsQuery(fs,path,q);if(cursor)x=x.startAfter(cursor);const s=await x.get();
-      return{itens:s.docs.map(d=>[d.id,d.data()]),cursor:s.docs[s.docs.length-1]||null,fim:s.docs.length<q.limite}},
-    async get(path){if(path.split('/').length%2){const s=await fs.collection(path).get(),o={};s.forEach(d=>o[d.id]=d.data());return o}
+      return{itens:s.docs.filter(d=>idOk(d.id)).map(d=>[d.id,d.data()]),cursor:s.docs[s.docs.length-1]||null,fim:s.docs.length<q.limite}},
+    async get(path){if(path.split('/').length%2){const s=await fs.collection(path).get(),o={};s.forEach(d=>{if(idOk(d.id))o[d.id]=d.data()});return o}
       const s=await fs.doc(path).get();return s.exists?s.data():null},
     /* Leitura que exige o servidor (migração e Recalcular): sem internet falha, em vez de usar só o que está no aparelho. */
-    async getServidor(path){const s=await fs.collection(path).get({source:'server'}),o={};s.forEach(d=>o[d.id]=d.data());return o},
+    async getServidor(path){const s=await fs.collection(path).get({source:'server'}),o={};s.forEach(d=>{if(idOk(d.id))o[d.id]=d.data()});return o},
     set:(p,o)=>fs.doc(p).set(o),
     /* Grava só os campos informados (D4): duas pessoas mexendo em campos diferentes não se apagam,
        e funciona sem internet. Valores especiais: op.uniao([...]), op.remover([...]), op.apagar(). */
@@ -67,7 +67,7 @@ function LocalBackend(){
   try{store=JSON.parse(localStorage.getItem(K)||'{}');user=JSON.parse(localStorage.getItem(K+'-u')||'null')}catch(e){}
   const subs=new Set(),acb=new Set();
   const save=()=>{try{localStorage.setItem(K,JSON.stringify(store))}catch(e){}};
-  const read=path=>{const n=path.split('/').length;if(n%2){const o={};for(const p in store){const s=p.split('/');if(s.length===n+1&&p.startsWith(path+'/'))o[s[n]]=store[p]}return o}return store[path]??null};
+  const read=path=>{const n=path.split('/').length;if(n%2){const o={};for(const p in store){const s=p.split('/');if(s.length===n+1&&p.startsWith(path+'/')&&idOk(s[n]))o[s[n]]=store[p]}return o}return store[path]??null};
   const notify=()=>subs.forEach(s=>s.cb(cl(read(s.path))));
   const filtrar=(path,q)=>{let e=Object.entries(read(path)).filter(([,d])=>d&&d[q.campo]!=null&&(!q.de||d[q.campo]>=q.de)&&(!q.ate||d[q.campo]<=q.ate));
     e.sort((x,y)=>String(x[1][q.campo]).localeCompare(String(y[1][q.campo]))*(q.ordem==='desc'?-1:1));return q.limite?e.slice(0,q.limite):e};

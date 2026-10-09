@@ -29,8 +29,9 @@ export function virtualOf(fx: Fixo, date: string) {
 export function proximasFixas(fixos: Fixo[], docs: Record<string, Partial<RodadaBase> | undefined>, agora: Date) {
   const out: ReturnType<typeof virtualOf>[] = [], now = agora.getTime();
   fixos.forEach(fx => {
-    const d = new Date(agora); d.setHours(12, 0, 0, 0);
-    for (let k = 0; k < 70; k++) {
+    /* Começa por ontem (KAN-111): um jogo que passou da meia-noite ainda está valendo até o horário de término. */
+    const d = new Date(agora); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() - 1);
+    for (let k = 0; k < 71; k++) {
       if (d.getDay() === +fx.dow) {
         const date = ymd(d), v = virtualOf(fx, date), doc = docs[v.id];
         if (endTs(doc ? Object.assign({}, v, doc) : v) > now && !(doc && doc.cancelada)) { if (!doc) out.push(v); break; }

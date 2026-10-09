@@ -28,6 +28,8 @@ service cloud.firestore {
           && get(rod(gid, rid)).data.get('cancelada', false) == false)
       );
     }
+    // Identificador gerado pelo app: só letras, números, _ e - (KAN-76: impede injetar código pelo nome do documento).
+    function idValido(id) { return id is string && id.matches('[A-Za-z0-9_-]{1,64}'); }
     function presencaValida() {
       return request.resource.data.keys().hasOnly(['s', 't', 'by', 'dev', 'nome', 'avulso', 'pos'])
         && request.resource.data.s in ['in', 'out']
@@ -99,11 +101,11 @@ service cloud.firestore {
         match /presencas/{pid} {
           allow read: if true;
           allow create: if isMember(gid) || (
-            presencaAberta(gid, rid) && presencaValida()
+            idValido(pid) && presencaAberta(gid, rid) && presencaValida()
             && request.resource.data.get('dev', '') == request.auth.uid
           );
           allow update: if isMember(gid) || (
-            presencaAberta(gid, rid) && presencaValida()
+            idValido(pid) && presencaAberta(gid, rid) && presencaValida()
             && ((('dev' in resource.data) && request.resource.data.get('dev', '') == resource.data.dev)
               || (!('dev' in resource.data) && request.resource.data.get('dev', '') == request.auth.uid))
           );
@@ -148,7 +150,9 @@ service cloud.firestore {
           allow create, update: if signed() && request.auth.uid == uid
             && grpAtivo(gid)
             && get(/databases/$(database)/documents/grupos/$(gid)/votacoes/$(vid)).data.open == true
-            && request.resource.data.keys().hasOnly(['pid', 'v', 't']);
+            && request.resource.data.keys().hasOnly(['pid', 'v', 't'])
+            && idValido(request.resource.data.get('pid', ''))
+            && request.resource.data.get('v', {}) is map && request.resource.data.get('v', {}).size() <= 30;
           allow delete: if isMember(gid);
         }
       }

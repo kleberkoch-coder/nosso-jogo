@@ -55,6 +55,9 @@ O produto vai ganhar muitas funcionalidades e passará a **cobrar por partes do 
 - **Identificadores** (nomes de documento) vindos do banco só são aceitos com letras, números, `_` e `-` (`idOk`, na leitura de toda coleção; e `idValido` nas regras de presença e voto), desde a pelada-v22 (KAN-76). Assim eles podem ir para atributos do HTML sem risco.
 - Chaves de acesso só em segredos do GitHub, nunca no código. A conta que publica regras não lê dados.
 - **Próximos reforços:** Firebase App Check (só o app oficial fala com o banco) e limites de gravação contra abuso, ambos antes de começar a cobrar.
+- **Limites contra abuso (KAN-89), em duas fases:**
+  - **Fase 1, só com as regras (pelada-v23, sem custo novo):** contadores que só sobem de 1 em 1, gravados na mesma operação do que contam, e que as regras conferem com `getAfter`. Avulso novo pelo link soma em `rodadas/{rid}/limites/avulsos` (padrão 30 por rodada); grupo novo soma em `contas/{uid}` (padrão 20 por conta, inativar não devolve vaga). Nomes de jogador, avulso e grupo novo com até 40 letras. Os números ficam em `sistema/limites` (`avulsosPorRodada`, `gruposPorConta`), editados só pelo console do Firebase; sem o documento valem os padrões, iguais em `firestore.rules` e `src/dominio/limites.ts` (um teste confere). Administradores não têm limite de avulsos e podem zerar o contador da rodada. Quem enche a lista de propósito trava só os avulsos novos daquela rodada pelo link; o organizador vê o aviso e continua adicionando por dentro.
+  - **Fase 2, com Cloud Functions (plano Blaze, quando houver cobrança):** votos por minuto, bloqueio temporário por aparelho e aviso ativo ao organizador. Cartão separado.
 - **App Check (KAN-88), em duas fases:**
   - **Fase 1, observar (pelada-v21):** o app oficial manda um comprovante invisível do reCAPTCHA Enterprise (chave em `window.APP_CHECK_KEY`, no `site/index.html`, válida só no domínio `nossosjogos.netlify.app`). O Firebase só mede; nada é bloqueado. Se o script do App Check não carregar, o app segue funcionando.
   - **Fase 2, bloquear (antes de cobrar):** depois de 7 dias com mais de 99% das chamadas verificadas, o Kleber liga "Aplicar" (Enforce) para o Firestore no console do App Check.
@@ -158,6 +161,7 @@ A montagem (`npm run build`) imprime estes números. Eles são registrados aqui 
 | pelada-v20 | 5 de 45 | 1 de 15 | 28 | 2 | 65,9 KB |
 | pelada-v21 | 5 de 45 | 1 de 15 | 28 | 2 | 66,1 KB |
 | pelada-v22 | 5 de 45 | 1 de 15 | 28 | 2 | 66,4 KB |
+| pelada-v23 | 6 de 46 | 1 de 15 | 28 | 2 | 67,3 KB |
 
 As 5 regras de negócio com teste próprio previsto: sorteio, ranking, pendências do caixa, rodadas fixas (próxima data) e apuração da votação. Os testes ficam em `testes/regras/` com o nome da regra (`sorteio.test.mjs`, `ranking.test.mjs`, `caixa.test.mjs`, `rodadas-fixas.test.mjs`, `votacao.test.mjs`) e rodam com `npm run regras` (testador do próprio Node, que lê TypeScript direto). Desde a pelada-v15 já existe o primeiro teste de regra, lista × times (`lista-sorteio.test.mjs`), e na v16 entrou jogadores por time e reservas (`times.test.mjs`); eles não entram na conta das 5. Para uma regra ganhar teste, ela precisa sair do código que lê o estado, como foi feito em `src/dominio/divergencia.ts`.
 
@@ -168,7 +172,7 @@ As 5 regras de negócio com teste próprio previsto: sorteio, ranking, pendênci
 | `estilos/app.css` | CSS do app (tokens do Design System e componentes) |
 | `i18n/` | `pt-BR.js` (textos), `index.js` (`tx` e `tp`), `formatos.js` (local e moeda) |
 | `nucleo/` | `util.js` (utilidades, sem dependências), `links.js`, `estado.js` (estado e assinaturas do banco), `backend.js` (Firebase ou demonstração, carregando dos botões), `edicoes.js` (gravações otimistas e presença) |
-| `dominio/` | Regras de negócio sem tela: `esportes.js` (catálogo), `grupo.js`, `rodadas.js`, `caixa.js`, `sorteio.js`, `whatsapp.js` (textos para compartilhar) |
+| `dominio/` | Regras de negócio sem tela: `esportes.js` (catálogo), `grupo.js`, `rodadas.js`, `caixa.js`, `sorteio.js`, `whatsapp.js` (textos para compartilhar), `limites.ts` (limites contra abuso) |
 | `ui/` | `render.js` (desenho da tela e abas), `tema.js`, `dialogos.js` |
 | `telas/` | Uma tela por arquivo: `apresentacao`, `login`, `convite`, `grupos`, `rodada`, `historico`, `grupo-form`, `grupo`, `jogadores`, `partida`, `ranking`, `caixa`, `votacao`, `publico-voto` e o componente `PublicoRodada.tsx` (link do jogador; `publico-rodada.js` guarda o "quem sou eu" do aparelho) |
 | `acoes.js` | O que cada botão (`data-a`) faz |

@@ -193,6 +193,16 @@ Atenção: se o mesmo jogador abrir o link pelo navegador do WhatsApp e depois p
 - Cada aparelho vê só o próprio voto; ninguém consegue ver em quem os outros votaram.
 - Limite conhecido: quem abrir a votação em outro navegador consegue votar de novo, porque os jogadores não têm conta.
 
+**Limites contra abuso** (desde a pelada-v23):
+- Pelo link, entram no máximo **30 nomes novos (avulsos) por rodada**. Jogadores cadastrados e quem só muda a própria resposta não contam. No limite, o link pede para a pessoa falar com o organizador, e a aba Rodada mostra um aviso. O organizador continua adicionando avulsos em **Adicionar avulso**, sem limite.
+- Cada conta cria no máximo **20 grupos** (criar e duplicar contam; inativar não devolve a vaga).
+- Para mudar esses números, sem publicar versão nova:
+  1. Abra o [console do Firebase](https://console.firebase.google.com), escolha o projeto e vá em **Firestore Database** > **Dados**.
+  2. Se ainda não existir a coleção `sistema`, clique em **+ Iniciar coleção**, digite `sistema` e clique em **Próximo**. Em **ID do documento**, digite `limites`.
+  3. Adicione os campos `avulsosPorRodada` e `gruposPorConta`, com o tipo **number** e o valor desejado (por exemplo, 30 e 20), e clique em **Salvar**.
+  4. Para mudar depois, clique no documento `sistema/limites`, passe o mouse sobre o campo, clique no lápis, troque o número e clique em **Atualizar**. Vale na hora.
+  Sem esse documento, valem 30 e 20.
+
 Notas, contatos, caixa, mensalidade, diária, chave Pix e o tipo do jogador (mensalista ou diarista) só aparecem para administradores. Os jogadores veem apenas nomes, posições, presença, times e resultados.
 
 Quanto ao custo, o plano gratuito do Firebase (Spark) permite dezenas de milhares de leituras e gravações por dia, muito acima do que uma pelada usa. O Netlify também é gratuito nesse volume.

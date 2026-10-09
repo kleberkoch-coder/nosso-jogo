@@ -182,5 +182,6 @@ Os agentes leem o app pelo projeto do Claude, e não pelo GitHub. Por isso, toda
 | `app/LEIA-ME.md` | `LEIA-ME.md` | quando o uso mudar |
 | `VISAO-DO-PRODUTO.md`, `docs/ARQUITETURA.md`, `DESIGN-SYSTEM.md` | `docs/` | quando mudarem |
 | `testes/ROTEIRO-DE-TESTES.md` e `testes/testes_app.py` | `testes/` | quando mudarem |
+| `testes/VERIFICACOES-GITHUB.md` | `testes/` (resultado das verificações do GitHub e do Netlify, que os agentes não enxergam) | toda entrega (ao abrir a proposta) e de novo depois do Merge |
 
 Depois de enviar, conferir que cada arquivo do projeto ficou igual ao do GitHub.

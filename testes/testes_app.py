@@ -210,6 +210,18 @@ with sync_playwright() as pw:
     pg.click('[data-a=saveVote]'); pg.wait_for_timeout(800)
     ok(pg.locator('#shtxt').is_visible(), 'votação criada e link para o WhatsApp continua aberto')
     pg.click('[data-a=close]'); pg.wait_for_timeout(300)
+    # Votação pública (sugerido pela Qualidade na v12): chip de tema, voto registrado e contraste nos dois temas
+    vid = pg.evaluate("S.vid")
+    pg.goto(URL + '#/p/' + gid_fut + '/v/' + vid); pg.wait_for_timeout(1000)
+    ok(pg.locator('#themeBtn').is_visible(), 'votação pública: chip de tema visível')
+    pg.select_option('[data-c=voter]', index=1); pg.wait_for_timeout(400)
+    pg.locator('[data-a=pubVote]').first.click(); pg.wait_for_timeout(800)
+    ok('Voto registrado' in pg.inner_text('main'), 'votação pública: voto registrado')
+    contraste(pg, 'votação pública (claro)')
+    pg.locator('#themeBtn').click(); pg.locator('.theme-menu [data-v=dark]').click(); pg.wait_for_timeout(300)
+    contraste(pg, 'votação pública (escuro)'); shot('18-votacao-publica-escuro')
+    pg.locator('#themeBtn').click(); pg.locator('.theme-menu [data-v=auto]').click(); pg.wait_for_timeout(200)
+    pg.goto(URL + '#/g/' + gid_fut); pg.wait_for_timeout(1000)
 
     # ---------- Aba Grupo e tema escuro na gestão
     pg.click('[data-a=tab][data-v=grupo]'); pg.wait_for_timeout(300)
@@ -364,6 +376,28 @@ with sync_playwright() as pw:
     pg.locator('[data-a=porTime]').first.click(); pg.wait_for_timeout(300); pg.click(f'#dlg [data-a=doPorTime][data-p="{gol}"]'); pg.wait_for_timeout(700)
     ok(pg.evaluate("(id)=>(S.rod[S.rid].times[0].res||[]).includes(id)", gol), 'CT-KAN-94-03: pôr alguém num time completo entra como reserva')
     ok(pg.evaluate("document.documentElement.scrollWidth<=innerWidth"), 'CT-KAN-94: sem rolagem lateral no celular')
+
+    # ---------- Sugestões da Qualidade (09/10): versão em todas as telas, convite e tema escuro
+    pg.goto(URL + '#/'); pg.wait_for_timeout(900)
+    ok(f'versão {VER}' in (pg.inner_text('main .versao') if pg.locator('main .versao').count() else ''), 'CT-KAN-107-03: Meus grupos mostra a versão do app')
+    pg.goto(URL + '#/g/' + gid_fut); pg.wait_for_timeout(1000); pg.click('[data-a=tab][data-v=grupo]'); pg.wait_for_timeout(400)
+    pg.click('[data-a=inviteLink]'); pg.wait_for_timeout(500); token = pg.evaluate("S.convite&&S.convite.token"); pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(200)
+    # sair da conta (modo demonstração) e abrir as telas públicas
+    pg.evaluate("localStorage.removeItem('pelada-demo-v2-u')"); pg.goto(URL + '#/entrar'); pg.reload(); pg.wait_for_timeout(900)
+    ok(f'Nosso Jogo · versão {VER}' in pg.inner_text('main'), 'CT-KAN-107-02: tela Entrar mostra a versão do app')
+    pg.evaluate("localStorage.setItem('nj-tema','dark')"); pg.reload(); pg.wait_for_timeout(900)
+    ok(pg.evaluate("document.documentElement.dataset.theme") == 'dark', 'tema escuro aplicado na tela Entrar')
+    contraste(pg, 'Entrar (escuro, CT-KAN-107-05)')
+    pg.goto(URL + '#/'); pg.wait_for_timeout(900)
+    contraste(pg, 'apresentação (escuro, CT-KAN-107-05)'); shot('19-apresentacao-escuro')
+    ok(f'versão {VER}' in pg.inner_text('.ld-foot'), 'CT-KAN-107-05: versão no rodapé da apresentação no tema escuro')
+    if token:
+        pg.goto(URL + '#/convite/' + gid_fut + '/' + token); pg.wait_for_timeout(1200)
+        ok(pg.locator('#themeBtn').is_visible(), 'convite: chip de tema visível')
+        ok(pg.evaluate("document.activeElement&&document.activeElement.id") == 'le', 'convite: cursor já no campo de e-mail')
+        contraste(pg, 'convite (escuro)')
+    else:
+        ok(False, 'convite: não foi possível gerar o link de convite')
     b.close()
 
 errs = [e for e in errs if not re.search(r'ERR_TUNNEL|fonts\.g|icons/|favicon|ERR_NAME|ERR_INTERNET|net::', e)]

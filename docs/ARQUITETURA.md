@@ -54,6 +54,10 @@ O produto vai ganhar muitas funcionalidades e passará a **cobrar por partes do 
 - Todo texto vindo do banco passa pela função de escape antes de ir para a tela.
 - Chaves de acesso só em segredos do GitHub, nunca no código. A conta que publica regras não lê dados.
 - **Próximos reforços:** Firebase App Check (só o app oficial fala com o banco) e limites de gravação contra abuso, ambos antes de começar a cobrar.
+- **App Check (KAN-88), em duas fases:**
+  - **Fase 1, observar (pelada-v21):** o app oficial manda um comprovante invisível do reCAPTCHA Enterprise (chave em `window.APP_CHECK_KEY`, no `site/index.html`, válida só no domínio `nossosjogos.netlify.app`). O Firebase só mede; nada é bloqueado. Se o script do App Check não carregar, o app segue funcionando.
+  - **Fase 2, bloquear (antes de cobrar):** depois de 7 dias com mais de 99% das chamadas verificadas, o Kleber liga "Aplicar" (Enforce) para o Firestore no console do App Check.
+  - **Prévias das propostas** (Netlify, `CONTEXT=deploy-preview`) passam a rodar em **modo demonstração**: não tocam nos dados reais e não dependem da chave (que não vale nos endereços de prévia). O GitHub confere isso a cada proposta.
 
 ### D7. Orçamento de desempenho (8 out. 2026)
 Medido a cada versão, no celular de 390px:
@@ -151,6 +155,7 @@ A montagem (`npm run build`) imprime estes números. Eles são registrados aqui 
 | pelada-v18 | 5 de 44 | 1 de 15 | 28 | 2 (+ ranking) | 77,3 KB ⚠️ perto do limite de 80 KB |
 | pelada-v19 | 5 de 45 | 1 de 15 | 28 | 2 | 65,5 KB (compactado) |
 | pelada-v20 | 5 de 45 | 1 de 15 | 28 | 2 | 65,9 KB |
+| pelada-v21 | 5 de 45 | 1 de 15 | 28 | 2 | 66,1 KB |
 
 As 5 regras de negócio com teste próprio previsto: sorteio, ranking, pendências do caixa, rodadas fixas (próxima data) e apuração da votação. Os testes ficam em `testes/regras/` com o nome da regra (`sorteio.test.mjs`, `ranking.test.mjs`, `caixa.test.mjs`, `rodadas-fixas.test.mjs`, `votacao.test.mjs`) e rodam com `npm run regras` (testador do próprio Node, que lê TypeScript direto). Desde a pelada-v15 já existe o primeiro teste de regra, lista × times (`lista-sorteio.test.mjs`), e na v16 entrou jogadores por time e reservas (`times.test.mjs`); eles não entram na conta das 5. Para uma regra ganhar teste, ela precisa sair do código que lê o estado, como foi feito em `src/dominio/divergencia.ts`.
 

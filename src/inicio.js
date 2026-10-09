@@ -15,7 +15,10 @@ async function boot(){
   $('#net').textContent=tx('comum.semInternetBarra');
   const C=window.FIREBASE_CONFIG||{};
   if(C.apiKey&&C.projectId){
-    try{const v='10.12.2',base=`https://www.gstatic.com/firebasejs/${v}/`;await loadScript(base+'firebase-app-compat.js');await loadScript(base+'firebase-auth-compat.js');await loadScript(base+'firebase-firestore-compat.js');setB(wrapBackend(FirebaseBackend(C)))}
+    try{const v='10.12.2',base=`https://www.gstatic.com/firebasejs/${v}/`;await loadScript(base+'firebase-app-compat.js');await loadScript(base+'firebase-auth-compat.js');await loadScript(base+'firebase-firestore-compat.js');
+      /* App Check (KAN-88): prova invisível de que a chamada vem do app oficial. Se o script não carregar, o app segue (enquanto a proteção não estiver ligada no console). */
+      const ak=window.APP_CHECK_KEY;if(ak){try{await loadScript(base+'firebase-app-check-compat.js')}catch(e){console.warn('App Check não carregou',e)}}
+      setB(wrapBackend(FirebaseBackend(C,ak)))}
     catch(e){main.innerHTML='<div class="panel empty"><h2>Não foi possível carregar</h2><p class="muted">Verifique sua conexão e recarregue a página.</p></div>';return}
   }else setB(wrapBackend(LocalBackend()));
   try{S.authMode=localStorage.getItem('pelada-mode')||'signup'}catch(e){S.authMode='signup'}

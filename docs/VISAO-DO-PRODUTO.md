@@ -13,7 +13,7 @@ Plataforma para **qualquer pessoa no mundo** organizar seus jogos recorrentes ou
 1. **O jogador não precisa de conta.** Ele recebe um link pelo WhatsApp e confirma presença ou vota direto no navegador.
 2. **Só o organizador e os administradores têm conta,** com e-mail e senha forte ou com a conta Google.
 3. **Cada grupo é independente:** dados, elenco, rodadas, caixa e administradores.
-4. **Privacidade:** notas, caixa (incluindo mensalidade, diária e chave Pix), contatos, tipo do jogador (mensalista ou diarista) e os votos individuais só são vistos por administradores. Os links públicos mostram nomes, posições, presença, times e resultados. A proteção vale nas regras do Firebase, não só na tela. **Ao tocar em Sair** (pelada-v20, KAN-80), o app apaga a cópia desses dados guardada no aparelho para funcionar sem sinal; se ainda houver algo sem enviar ao servidor, pergunta antes de sair.
+4. **Privacidade:** notas, caixa (incluindo mensalidade, diária e chave Pix), contatos, tipo do jogador (mensalista ou diarista) e os votos individuais só são vistos por administradores. Os links públicos mostram nomes, posições, presença, times e resultados. A proteção vale nas regras do Firebase, não só na tela. **Ao tocar em Sair** (pelada-v20, KAN-80), o app apaga a cópia desses dados guardada no aparelho para funcionar sem sinal; se ainda houver algo sem enviar ao servidor, pergunta antes de sair. **Só o app oficial conversa com o banco** (Firebase App Check, KAN-88): comprovante invisível, sem "não sou um robô"; em observação desde a pelada-v21 e com bloqueio ligado antes de começar a cobrar.
 5. **Esporte configurável:** posições, pontuação, duplas e categorias de votação vêm do catálogo, sem nada fixo de futebol.
 6. **Celular primeiro e funcionando com sinal fraco** (PWA, com placar e cronômetro offline; ao abrir, espera no máximo 3 segundos pela rede antes de usar a cópia salva). A página só recarrega sozinha quando uma versão nova substitui a antiga (pelo botão "Atualizar"), nunca na primeira visita.
 
@@ -21,7 +21,7 @@ Plataforma para **qualquer pessoa no mundo** organizar seus jogos recorrentes ou
 - **Código e publicação (decisão de 7 out. 2026):**
   - o código fica no GitHub, em `kleberkoch-coder/nosso-jogo` (privado);
   - cada versão nova chega como proposta de mudança (*pull request*) e roda os testes automáticos;
-  - o Netlify gera um link de prévia de cada proposta;
+  - o Netlify gera um link de prévia de cada proposta (desde a pelada-v21, em **modo demonstração**: a prévia nunca mexe nos dados reais do grupo);
   - o Kleber aprova com **Merge**. Só então o Netlify publica o site e, se o `firestore.rules` mudou, o GitHub publica as regras no Firebase. A chave usada (conta `publicar-regras-github`) só publica regras e não lê dados dos grupos;
   - não se arrasta mais a pasta no Netlify;
   - os documentos deste projeto espelham a versão proposta mais recente.

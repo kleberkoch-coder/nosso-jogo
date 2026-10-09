@@ -20,6 +20,9 @@ jobs:
           npm install --no-audit --no-fund
           npm run checar
           npm run regras
+          # Prévia do Netlify: tem de sair em modo demonstração, sem a configuração real do Firebase (KAN-88)
+          CONTEXT=deploy-preview npm run build
+          grep -q 'window.FIREBASE_CONFIG = {};' dist/index.html || { echo "::error::A prévia não ficou em modo demonstração."; exit 1; }
           npm run build
       - uses: actions/upload-artifact@v4
         with:

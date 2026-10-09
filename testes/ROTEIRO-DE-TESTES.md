@@ -63,6 +63,7 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
   - fechar a lista com cópia desatualizada não mexe na contagem de partidas (CT-KAN-83 adaptado).
   - **Não coberto pelo modo demonstração:** as regras do Firebase (criar só se não existe, apagar só se existe, resumos só para administradores). Revisadas por um agente independente; teste no emulador fica como cartão.
 - **Versão do app (v19, CT-KAN-107):** apresentação, cadastro, Entrar, Meus grupos e aba Grupo mostram a mesma versão do service worker; contraste da versão no tema escuro (apresentação e Entrar).
+- **App Check (v21, KAN-88):** no modo demonstração o App Check fica desligado e o roteiro inteiro passa (critério 4). O GitHub confere que a prévia sai em modo demonstração. A medição real (critério 2) é vista no console do App Check.
 - **Sair limpa o aparelho (v20, CT-KAN-80):** com alteração sem enviar, Sair pergunta e Cancelar mantém conectado; Sair desconecta e volta à apresentação sem dados do grupo na tela. A limpeza da cópia offline do Firebase (`terminate` + `clearPersistence`) não roda no modo demonstração.
 - **Sugestões da Qualidade (09/10/2026):** votação pública (chip de tema, voto registrado, contraste nos dois temas), tela de convite (chip de tema, cursor no e-mail, contraste no escuro) e apresentação no tema escuro. Desde a v19 o roteiro roda sobre o site **compactado** (o mesmo publicado).
 - **Regras do Firebase no emulador (v19, KAN-104):** tarefa `regras-firebase` no GitHub, 21 casos em `testes/regras-firebase/regras.test.mjs` (partidas criar/apagar só uma vez, lote repetido recusado inteiro, resumos só para administradores, caixa, Pix, presença com lista aberta/fechada, campo `via` dos administradores). Toda mudança nas regras entra com casos novos ali.
@@ -90,3 +91,4 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
 | pelada-v19 | 08/10/2026 | 125 de 125 passaram, 34 de 34 nas regras de negócio e 21 de 21 nas regras do Firebase |
 | pelada-v19 + testes sugeridos | 09/10/2026 | 138 de 138 passaram (13 verificações novas, sem mudar o app) |
 | pelada-v20 | 09/10/2026 | 140 de 140 passaram |
+| pelada-v21 | 09/10/2026 | 140 de 140 passaram |

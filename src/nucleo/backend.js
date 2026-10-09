@@ -2,8 +2,10 @@ import { cfg } from '../dominio/caixa.js';
 import { cl, uid } from './util.js';
 
 /* =================== backends =================== */
-function FirebaseBackend(cfg){
-  firebase.initializeApp(cfg);const auth=firebase.auth(),fs=firebase.firestore();try{fs.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(e){}
+function FirebaseBackend(cfg,appCheckKey){
+  firebase.initializeApp(cfg);
+  if(appCheckKey&&firebase.appCheck){try{firebase.appCheck().activate(new firebase.appCheck.ReCaptchaEnterpriseProvider(appCheckKey),true)}catch(e){console.warn('App Check',e)}}
+  const auth=firebase.auth(),fs=firebase.firestore();try{fs.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(e){}
   return{demo:false,
     /* via = como entrou da última vez ('google' ou 'senha'), mostrado na lista de administradores (pelada-v17).
        Vem primeiro dos provedores ligados à conta e é confirmado pelo token, sem atrasar a abertura do app. */

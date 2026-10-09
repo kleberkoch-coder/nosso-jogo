@@ -11,7 +11,10 @@ import { closeDlgNow, dlg } from './ui/dialogos.js';
 import { render } from './ui/render.js';
 
 /* =================== assinaturas por rota =================== */
-function ensurePres(){const r=curRodada(),id=r?r.id:null;if(S.presRid===id)return;S.presRid=id;S.pres={};drop('pres');if(id)sub('pres','rodadas/'+id+'/presencas',d=>{S.pres=d||{};regAvulsos()})}
+function ensurePres(){const r=curRodada(),id=r?r.id:null;if(S.presRid===id)return;S.presRid=id;S.pres={};drop('pres');if(id)sub('pres','rodadas/'+id+'/presencas',d=>{S.pres=d||{};regAvulsos()});subLimAv(id)}
+/* Contador de avulsos novos pelo link nesta rodada (KAN-89). */
+function subLimAv(id){S.limAv=null;drop('limAv');if(id)sub('limAv','rodadas/'+id+'/limites/avulsos',d=>{S.limAv=d})}
+const subLimCfg=()=>subRaw('limCfg','sistema/limites',d=>{S.limCfg=d});
 function regAvulsos(){if(!isAdmin()||!S.loaded.avul||!S.presRid)return;const r=S.rod[S.presRid],jogou=new Set(r&&r.times?r.times.flatMap(t=>t.players):[]);
   Object.entries(S.pres).forEach(([id,p])=>{if(jogou.has(id)&&p.avulso&&p.nome&&!S.jog[id]&&!S.avul[id]){const o={nome:p.nome,pos:p.pos||'',criado:Date.now()};S.avul[id]=o;GB.set('avulsos/'+id,o).catch(()=>{})}})}
 function ensureVotos(){const id=S.tab==='votacao'?(S.vid||Object.keys(S.vot).sort((a,b)=>(S.vot[b].createdAt||0)-(S.vot[a].createdAt||0))[0]):null;if(S.votosVid===id)return;S.votosVid=id;S.votos={};drop('votos');if(id)sub('votos','votacoes/'+id+'/votos',d=>{S.votos=d||{}})}
@@ -53,11 +56,12 @@ function setupRoute(){
   if(R.n==='auth'){if(logged){location.hash='#/';return}S.authMode=R.mode}
   window.scrollTo(0,0);
   if(R.n==='r'||R.n==='v'){try{localStorage.setItem('pelada-last',location.hash)}catch(e){}}
-  Object.assign(S,{avul:{},cont:{},pc:null,migrando:false,gid:R.gid||null,app:null,mem:null,membros:{},convite:null,rat:null,caixa:{},presRid:undefined,votosVid:undefined,dataOn:false,rod:{},rodF:{},rodP:{},rodAll:null,res:null,resK:null,parts:{},partsRid:null,migr:null,migrandoDados:false,rodMes:{},rodMesM:null,rodX:{},rodXid:null,hist:null,pres:{},vot:{},votos:{},myVote:null,jog:{},rid:null,vid:null,live:null});
+  Object.assign(S,{avul:{},cont:{},pc:null,migrando:false,gid:R.gid||null,app:null,mem:null,membros:{},convite:null,rat:null,caixa:{},presRid:undefined,limAv:null,limCfg:null,votosVid:undefined,dataOn:false,rod:{},rodF:{},rodP:{},rodAll:null,res:null,resK:null,parts:{},partsRid:null,migr:null,migrandoDados:false,rodMes:{},rodMesM:null,rodX:{},rodXid:null,hist:null,pres:{},vot:{},votos:{},myVote:null,jog:{},rid:null,vid:null,live:null});
   if(logged)subRaw('me','usuarios/'+S.user.uid,d=>{S.me=d||{grupos:{}};syncName();
     if(S.route.n==='home'&&!S.homeShown){S.homeShown=true;const all=Object.entries(S.me.grupos||{}),g=all.filter(([,v])=>v.ativo!==false).map(([k])=>k);if(g.length===1)location.hash='#/g/'+g[0];else if(!all.length)setTimeout(()=>{if(S.route.n==='home'&&!dlg.open)ACT.newGroup()},250)}});
   if(S.gid)sub('app','config/app',d=>{S.app=d;if(R.next)resolveNext();syncName();migrarPrivado()});
   const anon=()=>{if(!S.user)B.anon().catch(()=>toast('Não foi possível conectar. Recarregue a página.'))};
+  if(R.n==='r')subLimCfg();
   if(R.n==='r'&&R.next){anon();
     sub('jog','jogadores',d=>{S.jog=d||{}});sub('avul','avulsos',d=>{S.avul=d||{}});
     /* Link do jogador: só as próximas rodadas, nunca o histórico (KAN-82). */
@@ -65,7 +69,7 @@ function setupRoute(){
   }else if(R.n==='r'){anon();
     sub('jog','jogadores',d=>{S.jog=d||{}});sub('avul','avulsos',d=>{S.avul=d||{}});
     sub('r','rodadas/'+R.id,d=>{if(d)S.rod={[R.id]:d};else S.rod={}});
-    S.presRid=R.id;sub('pres','rodadas/'+R.id+'/presencas',d=>{S.pres=d||{}});
+    S.presRid=R.id;sub('pres','rodadas/'+R.id+'/presencas',d=>{S.pres=d||{}});subLimAv(R.id);
     S.partsRid=R.id;sub('parts','rodadas/'+R.id+'/partidas',d=>{S.parts=d||{}});
   }else if(R.n==='v'){anon();
     sub('jog','jogadores',d=>{S.jog=d||{}});
@@ -82,12 +86,12 @@ function syncVia(){const m=S.mem,u=S.user;if(!m||!u||!u.via||m.via===u.via||!S.g
 document.addEventListener('nj-via',syncVia);
 function focusEmail(){let n=0;const t=setInterval(()=>{const i=$('#le');if(i){i.focus();clearInterval(t)}else if(++n>40)clearInterval(t)},50)}
 function resolveNext(){if(!S.loaded.app||!S.loaded.rods)return;const r=upcoming()[0],id=r?r.id:null;
-  if(S.route.id!==id||S.presRid!==id){S.route.id=id;S.presRid=id;S.pres={};drop('pres');if(id)sub('pres','rodadas/'+id+'/presencas',d=>{S.pres=d||{}});
+  if(S.route.id!==id||S.presRid!==id){S.route.id=id;S.presRid=id;S.pres={};drop('pres');if(id)sub('pres','rodadas/'+id+'/presencas',d=>{S.pres=d||{}});subLimAv(id);
     S.partsRid=id;S.parts={};drop('parts');if(id)sub('parts','rodadas/'+id+'/partidas',d=>{S.parts=d||{}})}}
 function startData(){if(S.dataOn)return;S.dataOn=true;
   sub('rat','privado/ratings',d=>{S.rat=d});sub('cont','privado/contatos',d=>{S.cont=d||{}});sub('avul','avulsos',d=>{S.avul=d||{};regAvulsos()});sub('jog','jogadores',d=>{S.jog=d||{};migrarPrivado()});subQ('rodF','rodadas',Object.assign({de:dia(-1)},Q_PROX),d=>{S.rodF=d||{};juntarRod()});subQ('rodP','rodadas',Object.assign({ate:dia(0)},Q_REC),d=>{S.rodP=d||{};juntarRod()});
   sub('pc','privado/caixa',d=>{S.pc=d;migrarPrivado()});
   sub('migr','privado/migracao',d=>{S.migr=d||{v:0}});
-  sub('caixa','caixa',d=>{S.caixa=d||{}});sub('vot','votacoes',d=>{S.vot=d||{}});sub('membros','membros',d=>{S.membros=d||{}});sub('convite','privado/convite',d=>{S.convite=d})}
+  sub('caixa','caixa',d=>{S.caixa=d||{}});sub('vot','votacoes',d=>{S.vot=d||{}});sub('membros','membros',d=>{S.membros=d||{}});subLimCfg();sub('convite','privado/convite',d=>{S.convite=d})}
 
 export { dia, ensureExtras, ensurePres, ensureVotos, setupRoute, upMyGroup };

@@ -1,5 +1,6 @@
 import { tx } from '../i18n/index.js';
 import { divergencia } from '../dominio/divergencia.ts';
+import { avulsosEsgotados, limite } from '../dominio/limites.ts';
 import { col, posIdx, posLabel, posTag, sport, tn } from '../dominio/esportes.js';
 import { attendance, curRodada, fmtL, freq, grpAtivo, isAvulso, lvl, lvlTag, players, pname, ppos, rat, rodadas, rodadasJanela } from '../dominio/grupo.js';
 import { hora } from '../dominio/rodadas.js';
@@ -32,6 +33,7 @@ function vRodada(){
     <div class="panel"><h3>Confirmados</h3>${!carregou?`<p class="muted small">${tx('comum.carregando')}</p>`:a.inn.length?`<ol class="plist">${a.inn.map(li).join('')}</ol>`:'<p class="muted small">Ninguém confirmou ainda. Mande o link no grupo.</p>'}
       ${a.out.length?`<p class="small muted" style="margin-top:12px">Não vão: ${a.out.map(p=>esc(pname(p))).join(', ')}</p>`:''}</div>
     <div class="panel"><div class="row between"><h3 style="margin:0">Marcar presença</h3>${r.locked?'':'<button class="btn sm" data-a="addAvulso">Adicionar avulso</button>'}</div>
+      ${!r.locked&&avulsosEsgotados(S.limAv,S.limCfg)?`<div class="warn-alt aviso-limite" role="status">${tx('limite.avulsosAdmin',{n:limite(S.limCfg,'avulsosPorRodada')})}</div>`:''}
       ${r.locked?`<p class="small muted lista-fechada">${tx(r.times?(sport().pairs?'lista.fechadaComTimesDuplas':'lista.fechadaComTimes'):'lista.fechadaAviso')}</p>`:'<p class="small muted">Para quem respondeu fora do link.</p>'}
       <ul class="plist">${players().map(p=>p.id).concat(avs).map(id=>{const s=S.pres[id]?.s;return`<li>${posTag(id)}<span class="pn">${esc(pname(id))}${isAvulso(id)?' <span class="tag">· avulso</span>':''}${altTag(id)}</span>${r.locked?`<span class="tag" style="color:${s==='in'?'var(--in)':s==='out'?'var(--out)':''}">${s==='in'?tx('publico.vai'):s==='out'?tx('publico.naoVai'):'—'}</span>`:`<span class="mk"><button class="${s==='in'?'on-in':''}" data-a="mark" data-p="${id}" data-v="in" aria-label="Vai" aria-pressed="${s==='in'}">✓</button><button class="${s==='out'?'on-out':''}" data-a="mark" data-p="${id}" data-v="out" aria-label="Não vai" aria-pressed="${s==='out'}">✕</button></span>`}</li>`}).join('')||'<li class="muted small">Cadastre jogadores na aba Jogadores.</li>'}</ul></div>
   </div>

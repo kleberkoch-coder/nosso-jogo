@@ -37,6 +37,7 @@ beforeEach(async () => {
     await s(G + '/resumos/2026-10', { mes: '2026-10', jog: { a: { j: 1, v: 1 } } });
     await s(G + '/caixa/c1', { k: 'mensal', v: 80, d: '2026-10-02' });
     await s(G + '/privado/caixa', { pix: 'chave', mensal: 80 });
+    await s(G + '/jogadores/j1', { name: 'Cadastrado' });
   });
 });
 
@@ -148,6 +149,87 @@ describe('votos pelo link (KAN-76)', () => {
   test('voto com mais de 30 categorias é recusado', async () => {
     const v = {}; for (let i = 0; i < 31; i++) v['c' + i] = 'j1';
     await assertFails(setDoc(doc(db.anon(), V + '/votos/anon1'), { pid: 'j1', v, t: 1 }));
+  });
+});
+
+describe('limites contra abuso (KAN-89)', () => {
+  const R = G + '/rodadas/r1', C = R + '/limites/avulsos';
+  const pres = { s: 'in', t: 1, by: 'anon1', dev: 'anon1', nome: 'Avulso', avulso: true };
+  const novoAvulso = (f, pid, extra = {}) => { const b = writeBatch(f);
+    b.set(doc(f, R + '/presencas/' + pid), Object.assign({}, pres, extra));
+    b.set(doc(f, C), { n: increment(1), ult: pid }, { merge: true }); return b.commit(); };
+  const semRegras = fn => env.withSecurityRulesDisabled(async ctx => fn(ctx.firestore()));
+
+  test('avulso novo pelo link entra somando 1 no contador da rodada', async () => {
+    await assertSucceeds(novoAvulso(db.anon(), 'av1'));
+    await assertSucceeds(novoAvulso(db.anon(), 'av2'));
+    await semRegras(async f => { const d = (await getDoc(doc(f, C))).data(); if (d.n !== 2) throw new Error('contador ' + d.n); });
+  });
+  test('avulso novo sem somar no contador é recusado', async () => {
+    await assertFails(setDoc(doc(db.anon(), R + '/presencas/av1'), pres));
+  });
+  test('passou do limite (30): a gravação extra é recusada', async () => {
+    await semRegras(f => setDoc(doc(f, C), { n: 30, ult: 'x' }));
+    await assertFails(novoAvulso(db.anon(), 'av31'));
+  });
+  test('jogador cadastrado confirma, desmarca e confirma de novo sem contar (critério 2)', async () => {
+    const f = db.anon(), p = doc(f, R + '/presencas/j1');
+    await assertSucceeds(setDoc(p, { s: 'in', t: 1, by: 'anon1', dev: 'anon1' }));
+    await assertSucceeds(setDoc(p, { s: 'out', t: 2, by: 'anon1', dev: 'anon1' }));
+    await assertSucceeds(setDoc(p, { s: 'in', t: 3, by: 'anon1', dev: 'anon1' }));
+  });
+  test('avulso muda a própria resposta sem contar de novo', async () => {
+    await assertSucceeds(novoAvulso(db.anon(), 'av1'));
+    await assertSucceeds(setDoc(doc(db.anon(), R + '/presencas/av1'), Object.assign({}, pres, { s: 'out', t: 2 })));
+  });
+  test('contador não volta para trás nem pula, e não conta quem já estava na lista', async () => {
+    await assertSucceeds(novoAvulso(db.anon(), 'av1'));
+    await assertFails(setDoc(doc(db.anon(), C), { n: 0, ult: 'av1' }));
+    await assertFails(setDoc(doc(db.anon(), C), { n: 5, ult: 'av9' }));
+    await assertFails(novoAvulso(db.anon(), 'av1'));
+  });
+  test('limite mudado em sistema/limites vale na hora (critério 5)', async () => {
+    await semRegras(f => setDoc(doc(f, 'sistema/limites'), { avulsosPorRodada: 1, gruposPorConta: 1 }));
+    await assertSucceeds(novoAvulso(db.anon(), 'av1'));
+    await assertFails(novoAvulso(db.anon(), 'av2'));
+  });
+  test('ninguém grava a configuração dos limites pelo app; todos leem', async () => {
+    await assertFails(setDoc(doc(db.adm(), 'sistema/limites'), { avulsosPorRodada: 999 }));
+    await assertSucceeds(getDoc(doc(db.anon(), 'sistema/limites')));
+  });
+  test('administrador põe avulso direto, sem contador', async () => {
+    await assertSucceeds(setDoc(doc(db.adm(), R + '/presencas/av9'), { s: 'in', t: 1, by: 'adm', nome: 'Avulso', avulso: true }));
+  });
+  test('nome com mais de 40 letras é recusado (critério 4)', async () => {
+    const longo = 'x'.repeat(41);
+    await assertFails(novoAvulso(db.anon(), 'av1', { nome: longo }));
+    await assertFails(setDoc(doc(db.adm(), G + '/jogadores/j2'), { name: longo }));
+    await assertFails(setDoc(doc(db.adm(), G + '/avulsos/a2'), { nome: longo }));
+    await assertSucceeds(setDoc(doc(db.adm(), G + '/jogadores/j2'), { name: 'x'.repeat(40) }));
+  });
+
+  const criarGrupo = (f, uid, gid, extra = {}) => { const b = writeBatch(f);
+    b.set(doc(f, 'grupos/' + gid), Object.assign({ name: 'Novo', owner: uid, ativo: true, createdAt: 1 }, extra));
+    b.set(doc(f, 'contas/' + uid), { ng: increment(1), ult: gid }, { merge: true }); return b.commit(); };
+  test('conta cria grupo somando 1 no contador', async () => {
+    await assertSucceeds(criarGrupo(db.adm(), 'adm', 'gn1'));
+    await assertSucceeds(criarGrupo(db.adm(), 'adm', 'gn2'));
+  });
+  test('grupo sem somar no contador é recusado', async () => {
+    await assertFails(setDoc(doc(db.adm(), 'grupos/gn1'), { name: 'Novo', owner: 'adm', ativo: true, createdAt: 1 }));
+  });
+  test('passou do limite de grupos (20): nenhum grupo extra é criado (critério 3)', async () => {
+    await semRegras(f => setDoc(doc(f, 'contas/adm'), { ng: 20, ult: 'x' }));
+    await assertFails(criarGrupo(db.adm(), 'adm', 'gn21'));
+  });
+  test('contador de grupos não é zerado nem mexido por outra conta', async () => {
+    await assertSucceeds(criarGrupo(db.adm(), 'adm', 'gn1'));
+    await assertFails(setDoc(doc(db.adm(), 'contas/adm'), { ng: 0, ult: 'gn1' }));
+    await assertFails(deleteDoc(doc(db.adm(), 'contas/adm')));
+    await assertFails(getDoc(doc(db.outro(), 'contas/adm')));
+  });
+  test('nome de grupo novo com mais de 40 letras é recusado', async () => {
+    await assertFails(criarGrupo(db.adm(), 'adm', 'gn1', { name: 'x'.repeat(41) }));
   });
 });
 

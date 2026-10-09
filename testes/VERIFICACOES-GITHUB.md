@@ -16,6 +16,7 @@ Atualizado a cada entrega (quando a proposta é aberta) e de novo depois do Merg
 
 | Versão | Proposta | Testes do app | Regras de negócio | Regras do Firebase (emulador) | Tamanho | Mapa de origem | Regras publicadas | No ar |
 |---|---|---|---|---|---|---|---|---|
+| pelada-v23 | [#20](https://github.com/kleberkoch-coder/nosso-jogo/pull/20) | ✅ 155 de 155 (site compactado) | ✅ 41 de 41 | ✅ 40 de 40 | 67,3 KB | ✅ | ⚠️ mudam: publicadas no Merge (limites de avulsos e grupos, nomes até 40 letras) | aguardando Merge |
 | pelada-v22 | [#17](https://github.com/kleberkoch-coder/nosso-jogo/pull/17) | ✅ 147 de 147 (site compactado) | ✅ 35 de 35 | ✅ 25 de 25 | 66,4 KB | ✅ | ✅ publicadas no Merge (identificador válido em presença e voto) | ✅ Merge 09/10 12h08 |
 | pelada-v21 | [#16](https://github.com/kleberkoch-coder/nosso-jogo/pull/16) | ✅ 140 de 140 (site compactado) | ✅ 34 de 34 | ✅ 21 de 21 | 66,1 KB | ✅ | não mudaram | ✅ Merge 09/10 10h41 |
 | pelada-v20 | [#15](https://github.com/kleberkoch-coder/nosso-jogo/pull/15) | ✅ 140 de 140 (site compactado) | ✅ 34 de 34 | ✅ 21 de 21 | 65,9 KB | ✅ | não mudaram | ✅ Merge 09/10 10h10 |
@@ -27,4 +28,4 @@ Atualizado a cada entrega (quando a proposta é aberta) e de novo depois do Merg
 | pelada-v14 | [#6](https://github.com/kleberkoch-coder/nosso-jogo/pull/6) | ✅ 61 de 61 | — | (não existia) | cerca de 67 KB | — | não mudaram | ✅ Merge 08/10 12h38 |
 | pelada-v13 | [#4](https://github.com/kleberkoch-coder/nosso-jogo/pull/4) | ✅ 49 de 49 | — | (não existia) | 53,6 KB | — | não mudaram | ✅ Merge 08/10 10h45 |
 
-Propostas só de documentação ou testes (sem mudança no app): #5, #7 (D12), #13 (D14), #14 (testes sugeridos pela Qualidade, 138 de 138) e #18 (KAN-59, ícones mantidos e teste dos 5 ícones, 148 de 148, Merge 09/10 12h30), todas verdes e com Merge.
+Propostas só de documentação ou testes (sem mudança no app): #5, #7 (D12), #13 (D14), #14 (testes sugeridos pela Qualidade, 138 de 138), #18 (KAN-59, ícones mantidos e teste dos 5 ícones, 148 de 148, Merge 09/10 12h30) e #19 (registro do Merge da #18), todas verdes e com Merge.

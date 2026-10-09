@@ -28,6 +28,13 @@ test('jogo que passa da meia-noite termina no dia seguinte', () => {
   assert.equal(endTs({ date: '2026-10-05', time: '23:00', fim: '01:00' }), new Date('2026-10-06T01:00').getTime());
 });
 
+test('jogo que passa da meia-noite continua sendo a próxima rodada até o término (KAN-111)', () => {
+  const sex = { dow: 5, ini: '23:00', fim: '01:00' }; // 2026-10-09 é sexta
+  assert.equal(proximasFixas([sex], {}, em('2026-10-09T23:30'))[0].date, '2026-10-09');
+  assert.equal(proximasFixas([sex], {}, em('2026-10-10T00:30'))[0].date, '2026-10-09');
+  assert.equal(proximasFixas([sex], {}, em('2026-10-10T01:30'))[0].date, '2026-10-16');
+});
+
 test('data cancelada pula para a semana seguinte', () => {
   const docs = { [fixId('2026-10-05', '20:00')]: { date: '2026-10-05', cancelada: true } };
   assert.equal(proximasFixas([SEG], docs, em('2026-10-05T10:00'))[0].date, '2026-10-12');

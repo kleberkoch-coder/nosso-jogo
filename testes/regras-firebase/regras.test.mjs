@@ -127,8 +127,27 @@ describe('presença pelo link', () => {
   test('lista fechada recusa a confirmação', async () => {
     await assertFails(setDoc(doc(db.anon(), G + '/rodadas/r2/presencas/j1'), pres));
   });
+  test('identificador com código (aspas/tags) é recusado (KAN-76)', async () => {
+    await assertFails(setDoc(doc(db.anon(), G + '/rodadas/r1/presencas/x"><img src=x onerror=alert(1)>'), pres));
+    await assertFails(setDoc(doc(db.anon(), G + '/rodadas/r1/presencas/' + 'a'.repeat(80)), pres));
+  });
   test('campo estranho na presença é recusado', async () => {
     await assertFails(setDoc(doc(db.anon(), G + '/rodadas/r1/presencas/j1'), Object.assign({ nota: 10 }, pres)));
+  });
+});
+
+describe('votos pelo link (KAN-76)', () => {
+  const V = G + '/votacoes/v1';
+  beforeEach(async () => { await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), V), { open: true, cats: [{ id: 'mvp' }] }); }); });
+  test('voto com identificador válido é aceito', async () => {
+    await assertSucceeds(setDoc(doc(db.anon(), V + '/votos/anon1'), { pid: 'j1', v: { mvp: 'j2' }, t: 1 }));
+  });
+  test('voto com identificador de quem vota contendo código é recusado', async () => {
+    await assertFails(setDoc(doc(db.anon(), V + '/votos/anon1'), { pid: '"><b>x', v: { mvp: 'j2' }, t: 1 }));
+  });
+  test('voto com mais de 30 categorias é recusado', async () => {
+    const v = {}; for (let i = 0; i < 31; i++) v['c' + i] = 'j1';
+    await assertFails(setDoc(doc(db.anon(), V + '/votos/anon1'), { pid: 'j1', v, t: 1 }));
   });
 });
 

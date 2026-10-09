@@ -100,6 +100,7 @@ export default {
   'voto.registrado': 'Voto registrado. O resultado sai quando o organizador encerrar.',
 
   /* lista de presença × times sorteados (aba Rodada, pelada-v15) */
+  'lista.fechadaComTimesDuplas': 'Lista fechada pelo sorteio. Para mudar a presença, reabra a lista ou sorteie de novo.',
   'lista.fechadaAviso': 'Lista fechada. Para mudar a presença, toque em Reabrir lista.',
   'lista.fechadaComTimes': 'Lista fechada pelo sorteio. Para incluir alguém, use "+ Pôr no time" no quadro Times. Para mudar outras presenças, reabra a lista.',
   'lista.confirmaMudar': 'Os times já foram sorteados. Mudar a presença de {nome} vai deixar a lista diferente dos times. Continuar?',

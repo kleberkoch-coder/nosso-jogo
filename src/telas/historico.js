@@ -1,5 +1,5 @@
 import { sport, tn } from '../dominio/esportes.js';
-import { pname } from '../dominio/grupo.js';
+import { comCores, pname } from '../dominio/grupo.js';
 import { hora } from '../dominio/rodadas.js';
 import { tp, tx } from '../i18n/index.js';
 import { B } from '../nucleo/backend.js';
@@ -50,7 +50,7 @@ function vLista(h){
   return `<div class="panel"><ul class="plist">${h.itens.map(li).join('')}</ul>
     ${h.fim?'':`<div class="row" style="justify-content:center;margin-top:12px"><button class="btn" data-a="histMais">${tx('hist.verMais')}</button></div>`}</div>`}
 
-function vDetalhe(h){const id=h.sel,r=h.docs[id];if(!r)return '';
+function vDetalhe(h){const id=h.sel,r=comCores(h.docs[id]);if(!r)return '';
   const pres=h.pres,inn=pres?Object.entries(pres).filter(([,p])=>p.s==='in').sort((a,b)=>(a[1].t||0)-(b[1].t||0)).map(([pid])=>pid):[];
   const ms=h.parts||[],vs=Object.entries(S.vot||{}).filter(([,v])=>v.rid===id);
   const nomeP=pid=>esc((pres&&pres[pid]&&pres[pid].nome)||pname(pid));

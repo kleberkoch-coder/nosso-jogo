@@ -55,7 +55,7 @@ const ACT={
   signup:async()=>{const e=val('le'),p=$('#lp').value;if(!pwOk(p)){$('#lerr').textContent='A senha não atende aos requisitos.';return}if(p!==$('#lp2').value){$('#lerr').textContent='As senhas não conferem.';return}
     $('#lerr').textContent='';try{await B.signup(e,p);try{localStorage.setItem('pelada-mode','login')}catch(x){}}catch(x){$('#lerr').textContent=authMsg(x)}},
   google:async()=>{const le=$('#lerr');if(le)le.textContent='';
-    if(!B.demo&&inAppBrowser()){openDlg(`<h3>Abra no navegador</h3><p>O Google não permite entrar por dentro deste aplicativo. Abra o link no <b>Chrome</b> ou no <b>Safari</b> e toque de novo em <b>Continuar com Google</b>.</p>
+    if(!B.demo&&inAppBrowser()){openDlg(`<h3>Abra no navegador</h3><p>O Google não permite entrar por dentro deste aplicativo. Abra o link no <b>Chrome</b> ou no <b>Safari</b> e toque de novo em <b>Continuar com o Google</b>.</p>
       <p class="small muted">Dica: toque nos três pontinhos (⋮ ou ⋯) no canto da tela e escolha <b>Abrir no navegador</b>. Ou entre com e-mail e senha aqui mesmo.</p>
       <div class="dlg-f"><button class="btn" data-a="close">Fechar</button><button class="btn primary" data-a="copyHere">Copiar link</button></div>`);return}
     try{await B.google(val('le'));try{localStorage.setItem('pelada-mode','login')}catch(x){}}
@@ -188,7 +188,9 @@ const ACT={
       /* pelada-v15: sortear fecha a lista e guarda a foto dos confirmados, para avisar se a lista mudar depois. */
       x.locked=true;x.base=attendance().inn});
     if(nov!==cfg().novelty||(fora&&fora.join()!==(cfg().foraPos||[]).join()))editApp(a=>{a.cfg.novelty=nov;if(fora)a.cfg.foraPos=fora});S.live=null;closeDlg();toast(tx('lista.sorteadoFechada'))},
-  color:el=>{const ti=+el.dataset.v;editRod(curRodada().id,x=>{const used=x.times.map(t=>t.c);let c=x.times[ti].c;for(let k=0;k<COL.length;k++){c=(c+1)%COL.length;if(!used.includes(c))break}x.times[ti].c=c})},
+  /* Troca a cor do colete gravando só cores.{time} (KAN-108), sem regravar os jogadores. */
+  color:el=>{const r=curRodada(),ti=+el.dataset.v,used=r.times.map(t=>t.c);let c=r.times[ti].c;for(let k=0;k<COL.length;k++){c=(c+1)%COL.length;if(!used.includes(c))break}
+    const d=S.rod[r.id]||{};S.rod[r.id]=Object.assign({},d,{cores:Object.assign({},d.cores||{},{[ti]:c})});changed();return w(GB.patch('rodadas/'+r.id,{['cores.'+ti]:c}))},
   move:el=>{const r=curRodada(),f=+el.dataset.v,pid=el.dataset.p;openDlg(`<h3>Mover ${esc(pname(pid))}</h3><div class="vgrid">${r.times.map((t,i)=>i===f?'':`<button class="opt" data-a="doMove" data-v="${i}" data-f="${f}" data-p="${pid}"><span class="dot" style="background:${col(t.c).c}"></span>${tn(t.c)}</button>`).join('')}</div>
     <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn" data-a="toggleRes" data-v="${f}" data-p="${pid}">${(r.times[f].res||[]).includes(pid)?tx('times.marcarTitular'):tx('times.marcarReserva')}</button></div>`)},
   toggleRes:el=>{const f=+el.dataset.v,pid=el.dataset.p;closeDlg();return editRod(curRodada().id,x=>{const t=x.times[f],r=t.res||[];t.res=r.includes(pid)?r.filter(p=>p!==pid):r.concat(pid);if(!t.res.length)delete t.res})},

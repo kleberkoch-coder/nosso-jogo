@@ -27,4 +27,4 @@ Atualizado a cada entrega (quando a proposta é aberta) e de novo depois do Merg
 | pelada-v14 | [#6](https://github.com/kleberkoch-coder/nosso-jogo/pull/6) | ✅ 61 de 61 | — | (não existia) | cerca de 67 KB | — | não mudaram | ✅ Merge 08/10 12h38 |
 | pelada-v13 | [#4](https://github.com/kleberkoch-coder/nosso-jogo/pull/4) | ✅ 49 de 49 | — | (não existia) | 53,6 KB | — | não mudaram | ✅ Merge 08/10 10h45 |
 
-Propostas só de documentação ou testes (sem mudança no app): #5, #7 (D12), #13 (D14) e #14 (testes sugeridos pela Qualidade, 138 de 138), todas verdes e com Merge.
+Propostas só de documentação ou testes (sem mudança no app): #5, #7 (D12), #13 (D14), #14 (testes sugeridos pela Qualidade, 138 de 138) e #18 (KAN-59, ícones mantidos e teste dos 5 ícones, 148 de 148, Merge 09/10 12h30), todas verdes e com Merge.

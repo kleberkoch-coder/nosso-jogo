@@ -36,7 +36,16 @@ const montar = minify => esbuild.build({
     'preact': process.env.PREACT_SRC + '/src/index.js',
   } : {},
 });
-const modelo = fs.readFileSync('site/index.html', 'utf8');
+let modelo = fs.readFileSync('site/index.html', 'utf8');
+/* Prévias de proposta (Netlify, CONTEXT=deploy-preview) rodam em modo demonstração:
+   não tocam nos dados reais e não dependem da chave do App Check, que só vale no domínio oficial (KAN-88). */
+if (process.env.CONTEXT === 'deploy-preview') {
+  const n0 = modelo.length;
+  modelo = modelo.replace(/window\.FIREBASE_CONFIG\s*=\s*\{[\s\S]*?\};/, 'window.FIREBASE_CONFIG = {};');
+  if (modelo.length === n0) throw new Error('Não achei window.FIREBASE_CONFIG para a prévia.');
+  modelo = modelo.replace(/(<div id="demo"[^>]*>)[^<]*(<\/div>)/, '$1Prévia da proposta em modo demonstração: nada aqui mexe nos dados reais do grupo.$2');
+  console.log('Prévia: modo demonstração (sem dados reais).');
+}
 for (const mark of ['<!--ESTILOS-->', '<!--CODIGO-->']) if (!modelo.includes(mark)) throw new Error('Marcador ausente em site/index.html: ' + mark);
 function pagina(r) {
   const pick = ext => r.outputFiles.find(f => f.path.endsWith(ext)).text;

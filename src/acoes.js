@@ -36,6 +36,13 @@ function porNoTime(ti,pid){const r=curRodada(),t=r.times[ti];toast(tx('porTime.p
 function escolherTime(pid){const r=curRodada();
   openDlg(`<h3>${esc(tx('porTime.qualTime',{nome:pname(pid)}))}</h3><div class="vgrid">${r.times.map((t,i)=>`<button class="opt" data-a="doPorTime" data-v="${i}" data-p="${pid}"><span class="dot" style="background:${col(t.c).c}"></span>${tn(t.c)}<span class="tag" style="margin-left:auto">${tp('porTime.jogadores',t.players.length)}</span></button>`).join('')}</div><div class="dlg-f"><button class="btn" data-a="close">Cancelar</button></div>`)}
 
+async function sairDaConta(destino){
+  if(!(await B.semPendencias(3000))&&!confirm(tx('sair.pendentes')))return;
+  const limpou=await B.logout();
+  if(limpou===false)alert(tx('sair.outrasAbas'));
+  try{sessionStorage.clear()}catch(e){}
+  location.replace(location.pathname+location.search+destino);location.reload()}
+
 const ACT={
   tab:el=>{S.tab=el.dataset.v;render();window.scrollTo(0,0)},
   themeMenu:el=>{if(themeMenuEl&&themeAnchor===el){closeThemeMenu(true);return}openThemeMenu(el)},
@@ -111,8 +118,9 @@ const ACT={
   rmMember:el=>{if(!confirm('Remover este administrador do grupo? O link de convite atual também deixa de funcionar, para ele não conseguir voltar sozinho.'))return;delete S.membros[el.dataset.v];S.convite=null;changed();
     return Promise.all([w(GB.del('membros/'+el.dataset.v)),w(GB.del('privado/convite'))]).then(()=>toast('Administrador removido. Para convidar alguém, gere um novo link.',4500))},
   forgetGroup:()=>{const me=cl(S.me)||{grupos:{}};delete me.grupos[S.gid];S.me=me;B.set('usuarios/'+S.user.uid,me).catch(()=>{});location.hash='#/'},
-  logout:()=>{B.logout().then(()=>{location.hash='#/'})},
-  invSwitch:()=>B.logout(),
+  /* Sair (KAN-80): confere se ficou algo sem enviar, desconecta, apaga os dados do grupo guardados neste aparelho e recarrega. */
+  logout:()=>sairDaConta('#/'),
+  invSwitch:()=>sairDaConta(location.hash),
   newRod:()=>rodDlg(null),editRod:()=>rodDlg(curRodada()),
   saveRod:el=>{const d=val('rdt');if(!d){toast('Escolha a data.');return}const id=el.dataset.v;
     if(id)editRod(id,r=>Object.assign(r,{date:d,time:val('rtm'),fim:val('rfm'),place:val('rpl')}));

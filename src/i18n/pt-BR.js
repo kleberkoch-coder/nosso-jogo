@@ -5,6 +5,8 @@ export default {
   'comum.carregando': 'Carregando…',
   'comum.versao': 'Nosso Jogo · versão {n}',
   'comum.versaoCurta': 'versão {n}',
+  'sair.outrasAbas': 'Você saiu da conta. Para apagar também os dados do grupo guardados neste aparelho, feche as outras abas do Nosso Jogo e toque em Sair de novo na próxima vez.',
+  'sair.pendentes': 'Ainda há alterações deste aparelho que não chegaram ao servidor (sem sinal?). Se sair agora, elas serão perdidas. Sair mesmo assim?',
   'comum.copiado': 'Copiado.',
   'comum.copieLink': 'Copie o link:',
   'comum.semInternetBarra': 'Sem internet. O que você fizer agora é enviado quando a conexão voltar.',

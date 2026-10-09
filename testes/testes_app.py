@@ -382,8 +382,14 @@ with sync_playwright() as pw:
     ok(f'versão {VER}' in (pg.inner_text('main .versao') if pg.locator('main .versao').count() else ''), 'CT-KAN-107-03: Meus grupos mostra a versão do app')
     pg.goto(URL + '#/g/' + gid_fut); pg.wait_for_timeout(1000); pg.click('[data-a=tab][data-v=grupo]'); pg.wait_for_timeout(400)
     pg.click('[data-a=inviteLink]'); pg.wait_for_timeout(500); token = pg.evaluate("S.convite&&S.convite.token"); pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(200)
-    # sair da conta (modo demonstração) e abrir as telas públicas
-    pg.evaluate("localStorage.removeItem('pelada-demo-v2-u')"); pg.goto(URL + '#/entrar'); pg.reload(); pg.wait_for_timeout(900)
+    # Sair (KAN-80): com algo ainda sem enviar, pergunta antes; Cancelar mantém a pessoa conectada
+    pg.evaluate("window.__demoPendente=true"); aceitar['v'] = False
+    pg.click('#topright [data-a=logout]'); pg.wait_for_timeout(800)
+    ok(pg.evaluate("!!(S.user&&!S.user.anon)"), 'CT-KAN-80-03: com alterações sem enviar, Sair pergunta antes e Cancelar mantém conectado')
+    pg.evaluate("window.__demoPendente=false")
+    pg.click('#topright [data-a=logout]'); pg.wait_for_timeout(1500)
+    ok(pg.locator('.ld-nav').count() == 1 and pg.evaluate("!S.user||S.user.anon") and pg.evaluate("Object.keys(S.caixa||{}).length==0&&!S.rat"), 'CT-KAN-80-01: Sair desconecta, recarrega na apresentação e não deixa dados do grupo na tela')
+    pg.goto(URL + '#/entrar'); pg.wait_for_timeout(900)
     ok(f'Nosso Jogo · versão {VER}' in pg.inner_text('main'), 'CT-KAN-107-02: tela Entrar mostra a versão do app')
     pg.evaluate("localStorage.setItem('nj-tema','dark')"); pg.reload(); pg.wait_for_timeout(900)
     ok(pg.evaluate("document.documentElement.dataset.theme") == 'dark', 'tema escuro aplicado na tela Entrar')

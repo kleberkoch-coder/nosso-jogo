@@ -17,6 +17,9 @@ Plataforma para **qualquer pessoa no mundo** organizar seus jogos recorrentes ou
 5. **Esporte configurável:** posições, pontuação, duplas e categorias de votação vêm do catálogo, sem nada fixo de futebol.
 6. **Celular primeiro e funcionando com sinal fraco** (PWA, com placar e cronômetro offline; ao abrir, espera no máximo 3 segundos pela rede antes de usar a cópia salva). A página só recarrega sozinha quando uma versão nova substitui a antiga (pelo botão "Atualizar"), nunca na primeira visita.
 
+## Identidade visual
+- **Ícones do app** (decisão de 09/10/2026, KAN-59): mantidos os atuais, criados na v10 — gramado listrado com o círculo central e a bola em verde-limão, o mesmo símbolo do topo da apresentação. Ficam em `site/icons/` no GitHub (5 arquivos), e o roteiro de testes confere que existem.
+
 ## Infraestrutura atual
 - **Código e publicação (decisão de 7 out. 2026):**
   - o código fica no GitHub, em `kleberkoch-coder/nosso-jogo` (privado);

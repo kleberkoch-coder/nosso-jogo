@@ -8,7 +8,8 @@ import { reservas, sugerirTimes, titulares } from './dominio/times.ts';
 import { tp, tx } from './i18n/index.js';
 import { shareDlg, txtConvite, txtTimes } from './dominio/whatsapp.js';
 import { copyText, semConexao } from './eventos.js';
-import { B, setCAP, sleep } from './nucleo/backend.js';
+import { B, op, setCAP, sleep } from './nucleo/backend.js';
+import { avulsosEsgotados, gruposEsgotados, limite } from './dominio/limites.ts';
 import { editApp, editRat, editRod, saveContato, setPres } from './nucleo/edicoes.js';
 import { addMatch, apagarLanc, apagarPartidasDaRodada, delMatch as apagarPartida, gravarVotacao, recalcular, salvarLanc } from './nucleo/partidas.js';
 import { GB, S, clean, w } from './nucleo/estado.js';
@@ -43,6 +44,13 @@ async function sairDaConta(destino){
   try{sessionStorage.clear()}catch(e){}
   location.replace(location.pathname+location.search+destino);location.reload()}
 
+/* Limite de grupos por conta (KAN-89): confere antes de criar. Sem sinal, deixa a decisão para o Firebase. */
+async function limiteGrupos(){try{const [c,f]=await Promise.all([B.get('contas/'+S.user.uid),B.get('sistema/limites')]);
+  return{cheio:gruposEsgotados(c,f),n:limite(f,'gruposPorConta')}}catch(e){return{cheio:false,n:limite(null,'gruposPorConta')}}}
+/* Mostra a mensagem no formulário, rolando até ela (o botão Criar fica no fim do formulário). */
+function avisoGrupos(sel,n){const m=tx('limite.grupos',{n}),e=$(sel);if(e){e.textContent=m;e.scrollIntoView({block:'center'})}else toast(m)}
+/* Cria o documento do grupo junto com +1 no contador da conta: ou entram os dois, ou nenhum. */
+const gravarGrupo=(gid,o)=>B.lote([{tipo:'set',p:'grupos/'+gid,o},{tipo:'patch',p:'contas/'+S.user.uid,o:{ng:op.somar(1),ult:gid}}]);
 const ACT={
   tab:el=>{S.tab=el.dataset.v;render();window.scrollTo(0,0)},
   themeMenu:el=>{if(themeMenuEl&&themeAnchor===el){closeThemeMenu(true);return}openThemeMenu(el)},
@@ -86,8 +94,9 @@ const ACT={
     <p class="small muted">Rodadas, partidas, caixa, votações e administradores não são copiados.</p>
     <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="doDupGroup">Duplicar</button></div>`);setTimeout(()=>{const i=$('#dgn');i&&(i.focus(),i.select())},50)},
   doDupGroup:async()=>{const name=val('dgn');$('#dgErr').textContent='';if(name.length<2){$('#dgErr').textContent='Dê um nome ao grupo.';return}if(dupName(name,null)){$('#dgErr').textContent='Você já tem um grupo com esse nome.';return}
+    const lg=await limiteGrupos();if(lg.cheio){avisoGrupos('#dgErr',lg.n);return}
     const withEl=$('#dgel').checked,a=S.app,gid=B.newId(),uid=S.user.uid,now=Date.now(),base='grupos/'+gid,nc=cl(a.cfg)||{},c0=cfg();CAIXA_K.forEach(k=>delete nc[k]);
-    try{await B.set(base,clean({name,sport:a.sport||'futebol',sportName:a.sportName||'',freq:freq(),posx:a.posx||[],ativo:true,cfg:nc,owner:uid,createdAt:now,origem:S.gid}));
+    try{await gravarGrupo(gid,clean({name,sport:a.sport||'futebol',sportName:a.sportName||'',freq:freq(),posx:a.posx||[],ativo:true,cfg:nc,owner:uid,createdAt:now,origem:S.gid}));
       await B.set(base+'/membros/'+uid,Object.assign({uid,email:S.user.email,role:'owner',at:now},S.user.via?{via:S.user.via}:{}));
       const pcN={mensal:c0.mensal,diaria:c0.diaria,pix:c0.pix,tipos:{}};if(withEl)players().forEach(p=>{pcN.tipos[p.id]=ptipo(p.id)});await B.set(base+'/privado/caixa',clean(pcN));
       if(withEl){const keep=new Set(players().map(p=>p.id).concat(Object.keys(S.avul||{})));const ps=[];
@@ -96,16 +105,18 @@ const ACT={
         const R=cl(S.rat)||{},nv={};keep.forEach(id=>{nv[id]=lvl(id)});ps.push(B.set(base+'/privado/ratings',{nivel:nv,stars:{},sep:(R.sep||[]).filter(([x,y])=>keep.has(x)&&keep.has(y))}));
         const C={};Object.entries(S.cont||{}).forEach(([id,c])=>{if(keep.has(id))C[id]=c});if(Object.keys(C).length)ps.push(B.set(base+'/privado/contatos',C));await Promise.all(ps)}
       await upMyGroup(gid,{name,role:'owner',sport:a.sport||'futebol',sportName:a.sportName||'',ativo:true,criado:now});closeDlg();toast('Grupo duplicado.');location.hash='#/g/'+gid}
-    catch(e){console.error(e);toast('Não foi possível duplicar. Tente de novo.')}},
+    catch(e){console.error(e);if(e&&e.code==='permission-denied'&&!(await B.get('grupos/'+gid).catch(()=>null)))avisoGrupos('#dgErr',lg.n);else toast('Não foi possível duplicar. Tente de novo.')}},
   toggleAtivo:()=>{const on=!grpAtivo();if(!on&&!confirm('Inativar "'+gname()+'"? Os links públicos deixam de aceitar confirmações e votos, e a rodada fixa para de ser criada. Tudo continua guardado e você pode reativar depois.'))return;
     const p=editApp(a=>{a.ativo=on;if(on)delete a.inativadoEm;else a.inativadoEm=Date.now()});upMyGroup(S.gid,{ativo:on});toast(on?'Grupo reativado.':'Grupo inativado.');return p},
   pickSport:el=>{const box=el.closest('[data-sp]');box.dataset.sp=el.dataset.v;box.querySelectorAll('[data-a=pickSport]').forEach(b=>b.setAttribute('aria-pressed',b===el));const o=box.querySelector('#ngoW,#csoW');if(o)o.hidden=el.dataset.v!=='outro';
     const nt=box.querySelector('#ngt');if(nt){const ant=box.dataset.spAnt||'';if(!ant||+nt.value===porTimePadrao(ant))nt.value=porTimePadrao(el.dataset.v);box.dataset.spAnt=el.dataset.v;$('#ngtHelp').textContent=porTimeAjuda(el.dataset.v)}},
-  createGroup:async el=>{const g=readGroupForm(null);if(!g)return;const gid=B.newId(),uid=S.user.uid,now=Date.now();
-    try{await B.set('grupos/'+gid,{name:g.name,sport:g.sport,sportName:g.sportName,freq:g.freq,ativo:true,cfg:{minutes:SPORTS[g.sport].min,porTime:g.porTime,fixos:g.fixos,place:(g.fixos[0]&&g.fixos[0].place)||''},owner:uid,createdAt:now});
+  createGroup:async el=>{const g=readGroupForm(null);if(!g)return;
+    const lg=await limiteGrupos();if(lg.cheio){avisoGrupos('#ngErr',lg.n);return}
+    const gid=B.newId(),uid=S.user.uid,now=Date.now();
+    try{await gravarGrupo(gid,{name:g.name,sport:g.sport,sportName:g.sportName,freq:g.freq,ativo:true,cfg:{minutes:SPORTS[g.sport].min,porTime:g.porTime,fixos:g.fixos,place:(g.fixos[0]&&g.fixos[0].place)||''},owner:uid,createdAt:now});
       await B.set('grupos/'+gid+'/membros/'+uid,Object.assign({uid,email:S.user.email,role:'owner',at:now},S.user.via?{via:S.user.via}:{}));
       await upMyGroup(gid,{name:g.name,role:'owner',sport:g.sport,sportName:g.sportName,ativo:true,criado:now});closeDlg();location.hash='#/g/'+gid}
-    catch(e){console.error(e);toast('Não foi possível criar o grupo. Tente de novo.')}},
+    catch(e){console.error(e);if(e&&e.code==='permission-denied'&&!(await B.get('grupos/'+gid).catch(()=>null)))avisoGrupos('#ngErr',lg.n);else toast('Não foi possível criar o grupo. Tente de novo.')}},
   groupsDlg:()=>{const gs=Object.entries((S.me&&S.me.grupos)||{}).filter(([k,v])=>v.ativo!==false||k===S.gid).sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||'',LOCAL));
     openDlg(`<h3>Seus grupos</h3><ul class="plist">${gs.map(([gid,g])=>`<li><span class="gem">${(SPORTS[g.sport]||SPORTS.futebol).e}</span><span class="pn"><b>${esc(g.name)}</b>${gid===S.gid?' <span class="tag">· aberto</span>':''}<br><span class="tag">${esc(g.sportName||(SPORTS[g.sport]||SPORTS.futebol).n)}</span></span>${gid===S.gid?'':`<a class="btn sm primary" href="#/g/${gid}">Abrir</a>`}</li>`).join('')}</ul>
     <div class="dlg-f"><a class="btn" href="#/">Ver todos</a><button class="btn primary" data-a="newGroup">Novo grupo</button></div>`)},
@@ -297,11 +308,13 @@ const ACT={
   pubAdd:()=>openDlg(`<h3>Adicionar meu nome</h3><label class="f"><span>Nome ou apelido</span><input class="inp" id="anm" maxlength="40" autocomplete="off"></label>
     <div id="avsug"></div><div id="avnew">${posField('apos')}</div>
     <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="pubSaveAdd">Confirmar presença</button></div>`),
-  pubPick:el=>{const id=el.dataset.p,a=S.avul[id];if(!S.user){semConexao();return}closeDlg();try{localStorage.setItem(MEK,id)}catch(e){}
+  pubPick:el=>{const id=el.dataset.p,a=S.avul[id];if(!S.user){semConexao();return}
+    if(!S.pres[id]&&avulsosEsgotados(S.limAv,S.limCfg)){closeDlg();toast(tx('limite.avulsosPublico'));return}closeDlg();try{localStorage.setItem(MEK,id)}catch(e){}
     return setPres(S.route.id,id,{s:'in',nome:a.nome,avulso:true,pos:a.pos||''}).then(()=>{changed();toast('Presença confirmada: '+a.nome)}).catch(()=>{})},
   pubSaveAdd:()=>{const n=val('anm');if(n.length<2){toast('Digite seu nome.');return}if(!S.user){semConexao();return}
     const el=players().find(p=>normName(p.name)===normName(n));if(el){closeDlg();toast('Seu nome já está na lista: toque em Vou ao lado de '+el.name+'.');return}
     const same=Object.entries(S.avul||{}).find(([,a])=>normName(a.nome)===normName(n));if(same)return ACT.pubPick({dataset:{p:same[0]}});
+    if(avulsosEsgotados(S.limAv,S.limCfg)){closeDlg();toast(tx('limite.avulsosPublico'));return}
     const id=B.newId(),pos=val('apos');closeDlg();try{localStorage.setItem(MEK,id)}catch(e){}return setPres(S.route.id,id,{s:'in',nome:n,avulso:true,pos}).then(()=>{changed();toast('Presença confirmada: '+n)}).catch(()=>{})},
   pubVote:el=>{const me=S.myVote?.pid||myLocal();if(!me||!S.user)return;const d=cl(S.myVote)||{v:{}};d.pid=me;d.v=d.v||{};d.v[el.dataset.c2]=el.dataset.p;d.t=Date.now();S.myVote=d;changed();
     w(GB.set('votacoes/'+S.route.id+'/votos/'+S.user.uid,d))},

@@ -11,6 +11,7 @@ import { S as estado } from '../nucleo/estado.js';
 import { $, fdate, main } from '../nucleo/util.js';
 import { myLocal } from './publico-rodada.js';
 import { partidasDe } from '../nucleo/partidas.js';
+import { avulsosEsgotados } from '../dominio/limites';
 
 type Rodada = { id: string; date: string; time?: string; place?: string; locked?: boolean; cancelada?: boolean; times?: { c: number; players: string[]; res?: string[] }[] | null };
 type Presenca = { s?: 'in' | 'out'; nome?: string };
@@ -97,7 +98,9 @@ function PublicoRodada() {
         <h3>{r.locked ? tx('publico.listaFechada') : tx('publico.voceVai')}</h3>
         <p class="small muted" style={{ marginTop: '-6px' }}>{r.locked ? tx('publico.listaFechadaTexto') : tx('publico.instrucao')}</p>
         <ul class="plist">{lista.length ? lista.map(id => <Linha key={id} id={id} r={r} me={me} />) : <li class="muted small">{tx('publico.listaVazia')}</li>}</ul>
-        {!r.locked && <div class="row" style={{ marginTop: '14px' }}><span class="small muted" style={{ flex: 1 }}>{tx('publico.semNome')}</span><button class="btn primary" data-a="pubAdd">{tx('publico.adicionarNome')}</button></div>}
+        {!r.locked && (avulsosEsgotados(st().limAv, st().limCfg)
+          ? <p class="small muted aviso-limite" style={{ marginTop: '14px' }}>{tx('limite.avulsosPublico')}</p>
+          : <div class="row" style={{ marginTop: '14px' }}><span class="small muted" style={{ flex: 1 }}>{tx('publico.semNome')}</span><button class="btn primary" data-a="pubAdd">{tx('publico.adicionarNome')}</button></div>)}
       </div>
       <Placar rid={r.id} />
       {a.inn.length > 0 && <div class="panel"><h3>{tx('publico.confirmadosTitulo')}</h3><ol class="plist">{a.inn.map((id, i) => <li key={id}><span class="num">{i + 1}</span><span class="pn">{pname(id)}</span><Pos id={id} /></li>)}</ol></div>}

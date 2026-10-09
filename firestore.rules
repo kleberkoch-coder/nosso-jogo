@@ -38,6 +38,54 @@ service cloud.firestore {
         && (!('pos' in request.resource.data) || (request.resource.data.pos is string && request.resource.data.pos.size() <= 4));
     }
 
+    // Limites contra abuso (KAN-89). Os números ficam em /sistema/limites: muda no console do Firebase e vale na hora.
+    // Sem o documento, valem os padrões abaixo (os mesmos de src/dominio/limites.ts).
+    function cfgLim() { return /databases/$(database)/documents/sistema/limites; }
+    function lim(k, padrao) {
+      return exists(cfgLim()) && get(cfgLim()).data.get(k, padrao) is int && get(cfgLim()).data.get(k, padrao) >= 0
+        ? get(cfgLim()).data.get(k, padrao) : padrao;
+    }
+    function limAvulsos() { return lim('avulsosPorRodada', 30); }
+    function limGrupos() { return lim('gruposPorConta', 20); }
+    function pres(gid, rid, pid) { return /databases/$(database)/documents/grupos/$(gid)/rodadas/$(rid)/presencas/$(pid); }
+    function contAv(gid, rid) { return /databases/$(database)/documents/grupos/$(gid)/rodadas/$(rid)/limites/avulsos; }
+    function conta(uid) { return /databases/$(database)/documents/contas/$(uid); }
+    // Avulso novo pelo link: a mesma gravação soma 1 no contador da rodada e deixa nele o identificador deste avulso.
+    function avulsoContado(gid, rid, pid) {
+      return existsAfter(contAv(gid, rid))
+        && getAfter(contAv(gid, rid)).data.get('ult', '') == pid
+        && getAfter(contAv(gid, rid)).data.get('n', 0) == (exists(contAv(gid, rid)) ? get(contAv(gid, rid)).data.get('n', 0) : 0) + 1;
+    }
+    // Grupo novo: a mesma gravação soma 1 no contador da conta e deixa nele o identificador do grupo.
+    function grupoContado(gid) {
+      return existsAfter(conta(request.auth.uid))
+        && getAfter(conta(request.auth.uid)).data.get('ult', '') == gid
+        && getAfter(conta(request.auth.uid)).data.get('ng', 0) == (exists(conta(request.auth.uid)) ? get(conta(request.auth.uid)).data.get('ng', 0) : 0) + 1;
+    }
+    function nomeOk(campo) {
+      return !(campo in request.resource.data) || (request.resource.data[campo] is string && request.resource.data[campo].size() <= 40);
+    }
+
+    // Configuração dos limites: todos leem (o app avisa antes de chegar no limite); só o console do Firebase grava.
+    match /sistema/{doc} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Quantos grupos cada conta já criou (KAN-89). Só sobe de 1 em 1, junto com a criação de um grupo dela, até o limite.
+    match /contas/{uid} {
+      allow read: if realUser() && request.auth.uid == uid;
+      allow create, update: if realUser() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['ng', 'ult'])
+        && idValido(request.resource.data.get('ult', ''))
+        && request.resource.data.ng == (resource == null ? 0 : resource.data.get('ng', 0)) + 1
+        && request.resource.data.ng <= limGrupos()
+        && !exists(grp(request.resource.data.ult))
+        && existsAfter(grp(request.resource.data.ult))
+        && getAfter(grp(request.resource.data.ult)).data.owner == uid;
+      allow delete: if false;
+    }
+
     // Lista "Meus grupos" de cada conta: só a própria pessoa lê e grava.
     match /usuarios/{uid} {
       allow read, write: if realUser() && request.auth.uid == uid;
@@ -46,7 +94,9 @@ service cloud.firestore {
     match /grupos/{gid} {
       // Nome e configurações do grupo aparecem nos links públicos.
       allow read: if true;
-      allow create: if realUser() && request.resource.data.owner == request.auth.uid && pixOk();
+      // Grupo novo conta no limite de grupos por conta (KAN-89); nome com até 40 letras.
+      allow create: if realUser() && request.resource.data.owner == request.auth.uid && pixOk()
+        && nomeOk('name') && grupoContado(gid);
       // Dono e data de criação não mudam; só o organizador ativa ou inativa o grupo.
       allow update: if isMember(gid)
         && request.resource.data.owner == resource.data.owner
@@ -80,14 +130,16 @@ service cloud.firestore {
 
       match /jogadores/{id} {
         allow read: if true;
-        allow write: if isMember(gid);
+        allow create, update: if isMember(gid) && nomeOk('name');
+        allow delete: if isMember(gid);
       }
 
       // Avulsos que já jogaram: o nome e a posição aparecem no link público
       // para quem volta não precisar se cadastrar de novo. Nota e contato ficam em /privado.
       match /avulsos/{id} {
         allow read: if true;
-        allow write: if isMember(gid);
+        allow create, update: if isMember(gid) && nomeOk('nome');
+        allow delete: if isMember(gid);
       }
 
       match /rodadas/{rid} {
@@ -100,15 +152,31 @@ service cloud.firestore {
         // mudou a resposta de outra pessoa.
         match /presencas/{pid} {
           allow read: if true;
+          // Pelo link, nome que não é de jogador cadastrado entra como avulso novo e conta no limite da rodada (KAN-89).
           allow create: if isMember(gid) || (
             idValido(pid) && presencaAberta(gid, rid) && presencaValida()
             && request.resource.data.get('dev', '') == request.auth.uid
+            && (exists(/databases/$(database)/documents/grupos/$(gid)/jogadores/$(pid)) || avulsoContado(gid, rid, pid))
           );
           allow update: if isMember(gid) || (
             idValido(pid) && presencaAberta(gid, rid) && presencaValida()
             && ((('dev' in resource.data) && request.resource.data.get('dev', '') == resource.data.dev)
               || (!('dev' in resource.data) && request.resource.data.get('dev', '') == request.auth.uid))
           );
+          allow delete: if isMember(gid);
+        }
+
+        // Avulsos novos pelo link nesta rodada (KAN-89): o contador só sobe de 1 em 1, junto com a presença
+        // de um avulso que ainda não estava na lista, até o limite. Administradores podem zerar (apagar).
+        match /limites/{doc} {
+          allow read: if true;
+          allow create, update: if signed() && doc == 'avulsos'
+            && request.resource.data.keys().hasOnly(['n', 'ult'])
+            && idValido(request.resource.data.get('ult', ''))
+            && request.resource.data.n == (resource == null ? 0 : resource.data.get('n', 0)) + 1
+            && request.resource.data.n <= limAvulsos()
+            && !exists(pres(gid, rid, request.resource.data.ult))
+            && existsAfter(pres(gid, rid, request.resource.data.ult));
           allow delete: if isMember(gid);
         }
 

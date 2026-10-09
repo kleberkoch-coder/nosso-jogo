@@ -164,4 +164,9 @@ export default {
   'porTime.posto': '{nome} entrou no time {time}.',
   'porTime.jogadores.um': '{n} jogador',
   'porTime.jogadores.outros': '{n} jogadores',
+
+  /* limites contra abuso (KAN-89) */
+  'limite.avulsosPublico': 'A lista chegou ao limite de nomes novos pelo link. Fale com o organizador para entrar.',
+  'limite.avulsosAdmin': 'O link desta rodada chegou ao limite de avulsos novos ({n}). Quem mais precisar entrar, adicione por aqui em Adicionar avulso.',
+  'limite.grupos': 'Esta conta já criou {n} grupos, que é o limite atual. Use um dos seus grupos ou fale com o suporte do Nosso Jogo para liberar mais.',
 };

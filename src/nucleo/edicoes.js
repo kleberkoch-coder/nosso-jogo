@@ -1,6 +1,8 @@
 import { isAdmin, rodById } from '../dominio/grupo.js';
 import { GB, S, clean, w } from './estado.js';
-import { cl } from './util.js';
+import { cl, toast } from './util.js';
+import { contaComoAvulso } from '../dominio/limites.ts';
+import { tx } from '../i18n/index.js';
 import { op } from './backend.js';
 import { changed } from '../ui/render.js';
 
@@ -26,7 +28,13 @@ function setPres(rid,pid,data){const cur=S.presRid===rid?S.pres[pid]:null,me=S.u
   const d=Object.assign({t:Date.now()},data,{by:me});delete d.dev;
   /* dev = aparelho que respondeu primeiro pelo link. Administradores não viram "dono" da resposta. */
   const dev=(cur&&cur.dev)||(isAdmin()?null:me);if(dev)d.dev=dev;
-  if(S.presRid===rid){S.pres[pid]=d;changed()}return w(GB.set('rodadas/'+rid+'/presencas/'+pid,clean(d)))}
+  const novo=contaComoAvulso({admin:isAdmin(),jogador:!!(S.jog||{})[pid],jaNaLista:!!cur});
+  if(S.presRid===rid){S.pres[pid]=d;changed()}
+  if(!novo)return w(GB.set('rodadas/'+rid+'/presencas/'+pid,clean(d)));
+  /* Avulso novo pelo link (KAN-89): grava junto com +1 no contador da rodada; passou do limite, o Firebase recusa as duas. */
+  return GB.lote([{tipo:'set',p:'rodadas/'+rid+'/presencas/'+pid,o:clean(d)},{tipo:'patch',p:'rodadas/'+rid+'/limites/avulsos',o:{n:op.somar(1),ult:pid}}])
+    .catch(e=>{console.error(e);if(S.presRid===rid){delete S.pres[pid];changed()}
+      toast(e&&e.code==='permission-denied'?tx('limite.avulsosPublico'):'Não foi possível salvar. Verifique a conexão.');throw e})}
 /* Resposta mudada por um aparelho diferente do que respondeu primeiro (e que não é de administrador). */
 function presAlterada(id){const p=S.pres[id];return !!(p&&p.dev&&p.by&&p.by!==p.dev&&!(S.membros||{})[p.by])}
 

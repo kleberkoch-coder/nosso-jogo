@@ -13,7 +13,7 @@ Plataforma para **qualquer pessoa no mundo** organizar seus jogos recorrentes ou
 1. **O jogador não precisa de conta.** Ele recebe um link pelo WhatsApp e confirma presença ou vota direto no navegador.
 2. **Só o organizador e os administradores têm conta,** com e-mail e senha forte ou com a conta Google.
 3. **Cada grupo é independente:** dados, elenco, rodadas, caixa e administradores.
-4. **Privacidade:** notas, caixa (incluindo mensalidade, diária e chave Pix), contatos, tipo do jogador (mensalista ou diarista) e os votos individuais só são vistos por administradores. Os links públicos mostram nomes, posições, presença, times e resultados. A proteção vale nas regras do Firebase, não só na tela. **Ao tocar em Sair** (pelada-v20, KAN-80), o app apaga a cópia desses dados guardada no aparelho para funcionar sem sinal; se ainda houver algo sem enviar ao servidor, pergunta antes de sair. **Só o app oficial conversa com o banco** (Firebase App Check, KAN-88): comprovante invisível, sem "não sou um robô"; em observação desde a pelada-v21 e com bloqueio ligado antes de começar a cobrar. **Identificadores vindos do link são conferidos** (pelada-v22, KAN-76): as regras só aceitam nomes de presença e de voto com letras, números, `_` e `-`, e o app ignora qualquer registro fora disso, para ninguém injetar código pelo link público.
+4. **Privacidade:** notas, caixa (incluindo mensalidade, diária e chave Pix), contatos, tipo do jogador (mensalista ou diarista) e os votos individuais só são vistos por administradores. Os links públicos mostram nomes, posições, presença, times e resultados. A proteção vale nas regras do Firebase, não só na tela. **Ao tocar em Sair** (pelada-v20, KAN-80), o app apaga a cópia desses dados guardada no aparelho para funcionar sem sinal; se ainda houver algo sem enviar ao servidor, pergunta antes de sair. **Só o app oficial conversa com o banco** (Firebase App Check, KAN-88): comprovante invisível, sem "não sou um robô"; em observação desde a pelada-v21 e com bloqueio ligado antes de começar a cobrar. **Identificadores vindos do link são conferidos** (pelada-v22, KAN-76): as regras só aceitam nomes de presença e de voto com letras, números, `_` e `-`, e o app ignora qualquer registro fora disso, para ninguém injetar código pelo link público. **Limites contra abuso** (pelada-v23, KAN-89): no máximo 30 avulsos novos pelo link por rodada e 20 grupos criados por conta, garantidos pelas regras do Firebase; os números ficam no documento `sistema/limites` e mudam sem versão nova (passo a passo no `LEIA-ME`).
 5. **Esporte configurável:** posições, pontuação, duplas e categorias de votação vêm do catálogo, sem nada fixo de futebol.
 6. **Celular primeiro e funcionando com sinal fraco** (PWA, com placar e cronômetro offline; ao abrir, espera no máximo 3 segundos pela rede antes de usar a cópia salva). A página só recarrega sozinha quando uma versão nova substitui a antiga (pelo botão "Atualizar"), nunca na primeira visita.
 
@@ -77,6 +77,7 @@ Plataforma para **qualquer pessoa no mundo** organizar seus jogos recorrentes ou
   - não aceita confirmações nem votos;
   - não gera a rodada fixa;
   - mantém o histórico.
+- **Limite de grupos por conta** (KAN-89): padrão 20 grupos criados (criar e duplicar contam; inativar não devolve a vaga). No limite, o formulário avisa e nenhum grupo é criado.
 - **Duplicar:** cria um grupo independente com esporte, frequência, horários, posições e configurações de partidas e caixa. O elenco é opcional. Rodadas, caixa, votações e administradores não são copiados, e quem duplica vira organizador.
 - **Papéis:**
   - O organizador é o dono.
@@ -116,6 +117,7 @@ Cada grupo pode **criar posições próprias** (sigla de até 4 letras e nome) e
 - **Frequente:** a próxima rodada de cada dia fixo existe automaticamente. O link permanente vira para a semana seguinte quando o jogo termina. Uma data pode ser cancelada (feriado).
 - **Esporádico:** o administrador cria cada rodada (data, horário, término, local).
 - O jogador confirma no link com **Vou** ou **Não vou**. Quem não está na lista se adiciona como avulso.
+- **Limite de avulsos pelo link** (KAN-89): padrão 30 nomes novos por rodada. Jogador cadastrado e quem só muda a própria resposta não contam. No limite, o link mostra "A lista chegou ao limite de nomes novos pelo link. Fale com o organizador" e a aba Rodada avisa o organizador, que continua adicionando avulsos por dentro sem limite.
 - O administrador pode marcar presença por quem respondeu fora do link e pode **fechar a lista**.
 - **Lista fechada vale para todos** (pelada-v15): nem o link nem a aba Rodada mudam presença. O administrador vê a situação de cada um e reabre a lista se precisar.
 - **Presença mudada por outro aparelho** (decisão de outubro de 2026: registrar e avisar em vez de travar, para não bloquear quem troca de navegador):
@@ -188,6 +190,8 @@ Cada grupo pode **criar posições próprias** (sigla de até 4 letras e nome) e
 ## Modelo de dados (Firestore)
 ```
 usuarios/{uid}                      → lista "Meus grupos" da conta
+contas/{uid}                        → ng (grupos criados pela conta), ult  [só a própria conta lê; só sobe de 1 em 1]
+sistema/limites                     → avulsosPorRodada, gruposPorConta  [leitura pública; só pelo console do Firebase]
 grupos/{gid}                        → nome, esporte, freq, ativo, cfg (fixos, minutos, local), posx, owner, createdAt  [leitura pública; regras impedem gravar nova chave Pix aqui]
 grupos/{gid}/membros/{uid}          → administradores (owner/admin)
 grupos/{gid}/privado/ratings        → notas (nivel) e pares separados  [só admins]
@@ -198,6 +202,7 @@ grupos/{gid}/jogadores/{id}         → elenco: nome, posição, ativo, criado  
 grupos/{gid}/avulsos/{id}           → avulsos registrados (nome, posição)  [leitura pública]
 grupos/{gid}/rodadas/{rid}          → rodada, times, partidas  [leitura pública]
 grupos/{gid}/rodadas/{rid}/presencas/{id}  → confirmações: s, t, by, dev, nome, avulso, pos (qualquer pessoa com o link grava; dev não muda)
+grupos/{gid}/rodadas/{rid}/limites/avulsos → n (avulsos novos pelo link nesta rodada), ult  [leitura pública; só sobe de 1 em 1]
 grupos/{gid}/caixa/{id}             → lançamentos  [só admins]
 grupos/{gid}/votacoes/{vid}         → votação  [leitura pública]
 grupos/{gid}/votacoes/{vid}/votos/{uid}    → um voto por aparelho  [cada aparelho lê o próprio; admins leem todos]

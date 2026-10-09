@@ -15,7 +15,11 @@ function FirebaseBackend(cfg){
     login:(e,p)=>auth.signInWithEmailAndPassword(e,p),
     signup:(e,p)=>auth.createUserWithEmailAndPassword(e,p),
     reset:e=>auth.sendPasswordResetEmail(e),
-    logout:()=>auth.signOut(),
+    /* Sair (KAN-80): além de desconectar, apaga a cópia offline do banco que fica no navegador
+       (notas, contatos, caixa e chave Pix do administrador). Depois disso o app precisa recarregar. */
+    logout:async()=>{await auth.signOut();try{await fs.terminate();await fs.clearPersistence();return true}catch(e){console.warn('limpar dados do aparelho',e);return false}},
+    /* Tudo já foi enviado ao servidor? Espera até ms; sem sinal, responde false. */
+    semPendencias:ms=>Promise.race([fs.waitForPendingWrites().then(()=>true),sleep(ms||3000).then(()=>false)]),
     anon:()=>auth.signInAnonymously(),
     /* Google: abre a janela de escolha de conta. Se o navegador bloquear janelas
        (alguns celulares e o app instalado), troca para o redirecionamento de página inteira. */
@@ -76,7 +80,8 @@ function LocalBackend(){
   const lg=async(e,p)=>{if(!e||!p)throw{code:'auth/invalid-credential'};setU({uid:'u-'+e.toLowerCase().replace(/[^a-z0-9]/g,''),email:e.toLowerCase(),anon:false,via:p==='google'?'google':'senha'})};
   return{demo:true,
     onAuth(cb){acb.add(cb);setTimeout(()=>cb(user),0)},
-    login:lg,signup:lg,reset:async()=>{},logout:async()=>setU(null),
+    login:lg,signup:lg,reset:async()=>{},logout:async()=>{setU(null);return true},
+    semPendencias:async()=>!window.__demoPendente,
     google:async hint=>{await sleep(500);const e=/\S+@\S+\.\S+/.test(hint||'')?hint:'organizador.teste@gmail.com';return lg(e,'google')},
     redirectResult:async()=>null,
     anon:async()=>setU({uid:'anon-'+uid(),email:null,anon:true}),

@@ -12,6 +12,7 @@ concurrency:
 permissions:
   contents: read
   pull-requests: write
+  issues: write
 
 jobs:
   previa:
@@ -50,4 +51,4 @@ jobs:
           corpo="**Prévia da proposta** (modo demonstração, sem dados reais; expira em 7 dias): $url"
           id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --jq '[.[] | select(.body | startswith("**Prévia da proposta**"))][0].id // empty')
           if [ -n "$id" ]; then gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -f body="$corpo" >/dev/null
-          else gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -f body="$corpo" >/dev/null; fi
+          else gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -f body="$corpo" >/dev/null || echo "::warning::Não consegui comentar o link na proposta."; fi

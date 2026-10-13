@@ -18,11 +18,17 @@ const db = {
   semLogin: () => env.unauthenticatedContext().firestore(),
   admEmail: () => env.authenticatedContext('adm', { email: 'adm@x.com', firebase: { sign_in_provider: 'password' } }).firestore(),
   portal: () => env.authenticatedContext('kleber', { email: 'kleberkoch@gmail.com', email_verified: true, firebase: { sign_in_provider: 'google.com' } }).firestore(),
-  portalSemConfirmar: () => env.authenticatedContext('falso', { email: 'kleberkoch@gmail.com', email_verified: false, firebase: { sign_in_provider: 'password' } }).firestore(),
+  // Mesmo e-mail do Kleber, mas outra conta (outro identificador): não entra.
+  portalSemConfirmar: () => env.authenticatedContext('falso', { email: 'kleberkoch@gmail.com', email_verified: true, firebase: { sign_in_provider: 'google.com' } }).firestore(),
+  // Identificador certo, mas entrando por e-mail e senha: não entra (o portal só aceita Google).
+  portalSenha: () => env.authenticatedContext('kleber', { email: 'kleberkoch@gmail.com', firebase: { sign_in_provider: 'password' } }).firestore(),
 };
 
 before(async () => {
-  env = await initializeTestEnvironment({ projectId: 'demo-nosso-jogo', firestore: { rules: fs.readFileSync('firestore.rules', 'utf8') } });
+  // Nos testes, o administrador do portal é a conta 'kleber' (no ar, a lista tem só o identificador real do Kleber).
+  const regras = fs.readFileSync('firestore.rules', 'utf8').replace(/\/\*ADMINS_PORTAL\*\/\[[^\]]*\]/, "/*ADMINS_PORTAL*/['kleber']");
+  if (!regras.includes("['kleber']")) throw new Error('Marcador ADMINS_PORTAL não encontrado em firestore.rules');
+  env = await initializeTestEnvironment({ projectId: 'demo-nosso-jogo', firestore: { rules: regras } });
 });
 after(async () => { await env.cleanup(); });
 beforeEach(async () => {
@@ -337,7 +343,10 @@ describe('planos e portal (KAN-115, KAN-116)', () => {
     await assertFails(getDocs(collection(db.adm(), 'grupos')));
     await assertSucceeds(getDocs(collection(db.portal(), 'grupos')));
   });
-  test('outras contas, e o mesmo e-mail sem confirmação, não veem a lista de clientes nem dão plano', async () => {
+  test('o identificador certo entrando por e-mail e senha não acessa o portal', async () => {
+    await assertFails(getDocs(collection(db.portalSenha(), 'contas')));
+  });
+  test('outras contas, mesmo com o e-mail do Kleber, não veem a lista de clientes nem dão plano', async () => {
     await assertFails(getDocs(collection(db.adm(), 'contas')));
     await assertFails(getDocs(collection(db.portalSemConfirmar(), 'contas')));
     await assertFails(setDoc(doc(db.portalSemConfirmar(), 'contas/adm'), { plano: 'B' }, { merge: true }));

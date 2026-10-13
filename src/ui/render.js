@@ -14,7 +14,6 @@ import { vCaixa } from '../telas/caixa.js';
 import { renderInvite } from '../telas/convite.js';
 import { vGrupo } from '../telas/grupo.js';
 import { vHome } from '../telas/grupos.js';
-import { vPortal } from '../telas/portal.js';
 import { vJogadores } from '../telas/jogadores.js';
 import { vAuth } from '../telas/login.js';
 import { tick, vPartida } from '../telas/partida.js';
@@ -42,7 +41,7 @@ function renderCore(){
   if(R.n==='home'&&!logged&&!isStandalone()){document.body.classList.add('is-landing');$('#tabsnav').hidden=true;main.innerHTML=vLanding();return}
   if(R.n==='inv')return renderInvite();
   if(!logged){main.innerHTML=vAuth();return}
-  if(R.n==='home'||R.n==='portal'){main.innerHTML=R.n==='portal'?vPortal():vHome();return}
+  if(R.n==='home'){main.innerHTML=vHome();return}
   if(!S.loaded.mem||!S.loaded.app){main.innerHTML='<div class="empty muted">Carregando…</div>';return}
   if(!S.app){main.innerHTML=`<div class="panel empty auth"><h2>Grupo não encontrado</h2><p class="muted">Ele pode ter sido excluído.</p><a class="btn" href="#/">Meus grupos</a></div>`;return}
   if(!isAdmin()){main.innerHTML=`<div class="panel empty auth"><h2>Sem acesso</h2><p class="muted">Sua conta (${esc(S.user.email)}) não administra o grupo ${esc(gname())}. Peça ao organizador um link de convite.</p><div class="row" style="justify-content:center"><a class="btn" href="#/">Meus grupos</a>${S.me?.grupos?.[S.gid]?'<button class="btn ghost danger" data-a="forgetGroup">Remover da minha lista</button>':''}</div></div>`;return}

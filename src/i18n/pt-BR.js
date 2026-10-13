@@ -167,8 +167,13 @@ export default {
 
   /* área administrativa do portal (KAN-116) */
   'portal.titulo': 'Portal do Nosso Jogo',
-  'portal.abrir': 'Portal',
-  'portal.voltar': 'Meus grupos',
+  'portal.entrarAjuda': 'Área da administração do Nosso Jogo. Não há cadastro aqui: só as contas Google liberadas entram.',
+  'portal.entrarGoogle': 'Entrar com o Google',
+  'portal.erroEntrar': 'Não foi possível entrar com o Google. Tente de novo.',
+  'portal.negado': 'Esta conta ainda não está liberada no portal. Para liberar, o identificador abaixo precisa ser incluído nas regras do Firebase, numa proposta de mudança aprovada no GitHub.',
+  'portal.seuId': 'Identificador desta conta:',
+  'portal.copiarId': 'Copiar identificador',
+  'portal.sair': 'Sair',
   'portal.clientes': 'Clientes',
   'portal.ajuda': 'Organizadores e administradores com conta. Aqui aparecem só dados de cadastro e de uso, nunca notas, caixa ou contatos dos grupos. O último acesso começou a ser registrado em 13/10/2026.',
   'portal.buscar': 'Buscar por e-mail ou grupo',
@@ -187,8 +192,6 @@ export default {
   'portal.desde': 'registrado em {d}',
   'portal.atualizado': 'Atualizado em {d}.',
   'portal.erro': 'Não foi possível carregar agora. Verifique a conexão e tente de novo.',
-  'portal.semAcesso': 'Esta área é só para a administração do Nosso Jogo.',
-  'portal.negado': 'O Firebase não liberou o acesso. Entre com o Google (ou confirme seu e-mail) usando a conta de administração do portal.',
 
   /* limites contra abuso (KAN-89) */
   'limite.avulsosPublico': 'A lista chegou ao limite de nomes novos pelo link. Fale com o organizador para entrar.',

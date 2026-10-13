@@ -16,7 +16,6 @@ import { GB, S, clean, w } from './nucleo/estado.js';
 import { linkConvite, linkProxima, linkRodada, linkVoto } from './nucleo/links.js';
 import { $, DIAS, brl, cl, esc, fdate, fmonth, inAppBrowser, key, toast, today, uid } from './nucleo/util.js';
 import { upMyGroup } from './rotas.js';
-import { carregarPortal } from './telas/portal.js';
 import { pendencias } from './telas/caixa.js';
 import { groupForm, porTimeAjuda, readGroupForm, schedRow } from './telas/grupo-form.js';
 import { AUTH_CANCEL, authMsg, pwOk } from './telas/login.js';
@@ -53,8 +52,6 @@ function avisoGrupos(sel,n){const m=tp('limite.grupos',n),e=$(sel);if(e){e.textC
 /* Cria o documento do grupo junto com +1 no contador da conta: ou entram os dois, ou nenhum. */
 const gravarGrupo=(gid,o)=>B.lote([{tipo:'set',p:'grupos/'+gid,o},{tipo:'patch',p:'contas/'+S.user.uid,o:{ng:op.somar(1),ult:gid}}]);
 const ACT={
-  /* Área administrativa do portal (KAN-116) */
-  portalAtualizar:()=>carregarPortal(),
   tab:el=>{S.tab=el.dataset.v;render();window.scrollTo(0,0)},
   themeMenu:el=>{if(themeMenuEl&&themeAnchor===el){closeThemeMenu(true);return}openThemeMenu(el)},
   setTheme:el=>{const t=el.dataset.v;try{if(t==='auto')localStorage.removeItem(TEMA_K);else localStorage.setItem(TEMA_K,t)}catch(e){}

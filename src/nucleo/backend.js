@@ -1,4 +1,3 @@
-import { cfg } from '../dominio/caixa.js';
 import { cl, idOk, uid } from './util.js';
 
 /* =================== backends =================== */

@@ -83,10 +83,12 @@ service cloud.firestore {
         && getAfter(conta(request.auth.uid)).data.get('ult', '') == gid
         && getAfter(conta(request.auth.uid)).data.get('ng', 0) == (exists(conta(request.auth.uid)) ? get(conta(request.auth.uid)).data.get('ng', 0) : 0) + 1;
     }
-    // Administrador do portal (área administrativa, KAN-116): por enquanto só o e-mail do Kleber, confirmado.
-    // A mesma lista fica em src/dominio/planos.ts (um teste confere que são iguais).
+    // Administrador do portal (KAN-116): só as contas Google cujo identificador (uid) está nesta lista.
+    // O portal fica num site separado (sem criação de conta); o identificador é incluído aqui à mão,
+    // numa proposta de mudança aprovada pelo Kleber. Lista vazia = ninguém acessa.
     function adminPortal() {
-      return realUser() && request.auth.token.email in ['kleberkoch@gmail.com'] && request.auth.token.email_verified == true;
+      return realUser() && request.auth.token.firebase.sign_in_provider == 'google.com'
+        && request.auth.uid in /*ADMINS_PORTAL*/[];
     }
     function camposMudados() {
       return resource == null ? request.resource.data.keys() : request.resource.data.diff(resource.data).affectedKeys();

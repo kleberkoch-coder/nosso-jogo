@@ -9,7 +9,6 @@ import { GB, S, SUBS, drop, dropAll, sub, subQ, subRaw, w } from './nucleo/estad
 import { $, cl, toast } from './nucleo/util.js';
 import { closeDlgNow, dlg } from './ui/dialogos.js';
 import { render } from './ui/render.js';
-import { carregarPortal } from './telas/portal.js';
 
 /* =================== assinaturas por rota =================== */
 function ensurePres(){const r=curRodada(),id=r?r.id:null;if(S.presRid===id)return;S.presRid=id;S.pres={};drop('pres');if(id)sub('pres','rodadas/'+id+'/presencas',d=>{S.pres=d||{};regAvulsos()});subLimAv(id)}
@@ -44,7 +43,6 @@ function ensureExtras(){
 function parseRoute(){const h=location.hash.replace(/^#\/?/,'').split('/');
   if(h[0]==='p'&&h[1]){if(h[2]==='r'&&h[3])return{n:'r',gid:h[1],id:h[3]};if(h[2]==='v'&&h[3])return{n:'v',gid:h[1],id:h[3]};return{n:'r',gid:h[1],id:null,next:true}}
   if(h[0]==='g'&&h[1])return{n:'admin',gid:h[1]};
-  if(h[0]==='portal')return{n:'portal'};
   if(h[0]==='entrar')return{n:'auth',mode:'login'};if(h[0]==='criar')return{n:'auth',mode:'signup'};
   if(h[0]==='convite'&&h[1]&&h[2])return{n:'inv',gid:h[1],token:h[2]};
   return{n:'home'}}
@@ -68,7 +66,6 @@ function setupRoute(){
   if(logged)subRaw('me','usuarios/'+S.user.uid,d=>{S.me=d||{grupos:{}};syncName();
     if(S.route.n==='home'&&!S.homeShown){S.homeShown=true;const all=Object.entries(S.me.grupos||{}),g=all.filter(([,v])=>v.ativo!==false).map(([k])=>k);if(g.length===1)location.hash='#/g/'+g[0];else if(!all.length)setTimeout(()=>{if(S.route.n==='home'&&!dlg.open)ACT.newGroup()},250)}});
   if(logged)registrarAcesso();
-  if(R.n==='portal'&&logged)carregarPortal();
   if(S.gid)sub('app','config/app',d=>{S.app=d;if(R.next)resolveNext();syncName();migrarPrivado()});
   const anon=()=>{if(!S.user)B.anon().catch(()=>toast('Não foi possível conectar. Recarregue a página.'))};
   if(R.n==='r')subLimCfg();

@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { ADMINS_PORTAL, PLANOS_PADRAO, catalogo, ehAdminPortal, filtrarClientes, montarClientes, planoDaConta, resumoPorPlano, temRecurso } from '../../src/dominio/planos.ts';
+import { PLANOS_PADRAO, catalogo, filtrarClientes, montarClientes, planoDaConta, resumoPorPlano, temRecurso } from '../../src/dominio/planos.ts';
 
 const AGORA = Date.UTC(2026, 9, 13, 15), DIA = 864e5;
 
@@ -44,18 +44,12 @@ test('recursos: o app pergunta pelo recurso, não pelo nome do plano', () => {
   assert.equal(temRecurso(planoDaConta({ plano: 'B' }, cat, AGORA), 'iaCards'), true);
 });
 
-test('administrador do portal: só o e-mail da lista, sem diferença de maiúsculas', () => {
-  assert.equal(ehAdminPortal('kleberkoch@gmail.com'), true);
-  assert.equal(ehAdminPortal('KleberKoch@Gmail.com'), true);
-  assert.equal(ehAdminPortal('outro@gmail.com'), false);
-  assert.equal(ehAdminPortal(null), false);
-});
-
-test('a lista de administradores do portal é a mesma nas regras do Firebase', () => {
+test('portal: as regras liberam só identificadores da lista e só com login do Google; o app dos clientes não tem portal', () => {
   const r = fs.readFileSync('firestore.rules', 'utf8');
-  const m = /request\.auth\.token\.email in \[([^\]]*)\]/.exec(r);
-  assert.ok(m, 'adminPortal() não encontrado nas regras');
-  assert.deepEqual(m[1].split(',').map(s => s.trim().replace(/'/g, '')), ADMINS_PORTAL);
+  assert.match(r, /function adminPortal\(\)[\s\S]*sign_in_provider == 'google\.com'[\s\S]*request\.auth\.uid in \/\*ADMINS_PORTAL\*\/\[/);
+  assert.doesNotMatch(r, /token\.email in/, 'o acesso não pode depender só do e-mail');
+  const app = fs.readdirSync('src/telas').join(' ');
+  assert.doesNotMatch(app, /portal/i, 'nenhuma tela do portal dentro do app dos clientes');
 });
 
 const CONTAS = {

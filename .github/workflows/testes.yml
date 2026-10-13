@@ -31,6 +31,10 @@ jobs:
         with:
           name: site-montado
           path: dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: portal-montado
+          path: dist-portal
 
   # Regras do Firebase no emulador (KAN-104): as regras vão ao ar sozinhas no Merge, então são testadas antes.
   regras-firebase:
@@ -74,6 +78,10 @@ jobs:
         with:
           name: site-montado
           path: /tmp/demo
+      - uses: actions/download-artifact@v4
+        with:
+          name: portal-montado
+          path: /tmp/portal
       - name: Conferir o navegador de testes
         timeout-minutes: 5
         run: |
@@ -83,11 +91,12 @@ jobs:
         run: |
           python - <<'PY'
           import re, pathlib
-          p = pathlib.Path('/tmp/demo/index.html')
-          s = p.read_text(encoding='utf-8')
-          s2, n = re.subn(r'window\.FIREBASE_CONFIG\s*=\s*\{.*?\};', 'window.FIREBASE_CONFIG = {};', s, count=1, flags=re.S)
-          assert n == 1, 'Não achei window.FIREBASE_CONFIG no index.html'
-          p.write_text(s2, encoding='utf-8')
+          # O portal (site separado) é testado no mesmo endereço de teste, como portal.html
+          for orig, dest in [('/tmp/demo/index.html', '/tmp/demo/index.html'), ('/tmp/portal/index.html', '/tmp/demo/portal.html')]:
+              s = pathlib.Path(orig).read_text(encoding='utf-8')
+              s2, n = re.subn(r'window\.FIREBASE_CONFIG\s*=\s*\{.*?\};', 'window.FIREBASE_CONFIG = {};', s, count=1, flags=re.S)
+              assert n == 1, 'Não achei window.FIREBASE_CONFIG em ' + orig
+              pathlib.Path(dest).write_text(s2, encoding='utf-8')
           PY
       - name: Rodar os testes
         timeout-minutes: 10

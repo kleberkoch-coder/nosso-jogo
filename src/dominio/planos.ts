@@ -15,9 +15,8 @@ export const PLANOS_PADRAO: Catalogo = {
   B: { nome: 'Plano B', grupos: null, admins: 5, recursos: PLANO_A.concat(['iaCards', 'iaRelatorios', 'painelCaixa']) },
 };
 
-/* Quem administra o portal. A mesma lista está em firestore.rules (adminPortal); um teste confere. */
-export const ADMINS_PORTAL = ['kleberkoch@gmail.com'];
-export const ehAdminPortal = (email?: string | null) => !!email && ADMINS_PORTAL.includes(email.toLowerCase());
+/* Quem administra o portal: decidido só nas regras do Firebase (adminPortal(), lista de identificadores de contas Google).
+   O portal fica num site separado (src/portal/) e não tem nenhum botão no app dos clientes. */
 
 const limiteOk = (v: unknown) => v === null || (typeof v === 'number' && Number.isInteger(v) && v >= 0);
 function planoValido(p: any): p is Plano {

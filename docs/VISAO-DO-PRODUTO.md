@@ -47,6 +47,7 @@ Plataforma para **qualquer pessoa no mundo** organizar seus jogos recorrentes ou
 - Endereço `#/portal`, com o botão **Portal** em Meus grupos. Só para o administrador do portal: por enquanto o e-mail do Kleber, confirmado (entrar com o Google). A lista está nas regras do Firebase e em `src/dominio/planos.ts`.
 - Mostra cada cliente (conta de organizador ou administrador): e-mail, plano e validade, grupos ativos e inativos, último acesso, última rodada gravada e data de registro. Busca por e-mail ou nome de grupo; filtros por plano, "sem acesso há mais de 30 dias" e "plano vence em até 7 dias".
 - **Nunca** mostra notas, caixa, Pix ou contatos dos grupos.
+- Só o administrador do portal consegue **listar** todos os grupos; qualquer pessoa continua abrindo um grupo pelo link (KAN-133).
 - O último acesso começou a ser registrado na pelada-v26 (13/10/2026); quem não entrou desde então aparece sem data.
 - **Planos (KAN-115):** catálogo em `sistema/planos` (Grátis, A e B padrão), plano por conta com validade; vencido volta ao Grátis. Ainda **não** limita nada no app: os limites e cadeados entram na KAN-119. Mudar plano pela tela é a KAN-117.
 

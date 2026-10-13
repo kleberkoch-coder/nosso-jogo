@@ -288,8 +288,8 @@ describe('segurança do link (KAN-77, KAN-78, KAN-79)', () => {
     await assertFails(updateDoc(doc(db.adm(), G), { cfg: { diaria: 25 } }));
     await assertFails(setDoc(doc(db.adm(), 'grupos/gx'), { name: 'X', owner: 'adm', ativo: true, createdAt: 1, cfg: { mensal: 80 } }));
   });
-  test('KAN-79: grupo antigo pode mudar outros campos mantendo o valor igual', async () => {
-    await assertSucceeds(updateDoc(doc(db.adm(), 'grupos/g3'), { name: 'G3 novo' }));
+  test('KAN-79: com valores de caixa ainda no documento público, só dá para gravar tirando-os', async () => {
+    await assertFails(updateDoc(doc(db.adm(), 'grupos/g3'), { name: 'G3 novo' }));
   });
   test('KAN-79: grupo antigo não pode trocar a mensalidade no documento público', async () => {
     await assertFails(updateDoc(doc(db.adm(), 'grupos/g3'), { 'cfg.mensal': 100 }));

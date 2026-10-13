@@ -223,7 +223,7 @@ Migração (v10): grupos antigos com valores e Pix em `cfg` e `tipo` nos jogador
   - **desempenho (planejado, v15):** partidas numa subpasta da rodada; ranking e caixa com totais prontos por mês e botão Recalcular;
   - **gravação da rodada (feito na v14):** só os campos que mudaram, para dois administradores não apagarem o trabalho um do outro; funciona sem internet (por isso não usamos transações);
   - **linguagem e dívida técnica (D12):** ficamos em JavaScript, migrando para TypeScript; toda tela mexida vira componente na mesma entrega, cada pacote leva um cartão técnico, e um painel medido a cada versão acompanha a evolução;
-  - **cobrança por partes do serviço** (intenção de out. 2026): o plano de cada grupo será gravado só pelo servidor (Cloud Functions ligadas ao pagamento) e conferido nas regras do Firebase, nunca só na tela.
+  - **cobrança por planos** (decisão de 13/10/2026): o plano é **por conta do organizador** e vale para todos os grupos dela (Grátis: 1 grupo; Plano A: até 3; Plano B: ilimitados). Rascunho dos planos e pesquisa de concorrentes em `PLANOS-E-CONCORRENTES.md`, épico KAN-114. O plano é gravado só pela área administrativa ou pelo servidor (Cloud Functions ligadas ao pagamento) e conferido nas regras do Firebase, nunca só na tela. Jogador nunca paga.
 - Política de senha também no Firebase (Authentication > Configurações), se disponível.
 - **Ícones do app:**
   - na `pelada-v12` foram recriados com as cores novas: verde-gramado `#1F5A40`, círculo em cal e ponto limão;

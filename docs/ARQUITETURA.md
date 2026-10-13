@@ -46,7 +46,7 @@ O produto vai ganhar muitas funcionalidades e passará a **cobrar por partes do 
 - **Teste:** com uma cópia desatualizada da rodada, fechar a lista não apaga uma partida salva antes.
 
 ### D5. Recursos pagos controlados no servidor (planejado)
-- **Decisão:** quando houver cobrança, o que cada grupo pode usar (o "plano") fica num registro que **só o servidor grava** (Cloud Function ligada ao meio de pagamento). As regras do Firebase conferem o plano antes de liberar cada recurso pago. A tela só esconde ou mostra; quem garante é a regra.
+- **Decisão:** quando houver cobrança, o que cada **conta de organizador** pode usar (o "plano", decisão do Kleber em 13/10/2026: o plano é por conta e vale para todos os grupos dela, ver `PLANOS-E-CONCORRENTES.md` e o épico KAN-114) fica num registro que **só a área administrativa ou o servidor grava** (Cloud Function ligada ao meio de pagamento). As regras do Firebase conferem o plano antes de liberar cada recurso pago. A tela só esconde ou mostra; quem garante é a regra.
 - **Por quê:** se a liberação ficasse só na tela, qualquer pessoa com conhecimento técnico usaria o recurso sem pagar.
 
 ### D6. Segurança como requisito de cada entrega (8 out. 2026)

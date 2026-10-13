@@ -1,0 +1,56 @@
+# Publica o site no Firebase Hosting quando o app muda na main (ou seja, depois que o Kleber
+# aprova a proposta com Merge). Desde a pelada-v24 (decisão D15), substitui a publicação do Netlify.
+# No fim, confere no endereço oficial que a versão no ar é a mesma do site/sw.js: se não for, fica vermelho.
+name: Publicar o site
+on:
+  push:
+    branches: [main]
+    paths: [src/**, site/**, build.mjs, package.json, firebase.json, .github/workflows/publicar-site.yml]
+  workflow_dispatch:
+
+concurrency: publicar-site
+
+env:
+  ENDERECO: https://nosso-jogo-f4762.web.app
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Montar o site
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+      - name: Publicar no Firebase Hosting
+        env:
+          CHAVE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        shell: bash
+        run: |
+          test -n "$CHAVE" || { echo "::error::Falta o segredo FIREBASE_SERVICE_ACCOUNT no GitHub."; exit 1; }
+          echo "$CHAVE" > "$RUNNER_TEMP/chave.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/chave.json"
+          set +e
+          npx --yes firebase-tools@13 deploy --only hosting --project nosso-jogo-f4762 --non-interactive -m "${GITHUB_SHA::7}" 2>&1 | tee "$RUNNER_TEMP/saida.txt"
+          status=${PIPESTATUS[0]}
+          rm -f "$RUNNER_TEMP/chave.json"
+          if [ "$status" -ne 0 ]; then
+            grep -iE "error|erro|permission|denied|forbidden|not enabled|has not been used|not found" "$RUNNER_TEMP/saida.txt" | tail -8 | while IFS= read -r l; do echo "::error::$l"; done
+            echo "::error::Confira se o Hosting foi ligado no Firebase e se a conta do GitHub tem o papel Administrador do Firebase Hosting (LEIA-ME)."
+            exit "$status"
+          fi
+      - name: Conferir a versão no ar
+        shell: bash
+        run: |
+          esperada=$(grep -oE "VERSION = '[^']+'" site/sw.js | cut -d"'" -f2)
+          for i in $(seq 1 30); do
+            no_ar=$(curl -fsS "$ENDERECO/sw.js?conferir=$RANDOM" | grep -oE "VERSION = '[^']+'" | cut -d"'" -f2)
+            if [ "$no_ar" = "$esperada" ]; then echo "::notice::No ar: $esperada em $ENDERECO"; exit 0; fi
+            sleep 10
+          done
+          echo "::error::O site no ar mostra '${no_ar:-nada}', mas a versão aprovada é '$esperada'."
+          exit 1

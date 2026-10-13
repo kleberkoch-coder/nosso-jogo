@@ -14,7 +14,7 @@ São tarefas agendadas que rodam sozinhas, com regras fixas, e trabalham no Jira
 ## Onde os agentes leem o app
 Na pasta `app/` deste projeto: `app/index.html` (o app **montado**, num arquivo só, na cópia **legível**; os comentários `// src/...` mostram de qual módulo veio cada trecho. Desde a pelada-v19 o site publicado vai compactado, mas o comportamento é o mesmo), `app/sw.js`, `app/manifest.webmanifest`, `app/firestore.rules` e `app/LEIA-ME.md`. É uma cópia da versão proposta mais recente no GitHub, atualizada a cada entrega. **Não apague essa pasta:** sem ela, os agentes de UX, Qualidade, Segurança, Arquiteto e Organização param de funcionar.
 
-**O que os agentes não enxergam** (GitHub e prévia do Netlify) fica em `testes/VERIFICACOES-GITHUB.md`: resultado dos testes sobre o site publicado, regras de negócio, regras do Firebase no emulador, tamanho do app, Merge feito e regras publicadas. Quem entrega a versão atualiza esse arquivo ao abrir a proposta e de novo depois do Merge. Os agentes usam como evidência, em vez de deixar cartões "parciais" por falta de acesso.
+**O que os agentes não enxergam** (GitHub, prévia e site no ar) fica em `testes/VERIFICACOES-GITHUB.md`: resultado dos testes sobre o site publicado, regras de negócio, regras do Firebase no emulador, tamanho do app, Merge feito e regras publicadas. Quem entrega a versão atualiza esse arquivo ao abrir a proposta e de novo depois do Merge. Os agentes usam como evidência, em vez de deixar cartões "parciais" por falta de acesso.
 
 As decisões técnicas ficam em `docs/ARQUITETURA.md`.
 
@@ -34,7 +34,7 @@ As decisões técnicas ficam em `docs/ARQUITETURA.md`.
 3. **Construção** (na conversa do projeto):
    - os casos marcados "(automatizável)" viram testes no `testes/testes_app.py`, na mesma entrega;
    - todo o roteiro precisa passar, e o app montado precisa caber no orçamento de desempenho;
-   - a versão vai para o GitHub como proposta de mudança (*pull request*), onde o site é montado, os testes rodam de novo (inclusive as regras do Firebase no emulador) e o Netlify cria o link de prévia;
+   - a versão vai para o GitHub como proposta de mudança (*pull request*), onde o site é montado, os testes rodam de novo (inclusive as regras do Firebase no emulador) e o GitHub publica a prévia no Firebase Hosting e comenta o link na proposta;
    - a pasta `app/`, os documentos deste projeto e o `testes/VERIFICACOES-GITHUB.md` são atualizados com a versão proposta, para os agentes a enxergarem;
    - cada cartão entregue recebe o comentário "[Entrega] pelada-vXX", com o link da proposta e o da prévia, e vai para **Em análise**;
    - o `proximo-pacote` é retirado.
@@ -43,7 +43,7 @@ As decisões técnicas ficam em `docs/ARQUITETURA.md`.
    - **passou em todos:** move para **Concluído**;
    - **falhou em algum:** devolve para **A fazer** e cria um defeito para cada falha;
    - o veredito ("Pode publicar", "Já está no ar e está aprovada" ou "Segurar a publicação") vem com o link da proposta.
-5. **Publicação** (Kleber): abre a prévia, confere e clica em **Merge**. O Netlify monta e publica o site, e o GitHub publica as regras do Firebase se elas mudaram. A versão aparece no rodapé do app.
+5. **Publicação** (Kleber): abre a prévia, confere e clica em **Merge**. O GitHub monta e publica o site no Firebase Hosting (e confere que a versão no ar é a nova) e publica as regras do Firebase se elas mudaram. A versão aparece no rodapé do app.
 
 ## Registros que os agentes deixam nos épicos
 - `[Auditoria]` (UX, KAN-68): última versão auditada.
@@ -54,4 +54,4 @@ As decisões técnicas ficam em `docs/ARQUITETURA.md`.
 ## Infraestrutura de publicação
 - **GitHub:** `kleberkoch-coder/nosso-jogo` (privado). Código em `src/`, modelo da página e arquivos fixos em `site/`, montagem em `build.mjs` (`npm run build` gera `dist/` compactado e `montagem-legivel/`); `firestore.rules`, `testes/` e `docs/` na raiz.
 - **Automações do GitHub:** "Testes do app" (toda proposta: monta o site, testa as regras de negócio, testa as regras do Firebase no emulador e roda o roteiro sobre o site compactado) e "Publicar regras do Firebase" (quando o `firestore.rules` muda na `main`, com a conta `publicar-regras-github`, que só publica regras).
-- **Netlify:** site `nossosjogos`, ligado à `main`. Roda `npm run build`, publica `dist/` e cria prévia em cada proposta.
+- **Firebase Hosting (desde a pelada-v24, D15):** endereço oficial `https://nosso-jogo-f4762.web.app`. Automações "Publicar o site" (no Merge, com conferência da versão no ar) e "Prévia da proposta" (canal de prévia de 7 dias, modo demonstração). O Netlify (`nossosjogos.netlify.app`) só mostra o aviso de mudança de endereço.

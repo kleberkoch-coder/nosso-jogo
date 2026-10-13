@@ -168,5 +168,6 @@ export default {
   /* limites contra abuso (KAN-89) */
   'limite.avulsosPublico': 'A lista chegou ao limite de nomes novos pelo link. Fale com o organizador para entrar.',
   'limite.avulsosAdmin': 'O link desta rodada chegou ao limite de avulsos novos ({n}). Quem mais precisar entrar, adicione por aqui em Adicionar avulso.',
-  'limite.grupos': 'Esta conta já criou {n} grupos, que é o limite atual. Use um dos seus grupos ou fale com o suporte do Nosso Jogo para liberar mais.',
+  'limite.grupos.um': 'Esta conta chegou ao limite de 1 grupo. Use o seu grupo ou fale com o suporte do Nosso Jogo para liberar mais.',
+  'limite.grupos.outros': 'Esta conta chegou ao limite de {n} grupos. Use um dos seus grupos ou fale com o suporte do Nosso Jogo para liberar mais.',
 };

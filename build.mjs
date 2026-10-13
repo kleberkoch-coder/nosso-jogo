@@ -36,8 +36,34 @@ const montar = minify => esbuild.build({
     'preact': process.env.PREACT_SRC + '/src/index.js',
   } : {},
 });
+/* Endereço oficial do app desde a pelada-v24: Firebase Hosting (decisão D15 em docs/ARQUITETURA.md).
+   O Netlify (nossosjogos.netlify.app) deixou de ser a hospedagem. Se ele voltar a publicar a main
+   (produção), publica só um site de mudança de endereço: a página manda para o endereço novo,
+   mantendo o link (#/p/...), e o service worker antigo se desliga sozinho nos celulares. */
+const ENDERECO = 'https://nosso-jogo-f4762.web.app';
+if (process.env.NETLIFY === 'true' && process.env.CONTEXT === 'production') {
+  fs.rmSync(OUT, { recursive: true, force: true }); fs.mkdirSync(OUT, { recursive: true });
+  fs.writeFileSync(path.join(OUT, 'index.html'), `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Nosso Jogo mudou de endereço</title>
+<script>location.replace(${JSON.stringify(ENDERECO + '/')} + location.search + location.hash);</script>
+<style>body{font:16px/1.5 system-ui,sans-serif;margin:0;padding:32px 16px;background:#F4F6F2;color:#16241C;text-align:center}a{color:#1F5A40;font-weight:700}</style>
+</head><body><h1>O Nosso Jogo mudou de endereço</h1><p>Abrindo o endereço novo… Se não abrir, toque aqui:</p>
+<p><a id="ir" href="${ENDERECO}/">${ENDERECO.replace('https://', '')}</a></p>
+<script>document.getElementById('ir').href=${JSON.stringify(ENDERECO + '/')}+location.search+location.hash;</script></body></html>
+`);
+  /* Service worker de despedida: substitui o antigo, apaga o cache, se desliga e recarrega as abas (que vão para o endereço novo). */
+  fs.writeFileSync(path.join(OUT, 'sw.js'), `self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', e => e.waitUntil((async () => {
+  for (const k of await caches.keys()) await caches.delete(k);
+  await self.registration.unregister();
+  for (const c of await self.clients.matchAll({ type: 'window' })) c.navigate(c.url);
+})()));
+`);
+  console.log('Netlify (produção): publicado só o aviso de mudança para ' + ENDERECO);
+  process.exit(0);
+}
 let modelo = fs.readFileSync('site/index.html', 'utf8');
-/* Prévias de proposta (Netlify, CONTEXT=deploy-preview) rodam em modo demonstração:
+/* Prévias de proposta (CONTEXT=deploy-preview, canal de prévia do Firebase Hosting) rodam em modo demonstração:
    não tocam nos dados reais e não dependem da chave do App Check, que só vale no domínio oficial (KAN-88). */
 if (process.env.CONTEXT === 'deploy-preview') {
   const n0 = modelo.length;

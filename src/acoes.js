@@ -48,7 +48,7 @@ async function sairDaConta(destino){
 async function limiteGrupos(){try{const [c,f]=await Promise.all([B.get('contas/'+S.user.uid),B.get('sistema/limites')]);
   return{cheio:gruposEsgotados(c,f),n:limite(f,'gruposPorConta')}}catch(e){return{cheio:false,n:limite(null,'gruposPorConta')}}}
 /* Mostra a mensagem no formulário, rolando até ela (o botão Criar fica no fim do formulário). */
-function avisoGrupos(sel,n){const m=tx('limite.grupos',{n}),e=$(sel);if(e){e.textContent=m;e.scrollIntoView({block:'center'})}else toast(m)}
+function avisoGrupos(sel,n){const m=tp('limite.grupos',n),e=$(sel);if(e){e.textContent=m;e.scrollIntoView({block:'center'})}else toast(m)}
 /* Cria o documento do grupo junto com +1 no contador da conta: ou entram os dois, ou nenhum. */
 const gravarGrupo=(gid,o)=>B.lote([{tipo:'set',p:'grupos/'+gid,o},{tipo:'patch',p:'contas/'+S.user.uid,o:{ng:op.somar(1),ult:gid}}]);
 const ACT={

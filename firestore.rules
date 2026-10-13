@@ -18,15 +18,27 @@ service cloud.firestore {
       return !('pix' in request.resource.data.get('cfg', {}))
         || (resource != null && request.resource.data.cfg.pix == resource.data.get('cfg', {}).get('pix', null));
     }
+    // KAN-79: mensalidade e diária também ficam só em /privado/caixa. No documento público não podem ser
+    // criadas nem alteradas (grupos antigos mantêm o valor que já tinham até a migração, que apaga).
+    function campoCaixaOk(k) {
+      return !(k in request.resource.data.get('cfg', {}))
+        || (resource != null && request.resource.data.cfg[k] == resource.data.get('cfg', {}).get(k, null));
+    }
+    function caixaOk() { return pixOk() && campoCaixaOk('mensal') && campoCaixaOk('diaria'); }
     function rod(gid, rid) { return /databases/$(database)/documents/grupos/$(gid)/rodadas/$(rid); }
     // Rodada aceitando confirmações: grupo ativo e lista aberta (ou jogo fixo ainda sem documento).
     function presencaAberta(gid, rid) {
       return signed() && grpAtivo(gid) && (
-        (!exists(rod(gid, rid)) && rid.matches('f-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{4}'))
+        (!exists(rod(gid, rid)) && rid.matches('f-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{4}') && dataProxima(rid))
         || (exists(rod(gid, rid))
           && get(rod(gid, rid)).data.get('locked', false) == false
           && get(rod(gid, rid)).data.get('cancelada', false) == false)
       );
+    }
+    // KAN-77: jogo fixo ainda sem documento só aceita presença de ontem até 15 dias à frente (nada de datas inventadas, como 2099).
+    function dataDoFixo(rid) { return timestamp.date(int(rid.split('-')[1]), int(rid.split('-')[2]), int(rid.split('-')[3])); }
+    function dataProxima(rid) {
+      return dataDoFixo(rid) > request.time - duration.value(2, 'd') && dataDoFixo(rid) < request.time + duration.value(15, 'd');
     }
     // Identificador gerado pelo app: só letras, números, _ e - (KAN-76: impede injetar código pelo nome do documento).
     function idValido(id) { return id is string && id.matches('[A-Za-z0-9_-]{1,64}'); }
@@ -35,7 +47,22 @@ service cloud.firestore {
         && request.resource.data.s in ['in', 'out']
         && request.resource.data.by == request.auth.uid
         && (!('nome' in request.resource.data) || (request.resource.data.nome is string && request.resource.data.nome.size() <= 40))
-        && (!('pos' in request.resource.data) || (request.resource.data.pos is string && request.resource.data.pos.size() <= 4));
+        && (!('pos' in request.resource.data) || (request.resource.data.pos is string && request.resource.data.pos.size() <= 4))
+        && request.resource.data.get('t', 0) is int;
+    }
+    // KAN-78: a ordem da lista vem da hora da confirmação (t), enviada pelo celular. Pelo link ela não pode
+    // ser do futuro nem de mais de 6 horas atrás (folga para quem confirmou sem sinal).
+    function horaOk() {
+      return request.resource.data.t <= request.time.toMillis() + 60000
+        && request.resource.data.t >= request.time.toMillis() - 6 * 3600000;
+    }
+    // Na mudança pelo link: a hora só muda quando a resposta muda (e nunca volta para trás), e nome, avulso e posição não mudam.
+    function mudancaPeloLinkOk() {
+      return ((request.resource.data.s == resource.data.s && request.resource.data.get('t', null) == resource.data.get('t', null))
+          || (request.resource.data.s != resource.data.s && horaOk() && request.resource.data.t >= resource.data.get('t', 0)))
+        && request.resource.data.get('nome', null) == resource.data.get('nome', null)
+        && request.resource.data.get('avulso', null) == resource.data.get('avulso', null)
+        && request.resource.data.get('pos', null) == resource.data.get('pos', null);
     }
 
     // Limites contra abuso (KAN-89). Os números ficam em /sistema/limites: muda no console do Firebase e vale na hora.
@@ -97,14 +124,14 @@ service cloud.firestore {
       // Grupo novo conta no limite de grupos por conta (KAN-89); nome com até 40 letras.
       // TEMPORÁRIO (10/10/2026): o site no ar ainda é a v19, que não grava o contador de grupos (o Netlify pausou as publicações).
       // Enquanto isso, o contador é opcional. Voltar a exigir grupoContado(gid) quando a v23 ou mais nova estiver no ar.
-      allow create: if realUser() && request.resource.data.owner == request.auth.uid && pixOk()
+      allow create: if realUser() && request.resource.data.owner == request.auth.uid && caixaOk()
         && nomeOk('name') && (grupoContado(gid) || true);
       // Dono e data de criação não mudam; só o organizador ativa ou inativa o grupo.
       allow update: if isMember(gid)
         && request.resource.data.owner == resource.data.owner
         && request.resource.data.get('createdAt', 0) == resource.data.get('createdAt', 0)
         && (request.resource.data.get('ativo', true) == resource.data.get('ativo', true) || isOwner(gid))
-        && pixOk();
+        && caixaOk();
       allow delete: if isOwner(gid);
 
       // Administradores do grupo.
@@ -156,14 +183,14 @@ service cloud.firestore {
           allow read: if true;
           // Pelo link, nome que não é de jogador cadastrado entra como avulso novo e conta no limite da rodada (KAN-89).
           allow create: if isMember(gid) || (
-            idValido(pid) && presencaAberta(gid, rid) && presencaValida()
+            idValido(pid) && presencaAberta(gid, rid) && presencaValida() && horaOk()
             && request.resource.data.get('dev', '') == request.auth.uid
             // TEMPORÁRIO (10/10/2026): o site no ar ainda é a v19, que não grava o contador de avulsos (Netlify pausado).
             // Enquanto isso, o contador é opcional. Voltar a exigir quando a v23 ou mais nova estiver no ar.
             && (exists(/databases/$(database)/documents/grupos/$(gid)/jogadores/$(pid)) || avulsoContado(gid, rid, pid) || true)
           );
           allow update: if isMember(gid) || (
-            idValido(pid) && presencaAberta(gid, rid) && presencaValida()
+            idValido(pid) && presencaAberta(gid, rid) && presencaValida() && mudancaPeloLinkOk()
             && ((('dev' in resource.data) && request.resource.data.get('dev', '') == resource.data.dev)
               || (!('dev' in resource.data) && request.resource.data.get('dev', '') == request.auth.uid))
           );

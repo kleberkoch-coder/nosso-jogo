@@ -55,6 +55,10 @@ O produto vai ganhar muitas funcionalidades e passará a **cobrar por partes do 
 - **Identificadores** (nomes de documento) vindos do banco só são aceitos com letras, números, `_` e `-` (`idOk`, na leitura de toda coleção; e `idValido` nas regras de presença e voto), desde a pelada-v22 (KAN-76). Assim eles podem ir para atributos do HTML sem risco.
 - Chaves de acesso só em segredos do GitHub, nunca no código. A conta que publica regras não lê dados.
 - **Próximos reforços:** Firebase App Check (só o app oficial fala com o banco) e limites de gravação contra abuso, ambos antes de começar a cobrar.
+- **Presença pelo link (pelada-v25):**
+  - **ordem e nome (KAN-78):** a hora da confirmação (`t`) precisa ser um número, não pode ser do futuro nem de mais de 6 horas atrás (folga para quem confirmou sem sinal). Sem mudar a resposta, a hora não muda; ao mudar, nunca volta para trás. Pelo link, nome, marca de avulso e posição de uma presença não mudam. Administradores continuam corrigindo tudo;
+  - **datas (KAN-77):** jogo fixo ainda sem documento só aceita presença de ontem até 15 dias à frente;
+  - **caixa no documento público (KAN-79):** mensalidade e diária, como a chave Pix, não podem ser criadas nem alteradas em `cfg` do grupo. Grupos antigos podem manter o valor igual ou apagá-lo (a migração apaga ao abrir o grupo).
 - **Limites contra abuso (KAN-89), em duas fases:**
   - **Fase 1, só com as regras (pelada-v23, sem custo novo):** contadores que só sobem de 1 em 1, gravados na mesma operação do que contam, e que as regras conferem com `getAfter`. Avulso novo pelo link soma em `rodadas/{rid}/limites/avulsos` (padrão 30 por rodada); grupo novo soma em `contas/{uid}` (padrão 20 por conta, inativar não devolve vaga). Nomes de jogador, avulso e grupo novo com até 40 letras. Os números ficam em `sistema/limites` (`avulsosPorRodada`, `gruposPorConta`), editados só pelo console do Firebase; sem o documento valem os padrões, iguais em `firestore.rules` e `src/dominio/limites.ts` (um teste confere). Administradores não têm limite de avulsos e podem zerar o contador da rodada. Quem enche a lista de propósito trava só os avulsos novos daquela rodada pelo link; o organizador vê o aviso e continua adicionando por dentro.
   - **Fase 2, com Cloud Functions (plano Blaze, quando houver cobrança):** votos por minuto, bloqueio temporário por aparelho e aviso ativo ao organizador. Cartão separado.
@@ -173,6 +177,8 @@ A montagem (`npm run build`) imprime estes números. Eles são registrados aqui 
 | pelada-v21 | 5 de 45 | 1 de 15 | 28 | 2 | 66,1 KB |
 | pelada-v22 | 5 de 45 | 1 de 15 | 28 | 2 | 66,4 KB |
 | pelada-v23 | 6 de 46 | 1 de 15 | 28 | 2 | 67,3 KB |
+| pelada-v24 | 6 de 46 | 1 de 15 | 28 | 2 | 67,4 KB |
+| pelada-v25 | 6 de 46 | 1 de 15 | 28 | 2 | 67,5 KB |
 
 As 5 regras de negócio com teste próprio previsto: sorteio, ranking, pendências do caixa, rodadas fixas (próxima data) e apuração da votação. Os testes ficam em `testes/regras/` com o nome da regra (`sorteio.test.mjs`, `ranking.test.mjs`, `caixa.test.mjs`, `rodadas-fixas.test.mjs`, `votacao.test.mjs`) e rodam com `npm run regras` (testador do próprio Node, que lê TypeScript direto). Desde a pelada-v15 já existe o primeiro teste de regra, lista × times (`lista-sorteio.test.mjs`), e na v16 entrou jogadores por time e reservas (`times.test.mjs`); eles não entram na conta das 5. Para uma regra ganhar teste, ela precisa sair do código que lê o estado, como foi feito em `src/dominio/divergencia.ts`.
 

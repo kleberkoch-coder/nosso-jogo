@@ -38,6 +38,9 @@ beforeEach(async () => {
     await s(G + '/caixa/c1', { k: 'mensal', v: 80, d: '2026-10-02' });
     await s(G + '/privado/caixa', { pix: 'chave', mensal: 80 });
     await s(G + '/jogadores/j1', { name: 'Cadastrado' });
+    // Grupo antigo, ainda com mensalidade e diária no documento público (KAN-79)
+    await s('grupos/g3', { name: 'G3', owner: 'adm', ativo: true, createdAt: 1, cfg: { mensal: 80, diaria: 20 } });
+    await s('grupos/g3/membros/adm', { uid: 'adm', role: 'owner' });
   });
 });
 
@@ -285,20 +288,13 @@ describe('segurança do link (KAN-77, KAN-78, KAN-79)', () => {
     await assertFails(updateDoc(doc(db.adm(), G), { cfg: { diaria: 25 } }));
     await assertFails(setDoc(doc(db.adm(), 'grupos/gx'), { name: 'X', owner: 'adm', ativo: true, createdAt: 1, cfg: { mensal: 80 } }));
   });
-  const grupoAntigo = () => env.withSecurityRulesDisabled(async ctx => {
-    await setDoc(doc(ctx.firestore(), 'grupos/g3'), { name: 'G3', owner: 'adm', ativo: true, createdAt: 1, cfg: { mensal: 80, diaria: 20 } });
-    await setDoc(doc(ctx.firestore(), 'grupos/g3/membros/adm'), { uid: 'adm', role: 'owner' });
-  });
   test('KAN-79: grupo antigo pode mudar outros campos mantendo o valor igual', async () => {
-    await grupoAntigo();
     await assertSucceeds(updateDoc(doc(db.adm(), 'grupos/g3'), { name: 'G3 novo' }));
   });
   test('KAN-79: grupo antigo não pode trocar a mensalidade no documento público', async () => {
-    await grupoAntigo();
     await assertFails(updateDoc(doc(db.adm(), 'grupos/g3'), { 'cfg.mensal': 100 }));
   });
   test('KAN-79: grupo antigo pode apagar os valores (migração)', async () => {
-    await grupoAntigo();
     await assertSucceeds(updateDoc(doc(db.adm(), 'grupos/g3'), { cfg: {} }));
   });
 });

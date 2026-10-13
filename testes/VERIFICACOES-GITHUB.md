@@ -1,6 +1,6 @@
-# Verificações do GitHub e do Netlify, por versão
+# Verificações do GitHub e do site no ar, por versão
 
-Este arquivo existe porque os agentes (Qualidade, Arquiteto, Segurança) **não enxergam o GitHub nem a prévia do Netlify**. Quem entrega a versão anota aqui o que só dá para ver lá. Os agentes usam como evidência, sem precisar deixar cartões em "validação parcial" por falta de acesso.
+Este arquivo existe porque os agentes (Qualidade, Arquiteto, Segurança) **não enxergam o GitHub, a prévia nem o site no ar**. Quem entrega a versão anota aqui o que só dá para ver lá. Os agentes usam como evidência, sem precisar deixar cartões em "validação parcial" por falta de acesso.
 
 Atualizado a cada entrega (quando a proposta é aberta) e de novo depois do Merge.
 
@@ -9,17 +9,18 @@ Atualizado a cada entrega (quando a proposta é aberta) e de novo depois do Merg
 - **Regras do Firebase (emulador):** tarefa `regras-firebase`, desde a v19 (KAN-104). Casos em `testes/regras-firebase/regras.test.mjs`.
 - **Regras de negócio:** `npm run regras` (testes de `testes/regras/`), dentro da tarefa "montar".
 - **Tamanho:** app comprimido medido na montagem (limite 80 KB, decisão D7).
-- **Prévia:** desde a v21, o link de prévia roda em modo demonstração (não usa dados reais nem o App Check); o GitHub confere isso na tarefa "montar".
-- **No ar:** Merge feito e site publicado pelo Netlify (a versão aparece no rodapé desde a v19).
+- **Prévia:** roda em modo demonstração (não usa dados reais nem o App Check); o GitHub confere isso na tarefa "montar". Desde a v24, a prévia sai no Firebase Hosting (automação "Prévia da proposta").
+- **No ar:** desde a v24, vem da automação "Publicar o site", que **confere a versão no endereço oficial** (`https://nosso-jogo-f4762.web.app`). Antes disso, era anotado com base no Merge, e isso escondeu que a v20 a v23 não chegaram ao ar (ver abaixo).
 
 ## Versões
 
 | Versão | Proposta | Testes do app | Regras de negócio | Regras do Firebase (emulador) | Tamanho | Mapa de origem | Regras publicadas | No ar |
 |---|---|---|---|---|---|---|---|---|
-| pelada-v23 | [#20](https://github.com/kleberkoch-coder/nosso-jogo/pull/20) | ✅ 155 de 155 (site compactado) | ✅ 41 de 41 | ✅ 40 de 40 | 67,3 KB | ✅ | ⚠️ mudam: publicadas no Merge (limites de avulsos e grupos, nomes até 40 letras) | aguardando Merge |
-| pelada-v22 | [#17](https://github.com/kleberkoch-coder/nosso-jogo/pull/17) | ✅ 147 de 147 (site compactado) | ✅ 35 de 35 | ✅ 25 de 25 | 66,4 KB | ✅ | ✅ publicadas no Merge (identificador válido em presença e voto) | ✅ Merge 09/10 12h08 |
-| pelada-v21 | [#16](https://github.com/kleberkoch-coder/nosso-jogo/pull/16) | ✅ 140 de 140 (site compactado) | ✅ 34 de 34 | ✅ 21 de 21 | 66,1 KB | ✅ | não mudaram | ✅ Merge 09/10 10h41 |
-| pelada-v20 | [#15](https://github.com/kleberkoch-coder/nosso-jogo/pull/15) | ✅ 140 de 140 (site compactado) | ✅ 34 de 34 | ✅ 21 de 21 | 65,9 KB | ✅ | não mudaram | ✅ Merge 09/10 10h10 |
+| pelada-v24 | [#22](https://github.com/kleberkoch-coder/nosso-jogo/pull/22) | ✅ 156 de 156 (site compactado) | ✅ 41 de 41 | ✅ 40 de 40 | 67,4 KB | ✅ | não mudaram | aguardando Merge (a automação "Publicar o site" confere a versão no endereço novo) |
+| pelada-v23 | [#20](https://github.com/kleberkoch-coder/nosso-jogo/pull/20) | ✅ 155 de 155 (site compactado) | ✅ 41 de 41 | ✅ 40 de 40 | 67,3 KB | ✅ | ✅ publicadas no Merge (limites de avulsos e grupos, nomes até 40 letras); contadores ficaram opcionais na #21 | ⚠️ Merge 09/10 16h45, mas **não foi ao ar** (Netlify sem créditos; o site ficou na v19). Vai ao ar com a v24 |
+| pelada-v22 | [#17](https://github.com/kleberkoch-coder/nosso-jogo/pull/17) | ✅ 147 de 147 (site compactado) | ✅ 35 de 35 | ✅ 25 de 25 | 66,4 KB | ✅ | ✅ publicadas no Merge (identificador válido em presença e voto) | ⚠️ Merge 09/10 12h08, mas **não foi ao ar** (Netlify sem créditos; o site ficou na v19). Vai ao ar com a v24 |
+| pelada-v21 | [#16](https://github.com/kleberkoch-coder/nosso-jogo/pull/16) | ✅ 140 de 140 (site compactado) | ✅ 34 de 34 | ✅ 21 de 21 | 66,1 KB | ✅ | não mudaram | ⚠️ Merge 09/10 10h41, mas **não foi ao ar** (Netlify sem créditos; o site ficou na v19). Vai ao ar com a v24 |
+| pelada-v20 | [#15](https://github.com/kleberkoch-coder/nosso-jogo/pull/15) | ✅ 140 de 140 (site compactado) | ✅ 34 de 34 | ✅ 21 de 21 | 65,9 KB | ✅ | não mudaram | ⚠️ Merge 09/10 10h10, mas **não foi ao ar** (Netlify sem créditos; o site ficou na v19). Vai ao ar com a v24 |
 | pelada-v19 | [#12](https://github.com/kleberkoch-coder/nosso-jogo/pull/12) | ✅ 125 de 125 (site compactado) | ✅ 34 de 34 | ✅ 21 de 21 | 65,5 KB | ✅ `main.js.map` e `main.css.map` no `dist/` | não mudaram | ✅ Merge 08/10 17h47 |
 | pelada-v18 | [#11](https://github.com/kleberkoch-coder/nosso-jogo/pull/11) | ✅ 122 de 122 | ✅ 34 de 34 | (não existia) | 77,3 KB | — | ✅ publicadas no Merge | ✅ Merge 08/10 17h00 |
 | pelada-v17 | [#10](https://github.com/kleberkoch-coder/nosso-jogo/pull/10) | ✅ 109 de 109 | ✅ 24 de 24 | (não existia) | 72,9 KB | — | ✅ publicadas no Merge | ✅ Merge 08/10 16h24 |
@@ -29,3 +30,5 @@ Atualizado a cada entrega (quando a proposta é aberta) e de novo depois do Merg
 | pelada-v13 | [#4](https://github.com/kleberkoch-coder/nosso-jogo/pull/4) | ✅ 49 de 49 | — | (não existia) | 53,6 KB | — | não mudaram | ✅ Merge 08/10 10h45 |
 
 Propostas só de documentação ou testes (sem mudança no app): #5, #7 (D12), #13 (D14), #14 (testes sugeridos pela Qualidade, 138 de 138), #18 (KAN-59, ícones mantidos e teste dos 5 ícones, 148 de 148, Merge 09/10 12h30) e #19 (registro do Merge da #18), todas verdes e com Merge.
+
+**Correção urgente #21 (10/10/2026, Merge 14h04):** regras do Firebase com os contadores da KAN-89 opcionais, para a v19 que estava no ar voltar a aceitar avulso pelo link e criação de grupo. 40 de 40 no emulador (2 casos pulados, marcados como temporários). Voltar a exigir os contadores depois que a v24 estiver no ar.

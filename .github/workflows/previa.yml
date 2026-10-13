@@ -1,0 +1,54 @@
+# Prévia de cada proposta de mudança no Firebase Hosting (substitui a prévia do Netlify, decisão D15).
+# Roda em modo demonstração (sem dados reais) e expira em 7 dias. O link é comentado na proposta.
+name: Prévia da proposta
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: previa-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  previa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Montar a prévia (modo demonstração)
+        run: |
+          npm install --no-audit --no-fund
+          CONTEXT=deploy-preview npm run build
+          grep -q 'window.FIREBASE_CONFIG = {};' dist/index.html || { echo "::error::A prévia não ficou em modo demonstração."; exit 1; }
+      - name: Publicar a prévia e comentar o link
+        env:
+          CHAVE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        shell: bash
+        run: |
+          test -n "$CHAVE" || { echo "::error::Falta o segredo FIREBASE_SERVICE_ACCOUNT no GitHub."; exit 1; }
+          echo "$CHAVE" > "$RUNNER_TEMP/chave.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/chave.json"
+          set +e
+          npx --yes firebase-tools@13 hosting:channel:deploy "pr-$PR" --expires 7d --project nosso-jogo-f4762 --non-interactive --json > "$RUNNER_TEMP/previa.json" 2> "$RUNNER_TEMP/erro.txt"
+          status=$?
+          rm -f "$RUNNER_TEMP/chave.json"
+          if [ "$status" -ne 0 ]; then
+            cat "$RUNNER_TEMP/erro.txt" "$RUNNER_TEMP/previa.json" | grep -iE "error|erro|permission|denied|not found" | tail -6 | while IFS= read -r l; do echo "::error::$l"; done
+            exit "$status"
+          fi
+          url=$(python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(next(iter(d['result'].values()))['url'])" "$RUNNER_TEMP/previa.json")
+          echo "::notice::Prévia: $url"
+          corpo="**Prévia da proposta** (modo demonstração, sem dados reais; expira em 7 dias): $url"
+          id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --jq '[.[] | select(.body | startswith("**Prévia da proposta**"))][0].id // empty')
+          if [ -n "$id" ]; then gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -f body="$corpo" >/dev/null
+          else gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -f body="$corpo" >/dev/null || echo "::warning::Não consegui comentar o link na proposta."; fi

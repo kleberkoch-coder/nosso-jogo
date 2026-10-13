@@ -1,4 +1,6 @@
-# O Netlify monta o site a partir de src/ (npm run build) e publica a pasta dist/.
+# O Netlify deixou de ser a hospedagem do app (pelada-v24, decisão D15 em docs/ARQUITETURA.md):
+# o site agora está no Firebase Hosting (https://nosso-jogo-f4762.web.app).
+# Se o Netlify voltar a publicar a main, o build.mjs gera só a página de mudança de endereço.
 [build]
   command = "npm run build"
   publish = "dist"
@@ -6,8 +8,14 @@
 [build.environment]
   NODE_VERSION = "22"
 
-# O service worker nunca fica guardado no cache do navegador,
-# para que a versão nova chegue rápido a todos.
+# Prévias e ramos não são mais montados no Netlify (as prévias saem no Firebase Hosting).
+# "exit 0" no ignore = não montar.
+[context.deploy-preview]
+  ignore = "exit 0"
+
+[context.branch-deploy]
+  ignore = "exit 0"
+
 [[headers]]
   for = "/sw.js"
   [headers.values]

@@ -24,11 +24,10 @@ Plataforma para **qualquer pessoa no mundo** organizar seus jogos recorrentes ou
 - **Código e publicação (decisão de 7 out. 2026):**
   - o código fica no GitHub, em `kleberkoch-coder/nosso-jogo` (privado);
   - cada versão nova chega como proposta de mudança (*pull request*) e roda os testes automáticos;
-  - o Netlify gera um link de prévia de cada proposta (desde a pelada-v21, em **modo demonstração**: a prévia nunca mexe nos dados reais do grupo);
-  - o Kleber aprova com **Merge**. Só então o Netlify publica o site e, se o `firestore.rules` mudou, o GitHub publica as regras no Firebase. A chave usada (conta `publicar-regras-github`) só publica regras e não lê dados dos grupos;
-  - não se arrasta mais a pasta no Netlify;
+  - o GitHub publica uma prévia de cada proposta no Firebase Hosting e comenta o link na proposta (em **modo demonstração**: a prévia nunca mexe nos dados reais do grupo; expira em 7 dias);
+  - o Kleber aprova com **Merge**. Só então o GitHub publica o site no Firebase Hosting (e confere que a versão no ar é a nova) e, se o `firestore.rules` mudou, o GitHub publica as regras no Firebase. A chave usada (conta `publicar-regras-github`) só publica regras e o site e não lê dados dos grupos;
   - os documentos deste projeto espelham a versão proposta mais recente.
-- **Hospedagem:** Netlify (`nossosjogos.netlify.app`, site `nossosjogos`), ligado ao GitHub (pasta `site/`). O projeto precisa estar como público no Netlify.
+- **Hospedagem (desde a pelada-v24, decisão D15):** Firebase Hosting, endereço **`https://nosso-jogo-f4762.web.app`**, no plano grátis. O endereço antigo `nossosjogos.netlify.app` (Netlify, sem créditos desde 10/10/2026) vira só um aviso de mudança que leva ao endereço novo. Domínio próprio: depois da decisão do nome.
 - **Banco e login:** Firebase, projeto `nosso-jogo-f4762`, com Firestore e Authentication (provedores E-mail/senha, Google e Anônimo ativados).
 - **Código (pelada-v14):** JavaScript, HTML e CSS (o link do jogador já em TypeScript + Preact) (Firebase compat v10 via CDN), em módulos na pasta `src/`, montados pelo esbuild num único `index.html`. Detalhes e decisões técnicas em `docs/ARQUITETURA.md`.
 - **Modo demonstração:** quando a configuração do Firebase está vazia, os dados ficam só no navegador. É usado para testar.

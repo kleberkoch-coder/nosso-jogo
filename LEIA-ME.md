@@ -52,14 +52,13 @@ Observação: esses dados não são senha. Eles ficam visíveis no site por natu
 
 ## 5. Publicar o site
 
-O jeito mais simples é o Netlify Drop:
+O site fica no **Firebase Hosting**, no mesmo projeto do banco, e é publicado pelo GitHub a cada Merge (veja "Como as versões novas vão para o ar"). Na primeira vez:
 
-1. Acesse **app.netlify.com/drop** e crie uma conta gratuita.
-2. Arraste a **pasta** `pelada-site` para a página.
-3. Você recebe um endereço como `nome-aleatorio.netlify.app`. Em **Site configuration > Change site name** dá para trocar, por exemplo para `peladadosabado.netlify.app`.
-4. De volta ao Firebase, abra **Authentication > Configurações > Domínios autorizados**, clique em **Adicionar domínio** e cole o endereço do Netlify (sem `https://`).
+1. No [console do Firebase](https://console.firebase.google.com), abra o projeto, clique em **Criação** > **Hosting** > **Vamos começar** e avance até **Continuar para o console** (as instruções de instalação podem ser ignoradas).
+2. No [Google Cloud](https://console.cloud.google.com), em **IAM e administrador** > **IAM**, dê à conta de serviço usada pelo GitHub (`publicar-regras-github@...`) o papel **Administrador do Firebase Hosting** e o papel **Leitor de chaves de API**.
+3. Se usar o App Check, inclua `seuprojeto.web.app` e `seuprojeto.firebaseapp.com` nos domínios da chave do reCAPTCHA.
 
-Esse é o caminho da primeira instalação. Depois, o site passa a ser publicado pelo GitHub (veja "Como as versões novas vão para o ar"), e não se arrasta mais a pasta.
+Os endereços `seuprojeto.web.app` e `seuprojeto.firebaseapp.com` já vêm autorizados no login do Firebase. Um domínio próprio entra em **Hosting** > **Adicionar domínio personalizado**, e também precisa ir para **Authentication** > **Configurações** > **Domínios autorizados**.
 
 ## 6. Primeiro acesso
 
@@ -205,7 +204,7 @@ Atenção: se o mesmo jogador abrir o link pelo navegador do WhatsApp e depois p
 
 Notas, contatos, caixa, mensalidade, diária, chave Pix e o tipo do jogador (mensalista ou diarista) só aparecem para administradores. Os jogadores veem apenas nomes, posições, presença, times e resultados.
 
-Quanto ao custo, o plano gratuito do Firebase (Spark) permite dezenas de milhares de leituras e gravações por dia, muito acima do que uma pelada usa. O Netlify também é gratuito nesse volume.
+Quanto ao custo, o plano gratuito do Firebase (Spark) permite dezenas de milhares de leituras e gravações por dia, muito acima do que uma pelada usa. O Firebase Hosting também é gratuito nesse volume.
 
 ## Como as versões novas vão para o ar
 
@@ -213,13 +212,13 @@ Desde outubro de 2026 o código fica no GitHub (`kleberkoch-coder/nosso-jogo`, p
 
 1. **Proposta:** cada versão nova chega como uma proposta de mudança (*pull request*) no GitHub, com o resumo do que mudou.
 2. **Testes:** o GitHub roda sozinho o roteiro de testes (`testes/testes_app.py`) em modo demonstração. O resultado aparece na proposta: ✓ verde (passou) ou ✕ vermelho (falhou).
-3. **Prévia:** o Netlify cria um link de prévia com a versão nova (aparece na proposta como "Deploy Preview"). O site oficial não muda nessa etapa.
+3. **Prévia:** o GitHub publica uma prévia da versão nova no Firebase Hosting e comenta o link na proposta ("Prévia da proposta"), em modo demonstração. O site oficial não muda nessa etapa.
 4. **Sua aprovação:** abra a prévia no celular e, se estiver tudo certo, clique em **Merge pull request** e depois em **Confirm merge**.
 5. **No ar:**
-   - o Netlify publica o site oficial em cerca de 1 minuto;
+   - o GitHub publica o site oficial (`https://nosso-jogo-f4762.web.app`) no Firebase Hosting em 2 a 3 minutos e confere que a versão no ar é a nova (automação "Publicar o site"; se não for, fica vermelha);
    - se o `firestore.rules` mudou, o GitHub publica as regras no Firebase sozinho (automação "Publicar regras do Firebase").
 
-Não arraste mais a pasta no Netlify: a próxima publicação pelo GitHub sobrescreveria o que foi arrastado.
+Desde a pelada-v24 o Netlify não é mais usado (acabaram os créditos do plano grátis em 10/10/2026). O endereço antigo `nossosjogos.netlify.app` mostra só um aviso de mudança de endereço.
 
 **Onde fica cada coisa no repositório:**
 - `src/`: o código do app, dividido em módulos (telas, regras de negócio, textos por idioma);
@@ -228,12 +227,13 @@ Não arraste mais a pasta no Netlify: a próxima publicação pelo GitHub sobres
 - `firestore.rules`: as regras do Firebase;
 - `testes/`: o roteiro e o script de testes;
 - `docs/`: a visão do produto, a arquitetura e o Design System;
-- `.github/workflows/`: as duas automações (testes e regras).
+- `.github/workflows/`: as automações (testes, prévia, publicar o site e publicar as regras).
 
 **Se algo der errado:**
 - **Testes em vermelho:** não clique em Merge. Peça na conversa do projeto para corrigir.
 - **Regras não publicadas:** veja a aba **Actions** do repositório. A causa mais comum é o segredo `FIREBASE_SERVICE_ACCOUNT` ausente ou vencido.
-- **Voltar uma versão:** no Netlify, abra **Deploys**, clique numa publicação anterior e em **Publish deploy**.
+- **Site não publicado:** veja a automação **Publicar o site** na aba **Actions**. A causa mais comum é a conta do GitHub sem o papel **Administrador do Firebase Hosting** (Google Cloud > **IAM e administrador** > **IAM** > conta `publicar-regras-github` > lápis > **Adicionar outro papel**).
+- **Voltar uma versão:** no [console do Firebase](https://console.firebase.google.com), abra **Hosting**, role até **Histórico de versões**, clique nos três pontinhos de uma versão anterior e em **Reverter**.
 
 A cada mudança no app, o número em `VERSION` no começo do `site/sw.js` sobe (agora está em `pelada-v14`), para os celulares receberem a atualização.
 

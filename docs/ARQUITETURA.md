@@ -11,7 +11,7 @@ O produto vai ganhar muitas funcionalidades e passará a **cobrar por partes do 
 
 ## Como o app é hoje
 - **Front-end:** JavaScript, HTML e CSS. O código-fonte fica em `src/`, dividido em módulos por assunto (ver "Mapa do código").
-- **Montagem:** o **esbuild** junta os módulos num único `index.html` (com o CSS e o código embutidos, sem minificar, para continuar legível). O Netlify roda `npm run build` a cada Merge e publica a pasta `dist/`. Arquivos fixos (service worker, manifesto, ícones) e o modelo da página ficam em `site/`.
+- **Montagem:** o **esbuild** junta os módulos num único `index.html` (com o CSS e o código embutidos, sem minificar, para continuar legível). Desde a pelada-v24 (D15), o GitHub roda `npm run build` a cada Merge e publica a pasta `dist/` no **Firebase Hosting**. Arquivos fixos (service worker, manifesto, ícones) e o modelo da página ficam em `site/`.
 - **Banco e login:** Firebase (Firestore e Authentication), sem servidor próprio.
 - **Regras de acesso:** `firestore.rules`, publicadas pela automação do GitHub no Merge.
 - **Testes:** `testes/testes_app.py` (Python + Playwright), simulando um usuário no celular. Rodam em toda proposta de mudança.
@@ -61,7 +61,7 @@ O produto vai ganhar muitas funcionalidades e passará a **cobrar por partes do 
 - **App Check (KAN-88), em duas fases:**
   - **Fase 1, observar (pelada-v21):** o app oficial manda um comprovante invisível do reCAPTCHA Enterprise (chave em `window.APP_CHECK_KEY`, no `site/index.html`, válida só no domínio `nossosjogos.netlify.app`). O Firebase só mede; nada é bloqueado. Se o script do App Check não carregar, o app segue funcionando.
   - **Fase 2, bloquear (antes de cobrar):** depois de 7 dias com mais de 99% das chamadas verificadas, o Kleber liga "Aplicar" (Enforce) para o Firestore no console do App Check.
-  - **Prévias das propostas** (Netlify, `CONTEXT=deploy-preview`) passam a rodar em **modo demonstração**: não tocam nos dados reais e não dependem da chave (que não vale nos endereços de prévia). O GitHub confere isso a cada proposta.
+  - **Prévias das propostas** (`CONTEXT=deploy-preview`; desde a v24, no Firebase Hosting) passam a rodar em **modo demonstração**: não tocam nos dados reais e não dependem da chave (que não vale nos endereços de prévia). O GitHub confere isso a cada proposta.
 
 ### D7. Orçamento de desempenho (8 out. 2026)
 Medido a cada versão, no celular de 390px:
@@ -123,9 +123,20 @@ Medido a cada versão, no celular de 390px:
   - a regra fica em `src/dominio/resumos.ts`, com teste próprio (`testes/regras/ranking.test.mjs`, compara com o cálculo antigo);
   - riscos aceitos: Recalcular ao mesmo tempo que outro administrador salva uma partida pode sobrescrever aquele incremento (basta recalcular de novo); aparelho com a v17 em cache que encerrar votação ou apagar rodada não ajusta as fichas até alguém usar Recalcular.
 
+### D15. Hospedagem no Firebase Hosting, publicada pelo GitHub (13 out. 2026, pelada-v24)
+- **Contexto:** em 10/10 o plano grátis do Netlify ficou sem créditos e pausou as publicações. O site no ar ficou na v19 enquanto os Merges da v20 à v23 aconteciam, e as regras do Firebase (publicadas pelo GitHub) seguiram em frente: a v19 passou a ser recusada ao pôr avulso pelo link e ao criar grupo. A correção temporária das regras (proposta #21) liberou de novo. Ninguém percebeu antes porque o "No ar" era anotado com base no Merge, sem conferir o site.
+- **Decisão:**
+  - o site passa a ser publicado no **Firebase Hosting** (`https://nosso-jogo-f4762.web.app`), no mesmo projeto do banco e no plano grátis (Spark), pela automação "Publicar o site" (`.github/workflows/publicar-site.yml`), com a mesma conta de serviço das regras (papel **Administrador do Firebase Hosting**);
+  - a automação **confere no endereço oficial que a versão no ar é a do `site/sw.js`** e fica vermelha se não for. O "No ar" do `testes/VERIFICACOES-GITHUB.md` passa a vir dessa conferência;
+  - as **prévias** das propostas saem num canal de prévia do Firebase Hosting (`.github/workflows/previa.yml`), em modo demonstração, com o link comentado na proposta e validade de 7 dias;
+  - o **Netlify** não monta mais prévias nem ramos (`netlify.toml`). Se voltar a publicar a `main`, gera só a página "O Nosso Jogo mudou de endereço", que leva ao endereço novo mantendo o link (`#/p/...`) e desliga o service worker antigo nos celulares.
+- **Impacto para quem usa:** o endereço muda. Administradores entram de novo uma vez no endereço novo, e o tema e o "quem sou eu" do link são escolhidos de novo, porque o navegador guarda isso por endereço. Os dados dos grupos não mudam (o banco é o mesmo).
+- **Próximo passo:** domínio próprio, depois da decisão do nome. Ele é ligado à mesma hospedagem, e o endereço `web.app` continua funcionando.
+- **Para os agentes:** o endereço oficial é `https://nosso-jogo-f4762.web.app`. Não sugerir voltar ao Netlify.
+
 ### D14. Docker: não agora (8 out. 2026)
 - **Contexto:** surgiu a pergunta se o Docker (o "contêiner" que embala um programa com tudo de que ele precisa para rodar num servidor) se encaixa no Nosso Jogo.
-- **Decisão:** não usar Docker para rodar o app. O Nosso Jogo não tem servidor próprio: o site é entregue pelo Netlify e banco e login ficam no Firebase, administrados pelo Google. Criar um servidor só para usar contêiner aumentaria custo, manutenção e superfície de ataque, sem ganho para o jogador.
+- **Decisão:** não usar Docker para rodar o app. O Nosso Jogo não tem servidor próprio: o site é entregue pelo Firebase Hosting (antes, Netlify) e banco e login ficam no Firebase, administrados pelo Google. Criar um servidor só para usar contêiner aumentaria custo, manutenção e superfície de ataque, sem ganho para o jogador.
 - **Onde ele já aparece (e continua):** só como ferramenta de teste, nos testes automáticos do GitHub (imagem pronta do Playwright, com o navegador instalado).
 - **Quando reavaliar:** se surgir um serviço próprio que o Firebase não cobre (pagamentos com regras complexas, relatórios pesados, integração com sistema externo). Mesmo assim, o primeiro passo continua sendo as funções do Firebase (D5), sem servidor e sem Docker. Contêiner só entra se esse serviço precisar de máquina dedicada, e de preferência num serviço gerenciado (ex.: Cloud Run), sem administrar servidor.
 - **Para os agentes:** não sugerir Docker, Kubernetes ou servidor próprio antes de existir uma necessidade que se enquadre no "quando reavaliar".
@@ -194,6 +205,6 @@ Os agentes leem o app pelo projeto do Claude, e não pelo GitHub. Por isso, toda
 | `app/LEIA-ME.md` | `LEIA-ME.md` | quando o uso mudar |
 | `VISAO-DO-PRODUTO.md`, `docs/ARQUITETURA.md`, `DESIGN-SYSTEM.md` | `docs/` | quando mudarem |
 | `testes/ROTEIRO-DE-TESTES.md` e `testes/testes_app.py` | `testes/` | quando mudarem |
-| `testes/VERIFICACOES-GITHUB.md` | `testes/` (resultado das verificações do GitHub e do Netlify, que os agentes não enxergam) | toda entrega (ao abrir a proposta) e de novo depois do Merge |
+| `testes/VERIFICACOES-GITHUB.md` | `testes/` (resultado das verificações do GitHub e do site no ar, que os agentes não enxergam) | toda entrega (ao abrir a proposta) e de novo depois do Merge |
 
 Depois de enviar, conferir que cada arquivo do projeto ficou igual ao do GitHub.

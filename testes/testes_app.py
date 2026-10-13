@@ -436,8 +436,14 @@ with sync_playwright() as pw:
     antes = pg.evaluate("Object.keys(S.me.grupos||{}).length")
     novo_grupo(pg, 'Grupo Além do Limite', 'futebol')
     err = pg.inner_text('#ngErr') if pg.locator('#ngErr').count() else ''
-    ok('limite atual' in err and pg.evaluate("Object.keys(S.me.grupos||{}).length") == antes, f'CT-KAN-89-05: no limite de grupos aparece mensagem clara e nenhum grupo é criado ({err[:40]})')
+    ok('chegou ao limite de' in err and pg.evaluate("Object.keys(S.me.grupos||{}).length") == antes, f'CT-KAN-89-05: no limite de grupos aparece mensagem clara e nenhum grupo é criado ({err[:40]})')
     shot('21-limite-grupos')
+    # Singular (Qualidade, 10/10): com limite 1 o texto diz "1 grupo", e não "1 grupos"
+    pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(200)
+    pg.evaluate(LIM, {'gruposPorConta': 1}); pg.reload(); pg.wait_for_timeout(1200)
+    novo_grupo(pg, 'Grupo Além do Limite', 'futebol')
+    err = pg.inner_text('#ngErr') if pg.locator('#ngErr').count() else ''
+    ok('limite de 1 grupo.' in err and '1 grupos' not in err, f'CT-KAN-89-05: com limite 1, a mensagem fala "1 grupo" no singular ({err[:40]})')
     pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(200)
     pg.evaluate(LIM, None); pg.evaluate(TRAVA, [gid_fut, rid_lim, True]); pg.reload(); pg.wait_for_timeout(1000)
 

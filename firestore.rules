@@ -12,19 +12,13 @@ service cloud.firestore {
     }
     function isOwner(gid) { return realUser() && get(grp(gid)).data.owner == request.auth.uid; }
     function grpAtivo(gid) { return get(grp(gid)).data.get('ativo', true) == true; }
-    // A chave Pix fica em /privado/caixa. No documento público do grupo ela não pode
-    // ser criada nem alterada (grupos antigos podem manter a que já tinham até a migração).
-    function pixOk() {
+    // Caixa (chave Pix, mensalidade e diária) fica só em /privado/caixa (KAN-79). Desde 13/10/2026 nenhum grupo
+    // tem mais esses valores no documento público (conferido no console), então eles não podem existir ali.
+    function caixaOk() {
       return !('pix' in request.resource.data.get('cfg', {}))
-        || (resource != null && request.resource.data.cfg.pix == resource.data.get('cfg', {}).get('pix', null));
+        && !('mensal' in request.resource.data.get('cfg', {}))
+        && !('diaria' in request.resource.data.get('cfg', {}));
     }
-    // KAN-79: mensalidade e diária também ficam só em /privado/caixa. No documento público não podem ser
-    // criadas nem alteradas (grupos antigos mantêm o valor que já tinham até a migração, que apaga).
-    function campoCaixaOk(k) {
-      return !(k in request.resource.data.get('cfg', {}))
-        || (resource != null && request.resource.data.cfg[k] == resource.data.get('cfg', {}).get(k, null));
-    }
-    function caixaOk() { return pixOk() && campoCaixaOk('mensal') && campoCaixaOk('diaria'); }
     function rod(gid, rid) { return /databases/$(database)/documents/grupos/$(gid)/rodadas/$(rid); }
     // Rodada aceitando confirmações: grupo ativo e lista aberta (ou jogo fixo ainda sem documento).
     function presencaAberta(gid, rid) {

@@ -55,7 +55,7 @@ Observação: esses dados não são senha. Eles ficam visíveis no site por natu
 O site fica no **Firebase Hosting**, no mesmo projeto do banco, e é publicado pelo GitHub a cada Merge (veja "Como as versões novas vão para o ar"). Na primeira vez:
 
 1. No [console do Firebase](https://console.firebase.google.com), abra o projeto, clique em **Criação** > **Hosting** > **Vamos começar** e avance até **Continuar para o console** (as instruções de instalação podem ser ignoradas).
-2. No [Google Cloud](https://console.cloud.google.com), em **IAM e administrador** > **IAM**, dê à conta de serviço usada pelo GitHub (`publicar-regras-github@...`) o papel **Administrador do Firebase Hosting** e o papel **Leitor de chaves de API**.
+2. No [Google Cloud](https://console.cloud.google.com), em **IAM e administrador** > **IAM**, deixe a conta de serviço usada pelo GitHub (`publicar-regras-github@...`) só com estes 5 papéis: **Administrador das regras do Firebase**, **Administrador do Firebase Hosting**, **Leitor de chaves de API**, **Leitor do Service Usage** e **Consumidor do Service Usage**. Não use **Administrador do Firebase**: ele também lê os dados dos grupos.
 3. Se usar o App Check, inclua `seuprojeto.web.app` e `seuprojeto.firebaseapp.com` nos domínios da chave do reCAPTCHA.
 
 Os endereços `seuprojeto.web.app` e `seuprojeto.firebaseapp.com` já vêm autorizados no login do Firebase. Um domínio próprio entra em **Hosting** > **Adicionar domínio personalizado**, e também precisa ir para **Authentication** > **Configurações** > **Domínios autorizados**.

@@ -26,6 +26,10 @@ function waUrl(tel){let d=String(tel||'').replace(/\D/g,'');if(!d)return '';if(d
 function editRat(fn){const a=cl(S.rat)||{};a.stars=a.stars||{};a.nivel=a.nivel||{};a.sep=a.sep||[];fn(a);S.rat=a;changed();return w(GB.set('privado/ratings',clean(a)))}
 function setPres(rid,pid,data){const cur=S.presRid===rid?S.pres[pid]:null,me=S.user?S.user.uid:'';
   const d=Object.assign({t:Date.now()},data,{by:me});delete d.dev;
+  /* KAN-78: a ordem da lista é a hora em que a pessoa confirmou. Ela só muda quando a resposta muda (e nunca volta),
+     e pelo link o nome, a marca de avulso e a posição ficam como estavam (as regras do Firebase conferem). */
+  if(cur){if(cur.s===d.s&&cur.t!=null)d.t=cur.t;else if(cur.t!=null&&d.t<cur.t)d.t=cur.t;
+    if(!isAdmin())['nome','avulso','pos'].forEach(k=>{if(k in cur)d[k]=cur[k];else delete d[k]})}
   /* dev = aparelho que respondeu primeiro pelo link. Administradores não viram "dono" da resposta. */
   const dev=(cur&&cur.dev)||(isAdmin()?null:me);if(dev)d.dev=dev;
   const novo=contaComoAvulso({admin:isAdmin(),jogador:!!(S.jog||{})[pid],jaNaLista:!!cur});

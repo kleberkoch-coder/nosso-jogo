@@ -121,7 +121,7 @@ describe('caixa e dados privados', () => {
 });
 
 describe('presença pelo link', () => {
-  const pres = { s: 'in', t: 1, by: 'anon1', dev: 'anon1' };
+  const pres = { s: 'in', t: Date.now(), by: 'anon1', dev: 'anon1' };
   test('jogador confirma com a lista aberta', async () => {
     await assertSucceeds(setDoc(doc(db.anon(), G + '/rodadas/r1/presencas/j1'), pres));
   });
@@ -155,13 +155,13 @@ describe('votos pelo link (KAN-76)', () => {
 describe('limites contra abuso (KAN-89)', () => {
   // TEMPORÁRIO (10/10/2026): dois casos pulados enquanto o site no ar for a v19 (Netlify pausado). Reativar com a v23 ou mais nova no ar.
   test('compatível com a v19: avulso pelo link sem contador é aceito', async () => {
-    await assertSucceeds(setDoc(doc(db.anon(), G + '/rodadas/r1/presencas/avl'), { s: 'in', t: 1, by: 'anon1', dev: 'anon1', nome: 'Avulso', avulso: true }));
+    await assertSucceeds(setDoc(doc(db.anon(), G + '/rodadas/r1/presencas/avl'), { s: 'in', t: Date.now(), by: 'anon1', dev: 'anon1', nome: 'Avulso', avulso: true }));
   });
   test('compatível com a v19: grupo novo sem contador é aceito', async () => {
     await assertSucceeds(setDoc(doc(db.adm(), 'grupos/gv19'), { name: 'Novo', owner: 'adm', ativo: true, createdAt: 1 }));
   });
   const R = G + '/rodadas/r1', C = R + '/limites/avulsos';
-  const pres = { s: 'in', t: 1, by: 'anon1', dev: 'anon1', nome: 'Avulso', avulso: true };
+  const pres = { s: 'in', t: Date.now(), by: 'anon1', dev: 'anon1', nome: 'Avulso', avulso: true };
   const novoAvulso = (f, pid, extra = {}) => { const b = writeBatch(f);
     b.set(doc(f, R + '/presencas/' + pid), Object.assign({}, pres, extra));
     b.set(doc(f, C), { n: increment(1), ult: pid }, { merge: true }); return b.commit(); };
@@ -181,13 +181,13 @@ describe('limites contra abuso (KAN-89)', () => {
   });
   test('jogador cadastrado confirma, desmarca e confirma de novo sem contar (critério 2)', async () => {
     const f = db.anon(), p = doc(f, R + '/presencas/j1');
-    await assertSucceeds(setDoc(p, { s: 'in', t: 1, by: 'anon1', dev: 'anon1' }));
-    await assertSucceeds(setDoc(p, { s: 'out', t: 2, by: 'anon1', dev: 'anon1' }));
-    await assertSucceeds(setDoc(p, { s: 'in', t: 3, by: 'anon1', dev: 'anon1' }));
+    await assertSucceeds(setDoc(p, { s: 'in', t: Date.now(), by: 'anon1', dev: 'anon1' }));
+    await assertSucceeds(setDoc(p, { s: 'out', t: Date.now(), by: 'anon1', dev: 'anon1' }));
+    await assertSucceeds(setDoc(p, { s: 'in', t: Date.now(), by: 'anon1', dev: 'anon1' }));
   });
   test('avulso muda a própria resposta sem contar de novo', async () => {
     await assertSucceeds(novoAvulso(db.anon(), 'av1'));
-    await assertSucceeds(setDoc(doc(db.anon(), R + '/presencas/av1'), Object.assign({}, pres, { s: 'out', t: 2 })));
+    await assertSucceeds(setDoc(doc(db.anon(), R + '/presencas/av1'), Object.assign({}, pres, { s: 'out', t: Date.now() })));
   });
   test('contador não volta para trás nem pula, e não conta quem já estava na lista', async () => {
     await assertSucceeds(novoAvulso(db.anon(), 'av1'));
@@ -237,6 +237,60 @@ describe('limites contra abuso (KAN-89)', () => {
   });
   test('nome de grupo novo com mais de 40 letras é recusado', async () => {
     await assertFails(criarGrupo(db.adm(), 'adm', 'gn1', { name: 'x'.repeat(41) }));
+  });
+});
+
+describe('segurança do link (KAN-77, KAN-78, KAN-79)', () => {
+  const P = G + '/rodadas/r1/presencas/';
+  const base = () => ({ s: 'in', t: Date.now(), by: 'anon1', dev: 'anon1' });
+  test('KAN-78: hora da confirmação no futuro ou de mais de 6 horas atrás é recusada', async () => {
+    await assertFails(setDoc(doc(db.anon(), P + 'j1'), Object.assign(base(), { t: Date.now() + 10 * 60000 })));
+    await assertFails(setDoc(doc(db.anon(), P + 'j1'), Object.assign(base(), { t: Date.now() - 7 * 3600000 })));
+    await assertFails(setDoc(doc(db.anon(), P + 'j1'), Object.assign(base(), { t: 'agora' })));
+    await assertSucceeds(setDoc(doc(db.anon(), P + 'j1'), base()));
+  });
+  test('KAN-78: sem mudar a resposta, a hora não muda (não dá para furar a fila)', async () => {
+    const p = doc(db.anon(), P + 'j1'), b = base();
+    await assertSucceeds(setDoc(p, b));
+    await assertFails(setDoc(p, Object.assign({}, b, { t: b.t - 60000 })));
+    await assertSucceeds(setDoc(p, b));
+  });
+  test('KAN-78: ao mudar a resposta, a hora não volta para trás', async () => {
+    const p = doc(db.anon(), P + 'j1'), b = base();
+    await assertSucceeds(setDoc(p, b));
+    await assertFails(setDoc(p, Object.assign({}, b, { s: 'out', t: b.t - 1000 })));
+    await assertSucceeds(setDoc(p, Object.assign({}, b, { s: 'out', t: Date.now() })));
+  });
+  test('KAN-78: pelo link não dá para trocar o nome, a marca de avulso nem a posição', async () => {
+    const p = doc(db.anon(), P + 'av1'), b = Object.assign(base(), { nome: 'Fulano', avulso: true, pos: 'ATA' });
+    await assertSucceeds(setDoc(p, b));
+    await assertFails(setDoc(p, Object.assign({}, b, { nome: 'Outro nome' })));
+    await assertFails(setDoc(p, Object.assign({}, b, { pos: 'GOL' })));
+    await assertFails(setDoc(p, Object.assign({}, b, { avulso: false })));
+    await assertSucceeds(setDoc(p, Object.assign({}, b, { s: 'out', t: Date.now() })));
+  });
+  test('KAN-78: administrador continua podendo corrigir nome e hora', async () => {
+    await assertSucceeds(setDoc(doc(db.adm(), P + 'av2'), { s: 'in', t: 1, by: 'adm', nome: 'Certo', avulso: true }));
+    await assertSucceeds(setDoc(doc(db.adm(), P + 'av2'), { s: 'in', t: 2, by: 'adm', nome: 'Corrigido', avulso: true }));
+  });
+  test('KAN-77: jogo fixo sem documento só aceita datas próximas', async () => {
+    const d = new Date(), ymd = x => x.toISOString().slice(0, 10);
+    const hoje = 'f-' + ymd(d) + '-2000', longe = 'f-2099-01-01-2000', passado = 'f-2020-01-01-2000';
+    await assertSucceeds(setDoc(doc(db.anon(), G + '/rodadas/' + hoje + '/presencas/j1'), base()));
+    await assertFails(setDoc(doc(db.anon(), G + '/rodadas/' + longe + '/presencas/j1'), base()));
+    await assertFails(setDoc(doc(db.anon(), G + '/rodadas/' + passado + '/presencas/j1'), base()));
+  });
+  test('KAN-79: mensalidade e diária novas no documento público do grupo são recusadas', async () => {
+    await assertFails(updateDoc(doc(db.adm(), G), { cfg: { mensal: 90 } }));
+    await assertFails(updateDoc(doc(db.adm(), G), { cfg: { diaria: 25 } }));
+    await assertFails(setDoc(doc(db.adm(), 'grupos/gx'), { name: 'X', owner: 'adm', ativo: true, createdAt: 1, cfg: { mensal: 80 } }));
+  });
+  test('KAN-79: grupo antigo pode manter o valor igual ou apagar (migração), mas não trocar', async () => {
+    await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), 'grupos/g3'), { name: 'G3', owner: 'adm', ativo: true, createdAt: 1, cfg: { mensal: 80, diaria: 20 } });
+      await setDoc(doc(ctx.firestore(), 'grupos/g3/membros/adm'), { uid: 'adm', role: 'owner' }); });
+    await assertSucceeds(updateDoc(doc(db.adm(), 'grupos/g3'), { name: 'G3 novo' }));
+    await assertFails(updateDoc(doc(db.adm(), 'grupos/g3'), { 'cfg.mensal': 100 }));
+    await assertSucceeds(updateDoc(doc(db.adm(), 'grupos/g3'), { cfg: {} }));
   });
 });
 

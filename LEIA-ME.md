@@ -192,6 +192,10 @@ Atenção: se o mesmo jogador abrir o link pelo navegador do WhatsApp e depois p
 - Cada aparelho vê só o próprio voto; ninguém consegue ver em quem os outros votaram.
 - Limite conhecido: quem abrir a votação em outro navegador consegue votar de novo, porque os jogadores não têm conta.
 
+**Portal do Nosso Jogo** (desde a pelada-v26): em **Meus grupos**, o botão **Portal** abre a lista de clientes, com plano, grupos, último acesso e última rodada. Só aparece para o e-mail de administração do portal, e é preciso entrar com o **Google** (o Firebase exige e-mail confirmado).
+
+Para ajustar os planos sem versão nova: no console do Firebase, **Firestore Database** > **Dados** > coleção `sistema` > documento `planos`, campo `planos` (tipo **map**), com um mapa por plano (`gratis`, `A`, `B`...), cada um com `nome` (texto), `grupos` e `admins` (número, ou **null** para ilimitado) e `recursos` (**array** de textos). Sem esse documento, valem Grátis, A e B padrão. Os limites dos planos ainda não valem no app (KAN-119).
+
 **Limites contra abuso** (desde a pelada-v23):
 - Pelo link, entram no máximo **30 nomes novos (avulsos) por rodada**. Jogadores cadastrados e quem só muda a própria resposta não contam. No limite, o link pede para a pessoa falar com o organizador, e a aba Rodada mostra um aviso. O organizador continua adicionando avulsos em **Adicionar avulso**, sem limite.
 - Cada conta cria no máximo **20 grupos** (criar e duplicar contam; inativar não devolve a vaga).

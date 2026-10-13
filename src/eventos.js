@@ -7,6 +7,7 @@ import { S } from './nucleo/estado.js';
 import { $, esc, toast } from './nucleo/util.js';
 import { checkPw } from './telas/login.js';
 import { MEK } from './telas/publico-rodada.js';
+import { filtrarPortalNaTela } from './telas/portal.js';
 import { closeDlgNow, drawPreview } from './ui/dialogos.js';
 import { render } from './ui/render.js';
 import { closeThemeMenu, themeMenuEl } from './ui/tema.js';
@@ -43,12 +44,13 @@ document.addEventListener('change',e=>{const t=e.target;
   if(t.classList.contains('dp')){drawPreview();return}
   const el=t.closest('[data-c]');if(!el)return;const v=el.value,c=el.dataset.c;
   if(c==='rid'){S.rid=v;S.live=null}else if(c==='ta'){S.live.a=+v;S.live.goals=[]}else if(c==='tb'){S.live.b=+v;S.live.goals=[]}
-  else if(c==='dur'){S.live.dur=+v*60;S.live.beeped=false}else if(c==='rank')S.rankSort=v;else if(c==='rankAno'){S.rankAno=v;S.rankMes=''}else if(c==='rankMes')S.rankMes=v;else if(c==='month')S.month=v;else if(c==='vid')S.vid=v;
+  else if(c==='dur'){S.live.dur=+v*60;S.live.beeped=false}else if(c==='rank')S.rankSort=v;else if(c==='rankAno'){S.rankAno=v;S.rankMes=''}else if(c==='rankMes')S.rankMes=v;else if(c==='month')S.month=v;else if(c==='vid')S.vid=v;else if(c==='portalFiltro'){if(S.portal)S.portal.filtro=v}
   else if(c==='voter'){try{localStorage.setItem(MEK,v)}catch(x){}if(S.myVote)S.myVote.pid=v;else S.myVote={pid:v,v:{}}}
   render()});
 document.addEventListener('keydown',e=>{if(e.key!=='Enter')return;const id=e.target.id;if(['le','lp','lp2'].includes(id)){e.preventDefault();if(S.authMode==='signup'){const b=$('#sgBtn');if(b&&!b.disabled)b.click()}else $('[data-a=login]')?.click()}else if(id==='ngn'){e.preventDefault();$('[data-a=createGroup]')?.click()}});
 document.addEventListener('input',e=>{
   if(e.target.id==='plv'){$('#plvo').textContent=fmtL(e.target.value);return}
+  if(e.target.id==='ptq'){filtrarPortalNaTela(e.target.value);return}
   if(e.target.id==='avq'){const q=normName(e.target.value);document.querySelectorAll('#avlist [data-n]').forEach(b=>b.hidden=q&&!b.dataset.n.includes(q));return}
   if(e.target.id==='anm'&&$('#avsug')){const q=normName(e.target.value),m=q.length<2?[]:Object.entries(S.avul||{}).filter(([id,a])=>!S.jog[id]&&normName(a.nome).includes(q)).slice(0,5);
     $('#avsug').innerHTML=m.length?`<p class="small muted" style="margin:-4px 0 6px">Já jogou aqui? Toque no seu nome:</p><div class="vgrid" style="margin-bottom:12px">${m.map(([id,a])=>`<button class="opt" data-a="pubPick" data-p="${id}">${posTag(id)}<span>${esc(a.nome)}</span></button>`).join('')}</div>`:'';return}if(['le','lp','lp2'].includes(e.target.id)&&S.authMode==='signup')checkPw()});

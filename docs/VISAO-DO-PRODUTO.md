@@ -43,6 +43,13 @@ Plataforma para **qualquer pessoa no mundo** organizar seus jogos recorrentes ou
 | `#/p/{grupo}/v/{votação}` | Votação pública. |
 | `#/convite/{grupo}/{token}` | Convite para ser administrador. |
 
+## Área administrativa do portal (pelada-v26, KAN-115 e KAN-116)
+- Endereço `#/portal`, com o botão **Portal** em Meus grupos. Só para o administrador do portal: por enquanto o e-mail do Kleber, confirmado (entrar com o Google). A lista está nas regras do Firebase e em `src/dominio/planos.ts`.
+- Mostra cada cliente (conta de organizador ou administrador): e-mail, plano e validade, grupos ativos e inativos, último acesso, última rodada gravada e data de registro. Busca por e-mail ou nome de grupo; filtros por plano, "sem acesso há mais de 30 dias" e "plano vence em até 7 dias".
+- **Nunca** mostra notas, caixa, Pix ou contatos dos grupos.
+- O último acesso começou a ser registrado na pelada-v26 (13/10/2026); quem não entrou desde então aparece sem data.
+- **Planos (KAN-115):** catálogo em `sistema/planos` (Grátis, A e B padrão), plano por conta com validade; vencido volta ao Grátis. Ainda **não** limita nada no app: os limites e cadeados entram na KAN-119. Mudar plano pela tela é a KAN-117.
+
 ## Contas, login e navegação
 - **Entrar com Google** (decisão de outubro de 2026, v11): alternativa ao e-mail e senha, nunca substituta.
   - O botão "Continuar com o Google" aparece nas abas "Criar conta" e "Entrar" e na tela de convite, no padrão de marca do Google (G colorido, fundo branco com borda cinza; no tema escuro, fundo #131314) — pelada-v17.
@@ -190,7 +197,8 @@ Cada grupo pode **criar posições próprias** (sigla de até 4 letras e nome) e
 ## Modelo de dados (Firestore)
 ```
 usuarios/{uid}                      → lista "Meus grupos" da conta
-contas/{uid}                        → ng (grupos criados pela conta), ult  [só a própria conta lê; só sobe de 1 em 1]
+contas/{uid}                        → ng, ult (grupos criados, só sobe de 1 em 1); acesso, email, criada (último acesso, gravado pela própria conta no máximo 1 vez por dia); plano, planoAte, obs (só o administrador do portal grava)  [a própria conta e o administrador do portal leem]
+sistema/planos                      → planos: {id: {nome, grupos, admins, recursos[]}}  [catálogo de planos; sem ele valem Grátis, A e B padrão; só pelo console]
 sistema/limites                     → avulsosPorRodada, gruposPorConta  [leitura pública; só pelo console do Firebase]
 grupos/{gid}                        → nome, esporte, freq, ativo, cfg (fixos, minutos, local), posx, owner, createdAt  [leitura pública; regras impedem gravar nova chave Pix aqui]
 grupos/{gid}/membros/{uid}          → administradores (owner/admin)

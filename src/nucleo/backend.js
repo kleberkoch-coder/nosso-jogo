@@ -11,7 +11,7 @@ function FirebaseBackend(cfg,appCheckKey){
        Vem primeiro dos provedores ligados à conta e é confirmado pelo token, sem atrasar a abertura do app. */
     onAuth:cb=>auth.onAuthStateChanged(u=>{if(!u)return cb(null);
       const ids=(u.providerData||[]).map(p=>p.providerId),g=ids.includes('google.com'),pw=ids.includes('password');
-      const o={uid:u.uid,email:u.email,anon:u.isAnonymous,via:g&&!pw?'google':pw&&!g?'senha':null};cb(o);
+      const o={uid:u.uid,email:u.email,verificado:!!u.emailVerified,anon:u.isAnonymous,via:g&&!pw?'google':pw&&!g?'senha':null};cb(o);
       if(!u.isAnonymous)u.getIdTokenResult().then(r=>{const p=r.signInProvider,v=p==='google.com'?'google':p==='password'?'senha':null;
         if(v&&v!==o.via){o.via=v;document.dispatchEvent(new Event('nj-via'))}}).catch(()=>{})}),
     login:(e,p)=>auth.signInWithEmailAndPassword(e,p),
@@ -79,7 +79,7 @@ function LocalBackend(){
       else if(v&&v.$op==='apagar')delete a[f];else if(v&&v.$op==='somar')a[f]=(a[f]||0)+v.n;else a[f]=cl(v)}
     store[p]=d};
   const setU=u=>{user=u;try{localStorage.setItem(K+'-u',JSON.stringify(u))}catch(e){}acb.forEach(f=>f(u))};
-  const lg=async(e,p)=>{if(!e||!p)throw{code:'auth/invalid-credential'};setU({uid:'u-'+e.toLowerCase().replace(/[^a-z0-9]/g,''),email:e.toLowerCase(),anon:false,via:p==='google'?'google':'senha'})};
+  const lg=async(e,p)=>{if(!e||!p)throw{code:'auth/invalid-credential'};setU({uid:'u-'+e.toLowerCase().replace(/[^a-z0-9]/g,''),email:e.toLowerCase(),verificado:true,anon:false,via:p==='google'?'google':'senha'})};
   return{demo:true,
     onAuth(cb){acb.add(cb);setTimeout(()=>cb(user),0)},
     login:lg,signup:lg,reset:async()=>{},logout:async()=>{setU(null);return true},

@@ -665,7 +665,9 @@ with sync_playwright() as pw:
     ok(pg.evaluate("document.documentElement.dataset.theme") == 'dark' and pg.evaluate("(()=>{const r=document.querySelector('#topright [data-a=logout]').getBoundingClientRect();return r.width>0&&r.left>=0&&r.right<=innerWidth&&document.documentElement.scrollWidth<=innerWidth})()"),
        'CT-KAN-80-06: no tema escuro, o botão Sair cabe na tela de 390px')
     contraste(pg, 'gestão com Sair (escuro, CT-KAN-80-06)')
-    pg.click('#topright [data-a=logout]'); pg.wait_for_timeout(1500)
+    pg.click('#topright [data-a=logout]')
+    try: pg.wait_for_selector('.ld-nav', timeout=8000); pg.wait_for_timeout(300)
+    except Exception: pass
     ok(pg.locator('.ld-nav').count() == 1 and pg.evaluate("!S.user||S.user.anon"), 'CT-KAN-80-06: Sair no tema escuro leva à apresentação, sem conta conectada')
     pg.evaluate("localStorage.removeItem('nj-tema')")
 
@@ -725,9 +727,10 @@ with sync_playwright() as pw:
     rq = f'grupos/{gid_nt}/rodadas/f-2026-10-21-2000'
     p2.evaluate(PUT, {rq: {'date': '2026-10-21', 'time': '20:00', 'fim': '22:00', 'fixo': True, 'cancelada': True, 'locked': False, 'times': None, 'createdAt': 1}})
     a4 = ver111(gid_nt)
-    # Data cancelada: conferida no link permanente. A aba Rodada às vezes abre na data cancelada (a escolha da rodada é feita
-    # antes de as rodadas gravadas chegarem); defeito relatado à Qualidade, por isso fica fora desta verificação.
-    ok(all('21/10' in x[0] for x in a3) and '26/10' in a4[1][0], f'CT-KAN-111-04: com dois dias fixos vale o mais próximo (21/10), e com a data cancelada o link pula para a seguinte ({a3[0][0]} → link {a4[1][0]}; aba Rodada: {a4[0][0]})')
+    # Data cancelada: a aba Rodada e o link pulam para a seguinte. A aba Rodada abria às vezes na data cancelada
+    # (a escolha era fixada antes de as rodadas gravadas chegarem); corrigido na v25.
+    ok(all('21/10' in x[0] for x in a3) and '26/10' in a4[1][0], f'CT-KAN-111-04: com dois dias fixos vale o mais próximo (21/10), e com a data cancelada o link pula para a seguinte ({a3[0][0]} → link {a4[1][0]})')
+    ok('26/10' in a4[0][0] and 'cancelada' not in a4[0][0], f'CT-KAN-111-04: com a data cancelada, a aba Rodada também abre na seguinte ({a4[0][0]})')
     p2.evaluate(PUT, {rq: {'date': '2026-10-21', 'time': '20:00', 'fim': '22:00', 'place': 'Quadra gravada', 'fixo': True, 'locked': False, 'times': None, 'createdAt': 1}})
     a5 = ver111(gid_nt)
     ok(all('21/10' in x[0] and 'Quadra gravada' in x[1] for x in a5), f'CT-KAN-111-04: rodada já gravada é a que aparece ({a5[0][0]} · {a5[0][1][:30]})')

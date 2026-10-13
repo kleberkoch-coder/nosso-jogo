@@ -46,7 +46,9 @@ function isAvulso(id){return !S.jog[id]}
 function isAdmin(){return !!(S.user&&!S.user.anon&&S.mem)}
 function isOwnerMe(){return !!(S.app&&S.user&&S.app.owner===S.user.uid)}
 function curRodada(){const rs=rodadas();if(!rs.length)return null;if(S.rid){const f=rs.find(r=>r.id===S.rid);if(f)return f}
-  const r=upcoming()[0]||rs[0];S.rid=r.id;return r}
+  /* Só fixa a escolha automática depois que as rodadas gravadas chegaram: antes disso, um jogo fixo cancelado
+     ainda aparece como "virtual" e ficaria escolhido (defeito achado nos testes da v25). */
+  const r=upcoming()[0]||rs[0];if(S.route.n!=='admin'||(S.loaded.rodF&&S.loaded.rodP))S.rid=r.id;return r}
 function attendance(){const a=Object.entries(S.pres).map(([id,v])=>Object.assign({id},v));
   return{inn:a.filter(x=>x.s==='in').sort((x,y)=>x.t-y.t).map(x=>x.id),out:a.filter(x=>x.s==='out').map(x=>x.id)}}
 

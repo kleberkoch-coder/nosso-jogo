@@ -331,6 +331,12 @@ describe('planos e portal (KAN-115, KAN-116)', () => {
     await assertFails(setDoc(doc(db.portal(), 'contas/adm'), { acesso: 1 }, { merge: true }));
     await assertFails(setDoc(doc(db.portal(), 'contas/adm'), { ng: 0 }, { merge: true }));
   });
+  test('KAN-133: qualquer pessoa lê um grupo pelo link, mas só o administrador do portal lista todos', async () => {
+    await assertSucceeds(getDoc(doc(db.semLogin(), G)));
+    await assertFails(getDocs(collection(db.semLogin(), 'grupos')));
+    await assertFails(getDocs(collection(db.adm(), 'grupos')));
+    await assertSucceeds(getDocs(collection(db.portal(), 'grupos')));
+  });
   test('outras contas, e o mesmo e-mail sem confirmação, não veem a lista de clientes nem dão plano', async () => {
     await assertFails(getDocs(collection(db.adm(), 'contas')));
     await assertFails(getDocs(collection(db.portalSemConfirmar(), 'contas')));

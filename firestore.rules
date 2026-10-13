@@ -141,8 +141,10 @@ service cloud.firestore {
     }
 
     match /grupos/{gid} {
-      // Nome e configurações do grupo aparecem nos links públicos.
-      allow read: if true;
+      // Nome e configurações do grupo aparecem nos links públicos (ler UM grupo).
+      // Listar todos os grupos, só o administrador do portal (KAN-133).
+      allow get: if true;
+      allow list: if adminPortal();
       // Grupo novo conta no limite de grupos por conta (KAN-89); nome com até 40 letras.
       // TEMPORÁRIO (10/10/2026): o site no ar ainda é a v19, que não grava o contador de grupos (o Netlify pausou as publicações).
       // Enquanto isso, o contador é opcional. Voltar a exigir grupoContado(gid) quando a v23 ou mais nova estiver no ar.

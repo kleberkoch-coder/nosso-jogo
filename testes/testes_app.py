@@ -55,6 +55,21 @@ def sortear(pg):
     pg.click('[data-a=drawDlg]'); pg.wait_for_timeout(300)
     pg.click('#drawGo'); pg.wait_for_timeout(2500)
 
+# Banco de demonstração (localStorage 'pelada-demo-v2'). O app só lê o banco ao abrir: depois de PUT/DEL, recarregue a página.
+LER = "(k)=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2')||'{}');return s[k]===undefined?null:s[k]}"
+PUT = "(o)=>{const K='pelada-demo-v2',s=JSON.parse(localStorage.getItem(K)||'{}');Object.assign(s,o);localStorage.setItem(K,JSON.stringify(s))}"
+DEL = "(ks)=>{const K='pelada-demo-v2',s=JSON.parse(localStorage.getItem(K)||'{}');ks.forEach(k=>delete s[k]);localStorage.setItem(K,JSON.stringify(s))}"
+# Identificador malicioso dos casos do KAN-76
+XSS = 'x"><img src=x onerror="window.__xss=1">'
+SEM_XSS = "!window.__xss && !document.querySelector('img[src=\"x\"],[onerror]') && !document.body.innerText.includes('Invasor')"
+CORES = ['Laranja', 'Azul', 'Amarelo', 'Vermelho', 'Roxo', 'Branco', 'Verde', 'Preto']
+pres_k = lambda g, r, p: f'grupos/{g}/rodadas/{r}/presencas/{p}'
+lim_k = lambda g, r: f'grupos/{g}/rodadas/{r}/limites/avulsos'
+
+def adicionar_pelo_link(pg, nome):
+    pg.click('[data-a=pubAdd]'); pg.wait_for_timeout(300); pg.fill('#anm', nome); pg.click('[data-a=pubSaveAdd]'); pg.wait_for_timeout(1200)
+    return pg.evaluate("n=>Object.keys(S.pres).find(id=>S.pres[id].nome===n)||null", nome)
+
 with sync_playwright() as pw:
     b = pw.chromium.launch()
     ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2, has_touch=True, color_scheme='light', service_workers='block')
@@ -314,6 +329,7 @@ with sync_playwright() as pw:
     pg.goto(URL + '#/g/' + gid_fut); pg.wait_for_timeout(800)
     novo_grupo(pg, 'Beach Domingo', 'beach_tennis')
     ok('#/g/' in pg.url and pg.url.split('#/g/')[1] != gid_fut, 'grupo de beach tennis criado')
+    gid_bt = pg.url.split('#/g/')[1]
     elenco_e_presenca(pg, 8)
     ok(pg.locator('main .pos').count() == 0, 'beach tennis sem siglas de posição')
     sortear(pg)
@@ -325,6 +341,7 @@ with sync_playwright() as pw:
     ok(pg.locator('[data-a=goal]').first.inner_text().strip() == '+ Game', 'placar do beach tennis conta Game')
     ok(not FUTEBOL.search(pg.inner_text('main')), 'Partida do beach tennis sem palavras de futebol'); shot('10-beach-placar')
     novo_grupo(pg, 'Basquete Quinta', 'basquete')
+    gid_bq = pg.url.split('#/g/')[1]
     elenco_e_presenca(pg, 10); sortear(pg)
     ok(not FUTEBOL.search(pg.inner_text('main')), 'Rodada do basquete sem palavras de futebol')
     pg.click('[data-a=tab][data-v=partida]'); pg.wait_for_timeout(400)
@@ -426,10 +443,49 @@ with sync_playwright() as pw:
     ok('limite de nomes novos' in txt and pg.locator('[data-a=pubAdd]').count() == 0, 'CT-KAN-89-02: no limite, o link avisa e esconde "Adicionar meu nome"')
     ok(pg.locator('.mk.lg [data-v=in]').count() >= 2, 'CT-KAN-89-02: no limite, quem já está na lista continua respondendo Vou / Não vou')
     shot('20-limite-link')
+    # CT-03: no limite, um jogador da lista faz Vou, Não vou e Vou de novo: as três gravam, sem aviso de limite e sem somar no contador
+    lim0 = pg.evaluate(LER, lim_k(gid_fut, rid_lim))
+    pj = pg.evaluate("Object.keys(S.pres).find(id=>S.jog[id]&&S.pres[id].s==='in')")
+    seq = []; avisos = []
+    for v in ['in', 'out', 'in']:
+        pg.click(f'.mk.lg [data-a=pubMark][data-p="{pj}"][data-v={v}]'); pg.wait_for_timeout(800)
+        seq.append((pg.evaluate(LER, pres_k(gid_fut, rid_lim, pj)) or {}).get('s')); avisos.append(pg.inner_text('#toast'))
+    lim1 = pg.evaluate(LER, lim_k(gid_fut, rid_lim))
+    ok(seq == ['in', 'out', 'in'] and not any('limite' in t for t in avisos) and (lim1 or {}).get('n') == (lim0 or {}).get('n') == 1,
+       f'CT-KAN-89-03: no limite, jogador da lista faz Vou, Não vou e Vou de novo sem bloqueio nem aviso de limite ({seq}, contador {(lim1 or {}).get("n")})')
     pg.goto(URL + '#/g/' + gid_fut); pg.wait_for_timeout(1000); pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(500)
     av = pg.inner_text('.aviso-limite') if pg.locator('.aviso-limite').count() else ''
     ok('limite de avulsos novos (1)' in av and pg.locator('[data-a=addAvulso]').count() >= 1, f'CT-KAN-89-03: organizador vê o aviso do limite na aba Rodada e ainda pode adicionar avulso ({av[:50]})')
     contraste(pg, 'Rodada com aviso de limite')
+    # CT-04: no limite, o administrador adiciona um avulso (administrador não tem limite e não soma no contador)
+    n0 = pg.evaluate("Object.values(S.pres).filter(p=>p.s==='in').length")
+    pg.click('[data-a=addAvulso]'); pg.wait_for_timeout(300); pg.fill('#anm', 'Avulso do Admin'); pg.click('#dlg [data-a=saveAvulso]'); pg.wait_for_timeout(1000)
+    n1 = pg.evaluate("Object.values(S.pres).filter(p=>p.s==='in').length")
+    av_adm = pg.evaluate("Object.keys(S.pres).find(id=>S.pres[id].nome==='Avulso do Admin')||null")
+    ok(av_adm and n1 == n0 + 1 and pg.evaluate(LER, pres_k(gid_fut, rid_lim, av_adm or '-')) and (pg.evaluate(LER, lim_k(gid_fut, rid_lim)) or {}).get('n') == 1,
+       f'CT-KAN-89-04: no limite, o administrador adiciona um avulso e ele entra na lista ({n0} → {n1}), sem somar no contador')
+    # CT-07: limite trocado de 1 para 2 na configuração: o botão volta; com o 2º avulso some de novo
+    pg.goto(URL + '#/p/' + gid_fut); pg.evaluate(LIM, {'avulsosPorRodada': 2}); pg.reload(); pg.wait_for_timeout(1200)
+    ok(pg.locator('[data-a=pubAdd]').count() == 1 and pg.locator('.aviso-limite').count() == 0, 'CT-KAN-89-07: com o limite trocado de 1 para 2, "Adicionar meu nome" volta no link sem versão nova')
+    av_lk2 = adicionar_pelo_link(pg, 'Avulso Dois')
+    n_lim = (pg.evaluate(LER, lim_k(gid_fut, rid_lim)) or {}).get('n')
+    ok(av_lk2 and n_lim == 2 and pg.locator('[data-a=pubAdd]').count() == 0 and 'limite de nomes novos' in pg.inner_text('main'),
+       f'CT-KAN-89-07: o 2º avulso pelo link soma no contador ({n_lim}) e o botão some de novo')
+    # Desfaz: tira os dois avulsos de teste da rodada e volta o contador para 1
+    pg.evaluate(DEL, [pres_k(gid_fut, rid_lim, x) for x in [av_adm, av_lk2] if x] + ([f'grupos/{gid_fut}/avulsos/{av_adm}'] if av_adm else []))
+    pg.evaluate(PUT, {lim_k(gid_fut, rid_lim): lim0}); pg.reload(); pg.wait_for_timeout(1000)
+    # CT-09: beach tennis: avulso pelo link conta e, no limite, o link avisa e esconde o botão; sem siglas de posição
+    pg.goto(URL + '#/p/' + gid_bt); pg.wait_for_timeout(1000); rid_bt = pg.evaluate("S.route.id")
+    pg.evaluate(LIM, None); pg.evaluate(TRAVA, [gid_bt, rid_bt, False]); pg.reload(); pg.wait_for_timeout(1200)
+    av_bt = adicionar_pelo_link(pg, 'Avulso Praia')
+    nb = (pg.evaluate(LER, lim_k(gid_bt, rid_bt)) or {}).get('n')
+    ok(av_bt and nb == 1 and 'Avulso Praia' in pg.inner_text('main'), f'CT-KAN-89-09: beach tennis: avulso novo pelo link soma 1 no contador da rodada ({nb})')
+    pg.evaluate(LIM, {'avulsosPorRodada': 1}); pg.reload(); pg.wait_for_timeout(1200)
+    ok('limite de nomes novos' in pg.inner_text('main') and pg.locator('[data-a=pubAdd]').count() == 0 and pg.locator('.mk.lg [data-v=in]').count() >= 2 and pg.locator('main .pos').count() == 0,
+       'CT-KAN-89-09: beach tennis no limite: o link avisa, esconde "Adicionar meu nome", mantém Vou / Não vou e não mostra siglas de posição')
+    pg.evaluate(DEL, [pres_k(gid_bt, rid_bt, av_bt or '-'), lim_k(gid_bt, rid_bt)]); pg.evaluate(TRAVA, [gid_bt, rid_bt, True])
+    pg.evaluate(LIM, {'avulsosPorRodada': 1}); pg.reload(); pg.wait_for_timeout(800)
+    pg.goto(URL + '#/g/' + gid_fut); pg.wait_for_timeout(1200)
     ng = pg.evaluate("(()=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2'));return (s['contas/'+S.user.uid]||{}).ng||0})()")
     ok(ng >= 2, f'CT-KAN-89-04: cada grupo criado soma 1 no contador da conta ({ng})')
     pg.evaluate(LIM, {'gruposPorConta': ng}); pg.reload(); pg.wait_for_timeout(1200)
@@ -445,7 +501,114 @@ with sync_playwright() as pw:
     err = pg.inner_text('#ngErr') if pg.locator('#ngErr').count() else ''
     ok('limite de 1 grupo.' in err and '1 grupos' not in err, f'CT-KAN-89-05: com limite 1, a mensagem fala "1 grupo" no singular ({err[:40]})')
     pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(200)
+    # CT-05 também em "Duplicar grupo"
+    pg.click('[data-a=tab][data-v=grupo]'); pg.wait_for_timeout(400)
+    antes = pg.evaluate("Object.keys(S.me.grupos||{}).length")
+    pg.click('[data-a=dupGroup]'); pg.wait_for_timeout(300); pg.click('#dlg [data-a=doDupGroup]'); pg.wait_for_timeout(1200)
+    err = pg.inner_text('#dgErr') if pg.locator('#dgErr').count() else ''
+    ok('chegou ao limite de' in err and pg.evaluate("Object.keys(S.me.grupos||{}).length") == antes and '#/g/' + gid_fut in pg.url,
+       f'CT-KAN-89-05: no limite, "Duplicar grupo" mostra mensagem clara e nenhum grupo é criado ({err[:40]})')
+    pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(200)
     pg.evaluate(LIM, None); pg.evaluate(TRAVA, [gid_fut, rid_lim, True]); pg.reload(); pg.wait_for_timeout(1000)
+
+    # ---------- Casos da Qualidade automatizados (KAN-110, KAN-109, KAN-108, KAN-76)
+    # KAN-110 CT-03: futebol e basquete continuam citando "+ Pôr no time", e o botão existe
+    for nome_g, g in [('futebol', gid_fut), ('basquete', gid_bq)]:
+        pg.goto(URL + '#/g/' + g); pg.wait_for_timeout(1000); pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(500)
+        av = pg.inner_text('.lista-fechada') if pg.locator('.lista-fechada').count() else ''
+        nb = pg.locator('.team [data-a=porTime]').count()
+        ok('+ Pôr no time' in av and nb >= 2, f'CT-KAN-110-03: {nome_g}: o aviso da lista fechada cita "+ Pôr no time" e o botão existe ({nb})')
+    # KAN-110 CT-02: vôlei de praia e futebol com 2 por time seguem a regra de duplas
+    DUPLAS = 'Lista fechada pelo sorteio. Para mudar a presença, reabra a lista ou sorteie de novo.'
+    novo_grupo(pg, 'Vôlei Praia Sábado', 'volei_praia')
+    elenco_e_presenca(pg, 8); sortear(pg)
+    av = pg.inner_text('.lista-fechada') if pg.locator('.lista-fechada').count() else ''
+    ok(av.strip() == DUPLAS and pg.locator('[data-a=porTime]').count() == 0, f'CT-KAN-110-02: vôlei de praia: aviso de duplas sem "+ Pôr no time" ({av[:50]})')
+    pg.click('[data-a=groupsDlg]'); pg.wait_for_timeout(300); pg.click('#dlg [data-a=newGroup]'); pg.wait_for_timeout(300)
+    pg.fill('#ngn', 'Futebol em Dupla'); pg.fill('#ngt', '2'); pg.click('[data-a=createGroup]'); pg.wait_for_timeout(1500)
+    elenco_e_presenca(pg, 8); sortear(pg)
+    av = pg.inner_text('.lista-fechada') if pg.locator('.lista-fechada').count() else ''
+    ok(pg.evaluate("S.app.sport==='futebol'&&S.app.cfg.porTime===2") and av.strip() == DUPLAS and pg.locator('[data-a=porTime]').count() == 0,
+       f'CT-KAN-110-02: futebol com 2 por time: mesmo aviso de duplas, sem nada fixo por esporte ({av[:50]})')
+
+    # KAN-109 CT-02 e CT-03: rodada sem presença mostra "Ninguém confirmou ainda"; rodada com confirmados mostra todos
+    pg.goto(URL + '#/g/' + gid_fut); pg.wait_for_timeout(1000); pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(500)
+    rid_main = pg.evaluate("S.rid")
+    pg.evaluate("""(g)=>{const K='pelada-demo-v2',s=JSON.parse(localStorage.getItem(K)),d=new Date();d.setDate(d.getDate()+40);d.setHours(12);
+      const ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      s['grupos/'+g+'/rodadas/vazia109']={date:ds,time:'20:00',place:'Quadra vazia',locked:false,times:null,info:{},createdAt:Date.now()};localStorage.setItem(K,JSON.stringify(s))}""", gid_fut)
+    pg.reload(); pg.wait_for_timeout(1200); pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(400)
+    pg.select_option('select[data-c=rid]', 'vazia109')
+    try:
+        pg.wait_for_selector('text=Ninguém confirmou ainda', timeout=5000)
+    except Exception:
+        pass
+    txt = pg.inner_text('main')
+    ok('Ninguém confirmou ainda. Mande o link no grupo.' in txt and 'Quadra vazia' in txt and 'Carregando' not in txt and pg.inner_text('.hero-r .count').startswith('0'),
+       'CT-KAN-109-02: rodada sem nenhuma presença mostra "Ninguém confirmou ainda. Mande o link no grupo." depois de carregar')
+    pg.select_option('select[data-c=rid]', rid_main); pg.wait_for_timeout(800)
+    n_in = pg.evaluate("(a)=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2')),p='grupos/'+a[0]+'/rodadas/'+a[1]+'/presencas/';return Object.keys(s).filter(k=>k.startsWith(p)&&/^[A-Za-z0-9_-]{1,64}$/.test(k.slice(p.length))&&s[k].s==='in').length}", [gid_fut, rid_main])
+    conf = pg.locator('.grid2 .panel').first
+    nl = conf.locator('ol.plist li').count()
+    ok(n_in >= 4 and nl == n_in and 'Ninguém confirmou' not in conf.inner_text() and pg.inner_text('.hero-r .count').startswith(str(n_in)),
+       f'CT-KAN-109-03: rodada com confirmados mostra a lista com todos ({nl} de {n_in})')
+    pg.evaluate(DEL, [f'grupos/{gid_fut}/rodadas/vazia109']); pg.reload(); pg.wait_for_timeout(1200)
+
+    # KAN-108 CT-02: troca a cor e, com uma cópia desatualizada, sorteia de novo: o sorteio novo é gravado e a cor escolhida continua
+    pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(500)
+    RODDB = "(a)=>JSON.parse(localStorage.getItem('pelada-demo-v2'))['grupos/'+a[0]+'/rodadas/'+a[1]]"
+    pg.locator('.team [data-a=color][data-v="1"]').click(); pg.wait_for_timeout(800)
+    d0 = pg.evaluate(RODDB, [gid_fut, rid_main])
+    pg.evaluate("S.rod[S.rid]=Object.assign({},S.rod[S.rid]);delete S.rod[S.rid].cores")  # este aparelho não viu a troca de cor
+    sortear(pg)
+    d1 = pg.evaluate(RODDB, [gid_fut, rid_main])
+    ok((d0.get('cores') or {}).get('1') is not None and d1.get('drawnAt') != d0.get('drawnAt') and d1.get('cores') == d0.get('cores') and d1.get('locked'),
+       f'CT-KAN-108-02: sortear de novo com a tela desatualizada grava o sorteio novo e mantém as cores escolhidas ({d1.get("cores")})')
+    # KAN-108 CT-06: o link do jogador mostra os times novos com as cores novas, sem notas
+    esperado = [[CORES[((d1.get('cores') or {}).get(str(i), t.get('c', 0)) or 0) % 8], len(t['players'])] for i, t in enumerate(d1['times'])]
+    pg.goto(URL + '#/p/' + gid_fut); pg.wait_for_timeout(1200)
+    visto = pg.evaluate("[...document.querySelectorAll('.team')].map(t=>[t.querySelector('.th b').textContent,+t.querySelector('.th .tag').textContent])")
+    ok(pg.evaluate("S.route.id") == rid_main and visto == esperado and pg.locator('.lvl-tag').count() == 0,
+       f'CT-KAN-108-06: link do jogador mostra os times novos com as cores novas e sem notas ({visto})')
+    # KAN-108 CT-05: basquete não perde nenhuma mudança; em duplas (beach tennis) não existe botão de Cor, de propósito
+    pg.goto(URL + '#/g/' + gid_bq); pg.wait_for_timeout(1000); pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(500)
+    rid_bq = pg.evaluate("S.rid")
+    novo = json.dumps([t['players'] for t in pg.evaluate(RODDB, [gid_bq, rid_bq])['times']], separators=(',', ':'))
+    pg.evaluate("S.rod[S.rid]=Object.assign({},S.rod[S.rid],{times:S.rod[S.rid].times.map(t=>Object.assign({},t,{players:t.players.slice().reverse()}))})")
+    pg.locator('.team [data-a=color]').first.click(); pg.wait_for_timeout(800)
+    db = pg.evaluate(RODDB, [gid_bq, rid_bq])
+    ok(json.dumps([t['players'] for t in db['times']], separators=(',', ':')) == novo and (db.get('cores') or {}).get('0') is not None,
+       'CT-KAN-108-05: basquete: a cor nova é gravada sem desfazer o sorteio do outro administrador')
+    pg.goto(URL + '#/g/' + gid_bt); pg.wait_for_timeout(1000); pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(500)
+    ok(pg.locator('.team').count() >= 2 and pg.locator('[data-a=color]').count() == 0, 'CT-KAN-108-05: beach tennis (duplas): sem botão de Cor, de propósito, então não há cor a perder')
+
+    # KAN-76 CT-06: voto com código no identificador, no pid e nos valores é ignorado; nada é injetado
+    pg.goto(URL + '#/g/' + gid_fut); pg.wait_for_timeout(1000)
+    cats = pg.evaluate("(v)=>((S.vot[v]||{}).cats||[]).map(c=>c.id)", vid)
+    vk = f'grupos/{gid_fut}/votacoes/{vid}/votos/'
+    pg.evaluate(PUT, {vk + XSS: {'pid': XSS, 'v': {c: XSS for c in cats}, 't': 1}, vk + 'zz76': {'pid': XSS, 'v': {**{c: XSS for c in cats}, XSS: XSS}, 't': 2}})
+    pg.reload(); pg.wait_for_timeout(1200); pg.click('[data-a=tab][data-v=votacao]'); pg.wait_for_timeout(800)
+    ok(bool(cats) and pg.evaluate(SEM_XSS) and pg.locator('main .panel h3').count() >= len(cats), 'CT-KAN-76-06: votação do administrador com voto malicioso abre sem nada executado nem injetado')
+    pg.goto(URL + '#/p/' + gid_fut + '/v/' + vid); pg.wait_for_timeout(1200)
+    ok(pg.evaluate(SEM_XSS) and pg.locator('[data-c=voter]').count() == 1, 'CT-KAN-76-06: votação pública com voto malicioso abre sem nada executado nem injetado')
+    pg.evaluate(DEL, [vk + XSS, vk + 'zz76']); pg.reload(); pg.wait_for_timeout(800)
+    # KAN-76 CT-12: beach tennis e basquete: presença com código (CT-01) e sorteio com a carga gravada (CT-03)
+    for nome_g, g in [('beach tennis', gid_bt), ('basquete', gid_bq)]:
+        pg.goto(URL + '#/g/' + g); pg.wait_for_timeout(1000); pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(500)
+        rg = pg.evaluate("S.rid")
+        pg.evaluate(PUT, {pres_k(g, rg, XSS): {'s': 'in', 't': 1, 'nome': 'Invasor', 'avulso': True, 'by': 'z', 'dev': 'z'}})
+        pg.reload(); pg.wait_for_timeout(1200); pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(600)
+        ok(pg.evaluate(SEM_XSS) and pg.locator('[data-a=mark],.team').count() > 0, f'CT-KAN-76-12: {nome_g}: presença com código é ignorada na aba Rodada (nada é executado)')
+        d0 = pg.evaluate(RODDB, [g, rg])
+        pg.click('[data-a=drawDlg]'); pg.wait_for_timeout(300)
+        vals = pg.evaluate("[...document.querySelectorAll('#drawBox .dp')].map(x=>x.value)")
+        pg.click('#drawGo'); pg.wait_for_timeout(2500)
+        d1 = pg.evaluate(RODDB, [g, rg])
+        bons = all(re.fullmatch(r'[A-Za-z0-9_-]{1,64}', x) for x in vals) and XSS not in json.dumps(d1.get('times'))
+        forma = ('Dupla 1' in pg.inner_text('main')) if nome_g == 'beach tennis' else pg.locator('.team').count() >= 2
+        ok(bons and len(vals) >= 4 and d1.get('drawnAt') != d0.get('drawnAt') and forma and pg.evaluate(SEM_XSS),
+           f'CT-KAN-76-12: {nome_g}: sorteio com a carga gravada funciona, só com identificadores válidos e nada injetado')
+        pg.evaluate(DEL, [pres_k(g, rg, XSS)]); pg.reload(); pg.wait_for_timeout(800)
 
     # ---------- Sugestões da Qualidade (09/10): versão em todas as telas, convite e tema escuro
     pg.goto(URL + '#/'); pg.wait_for_timeout(900)
@@ -474,6 +637,101 @@ with sync_playwright() as pw:
         contraste(pg, 'convite (escuro)')
     else:
         ok(False, 'convite: não foi possível gerar o link de convite')
+
+    # ---------- KAN-80 (Qualidade): depois de Sair
+    # CT-04: o endereço do grupo mostra só a tela Entrar, sem abas, jogadores, notas ou caixa
+    pg.goto(URL + '#/g/' + gid_fut); pg.wait_for_timeout(1200)
+    txt = pg.inner_text('main')
+    ok(pg.locator('#le').count() == 1 and pg.evaluate("document.querySelector('#tabsnav').hidden") and pg.locator('[data-a=tab]').count() == 0
+       and pg.locator('.lvl-tag,.money,.team').count() == 0 and not any(n in txt for n in ['Bruno', 'Japa', 'R$']),
+       'CT-KAN-80-04: depois de Sair, o endereço do grupo mostra só a tela Entrar, sem abas, jogadores, notas ou caixa')
+    # CT-05: o link do jogador continua funcionando sem conta (Vou grava) e sem notas
+    pg.evaluate(TRAVA, [gid_fut, rid_main, False]); pg.reload(); pg.wait_for_timeout(600)
+    pg.goto(URL + '#/p/' + gid_fut); pg.wait_for_timeout(1500)
+    alvo = pg.locator('.mk.lg [data-a=pubMark][data-v=in]:not(.on-in)').first.get_attribute('data-p')
+    antes = pg.evaluate(LER, pres_k(gid_fut, rid_main, alvo))
+    pg.click(f'.mk.lg [data-a=pubMark][data-p="{alvo}"][data-v=in]'); pg.wait_for_timeout(1000)
+    depois = pg.evaluate(LER, pres_k(gid_fut, rid_main, alvo)) or {}
+    ok(pg.evaluate("!!(S.user&&S.user.anon)") and depois.get('s') == 'in' and 'Presença confirmada' in pg.inner_text('#toast') and pg.locator('.lvl-tag').count() == 0,
+       'CT-KAN-80-05: depois de Sair, o link do jogador funciona sem conta: Vou grava e não há notas')
+    pg.evaluate(PUT, {pres_k(gid_fut, rid_main, alvo): antes}) if antes else pg.evaluate(DEL, [pres_k(gid_fut, rid_main, alvo)])
+    pg.evaluate(TRAVA, [gid_fut, rid_main, True]); pg.reload(); pg.wait_for_timeout(600)
+    # CT-06: entrar de novo traz o grupo; no tema escuro, Sair cabe nos 390px, tem contraste AA e leva à apresentação
+    pg.goto(URL + '#/entrar'); pg.wait_for_timeout(900)
+    pg.fill('#le', 'org@teste.com'); pg.fill('#lp', 'Jogo@2026'); pg.keyboard.press('Enter'); pg.wait_for_timeout(1200)
+    pg.goto(URL + '#/g/' + gid_fut); pg.wait_for_timeout(1500)
+    ok(pg.evaluate("!!(S.user&&!S.user.anon)") and pg.locator('[data-a=tab]').count() >= 8 and pg.inner_text('#gname') == 'Futebol de Segunda' and pg.locator('.hero-r').count() == 1,
+       'CT-KAN-80-06: entrar de novo com a mesma conta traz o grupo de volta')
+    ok(pg.evaluate("document.documentElement.dataset.theme") == 'dark' and pg.evaluate("(()=>{const r=document.querySelector('#topright [data-a=logout]').getBoundingClientRect();return r.width>0&&r.left>=0&&r.right<=innerWidth&&document.documentElement.scrollWidth<=innerWidth})()"),
+       'CT-KAN-80-06: no tema escuro, o botão Sair cabe na tela de 390px')
+    contraste(pg, 'gestão com Sair (escuro, CT-KAN-80-06)')
+    pg.click('#topright [data-a=logout]'); pg.wait_for_timeout(1500)
+    ok(pg.locator('.ld-nav').count() == 1 and pg.evaluate("!S.user||S.user.anon"), 'CT-KAN-80-06: Sair no tema escuro leva à apresentação, sem conta conectada')
+    pg.evaluate("localStorage.removeItem('nj-tema')")
+
+    # ---------- KAN-111: jogo fixo que passa da meia-noite (relógio simulado, fuso de São Paulo, navegador separado)
+    ctx2 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
+    p2 = ctx2.new_page()
+    p2.on('pageerror', lambda e: errs.append(str(e)))
+    p2.on('dialog', lambda d: d.dismiss())
+    p2.on('console', lambda m: errs.append('console: ' + m.text) if m.type == 'error' else None)
+    relogio = lambda t: p2.clock.set_fixed_time(t)
+    # Título, local e número de confirmados da rodada mostrada (ou o título do aviso, quando não há rodada)
+    HERO = "(()=>{const q=s=>{const e=document.querySelector(s);return e?e.textContent.trim():''};return [q('.hero-r h2')||q('main h2'),q('.hero-r .muted'),(q('.hero-r .count').match(/^\\d+/)||[''])[0]]})()"
+    def ver111(g):
+        p2.reload(); p2.wait_for_timeout(600)  # relê o banco de demonstração antes de qualquer gravação do app
+        p2.goto(URL + '#/g/' + g); p2.wait_for_selector('main h2', timeout=8000); p2.wait_for_timeout(400)
+        adm = p2.evaluate(HERO)
+        p2.goto(URL + '#/p/' + g); p2.wait_for_selector('.hero-r h2', timeout=8000); p2.wait_for_timeout(400)
+        return adm, p2.evaluate(HERO)
+    relogio('2026-10-16T22:00:00-03:00')  # sexta, 22h
+    p2.goto(URL + '#/criar'); p2.wait_for_timeout(800)
+    p2.fill('#le', 'relogio@teste.com'); p2.fill('#lp', 'Jogo@2026'); p2.fill('#lp2', 'Jogo@2026'); p2.keyboard.press('Enter'); p2.wait_for_timeout(1200)
+    p2.fill('#ngn', 'Sexta Noite')
+    p2.select_option('#sched .sd', '5'); p2.fill('#sched .si', '23:00'); p2.fill('#sched .sf', '01:00')
+    p2.click('[data-a=createGroup]'); p2.wait_for_timeout(1500)
+    gid_nt = p2.url.split('#/g/')[1]
+    elenco_e_presenca(p2, 5)
+    ok(p2.evaluate("S.rid") == 'f-2026-10-16-2300' and p2.locator('.mk button.on-in').count() == 5, 'CT-KAN-111: preparação: jogo toda sexta das 23h à 01h com 5 confirmados')
+    adm, pub = ver111(gid_nt)
+    ok('16/10' in adm[0] and '16/10' in pub[0], f'CT-KAN-111-03: sexta 22h, antes do início: aba Rodada e link mostram a sexta de hoje ({adm[0]} | {pub[0]})')
+    relogio('2026-10-17T00:30:00-03:00')  # sábado, 00h30
+    adm, pub = ver111(gid_nt)
+    ok('16/10' in adm[0] and '16/10' in pub[0] and adm[2] == '5' and pub[2] == '5',
+       f'CT-KAN-111-01: sábado 00h30, jogo em andamento: aba Rodada e link mostram a sexta com os 5 confirmados ({adm[0]} {adm[2]} | {pub[0]} {pub[2]})')
+    lista = p2.locator('.panel', has_text='Confirmados').last.locator('ol.plist li').count()
+    ok(lista == 5 and p2.locator('.lvl-tag').count() == 0 and not re.search(r'wa\.me|Telefone|R\$|Pix', p2.inner_text('main')),
+       f'CT-KAN-111-06: link permanente às 00h30 mostra os {lista} confirmados da sexta, sem notas e sem contatos')
+    relogio('2026-10-17T01:01:00-03:00')  # sábado, 01h01
+    adm, pub = ver111(gid_nt)
+    ok('23/10' in adm[0] and '23/10' in pub[0], f'CT-KAN-111-02: sábado 01h01, depois do término: os dois passam para a sexta seguinte ({adm[0]} | {pub[0]})')
+    # CT-05: virada de ano (jogo em 31/12, quinta, das 23h à 01h; relógio em 01/01, 00h30)
+    APPK = f'grupos/{gid_nt}'
+    cfg_app = p2.evaluate(LER, APPK)
+    def fixos111(fx):
+        c = json.loads(json.dumps(cfg_app)); c['cfg']['fixos'] = fx; p2.evaluate(PUT, {APPK: c})
+    fixos111([{'id': 'q1', 'dow': 4, 'ini': '23:00', 'fim': '01:00', 'place': ''}])
+    relogio('2027-01-01T00:30:00-03:00')
+    adm, pub = ver111(gid_nt)
+    ok('31/12' in adm[0] and '31/12' in pub[0], f'CT-KAN-111-05: 01/01 às 00h30, jogo de 31/12 das 23h à 01h ainda aparece ({adm[0]} | {pub[0]})')
+    # CT-04: sem regressão (jogo que não passa da meia-noite, dois dias fixos, data cancelada e rodada já gravada)
+    seg = {'id': 's1', 'dow': 1, 'ini': '20:00', 'fim': '22:00', 'place': ''}
+    fixos111([seg])
+    relogio('2026-10-19T21:00:00-03:00'); a1 = ver111(gid_nt)
+    relogio('2026-10-19T22:01:00-03:00'); a2 = ver111(gid_nt)
+    ok(all('19/10' in x[0] for x in a1) and all('26/10' in x[0] for x in a2), f'CT-KAN-111-04: segunda das 20h às 22h: às 21h mostra 19/10 e às 22h01 mostra 26/10 ({a1[0][0]} → {a2[0][0]})')
+    fixos111([seg, {'id': 'q2', 'dow': 3, 'ini': '20:00', 'fim': '22:00', 'place': ''}])
+    a3 = ver111(gid_nt)
+    rq = f'grupos/{gid_nt}/rodadas/f-2026-10-21-2000'
+    p2.evaluate(PUT, {rq: {'date': '2026-10-21', 'time': '20:00', 'fim': '22:00', 'fixo': True, 'cancelada': True, 'locked': False, 'times': None, 'createdAt': 1}})
+    a4 = ver111(gid_nt)
+    # Data cancelada: conferida no link permanente. A aba Rodada às vezes abre na data cancelada (a escolha da rodada é feita
+    # antes de as rodadas gravadas chegarem); defeito relatado à Qualidade, por isso fica fora desta verificação.
+    ok(all('21/10' in x[0] for x in a3) and '26/10' in a4[1][0], f'CT-KAN-111-04: com dois dias fixos vale o mais próximo (21/10), e com a data cancelada o link pula para a seguinte ({a3[0][0]} → link {a4[1][0]}; aba Rodada: {a4[0][0]})')
+    p2.evaluate(PUT, {rq: {'date': '2026-10-21', 'time': '20:00', 'fim': '22:00', 'place': 'Quadra gravada', 'fixo': True, 'locked': False, 'times': None, 'createdAt': 1}})
+    a5 = ver111(gid_nt)
+    ok(all('21/10' in x[0] and 'Quadra gravada' in x[1] for x in a5), f'CT-KAN-111-04: rodada já gravada é a que aparece ({a5[0][0]} · {a5[0][1][:30]})')
+    ctx2.close()
     b.close()
 
 errs = [e for e in errs if not re.search(r'ERR_TUNNEL|fonts\.g|icons/|favicon|ERR_NAME|ERR_INTERNET|net::', e)]

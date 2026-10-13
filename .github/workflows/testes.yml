@@ -51,7 +51,11 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          npx firebase emulators:exec --only firestore --project demo-nosso-jogo "node --test testes/regras-firebase/*.test.mjs" 2>&1 | tee "$RUNNER_TEMP/regras.txt"
+          status=0
+          npx firebase emulators:exec --only firestore --project demo-nosso-jogo "node --test testes/regras-firebase/*.test.mjs" 2>&1 | tee "$RUNNER_TEMP/regras.txt" || status=$?
+          # Casos que falharam viram avisos visíveis na proposta (os registros completos nem sempre abrem).
+          grep -E "^\s*not ok [0-9]+ - " "$RUNNER_TEMP/regras.txt" | sed -E 's/^\s*not ok [0-9]+ - /::error::Regra falhou: /' || true
+          test "$status" -eq 0 || exit "$status"
           pass=$(grep -oE '^# pass [0-9]+' "$RUNNER_TEMP/regras.txt" | grep -oE '[0-9]+' | tail -1)
           fail=$(grep -oE '^# fail [0-9]+' "$RUNNER_TEMP/regras.txt" | grep -oE '[0-9]+' | tail -1)
           test "${pass:-0}" -gt 0 || { echo "::error::Nenhum teste de regra rodou."; exit 1; }

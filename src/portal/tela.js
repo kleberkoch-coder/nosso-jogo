@@ -3,7 +3,7 @@
    - Quem acessa é decidido nas regras do Firebase (adminPortal(): identificadores de contas Google, incluídos à mão).
    - Mostra dados de cadastro e de uso. Nunca notas, caixa, Pix ou contatos dos grupos. */
 import { catalogo, filtrarClientes, montarClientes, resumoPorPlano } from '../dominio/planos.ts';
-import { tx } from '../i18n/index.js';
+import { tx } from './textos.js';
 import { LOCAL } from '../i18n/formatos.js';
 import { esc, today } from '../nucleo/util.js';
 

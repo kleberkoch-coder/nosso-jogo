@@ -165,13 +165,6 @@ describe('votos pelo link (KAN-76)', () => {
 });
 
 describe('limites contra abuso (KAN-89)', () => {
-  // TEMPORÁRIO (10/10/2026): dois casos pulados enquanto o site no ar for a v19 (Netlify pausado). Reativar com a v23 ou mais nova no ar.
-  test('compatível com a v19: avulso pelo link sem contador é aceito', async () => {
-    await assertSucceeds(setDoc(doc(db.anon(), G + '/rodadas/r1/presencas/avl'), { s: 'in', t: Date.now(), by: 'anon1', dev: 'anon1', nome: 'Avulso', avulso: true }));
-  });
-  test('compatível com a v19: grupo novo sem contador é aceito', async () => {
-    await assertSucceeds(setDoc(doc(db.adm(), 'grupos/gv19'), { name: 'Novo', owner: 'adm', ativo: true, createdAt: 1 }));
-  });
   const R = G + '/rodadas/r1', C = R + '/limites/avulsos';
   const pres = { s: 'in', t: Date.now(), by: 'anon1', dev: 'anon1', nome: 'Avulso', avulso: true };
   const novoAvulso = (f, pid, extra = {}) => { const b = writeBatch(f);
@@ -184,7 +177,7 @@ describe('limites contra abuso (KAN-89)', () => {
     await assertSucceeds(novoAvulso(db.anon(), 'av2'));
     await semRegras(async f => { const d = (await getDoc(doc(f, C))).data(); if (d.n !== 2) throw new Error('contador ' + d.n); });
   });
-  test.skip('avulso novo sem somar no contador é recusado', async () => {
+  test('avulso novo sem somar no contador é recusado', async () => {
     await assertFails(setDoc(doc(db.anon(), R + '/presencas/av1'), pres));
   });
   test('passou do limite (30): a gravação extra é recusada', async () => {
@@ -234,7 +227,7 @@ describe('limites contra abuso (KAN-89)', () => {
     await assertSucceeds(criarGrupo(db.adm(), 'adm', 'gn1'));
     await assertSucceeds(criarGrupo(db.adm(), 'adm', 'gn2'));
   });
-  test.skip('grupo sem somar no contador é recusado', async () => {
+  test('grupo sem somar no contador é recusado', async () => {
     await assertFails(setDoc(doc(db.adm(), 'grupos/gn1'), { name: 'Novo', owner: 'adm', ativo: true, createdAt: 1 }));
   });
   test('passou do limite de grupos (20): nenhum grupo extra é criado (critério 3)', async () => {
@@ -274,8 +267,9 @@ describe('segurança do link (KAN-77, KAN-78, KAN-79)', () => {
     await assertSucceeds(setDoc(p, Object.assign({}, b, { s: 'out', t: Date.now() })));
   });
   test('KAN-78: pelo link não dá para trocar o nome, a marca de avulso nem a posição', async () => {
-    const p = doc(db.anon(), P + 'av1'), b = Object.assign(base(), { nome: 'Fulano', avulso: true, pos: 'ATA' });
-    await assertSucceeds(setDoc(p, b));
+    const f = db.anon(), p = doc(f, P + 'av1'), b = Object.assign(base(), { nome: 'Fulano', avulso: true, pos: 'ATA' });
+    const lote = writeBatch(f); lote.set(p, b); lote.set(doc(f, G + '/rodadas/r1/limites/avulsos'), { n: increment(1), ult: 'av1' }, { merge: true });
+    await assertSucceeds(lote.commit());
     await assertFails(setDoc(p, Object.assign({}, b, { nome: 'Outro nome' })));
     await assertFails(setDoc(p, Object.assign({}, b, { pos: 'GOL' })));
     await assertFails(setDoc(p, Object.assign({}, b, { avulso: false })));

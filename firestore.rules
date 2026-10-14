@@ -149,10 +149,9 @@ service cloud.firestore {
       allow get: if true;
       allow list: if adminPortal();
       // Grupo novo conta no limite de grupos por conta (KAN-89); nome com até 40 letras.
-      // TEMPORÁRIO (10/10/2026): o site no ar ainda é a v19, que não grava o contador de grupos (o Netlify pausou as publicações).
-      // Enquanto isso, o contador é opcional. Voltar a exigir grupoContado(gid) quando a v23 ou mais nova estiver no ar.
+      // Grupo novo conta no limite de grupos por conta (KAN-89); obrigatório de novo desde a pelada-v28 (KAN-134).
       allow create: if realUser() && request.resource.data.owner == request.auth.uid && caixaOk()
-        && nomeOk('name') && (grupoContado(gid) || true);
+        && nomeOk('name') && grupoContado(gid);
       // Dono e data de criação não mudam; só o organizador ativa ou inativa o grupo.
       allow update: if isMember(gid)
         && request.resource.data.owner == resource.data.owner
@@ -212,9 +211,8 @@ service cloud.firestore {
           allow create: if isMember(gid) || (
             idValido(pid) && presencaAberta(gid, rid) && presencaValida() && horaOk()
             && request.resource.data.get('dev', '') == request.auth.uid
-            // TEMPORÁRIO (10/10/2026): o site no ar ainda é a v19, que não grava o contador de avulsos (Netlify pausado).
-            // Enquanto isso, o contador é opcional. Voltar a exigir quando a v23 ou mais nova estiver no ar.
-            && (exists(/databases/$(database)/documents/grupos/$(gid)/jogadores/$(pid)) || avulsoContado(gid, rid, pid) || true)
+            // Avulso novo pelo link conta no limite da rodada (KAN-89); obrigatório de novo desde a pelada-v28 (KAN-134).
+            && (exists(/databases/$(database)/documents/grupos/$(gid)/jogadores/$(pid)) || avulsoContado(gid, rid, pid))
           );
           allow update: if isMember(gid) || (
             idValido(pid) && presencaAberta(gid, rid) && presencaValida() && mudancaPeloLinkOk()

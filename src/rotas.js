@@ -11,7 +11,7 @@ import { closeDlgNow, dlg } from './ui/dialogos.js';
 import { render } from './ui/render.js';
 
 /* =================== assinaturas por rota =================== */
-function ensurePres(){const r=curRodada(),id=r?r.id:null;if(S.presRid===id)return;S.presRid=id;S.pres={};drop('pres');if(id)sub('pres','rodadas/'+id+'/presencas',d=>{S.pres=d||{};regAvulsos()});subLimAv(id)}
+function ensurePres(){if(S.route.n==='admin'&&!(S.loaded.rodF&&S.loaded.rodP))return;const r=curRodada(),id=r?r.id:null;if(S.presRid===id)return;S.presRid=id;S.pres={};drop('pres');if(id)sub('pres','rodadas/'+id+'/presencas',d=>{S.pres=d||{};regAvulsos()});subLimAv(id)}
 /* Contador de avulsos novos pelo link nesta rodada (KAN-89). */
 function subLimAv(id){S.limAv=null;drop('limAv');if(id)sub('limAv','rodadas/'+id+'/limites/avulsos',d=>{S.limAv=d})}
 const subLimCfg=()=>subRaw('limCfg','sistema/limites',d=>{S.limCfg=d});

@@ -16,7 +16,7 @@ Atualizado a cada entrega (quando a proposta é aberta) e de novo depois do Merg
 
 | Versão | Proposta | Testes do app | Regras de negócio | Regras do Firebase (emulador) | Tamanho | Mapa de origem | Regras publicadas | No ar |
 |---|---|---|---|---|---|---|---|---|
-| pelada-v28 | [#31](https://github.com/kleberkoch-coder/nosso-jogo/pull/31) | ✅ 229 de 229 (site e portal compactados) | ✅ 49 de 49 | (a preencher) | 67,7 KB (portal 43,5 KB) | ✅ | ⚠️ mudam: publicadas no Merge (limites de avulsos e grupos obrigatórios de novo, KAN-134) | aguardando Merge |
+| pelada-v28 | [#31](https://github.com/kleberkoch-coder/nosso-jogo/pull/31) | ✅ 229 de 229 (site e portal compactados) | ✅ 49 de 49 | ✅ 59 de 59 (nenhum caso pulado) | 67,7 KB (portal 43,5 KB) | ✅ | ⚠️ mudam: publicadas no Merge (limites de avulsos e grupos obrigatórios de novo, KAN-134) | aguardando Merge |
 | pelada-v27 | (a preencher na proposta) | ✅ 211 de 211 (site e portal compactados) | ✅ 49 de 49 | | 68,1 KB | ✅ | não mudaram | aguardando Merge |
 | pelada-v26 | [#27](https://github.com/kleberkoch-coder/nosso-jogo/pull/27) | ✅ 208 de 208 (site e portal compactados) | ✅ 49 de 49 | ✅ 59 de 59 (2 casos pulados até a v28, da #21) | 68,0 KB (portal à parte: 51,7 KB) | ✅ | ⚠️ mudam: publicadas no Merge (plano só pelo portal, último acesso, listar grupos só no portal) | aguardando Merge |
 | pelada-v25 | [#24](https://github.com/kleberkoch-coder/nosso-jogo/pull/24) | ✅ 195 de 195 (site compactado) | ✅ 41 de 41 | ✅ 50 de 50 (2 casos pulados até a v28, da #21) | 67,5 KB | ✅ | ✅ publicadas no Merge (ordem e nome da presença, datas do jogo fixo, mensalidade e diária) | ✅ Merge 13/10 14h29; **conferido no ar** (pelada-v25 em https://nosso-jogo-f4762.web.app) |

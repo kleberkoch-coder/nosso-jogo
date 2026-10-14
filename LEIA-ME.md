@@ -62,7 +62,7 @@ Os endereços `seuprojeto.web.app` e `seuprojeto.firebaseapp.com` já vêm autor
 
 ## 6. Primeiro acesso
 
-O endereço principal (`https://seusite.netlify.app/`) abre a **página de apresentação** do produto, com os botões **Criar conta grátis** e **Entrar**.
+O endereço principal (`https://seuprojeto.web.app/`) abre a **página de apresentação** do produto, com os botões **Criar conta grátis** e **Entrar**.
 
 1. Clique em **Criar conta grátis**.
    - O jeito mais rápido é tocar em **Continuar com Google** e escolher a sua conta.
@@ -223,7 +223,7 @@ Desde outubro de 2026 o código fica no GitHub (`kleberkoch-coder/nosso-jogo`, p
    - o GitHub publica o site oficial (`https://nosso-jogo-f4762.web.app`) no Firebase Hosting em 2 a 3 minutos e confere que a versão no ar é a nova (automação "Publicar o site"; se não for, fica vermelha);
    - se o `firestore.rules` mudou, o GitHub publica as regras no Firebase sozinho (automação "Publicar regras do Firebase").
 
-Desde a pelada-v24 o Netlify não é mais usado (acabaram os créditos do plano grátis em 10/10/2026). O endereço antigo `nossosjogos.netlify.app` mostra só um aviso de mudança de endereço.
+Desde a pelada-v24 o site fica no Firebase Hosting. O Netlify foi desligado em 14/10/2026 e o endereço antigo `nossosjogos.netlify.app` não existe mais.
 
 **Onde fica cada coisa no repositório:**
 - `src/`: o código do app, dividido em módulos (telas, regras de negócio, textos por idioma);
@@ -261,13 +261,13 @@ A cada mudança no app, o número em `VERSION` no começo do `site/sw.js` sobe (
   - botões Vou e Não vou maiores no link da rodada;
   - aviso visual quando o tempo da partida acaba;
   - ícones do app com as cores novas.
-- **O que fazer:** as regras do Firestore **não mudaram**, então basta arrastar a pasta no Netlify.
+- **O que fazer:** as regras do Firestore **não mudaram** (na época, a publicação era manual).
 - **No celular de quem já usa:** aparece "Nova versão disponível · Atualizar". Quem instalou o app pode precisar remover e instalar de novo para ver o ícone novo na tela inicial.
 
 **Versão `pelada-v11`: botão Continuar com Google.**
 - As regras do Firestore não mudaram.
 - É preciso ativar o provedor Google no Firebase (passo 2).
-- Confira se o endereço do Netlify está em **Authentication > Configurações > Domínios autorizados** (passo 5).
+- Confira se o endereço do site está em **Authentication > Configurações > Domínios autorizados** (passo 5).
 - Sem isso, o botão mostra um aviso, e o login por e-mail e senha continua funcionando normalmente.
 
 **Versão `pelada-v10`: dados do caixa só para administradores.** A mensalidade, a diária, a chave Pix e o tipo dos jogadores saíram da parte pública do grupo e foram para a área de administradores. Grupos antigos são migrados sozinhos na primeira vez que um administrador abre o grupo com a versão nova; não é preciso fazer nada.

@@ -29,8 +29,8 @@ function vRodada(){
   return `<div class="stack">${rodadaPicker(r)}${fixPanel()}
   <div class="panel"><div class="hero-r"><div><h2>${esc(fdate(r.date))}${r.time?' · '+esc(hora(r)):''}</h2><div class="muted">${esc(r.place||'Local a definir')}${r.fixo?' · jogo fixo':''}${r.locked?' · lista fechada':''}</div></div>
     <div class="count">${carregou?a.inn.length:'…'}<small>confirmados</small></div></div>
-    ${vDivergencia(r)}
-    ${alt.length?`<div class="warn-alt"><b>${alt.length===1?'1 resposta foi mudada':alt.length+' respostas foram mudadas'} por outro aparelho:</b> ${alt.map(id=>esc(pname(id))+' ('+(S.pres[id].s==='in'?'vai':'não vai')+')').join(', ')}. Confira com o jogador. Se estiver errado, corrija em Marcar presença.</div>`:''}
+    ${carregou?vDivergencia(r):''}
+    ${carregou&&alt.length?`<div class="warn-alt"><b>${alt.length===1?'1 resposta foi mudada':alt.length+' respostas foram mudadas'} por outro aparelho:</b> ${alt.map(id=>esc(pname(id))+' ('+(S.pres[id].s==='in'?'vai':'não vai')+')').join(', ')}. Confira com o jogador. Se estiver errado, corrija em Marcar presença.</div>`:''}
     <div class="row" style="margin-top:12px"><button class="btn sm primary" data-a="shareConvite">Mandar link no WhatsApp</button><button class="btn sm" data-a="copyLink">Copiar link</button><button class="btn sm" data-a="editRod">Editar</button>
     <button class="btn sm" data-a="lock">${r.locked?'Reabrir lista':'Fechar lista'}</button>${r.fixo?'<button class="btn sm ghost danger" data-a="cancelRod">Cancelar esta data</button>':'<button class="btn sm ghost danger" data-a="delRod">Excluir</button>'}</div></div>
   ${vPresenca(r,a,carregou,avs,altTag)}
@@ -69,7 +69,8 @@ function teamCard(t,ti,admin){const R=rat(),c=col(t.c);
   <ul>${ps.map(id=>`<li class="${rs(id)?'reserva':''}">${posTag(id)}<span class="pn">${esc(pname(id))}${rs(id)?` <span class="tag">· ${tx('times.reserva')}</span>`:''}</span>${admin?`<button class="btn sm ghost" data-a="move" data-v="${ti}" data-p="${id}" title="Mover" aria-label="Mover ${esc(pname(id))}">⇄</button>`:''}</li>`).join('')}</ul>
   ${admin?`<div class="row between small muted" style="padding:0 14px 12px"><span>Nota média ${fmtL(Math.round(avg*10)/10)}</span>${sport().pairs?'':`<button class="btn sm ghost" data-a="porTime" data-v="${ti}">${tx('porTime.botao')}</button>`}</div>`:''}</div>`}
 
-/* Aviso de lista diferente dos times (pelada-v15). Some sozinho quando a lista e os times voltam a bater. */
+/* Aviso de lista diferente dos times (pelada-v15). Some sozinho quando a lista e os times voltam a bater.
+   Só aparece depois que a presença chegou: antes disso a lista está vazia e todos pareceriam ter saído (KAN-137, v32). */
 function vDivergencia(r){const d=divergencia(r,S.pres);if(!d.saiu.length&&!d.entrou.length)return '';
   const pares=!!sport().pairs,b=(a,id,t)=>pares?'':`<button class="btn sm" data-a="${a}" data-p="${id}">${t}</button>`;
   const linha=(txt,btn)=>`<li><span class="pn">${txt}</span>${btn}</li>`;

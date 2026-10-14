@@ -610,10 +610,13 @@ with sync_playwright() as pw:
     else:
         ok(False, 'CT-KAN-108-01: rodada sem times para testar a cor')
     # KAN-109: enquanto a presença carrega, mostra "Carregando…" e não "Ninguém confirmou ainda"
-    pg.evaluate("S.loaded.pres=false"); pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(200)
+    # Como na abertura do grupo: presença ainda não chegou (lista vazia na memória) numa rodada com times sorteados
+    tem_times = pg.evaluate("!!(S.rod[S.rid]&&S.rod[S.rid].times)")
+    pg.evaluate("S.loaded.pres=false;window.__presGuardada=S.pres;S.pres={}"); pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(200)
     txt = pg.inner_text('main')
     ok('Carregando' in txt and 'Ninguém confirmou ainda' not in txt, 'CT-KAN-109-01: presença carregando mostra "Carregando…"')
-    pg.evaluate("S.loaded.pres=true"); pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(200)
+    ok(tem_times and pg.locator('.warn-div').count() == 0 and 'não vai mais' not in txt, 'KAN-137 (v32): enquanto a presença carrega, não aparece o aviso "A lista mudou depois do sorteio" com todos saindo')
+    pg.evaluate("S.pres=window.__presGuardada;S.loaded.pres=true"); pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(200)
     # KAN-112: o aviso "Abra no navegador" usa o mesmo texto do botão
     ok('Continuar com Google' not in pg.content(), 'CT-KAN-112-01: nenhum texto "Continuar com Google" sem o "o" no app')
 

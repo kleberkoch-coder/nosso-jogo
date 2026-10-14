@@ -52,8 +52,13 @@ jobs:
             no_ar=$(curl -fsS "$ENDERECO/sw.js?conferir=$RANDOM" | grep -oE "VERSION = '[^']+'" | cut -d"'" -f2)
             if [ "$no_ar" = "$esperada" ]; then
               echo "::notice::No ar: $esperada em $ENDERECO"
-              curl -fsS "$PORTAL/?conferir=$RANDOM" | grep -q "<title>Portal do Nosso Jogo</title>" && echo "::notice::Portal no ar em $PORTAL" || { echo "::error::O portal não respondeu em $PORTAL"; exit 1; }
-              exit 0
+              # O portal (outro site) pode levar alguns segundos a mais para aparecer.
+              for k in $(seq 1 18); do
+                if curl -fsS "$PORTAL/?conferir=$RANDOM" | grep -q "<title>Portal do Nosso Jogo</title>"; then echo "::notice::Portal no ar em $PORTAL"; exit 0; fi
+                sleep 10
+              done
+              echo "::error::O portal não respondeu em $PORTAL: $(curl -sS "$PORTAL/" | head -c 200 | tr -d '\n')"
+              exit 1
             fi
             sleep 10
           done

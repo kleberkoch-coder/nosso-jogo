@@ -86,9 +86,10 @@ service cloud.firestore {
     // Administrador do portal (KAN-116): só as contas Google cujo identificador (uid) está nesta lista.
     // O portal fica num site separado (sem criação de conta); o identificador é incluído aqui à mão,
     // numa proposta de mudança aprovada pelo Kleber. Lista vazia = ninguém acessa.
+    // NmI1R5zcW6QQJLdj7KYKHTbuJm73 = portalnossojogo@gmail.com (liberada em 14/10/2026).
     function adminPortal() {
       return realUser() && request.auth.token.firebase.sign_in_provider == 'google.com'
-        && request.auth.uid in /*ADMINS_PORTAL*/[];
+        && request.auth.uid in /*ADMINS_PORTAL*/['NmI1R5zcW6QQJLdj7KYKHTbuJm73'];
     }
     function camposMudados() {
       return resource == null ? request.resource.data.keys() : request.resource.data.diff(resource.data).affectedKeys();

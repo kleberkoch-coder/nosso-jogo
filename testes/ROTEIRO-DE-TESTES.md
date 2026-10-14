@@ -101,5 +101,6 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
 | pelada-v22 | 09/10/2026 | 147 de 147 passaram, 35 de 35 nas regras de negócio |
 | pelada-v23 | 09/10/2026 | 155 de 155 passaram, 41 de 41 nas regras de negócio |
 | pelada-v24 | 13/10/2026 | 156 de 156 passaram, 41 de 41 nas regras de negócio (mudança para o Firebase Hosting; mensagem do limite de grupos no singular) |
+| pelada-v27 | 14/10/2026 | 211 de 211 passaram (Entrar no topo da apresentação em 390, 360 e 320 px, KAN-136) |
 | pelada-v26 | 14/10/2026 | 208 de 208 passaram, 49 de 49 nas regras de negócio (portal em site separado) |
 | pelada-v25 | 13/10/2026 | 195 de 195 passaram, 41 de 41 nas regras de negócio, 50 de 50 nas regras do Firebase (2 casos temporariamente pulados) |

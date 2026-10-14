@@ -22,7 +22,7 @@ function vLanding(){
     ['Funciona no iPhone e no Android?','Sim. Funciona em qualquer navegador e pode ser instalado na tela inicial como um app.'],
     ['Quanto custa?','Você pode criar sua conta e seus grupos gratuitamente.']];
   return `<div class="ld">
-  <nav class="ld-nav"><div class="ld-wrap"><a class="ld-logo" href="#/"><span class="ld-mark" aria-hidden="true"></span>${APP}</a>
+  <nav class="ld-nav"><div class="ld-wrap"><a class="ld-logo" href="#/" aria-label="${APP}"><span class="ld-mark" aria-hidden="true"></span><span class="ld-txt">${APP}</span></a>
     <div class="row" style="gap:8px"><button class="btn ld-ghost ld-ic" data-a="themeMenu" aria-haspopup="menu" aria-expanded="false" aria-label="${themeLabel()}" title="${themeLabel()}">${themeDef()[1]}</button><a class="btn ld-ghost ld-enter" href="#/entrar">Entrar</a><a class="btn bib" href="#/criar">Criar conta<span class="ld-gr" style="margin-left:-2px">grátis</span></a></div></div></nav>
   <header class="ld-hero"><div class="ld-wrap ld-hero-in">
     <div class="ld-copy"><p class="ld-eyebrow">Para quem organiza o jogo da semana</p>

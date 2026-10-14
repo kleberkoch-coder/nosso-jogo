@@ -46,7 +46,11 @@ document.addEventListener('change',e=>{const t=e.target;
   else if(c==='dur'){S.live.dur=+v*60;S.live.beeped=false}else if(c==='rank')S.rankSort=v;else if(c==='rankAno'){S.rankAno=v;S.rankMes=''}else if(c==='rankMes')S.rankMes=v;else if(c==='month')S.month=v;else if(c==='vid')S.vid=v;
   else if(c==='voter'){try{localStorage.setItem(MEK,v)}catch(x){}if(S.myVote)S.myVote.pid=v;else S.myVote={pid:v,v:{}}}
   render()});
-document.addEventListener('keydown',e=>{if(e.key!=='Enter')return;const id=e.target.id;if(['le','lp','lp2'].includes(id)){e.preventDefault();if(S.authMode==='signup'){const b=$('#sgBtn');if(b&&!b.disabled)b.click()}else $('[data-a=login]')?.click()}else if(id==='ngn'){e.preventDefault();$('[data-a=createGroup]')?.click()}});
+document.addEventListener('keydown',e=>{if(e.key!=='Enter')return;const id=e.target.id;if(['le','lp','lp2'].includes(id)){e.preventDefault();if(S.authMode==='signup'){const b=$('#sgBtn');if(b&&!b.disabled)b.click()}else $('[data-a=login]')?.click()}else if(id==='ngn'){e.preventDefault();$('[data-a=createGroup]')?.click()}
+  /* KAN-74: em qualquer janela, Enter (ou "Ir" no teclado do celular) num campo de texto aciona o botão principal do rodapé.
+     Fica de fora: área de texto, listas de escolha, caixas de marcar e a busca de nomes (#avq). */
+  else if(!e.isComposing&&enterEnvia(e.target)){const b=[...document.querySelectorAll('#dlg .dlg-f .btn.primary,#dlg .dlg-f .btn.bib')].pop();if(b&&!b.disabled&&!b.classList.contains('busy')){e.preventDefault();b.click()}}});
+function enterEnvia(t){return t.tagName==='INPUT'&&!!t.closest('#dlg')&&!['checkbox','radio','button','submit','range','file','color'].includes(t.type)&&t.id!=='avq'}
 document.addEventListener('input',e=>{
   if(e.target.id==='plv'){$('#plvo').textContent=fmtL(e.target.value);return}
   if(e.target.id==='avq'){const q=normName(e.target.value);document.querySelectorAll('#avlist [data-n]').forEach(b=>b.hidden=q&&!b.dataset.n.includes(q));return}

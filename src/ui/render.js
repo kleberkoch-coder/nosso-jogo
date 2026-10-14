@@ -48,9 +48,19 @@ function renderCore(){
   const r0=curRodada();$('#gsub').textContent=`${sport().e} ${sportName()}`+(r0?' · ':'')+(r0?`Próxima: ${fdate(r0.date)}${r0.time?' · '+hora(r0):''}${r0.place?' — '+r0.place:''}`:'');
   $('#tabsnav').hidden=false;
   $('#tabs').innerHTML=TABS.map(([k,l])=>`<button class="tab" role="tab" aria-selected="${S.tab===k}" data-a="tab" data-v="${k}">${l.startsWith('abas.')?tx(l):l}</button>`).join('');
+  abasNoLugar();
   ensurePres();ensureVotos();ensureExtras();
   main.innerHTML=(grpAtivo()?'':`<div class="inbar"><span>Grupo inativo desde ${fdia(S.app.inativadoEm)}. Os links públicos não aceitam confirmações nem votos.</span>${isOwnerMe()?'<button class="btn sm" data-a="toggleAtivo">Reativar</button>':''}</div>`)+{rodada:vRodada,jogadores:vJogadores,partida:vPartida,ranking:vRanking,caixa:vCaixa,votacao:vVotacao,historico:vHistorico,grupo:vGrupo}[S.tab]();
   if(S.tab==='partida')tick();
 }
+
+/* KAN-72: a aba aberta fica no centro da barra (só quando muda de aba ou de grupo, para não brigar com quem está rolando)
+   e uma sombra mostra que há mais abas para o lado. */
+let abaCentrada='';
+function sombraAbas(){const t=$('#tabs'),n=$('#tabsnav');if(!t||!n)return;n.classList.toggle('mais-esq',t.scrollLeft>2);n.classList.toggle('mais-dir',t.scrollLeft+t.clientWidth<t.scrollWidth-2)}
+function abasNoLugar(){const t=$('#tabs'),k=S.gid+'/'+S.tab;
+  if(k!==abaCentrada){abaCentrada=k;const a=t.querySelector('[aria-selected="true"]');if(a){const ar=a.getBoundingClientRect(),tr=t.getBoundingClientRect();t.scrollLeft+=(ar.left+ar.width/2)-(tr.left+tr.width/2)}}
+  sombraAbas()}
+$('#tabs').addEventListener('scroll',sombraAbas,{passive:true});addEventListener('resize',sombraAbas);
 
 export { changed, render };

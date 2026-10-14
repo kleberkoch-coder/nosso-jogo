@@ -189,6 +189,7 @@ A montagem (`npm run build`) imprime estes números. Eles são registrados aqui 
 | pelada-v26 | 7 de 47 | 1 de 15 | 28 | 2 | 68,0 KB (portal à parte) |
 | pelada-v27 | 7 de 47 | 1 de 15 | 28 | 2 | 68,1 KB |
 | pelada-v28 | 7 de 55 | 1 de 15 | 28 | 2 | 67,7 KB (ações divididas em 8 arquivos; textos do portal fora do app) |
+| pelada-v29 | 7 de 55 | 1 de 15 | 28 | 2 | 70,5 KB (melhorias de uso no celular: KAN-71, 72, 73, 74, 127 e 130) |
 
 As 5 regras de negócio com teste próprio previsto: sorteio, ranking, pendências do caixa, rodadas fixas (próxima data) e apuração da votação. Os testes ficam em `testes/regras/` com o nome da regra (`sorteio.test.mjs`, `ranking.test.mjs`, `caixa.test.mjs`, `rodadas-fixas.test.mjs`, `votacao.test.mjs`) e rodam com `npm run regras` (testador do próprio Node, que lê TypeScript direto). Desde a pelada-v15 já existe o primeiro teste de regra, lista × times (`lista-sorteio.test.mjs`), e na v16 entrou jogadores por time e reservas (`times.test.mjs`); eles não entram na conta das 5. Para uma regra ganhar teste, ela precisa sair do código que lê o estado, como foi feito em `src/dominio/divergencia.ts`.
 

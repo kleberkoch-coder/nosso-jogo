@@ -58,7 +58,7 @@ Times em pastel, sempre com o nome da cor: laranja #F4B183, azul #9DBBF0, amarel
   - fecha ao escolher, com Esc ou ao tocar fora, e o toque de fechar não aciona o que está embaixo;
   - setas do teclado navegam entre as opções;
   - a cor do navegador (`theme-color`) acompanha o `pitch` do tema em uso.
-- **Página de apresentação no celular:** até 440px de largura, o "Entrar" do topo some (o botão "Já tenho conta" fica logo abaixo); até 400px, o botão vira "Criar conta".
+- **Página de apresentação no celular** (pelada-v27, KAN-136): Entrar, Criar conta e o tema ficam sempre no topo. Até 440px os botões ficam compactos; até 360px o nome ao lado do logo some.
 
 ## Regras rápidas
 - **Botões:**
@@ -68,9 +68,20 @@ Times em pastel, sempre com o nome da cor: laranja #F4B183, azul #9DBBF0, amarel
 - **Estados nunca só pela cor:** "✓ Vou" e "✕ Não vou" com borda, sinais + e −, status com palavra.
 - **Bordas:** `field-border` em campos e botões; `line` só em divisórias.
 - **Tamanhos de toque:**
-  - 44px (`touch-min`, classe `mk lg`) para Vou e Não vou no link público, opções do seletor de tema e pontuação;
-  - 36px (`touch-compact`) para botões pequenos.
-- **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo; Enter envia.
+  - 44px (`touch-min`, classe `mk lg`) para Vou e Não vou no link público, opções do seletor de tema, opções do seletor segmentado (`seg`), pontuação, linhas da lista de jogadores do sorteio e opções das janelas (`opt`);
+  - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
+- **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo; **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
+
+## Componentes (pelada-v29)
+- **Barra de ação fixa no rodapé** (KAN-71): só na aba Rodada, enquanto os times não foram sorteados. Fundo `surface`, borda `line` em cima, botão `bib` de 44px na largura toda.
+  - Normal: "Sortear times (10)", com a quantidade de confirmados.
+  - Desabilitado com motivo: "Faltam 2 para sortear", texto `muted` sobre `surface` (contraste AA).
+  - Carregando: o mesmo de todo botão.
+  - Depois do sorteio a barra sai e "Sortear de novo" fica no painel dos times, para ninguém sortear outra vez sem querer. A tela rola até os times e o foco vai para o título "Times".
+- **Lista de presença com filtros** (KAN-71): uma lista só, com seletor segmentado de 4 opções (Todos · Vão · Não vão · Sem resposta), cada uma com a contagem embaixo. Em "Vão", a lista é numerada na ordem de chegada.
+- **Abas** (KAN-72): sombra de continuação (degradê de `surface` para transparente, 24px) do lado em que há mais abas; a aba aberta fica no centro da barra; espaço lateral de 12px.
+- **Placar** (KAN-73): botões de pontuação sempre com 44px. Com 4 ou mais pontuações (futebol americano, rugby), viram uma grade de 2 colunas sob cada time. Quando o tempo acaba, o número pisca só 3 vezes (nunca abaixo de 60% de opacidade) e fica parado em `bib`, com o aviso "Tempo esgotado" fixo.
+- **Busca de nome no link público** (KAN-127): campo "Procure seu nome" com rótulo visível e 44px, que filtra enquanto digita, sem diferenciar acentos e maiúsculas. Sem resultado, orienta a tocar em "Adicionar meu nome" e leva o texto digitado para a janela. Com a lista aberta, os times ficam recolhidos em "Ver times"; os confirmados viram uma linha "10 confirmados · ver nomes".
 - **Valores novos** entram primeiro no Design System, com contraste medido nos dois temas.
 
 ## Testes

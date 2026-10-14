@@ -15,14 +15,15 @@ function vPartida(){
   const L=S.live,ta=r.times[L.a],tb=r.times[L.b],ca=col(ta.c),cb=col(tb.c);
   const ga=sumPts(L.goals,'a'),gb=sumPts(L.goals,'b'),SP=sport();
   const gt=t=>L.goals.filter(g=>g.t===t).map(g=>(g.pid?esc(pname(g.pid))+(g.og?' (contra)':''):'—')+((g.pts||1)>1?` (${g.pts})`:'')).join(', ');
-  const sbtn=t=>SP.score.map(([l,v],i)=>`<button class="btn bib${SP.score.length>2?' sm':''}" data-a="goal" data-v="${t}" data-i="${i}">${SP.score.length===1?'+ '+l:l}</button>`).join('');
+  /* KAN-73: botões de pontuação sempre com 44px; com 4 ou mais, viram uma grade de 2 colunas sob cada time. */
+  const sbtn=t=>`<div class="pts${SP.score.length>=4?' grade':''}">${SP.score.map(([l,v],i)=>`<button class="btn bib" data-a="goal" data-v="${t}" data-i="${i}">${SP.score.length===1?'+ '+l:l}</button>`).join('')}</div>`;
   const opt=(sel,skip)=>r.times.map((t,i)=>`<option value="${i}" ${i===sel?'selected':''} ${i===skip?'disabled':''}>${tn(t.c)}</option>`).join('');
   const ms=partidasDe(r.id),carregou=S.partsRid===r.id&&S.loaded.parts;
   return `<div class="stack">${rodadaPicker(r)}
   <div class="board"><div class="sides">
-    <div><div class="tn"><span class="dot" style="background:${ca.c}"></span>${tn(ta.c)}</div><div class="sc">${ga}</div><div class="goals">${gt('a')}</div><div class="row" style="justify-content:center;gap:6px">${sbtn('a')}</div></div>
+    <div><div class="tn"><span class="dot" style="background:${ca.c}"></span>${tn(ta.c)}</div><div class="sc">${ga}</div><div class="goals">${gt('a')}</div>${sbtn('a')}</div>
     <div class="x">×</div>
-    <div><div class="tn"><span class="dot" style="background:${cb.c}"></span>${tn(tb.c)}</div><div class="sc">${gb}</div><div class="goals">${gt('b')}</div><div class="row" style="justify-content:center;gap:6px">${sbtn('b')}</div></div></div>
+    <div><div class="tn"><span class="dot" style="background:${cb.c}"></span>${tn(tb.c)}</div><div class="sc">${gb}</div><div class="goals">${gt('b')}</div>${sbtn('b')}</div></div>
     <div id="clock">--:--</div><div id="clockMsg" class="clock-msg" role="status" hidden>Tempo esgotado</div>
     <div class="row" style="justify-content:center"><button class="btn" data-a="clock" id="clockBtn">${L.run?'Pausar':'Iniciar'}</button><button class="btn" data-a="clockReset">Zerar tempo</button><button class="btn" data-a="undoGoal" ${L.goals.length?'':'disabled'}>Desfazer último</button></div></div>
   <div class="panel"><div class="row">
@@ -34,9 +35,10 @@ function vPartida(){
     <span class="small muted">${m.goals.filter(g=>g.pid&&!g.og).length?' — '+sport().word.toLowerCase()+': '+m.goals.filter(g=>g.pid&&!g.og).map(g=>esc(pname(g.pid))+((g.pts||1)>1?' ('+g.pts+')':'')).join(', '):''}</span></span><button class="btn sm ghost danger" data-a="delMatch" data-v="${esc(m.id)}">Apagar</button></li>`).join('')}</ul>`:`<p class="muted small">${carregou?'Nenhuma partida salva ainda.':tx('comum.carregando')}</p>`}</div></div>`}
 function sumPts(gs,t){return gs.filter(g=>g.t===t).reduce((s,g)=>s+(g.pts||1),0)}
 function elapsed(){const L=S.live;return L.el+(L.run?(Date.now()-L.st)/1000:0)}
+/* KAN-73: quando o tempo acaba, o número pisca só 3 vezes e fica parado (a classe "pisca" entra uma vez só). */
 function tick(){const el=document.getElementById('clock');if(!el||!S.live)return;const rem=S.live.dur-elapsed(),a=Math.abs(rem);
   el.textContent=(rem<0?'+':'')+String(Math.floor(a/60)).padStart(2,'0')+':'+String(Math.floor(a%60)).padStart(2,'0');
-  el.classList.toggle('over',rem<=0);const msg=document.getElementById('clockMsg');if(msg)msg.hidden=rem>0;if(rem<=0&&!S.live.beeped&&S.live.run){S.live.beeped=true;beep()}}
+  el.classList.toggle('over',rem<=0);if(rem>0)S.live.pisc=false;else if(!S.live.pisc){S.live.pisc=true;el.classList.add('pisca')}const msg=document.getElementById('clockMsg');if(msg)msg.hidden=rem>0;if(rem<=0&&!S.live.beeped&&S.live.run){S.live.beeped=true;beep()}}
 setInterval(()=>{if(S.tab==='partida'&&S.route.n==='admin')tick()},250);
 let actx=null;
 function beep(){try{if(!actx)return;[0,.35,.7].forEach(d=>{const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;o.connect(g);g.connect(actx.destination);g.gain.setValueAtTime(.25,actx.currentTime+d);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+d+.3);o.start(actx.currentTime+d);o.stop(actx.currentTime+d+.3)});if(navigator.vibrate)navigator.vibrate([300,150,300,150,300])}catch(e){}}

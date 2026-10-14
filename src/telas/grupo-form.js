@@ -6,9 +6,10 @@ import { val } from '../ui/dialogos.js';
 
 function fixPanel(){const f=fixos();
   if(!f.length)return freq()==='fixo'?`<div class="row small muted">Os dias fixos do grupo ainda não foram definidos.<button class="btn sm" data-a="editGroup">Definir dias e horários</button></div>`:'';
-  return `<div class="panel"><div class="row between"><div><h3 style="margin:0">Jogos fixos</h3><div class="small muted">${f.map(schedTxt).join('<br>')}</div></div>
+  /* KAN-71: painel compacto; a explicação fica em "Como funciona". */
+  return `<div class="panel fixos"><div class="row between"><div><h3 style="margin:0">Jogos fixos</h3><div class="small muted">${f.map(schedTxt).join('<br>')}</div></div>
   <div class="row"><button class="btn sm primary" data-a="shareFixo">Link permanente no WhatsApp</button><button class="btn sm" data-a="copyFixo">Copiar link</button><button class="btn sm" data-a="editGroup">Editar dias</button></div></div>
-  <p class="small muted" style="margin-top:8px">O link permanente sempre abre a próxima rodada. Mande uma vez e deixe fixado no grupo. A confirmação da semana seguinte abre assim que o jogo termina.</p></div>`}
+  <details class="small" style="margin-top:8px"><summary>Como funciona</summary><p class="muted" style="margin:6px 0 0">O link permanente sempre abre a próxima rodada. Mande uma vez e deixe fixado no grupo. A confirmação da semana seguinte abre assim que o jogo termina.</p></details></div>`}
 function schedRow(x){x=x||{dow:1,ini:'20:00',fim:'22:00',place:''};
   return `<div class="srow" data-id="${esc(x.id||'')}"><select class="sel sd" aria-label="Dia da semana">${DIAS.map((d,i)=>`<option value="${i}" ${i===+x.dow?'selected':''}>${d}</option>`).join('')}</select>
   <input class="inp si" type="time" value="${esc(x.ini||'')}" aria-label="Início"><input class="inp sf" type="time" value="${esc(x.fim||'')}" aria-label="Término">

@@ -37,6 +37,9 @@ function porNoTime(ti,pid){const r=curRodada(),t=r.times[ti];toast(tx('porTime.p
 /* Escolher o time de quem confirmou depois do sorteio. */
 function escolherTime(pid){const r=curRodada();
   openDlg(`<h3>${esc(tx('porTime.qualTime',{nome:pname(pid)}))}</h3><div class="vgrid">${r.times.map((t,i)=>`<button class="opt" data-a="doPorTime" data-v="${i}" data-p="${pid}"><span class="dot" style="background:${col(t.c).c}"></span>${tn(t.c)}<span class="tag" style="margin-left:auto">${tp('porTime.jogadores',t.players.length)}</span></button>`).join('')}</div><div class="dlg-f"><button class="btn" data-a="close">Cancelar</button></div>`)}
+/* KAN-71: depois de sortear, a tela vai até os times e o foco fica no título "Times" (leitor de tela anuncia). */
+function irParaTimes(){setTimeout(()=>{const h=document.getElementById('timesTit');if(!h)return;h.scrollIntoView({block:'start'});h.focus({preventScroll:true})},80)}
+
 const acoes={
   newRod:()=>rodDlg(null),editRod:()=>rodDlg(curRodada()),
   saveRod:el=>{const d=val('rdt');if(!d){toast('Escolha a data.');return}const id=el.dataset.v;
@@ -96,9 +99,11 @@ const acoes={
     el.setAttribute('aria-pressed',on);box.querySelectorAll('.dp').forEach(c=>{if(c.dataset.pos===p)c.checked=!on});
     if(!sport().pairs){const k=box.querySelectorAll('.dp:checked').length;box.dataset.n=sugerirTimes(k,porTime())}drawPreview()},
   dN:el=>{$('#drawBox').dataset.n=el.dataset.v;drawPreview()},
+  /* KAN-71: filtro da lista de presença (Todos, Vão, Não vão, Sem resposta). Só muda a tela. */
+  presFiltro:el=>{S.presFiltro=el.dataset.v;render()},
   dNov:el=>{$('#drawBox').dataset.nov=el.dataset.v;drawPreview()},
   doDraw:()=>{const box=$('#drawBox'),n=+box.dataset.n,nov=+box.dataset.nov,fora=(box.dataset.fora||'').split(',').filter(Boolean),ids=[...box.querySelectorAll('.dp:checked')].map(x=>x.value);if(ids.length<n*2)return;
-    return sleep(40).then(()=>{const cap=[];cap.close=false;setCAP(cap);try{ACT._draw(ids,n,nov,fora)}finally{setCAP(null)}return Promise.allSettled(cap).then(()=>closeDlgNow())})},
+    return sleep(40).then(()=>{const cap=[];cap.close=false;setCAP(cap);try{ACT._draw(ids,n,nov,fora)}finally{setCAP(null)}return Promise.allSettled(cap).then(()=>{closeDlgNow();irParaTimes()})})},
   _draw:(ids,n,nov,fora)=>{
     const r=curRodada(),T=draw(ids,n,nov,r.id),PT=porTime(),quando=id=>(S.pres[id]||{}).t||0;
     editRod(r.id,x=>{const old=x.times||[];x.times=T.map((p,i)=>{const t={c:old[i]?.c??i,players:p},rs=reservas(p,PT,quando);if(rs.length)t.res=rs;return t});x.info={};ids.forEach(id=>x.info[id]={n:pname(id),p:ppos(id)});x.drawnAt=Date.now();

@@ -1,4 +1,4 @@
-import { tx } from '../i18n/index.js';
+import { tp, tx } from '../i18n/index.js';
 import { divergencia } from '../dominio/divergencia.ts';
 import { avulsosEsgotados, limite } from '../dominio/limites.ts';
 import { col, posIdx, posLabel, posTag, sport, tn } from '../dominio/esportes.js';
@@ -29,25 +29,40 @@ function vRodada(){
     ${alt.length?`<div class="warn-alt"><b>${alt.length===1?'1 resposta foi mudada':alt.length+' respostas foram mudadas'} por outro aparelho:</b> ${alt.map(id=>esc(pname(id))+' ('+(S.pres[id].s==='in'?'vai':'não vai')+')').join(', ')}. Confira com o jogador. Se estiver errado, corrija em Marcar presença.</div>`:''}
     <div class="row" style="margin-top:12px"><button class="btn sm primary" data-a="shareConvite">Mandar link no WhatsApp</button><button class="btn sm" data-a="copyLink">Copiar link</button><button class="btn sm" data-a="editRod">Editar</button>
     <button class="btn sm" data-a="lock">${r.locked?'Reabrir lista':'Fechar lista'}</button>${r.fixo?'<button class="btn sm ghost danger" data-a="cancelRod">Cancelar esta data</button>':'<button class="btn sm ghost danger" data-a="delRod">Excluir</button>'}</div></div>
-  <div class="grid2">
-    <div class="panel"><h3>Confirmados</h3>${!carregou?`<p class="muted small">${tx('comum.carregando')}</p>`:a.inn.length?`<ol class="plist">${a.inn.map(li).join('')}</ol>`:'<p class="muted small">Ninguém confirmou ainda. Mande o link no grupo.</p>'}
-      ${a.out.length?`<p class="small muted" style="margin-top:12px">Não vão: ${a.out.map(p=>esc(pname(p))).join(', ')}</p>`:''}</div>
-    <div class="panel"><div class="row between"><h3 style="margin:0">Marcar presença</h3>${r.locked?'':'<button class="btn sm" data-a="addAvulso">Adicionar avulso</button>'}</div>
-      ${!r.locked&&avulsosEsgotados(S.limAv,S.limCfg)?`<div class="warn-alt aviso-limite" role="status">${tx('limite.avulsosAdmin',{n:limite(S.limCfg,'avulsosPorRodada')})}</div>`:''}
-      ${r.locked?`<p class="small muted lista-fechada">${tx(r.times?(sport().pairs?'lista.fechadaComTimesDuplas':'lista.fechadaComTimes'):'lista.fechadaAviso')}</p>`:'<p class="small muted">Para quem respondeu fora do link.</p>'}
-      <ul class="plist">${players().map(p=>p.id).concat(avs).map(id=>{const s=S.pres[id]?.s;return`<li>${posTag(id)}<span class="pn">${esc(pname(id))}${isAvulso(id)?' <span class="tag">· avulso</span>':''}${altTag(id)}</span>${r.locked?`<span class="tag" style="color:${s==='in'?'var(--in)':s==='out'?'var(--out)':''}">${s==='in'?tx('publico.vai'):s==='out'?tx('publico.naoVai'):'—'}</span>`:`<span class="mk"><button class="${s==='in'?'on-in':''}" data-a="mark" data-p="${id}" data-v="in" aria-label="Vai" aria-pressed="${s==='in'}">✓</button><button class="${s==='out'?'on-out':''}" data-a="mark" data-p="${id}" data-v="out" aria-label="Não vai" aria-pressed="${s==='out'}">✕</button></span>`}</li>`}).join('')||'<li class="muted small">Cadastre jogadores na aba Jogadores.</li>'}</ul></div>
-  </div>
-  <div class="panel"><div class="row between"><h3 style="margin:0">Times</h3><button class="btn bib" data-a="drawDlg" ${a.inn.length>=4?'':'disabled'}>${r.times?'Sortear de novo':'Sortear times'}</button></div>
-    ${a.inn.length<4&&!r.times?'<p class="muted small">O sorteio libera com pelo menos 4 confirmados. Quantidade de times é escolhida na hora.</p>':''}
+  ${vPresenca(r,a,carregou,avs,altTag)}
+  <div class="panel"><div class="row between"><h3 style="margin:0" id="timesTit" tabindex="-1">Times</h3>${r.times?`<button class="btn bib" data-a="drawDlg" ${a.inn.length>=4?'':'disabled'}>Sortear de novo</button>`:''}</div>
+    ${!r.times?`<p class="muted small" style="margin-bottom:0">${tx(a.inn.length<4?'rodada.timesAjuda':'rodada.timesPronto')}</p>`:''}
     ${r.times?`<div class="teams" style="margin-top:12px">${r.times.map((t,ti)=>teamCard(t,ti,true)).join('')}</div>
     ${q?`<div class="quality"><span>Diferença de nota média: <b>${fmtL(Math.round(q.diff*10)/10)}</b></span>${q.gk?`<span>${esc(posLabel(sport().key))}s: <b>${q.gk.join(' × ')}</b></span>`:''}${q.nsep?`<span>Separações respeitadas: <b>${q.nsep-q.viol}/${q.nsep}</b></span>`:''}${q.newPct!=null?`<span>Parcerias novas vs. rodada anterior: <b>${q.newPct}%</b></span>`:''}</div>`:''}
     <div class="row" style="margin-top:12px"><button class="btn sm" data-a="shareTimes">Mandar times no WhatsApp</button><button class="btn sm" data-a="tab" data-v="partida">Ir para a partida</button></div>`:''}
-  </div></div>`}
+  </div>
+  ${r.times?'':barraSortear(a.inn.length)}</div>`}
+
+/* KAN-71: barra fixa no rodapé com a ação que o organizador veio fazer. Sai quando os times já foram sorteados
+   (aí "Sortear de novo" fica no painel dos times, para não convidar a sortear outra vez sem querer). */
+function barraSortear(k){const falta=Math.max(0,4-k),txt=sport().pairs?'Sortear duplas':'Sortear times';
+  return `<div class="acao-fixa"><button class="btn bib" data-a="drawDlg" ${falta?'disabled':''}>${falta?tp('rodada.faltam',falta):`${txt} (${k})`}</button></div>`}
+
+/* KAN-71: uma lista só de presença, com filtros. Em "Vão", a ordem é a de chegada (numerada). */
+const FILTROS=[['todos','Todos'],['in','Vão'],['out','Não vão'],['sem','Sem resposta']];
+function vPresenca(r,a,carregou,avs,altTag){
+  const ids=[...new Set(players().map(p=>p.id).concat(avs))],f=FILTROS.some(x=>x[0]===S.presFiltro)?S.presFiltro:'todos';
+  const st=id=>S.pres[id]?.s,cont={todos:ids.length,in:a.inn.length,out:ids.filter(id=>st(id)==='out').length,sem:ids.filter(id=>!st(id)).length};
+  const vis=f==='in'?a.inn:f==='todos'?ids:ids.filter(id=>f==='out'?st(id)==='out':!st(id));
+  const linha=(id,i)=>{const s=st(id);return `<li>${f==='in'?`<span class="num">${i+1}</span>`:''}${posTag(id)}<span class="pn">${esc(pname(id))}${isAvulso(id)?' <span class="tag">· avulso</span>':''}${altTag(id)}</span>${isAvulso(id)&&s==='in'?`<button class="btn sm" data-a="editAvulso" data-p="${id}">Editar</button>`:''}${lvlTag(id)}${r.locked?`<span class="tag" style="color:${s==='in'?'var(--in)':s==='out'?'var(--out)':''}">${s==='in'?tx('publico.vai'):s==='out'?tx('publico.naoVai'):'—'}</span>`:`<span class="mk"><button class="${s==='in'?'on-in':''}" data-a="mark" data-p="${id}" data-v="in" aria-label="${esc(pname(id))} vai" aria-pressed="${s==='in'}">✓</button><button class="${s==='out'?'on-out':''}" data-a="mark" data-p="${id}" data-v="out" aria-label="${esc(pname(id))} não vai" aria-pressed="${s==='out'}">✕</button></span>`}</li>`};
+  const vazio=!carregou?tx('comum.carregando'):!ids.length?'Cadastre jogadores na aba Jogadores.':f==='in'?'Ninguém confirmou ainda. Mande o link no grupo.':f==='out'?'Ninguém disse que não vai.':f==='sem'?'Todo mundo já respondeu.':'';
+  return `<div class="panel" id="presPainel"><div class="row between"><h3 style="margin:0">Presença</h3>${r.locked?'':'<button class="btn sm" data-a="addAvulso">Adicionar avulso</button>'}</div>
+    ${!r.locked&&avulsosEsgotados(S.limAv,S.limCfg)?`<div class="warn-alt aviso-limite" role="status">${tx('limite.avulsosAdmin',{n:limite(S.limCfg,'avulsosPorRodada')})}</div>`:''}
+    ${r.locked?`<p class="small muted lista-fechada">${tx(r.times?(sport().pairs?'lista.fechadaComTimesDuplas':'lista.fechadaComTimes'):'lista.fechadaAviso')}</p>`:''}
+    <div class="seg seg-filtro" role="group" aria-label="Mostrar">${FILTROS.map(([k,l])=>`<button data-a="presFiltro" data-v="${k}" aria-pressed="${f===k}">${l} <span class="n">${carregou||k==='todos'?cont[k]:'…'}</span></button>`).join('')}</div>
+    ${carregou&&!a.inn.length&&f!=='in'&&ids.length?'<p class="small muted" style="margin:10px 0 0">Ninguém confirmou ainda. Mande o link no grupo.</p>':''}
+    <${f==='in'?'ol':'ul'} class="plist" id="presLista">${carregou?vis.map(linha).join(''):''}${!carregou||!vis.length?`<li class="muted small">${vazio}</li>`:''}</${f==='in'?'ol':'ul'}></div>`}
+
 function teamCard(t,ti,admin){const R=rat(),c=col(t.c);
   const rs=id=>(t.res||[]).includes(id)?1:0,ps=t.players.slice().sort((a,b)=>rs(a)-rs(b)||posIdx(ppos(a))-posIdx(ppos(b)));
   const avg=t.players.reduce((s,id)=>s+lvl(id),0)/Math.max(1,t.players.length);
   return `<div class="team"><div class="band${c.n==='Branco'&&!sport().pairs?' branco':''}" style="background:${c.c}"></div><div class="th"><b>${tn(t.c)}</b>${admin&&!sport().pairs?`<button class="btn sm ghost" data-a="color" data-v="${ti}">Cor</button>`:`<span class="tag">${t.players.length}</span>`}</div>
-  <ul>${ps.map(id=>`<li class="${rs(id)?'reserva':''}">${posTag(id)}<span class="pn">${esc(pname(id))}${rs(id)?` <span class="tag">· ${tx('times.reserva')}</span>`:''}</span>${admin?`<button class="btn sm ghost" data-a="move" data-v="${ti}" data-p="${id}" title="Mover">⇄</button>`:''}</li>`).join('')}</ul>
+  <ul>${ps.map(id=>`<li class="${rs(id)?'reserva':''}">${posTag(id)}<span class="pn">${esc(pname(id))}${rs(id)?` <span class="tag">· ${tx('times.reserva')}</span>`:''}</span>${admin?`<button class="btn sm ghost" data-a="move" data-v="${ti}" data-p="${id}" title="Mover" aria-label="Mover ${esc(pname(id))}">⇄</button>`:''}</li>`).join('')}</ul>
   ${admin?`<div class="row between small muted" style="padding:0 14px 12px"><span>Nota média ${fmtL(Math.round(avg*10)/10)}</span>${sport().pairs?'':`<button class="btn sm ghost" data-a="porTime" data-v="${ti}">${tx('porTime.botao')}</button>`}</div>`:''}</div>`}
 
 /* Aviso de lista diferente dos times (pelada-v15). Some sozinho quando a lista e os times voltam a bater. */

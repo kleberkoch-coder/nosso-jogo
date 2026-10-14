@@ -24,7 +24,7 @@ import './telas/grupo.js';
 import './telas/jogadores.js';
 import './telas/partida.js';
 import './telas/ranking.js';
-import './telas/caixa.js';
+import './telas/Caixa.tsx';
 import './telas/votacao.js';
 import './telas/publico-rodada.js';
 import './telas/publico-voto.js';

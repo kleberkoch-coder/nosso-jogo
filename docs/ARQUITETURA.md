@@ -190,6 +190,7 @@ A montagem (`npm run build`) imprime estes números. Eles são registrados aqui 
 | pelada-v27 | 7 de 47 | 1 de 15 | 28 | 2 | 68,1 KB |
 | pelada-v28 | 7 de 55 | 1 de 15 | 28 | 2 | 67,7 KB (ações divididas em 8 arquivos; textos do portal fora do app) |
 | pelada-v29 | 7 de 55 | 1 de 15 | 28 | 2 | 70,5 KB (melhorias de uso no celular: KAN-71, 72, 73, 74, 127 e 130) |
+| pelada-v30 | 9 de 56 | 2 de 15 | 24 | 3 | 72,9 KB (Caixa como componente e regra do caixa com teste, KAN-135; confirmação do app, KAN-128) |
 
 As 5 regras de negócio com teste próprio previsto: sorteio, ranking, pendências do caixa, rodadas fixas (próxima data) e apuração da votação. Os testes ficam em `testes/regras/` com o nome da regra (`sorteio.test.mjs`, `ranking.test.mjs`, `caixa.test.mjs`, `rodadas-fixas.test.mjs`, `votacao.test.mjs`) e rodam com `npm run regras` (testador do próprio Node, que lê TypeScript direto). Desde a pelada-v15 já existe o primeiro teste de regra, lista × times (`lista-sorteio.test.mjs`), e na v16 entrou jogadores por time e reservas (`times.test.mjs`); eles não entram na conta das 5. Para uma regra ganhar teste, ela precisa sair do código que lê o estado, como foi feito em `src/dominio/divergencia.ts`.
 
@@ -200,9 +201,9 @@ As 5 regras de negócio com teste próprio previsto: sorteio, ranking, pendênci
 | `estilos/app.css` | CSS do app (tokens do Design System e componentes) |
 | `i18n/` | `pt-BR.js` (textos), `index.js` (`tx` e `tp`), `formatos.js` (local e moeda) |
 | `nucleo/` | `util.js` (utilidades, sem dependências), `links.js`, `estado.js` (estado e assinaturas do banco), `backend.js` (Firebase ou demonstração, carregando dos botões), `edicoes.js` (gravações otimistas e presença) |
-| `dominio/` | Regras de negócio sem tela: `esportes.js` (catálogo), `grupo.js`, `rodadas.js`, `caixa.js`, `sorteio.js`, `whatsapp.js` (textos para compartilhar), `limites.ts` (limites contra abuso) |
-| `ui/` | `render.js` (desenho da tela e abas), `tema.js`, `dialogos.js` |
-| `telas/` | Uma tela por arquivo: `apresentacao`, `login`, `convite`, `grupos`, `rodada`, `historico`, `grupo-form`, `grupo`, `jogadores`, `partida`, `ranking`, `caixa`, `votacao`, `publico-voto` e o componente `PublicoRodada.tsx` (link do jogador; `publico-rodada.js` guarda o "quem sou eu" do aparelho) |
+| `dominio/` | Regras de negócio sem tela: `esportes.js` (catálogo), `grupo.js`, `rodadas.js`, `caixa.js` (configuração do caixa), `caixa-regras.ts` (pendências do mês e totais, com teste próprio desde a pelada-v30), `sorteio.js`, `whatsapp.js` (textos para compartilhar), `limites.ts` (limites contra abuso) |
+| `ui/` | `render.js` (desenho da tela e abas), `tema.js`, `dialogos.js` (janelas; desde a pelada-v30 também a janela de confirmação do app, `confirmou()`, no lugar do `confirm()` do navegador) |
+| `telas/` | Uma tela por arquivo: `apresentacao`, `login`, `convite`, `grupos`, `rodada`, `historico`, `grupo-form`, `grupo`, `jogadores`, `partida`, `ranking`, `votacao`, `publico-voto` e os componentes `PublicoRodada.tsx` e `Caixa.tsx` (pelada-v30, KAN-135) (link do jogador; `publico-rodada.js` guarda o "quem sou eu" do aparelho) |
 | `acoes.js` e `acoes/` | O que cada botão (`data-a`) faz, dividido por assunto desde a pelada-v28: `conta`, `grupo`, `rodada`, `jogadores`, `partida`, `caixa`, `votacao` e `publico` |
 | `portal/` | Portal do Nosso Jogo, site separado (`main.js`, `tela.js` e `textos.js`, com dicionário próprio) |
 | `eventos.js` | Cliques, teclas e campos: liga a tela às ações, com o carregando dos botões |

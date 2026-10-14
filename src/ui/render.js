@@ -10,7 +10,7 @@ import { tx } from '../i18n/index.js';
 import { desmontarPublico } from '../telas/PublicoRodada.tsx';
 import { vHistorico } from '../telas/historico.js';
 import { vLanding } from '../telas/apresentacao.js';
-import { vCaixa } from '../telas/caixa.js';
+import { montarCaixa, vCaixa } from '../telas/Caixa.tsx';
 import { renderInvite } from '../telas/convite.js';
 import { vGrupo } from '../telas/grupo.js';
 import { vHome } from '../telas/grupos.js';
@@ -51,6 +51,7 @@ function renderCore(){
   abasNoLugar();
   ensurePres();ensureVotos();ensureExtras();
   main.innerHTML=(grpAtivo()?'':`<div class="inbar"><span>Grupo inativo desde ${fdia(S.app.inativadoEm)}. Os links públicos não aceitam confirmações nem votos.</span>${isOwnerMe()?'<button class="btn sm" data-a="toggleAtivo">Reativar</button>':''}</div>`)+{rodada:vRodada,jogadores:vJogadores,partida:vPartida,ranking:vRanking,caixa:vCaixa,votacao:vVotacao,historico:vHistorico,grupo:vGrupo}[S.tab]();
+  if(S.tab==='caixa')montarCaixa();
   if(S.tab==='partida')tick();
 }
 

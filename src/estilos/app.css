@@ -307,3 +307,12 @@ dialog::backdrop{background:rgba(5,20,12,.55)}
 /* KAN-127: busca do nome no link */
 .busca-nome{margin:10px 0 4px}
 .busca-nome .inp{min-height:var(--touch-min);font-size:16px}
+/* KAN-129: aviso flutuante com ação ("Desfazer") */
+#toast.acao{pointer-events:auto;display:flex;align-items:center;gap:6px;padding:4px 4px 4px 16px;width:max-content}
+#toast .toast-btn{min-height:var(--touch-min);min-width:var(--touch-min);padding:0 12px;border:0;border-radius:8px;background:transparent;color:var(--bg);font-weight:800;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+#toast .toast-btn:focus-visible{outline:2px solid var(--bg);outline-offset:-4px}
+/* KAN-128: janela de confirmação do app */
+.conf h3{margin:0 0 6px}
+.conf-txt{color:var(--muted);margin:0 0 12px;line-height:1.5}
+.conf .dlg-f .btn{min-height:var(--touch-min)}
+.btn.perigo{background:var(--out-fill);color:var(--on-out);border-color:var(--out)}

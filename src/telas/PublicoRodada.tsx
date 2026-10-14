@@ -1,5 +1,5 @@
 /* Link público da rodada (jogador sem conta): primeiro componente em TypeScript + Preact (decisão D2).
-   O Preact monta a tela a partir do estado (S) e escapa todo texto sozinho: aqui não há innerHTML.
+   O Preact monta a tela a partir do estado (S) e escapa todo texto sozinho: aqui não se monta HTML como texto.
    Os botões continuam com data-a, então as ações, o carregando e o aviso de sem sinal são os mesmos do resto do app. */
 import { render } from 'preact';
 import { useState } from 'preact/hooks';
@@ -138,10 +138,10 @@ let montado = false;
 /* Desenha (ou atualiza) o link público dentro de <main>. */
 function montarPublico() {
   const S = st();
-  ($('#tabsnav') as HTMLElement).hidden = true; ($('#topright') as HTMLElement).innerHTML = '';
+  ($('#tabsnav') as HTMLElement).hidden = true; ($('#topright') as HTMLElement).replaceChildren();
   const r = rodById(S.route.id) as Rodada | null, ok = S.app && grpAtivo() && r && !r.cancelada;
   ($('#gsub') as HTMLElement).textContent = ok ? tx('publico.subtitulo', { emoji: sport().e, esporte: sportName() }) : '';
-  if (!montado) { main.innerHTML = ''; montado = true; }
+  if (!montado) { main.replaceChildren(); montado = true; }
   render(<PublicoRodada />, main);
 }
 /* Antes de outra tela escrever em <main>, o Preact solta a tela pública. */

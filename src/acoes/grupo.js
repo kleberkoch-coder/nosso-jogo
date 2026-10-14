@@ -15,15 +15,15 @@ import { editApp, editRat, editRod, saveContato, setPres } from '../nucleo/edico
 import { addMatch, apagarLanc, apagarPartidasDaRodada, delMatch as apagarPartida, gravarVotacao, recalcular, salvarLanc } from '../nucleo/partidas.js';
 import { GB, S, clean, w } from '../nucleo/estado.js';
 import { linkConvite, linkProxima, linkRodada, linkVoto } from '../nucleo/links.js';
-import { $, DIAS, brl, cl, esc, fdate, fmonth, inAppBrowser, key, toast, today, uid } from '../nucleo/util.js';
+import { $, DIAS, brl, cl, esc, fdate, fmonth, inAppBrowser, key, toast, toastAcao, today, uid, usarAvisoAcao } from '../nucleo/util.js';
 import { upMyGroup } from '../rotas.js';
-import { pendencias } from '../telas/caixa.js';
+import { pendencias } from '../telas/Caixa.tsx';
 import { groupForm, porTimeAjuda, readGroupForm, schedRow } from '../telas/grupo-form.js';
 import { AUTH_CANCEL, authMsg, pwOk } from '../telas/login.js';
 import { actx, elapsed, setActx, sumPts } from '../telas/partida.js';
 import { MEK, myLocal } from '../telas/publico-rodada.js';
 import { tally } from '../telas/votacao.js';
-import { closeDlg, closeDlgNow, dlg, drawPreview, openDlg, playerDlg, posField, rodDlg, val } from '../ui/dialogos.js';
+import { avisar, closeDlg, closeDlgNow, confirmou, dlg, drawPreview, naoConfirmar, openDlg, playerDlg, posField, responder, rodDlg, val } from '../ui/dialogos.js';
 import { changed, render } from '../ui/render.js';
 import { TEMA_K, applyTheme, closeThemeMenu, openThemeMenu, themeAnchor, themeMenuEl } from '../ui/tema.js';
 import { LOCAL } from '../i18n/formatos.js';
@@ -44,8 +44,8 @@ const acoes={
   addSched:()=>{const rows=[...document.querySelectorAll('#sched .srow')],last=rows[rows.length-1];const x=last?{dow:(+last.querySelector('.sd').value+2)%7,ini:last.querySelector('.si').value,fim:last.querySelector('.sf').value,place:last.querySelector('.sl').value}:null;
     $('#sched').insertAdjacentHTML('beforeend',schedRow(x));const n=$('#sched').lastElementChild.querySelector('.sd');n&&n.focus()},
   rmSched:el=>{const rows=document.querySelectorAll('#sched .srow');if(rows.length<=1){toast('Deixe pelo menos um dia, ou marque o grupo como esporádico.');return}el.closest('.srow').remove()},
-  saveGroup:()=>{const g=readGroupForm(S.gid);if(!g)return;const wasFix=fixos().map(x=>x.dow+'|'+x.ini).join(),willFix=g.fixos.map(x=>x.dow+'|'+x.ini).join();
-    if(wasFix&&wasFix!==willFix&&!confirm('Mudar dias ou horários fixos reinicia a confirmação da próxima rodada fixa. Continuar?'))return;
+  saveGroup:el=>{const g=readGroupForm(S.gid);if(!g)return;const wasFix=fixos().map(x=>x.dow+'|'+x.ini).join(),willFix=g.fixos.map(x=>x.dow+'|'+x.ini).join();
+    if(wasFix&&wasFix!==willFix&&confirmou(el,{titulo:'Mudar os dias fixos?',texto:'A confirmação da próxima rodada fixa começa do zero.',acao:'Mudar dias'})!=='sim')return;
     const p=editApp(a=>{a.name=g.name;a.sport=g.sport;a.sportName=g.sportName;a.freq=g.freq;a.cfg.fixos=g.fixos;a.cfg.porTime=g.porTime;if(g.fixos[0]&&g.fixos[0].place)a.cfg.place=g.fixos[0].place});
     upMyGroup(S.gid,{name:g.name,sport:g.sport,sportName:g.sportName});S.rid=null;closeDlg();toast('Grupo atualizado.');return p},
   addPos:()=>openDlg(`<h3>Nova posição</h3><div class="row"><label class="f" style="width:110px"><span>Sigla</span><input class="inp" id="psg" maxlength="4" placeholder="Ex.: VOL" style="text-transform:uppercase"></label>
@@ -54,7 +54,7 @@ const acoes={
   savePos:()=>{const k=val('psg').toUpperCase().replace(/[^A-Z0-9]/g,''),l=val('pnmx');if(k.length<2){toast('A sigla precisa de 2 a 4 letras.');return}if(l.length<2){toast('Dê um nome à posição.');return}
     if(sport().pos.some(([x,y])=>x===k||normName(y)===normName(l))){toast('Essa posição já existe.');return}closeDlg();return editApp(a=>{a.posx=(a.posx||[]).concat([[k,l]])})},
   rmPos:el=>{const i=+el.dataset.v,[k,l]=(S.app.posx||[])[i]||[];const n=Object.values(S.jog).filter(p=>p.pos===k).length;
-    if(!confirm(`Remover a posição ${l}?`+(n?` ${n} jogador(es) com essa posição passam para uma posição padrão.`:'')))return;return editApp(a=>{a.posx=(a.posx||[]).filter((x,j)=>j!==i)})},
+    if(confirmou(el,{titulo:`Remover a posição ${l}?`,texto:n?tp('posicao.removerAviso',n):'Ninguém usa esta posição.',acao:'Remover posição',perigo:true})!=='sim')return;return editApp(a=>{a.posx=(a.posx||[]).filter((x,j)=>j!==i)})},
   dupGroup:()=>{openDlg(`<h3>Duplicar grupo</h3><p class="small muted" style="margin-top:-6px">Cria um grupo novo e independente, com o mesmo esporte, frequência, dias e horários, posições e configurações de partidas e caixa. Você será o organizador dele.</p>
     <label class="f"><span>Nome do novo grupo</span><input class="inp" id="dgn" maxlength="40" value="${esc(gname()+' (cópia)')}"></label><div class="err" id="dgErr" style="margin-top:-8px"></div>
     <label class="row small" style="margin-bottom:6px"><input type="checkbox" id="dgel" checked> Copiar o elenco (jogadores ativos, notas, contatos, avulsos e pares separados)</label>
@@ -73,7 +73,7 @@ const acoes={
         const C={};Object.entries(S.cont||{}).forEach(([id,c])=>{if(keep.has(id))C[id]=c});if(Object.keys(C).length)ps.push(B.set(base+'/privado/contatos',C));await Promise.all(ps)}
       await upMyGroup(gid,{name,role:'owner',sport:a.sport||'futebol',sportName:a.sportName||'',ativo:true,criado:now});closeDlg();toast('Grupo duplicado.');location.hash='#/g/'+gid}
     catch(e){console.error(e);if(e&&e.code==='permission-denied'&&!(await B.get('grupos/'+gid).catch(()=>null)))avisoGrupos('#dgErr',lg.n);else toast('Não foi possível duplicar. Tente de novo.')}},
-  toggleAtivo:()=>{const on=!grpAtivo();if(!on&&!confirm('Inativar "'+gname()+'"? Os links públicos deixam de aceitar confirmações e votos, e a rodada fixa para de ser criada. Tudo continua guardado e você pode reativar depois.'))return;
+  toggleAtivo:el=>{const on=!grpAtivo();if(!on&&confirmou(el,{titulo:'Inativar "'+gname()+'"?',texto:'Os links públicos deixam de aceitar confirmações e votos, e a rodada fixa para de ser criada. Tudo continua guardado e você pode reativar depois.',acao:'Inativar grupo',perigo:true})!=='sim')return;
     const p=editApp(a=>{a.ativo=on;if(on)delete a.inativadoEm;else a.inativadoEm=Date.now()});upMyGroup(S.gid,{ativo:on});toast(on?'Grupo reativado.':'Grupo inativado.');return p},
   pickSport:el=>{const box=el.closest('[data-sp]');box.dataset.sp=el.dataset.v;box.querySelectorAll('[data-a=pickSport]').forEach(b=>b.setAttribute('aria-pressed',b===el));const o=box.querySelector('#ngoW,#csoW');if(o)o.hidden=el.dataset.v!=='outro';
     const nt=box.querySelector('#ngt');if(nt){const ant=box.dataset.spAnt||'';if(!ant||+nt.value===porTimePadrao(ant))nt.value=porTimePadrao(el.dataset.v);box.dataset.spAnt=el.dataset.v;$('#ngtHelp').textContent=porTimeAjuda(el.dataset.v)}},
@@ -92,8 +92,8 @@ const acoes={
     catch(e){console.error(e);el.disabled=false;toast('Convite inválido ou expirado. Peça um novo link ao organizador.')}},
   inviteLink:()=>{let t=S.convite?.token;if(!t){t=B.newId()+B.newId();S.convite={token:t};w(GB.set('privado/convite',{token:t}))}
     shareDlg('Convite para administrador',`Oi! Te convidei para administrar o grupo *${gname()}* no ${APP}.\nAbra o link, crie sua conta (ou entre) e aceite:\n${linkConvite(t)}`)},
-  newInviteLink:()=>{if(!confirm('Gerar um novo link? O link atual deixa de funcionar.'))return;const t=B.newId()+B.newId();S.convite={token:t};w(GB.set('privado/convite',{token:t}));ACT.inviteLink()},
-  rmMember:el=>{if(!confirm('Remover este administrador do grupo? O link de convite atual também deixa de funcionar, para ele não conseguir voltar sozinho.'))return;delete S.membros[el.dataset.v];S.convite=null;changed();
+  newInviteLink:el=>{if(confirmou(el,{titulo:'Gerar um novo link de convite?',texto:'O link atual deixa de funcionar.',acao:'Gerar novo link'})!=='sim')return;const t=B.newId()+B.newId();S.convite={token:t};w(GB.set('privado/convite',{token:t}));ACT.inviteLink()},
+  rmMember:el=>{if(confirmou(el,{titulo:'Remover este administrador?',texto:'O link de convite atual também deixa de funcionar, para ele não conseguir voltar sozinho.',acao:'Remover administrador',perigo:true})!=='sim')return;delete S.membros[el.dataset.v];S.convite=null;changed();
     return Promise.all([w(GB.del('membros/'+el.dataset.v)),w(GB.del('privado/convite'))]).then(()=>toast('Administrador removido. Para convidar alguém, gere um novo link.',4500))},
   forgetGroup:()=>{const me=cl(S.me)||{grupos:{}};delete me.grupos[S.gid];S.me=me;B.set('usuarios/'+S.user.uid,me).catch(()=>{});location.hash='#/'},
 };

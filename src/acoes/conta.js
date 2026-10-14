@@ -15,24 +15,25 @@ import { editApp, editRat, editRod, saveContato, setPres } from '../nucleo/edico
 import { addMatch, apagarLanc, apagarPartidasDaRodada, delMatch as apagarPartida, gravarVotacao, recalcular, salvarLanc } from '../nucleo/partidas.js';
 import { GB, S, clean, w } from '../nucleo/estado.js';
 import { linkConvite, linkProxima, linkRodada, linkVoto } from '../nucleo/links.js';
-import { $, DIAS, brl, cl, esc, fdate, fmonth, inAppBrowser, key, toast, today, uid } from '../nucleo/util.js';
+import { $, DIAS, brl, cl, esc, fdate, fmonth, inAppBrowser, key, toast, toastAcao, today, uid, usarAvisoAcao } from '../nucleo/util.js';
 import { upMyGroup } from '../rotas.js';
-import { pendencias } from '../telas/caixa.js';
+import { pendencias } from '../telas/Caixa.tsx';
 import { groupForm, porTimeAjuda, readGroupForm, schedRow } from '../telas/grupo-form.js';
 import { AUTH_CANCEL, authMsg, pwOk } from '../telas/login.js';
 import { actx, elapsed, setActx, sumPts } from '../telas/partida.js';
 import { MEK, myLocal } from '../telas/publico-rodada.js';
 import { tally } from '../telas/votacao.js';
-import { closeDlg, closeDlgNow, dlg, drawPreview, openDlg, playerDlg, posField, rodDlg, val } from '../ui/dialogos.js';
+import { avisar, closeDlg, closeDlgNow, confirmou, dlg, drawPreview, naoConfirmar, openDlg, playerDlg, posField, responder, rodDlg, val } from '../ui/dialogos.js';
 import { changed, render } from '../ui/render.js';
 import { TEMA_K, applyTheme, closeThemeMenu, openThemeMenu, themeAnchor, themeMenuEl } from '../ui/tema.js';
 import { LOCAL } from '../i18n/formatos.js';
 import { ACT } from '../acoes.js';
 
-async function sairDaConta(destino){
-  if(!(await B.semPendencias(3000))&&!confirm(tx('sair.pendentes')))return;
+async function sairDaConta(destino,el){
+  if(!(el&&el._conf==='sim')&&!(await B.semPendencias(3000))){confirmou(el,{titulo:tx('sair.pendentesTitulo'),texto:tx('sair.pendentes'),acao:tx('sair.mesmoAssim'),perigo:true});return}
+  if(el)delete el._conf;
   const limpou=await B.logout();
-  if(limpou===false)alert(tx('sair.outrasAbas'));
+  if(limpou===false)await avisar(tx('sair.outrasAbasTitulo'),tx('sair.outrasAbas'));
   try{sessionStorage.clear()}catch(e){}
   location.replace(location.pathname+location.search+destino);location.reload()}
 const acoes={
@@ -41,6 +42,8 @@ const acoes={
   setTheme:el=>{const t=el.dataset.v;try{if(t==='auto')localStorage.removeItem(TEMA_K);else localStorage.setItem(TEMA_K,t)}catch(e){}
     const fromMenu=!!el.closest('.theme-menu');closeThemeMenu(fromMenu);applyTheme();render()},
   close:closeDlg,
+  /* Janela de confirmação do app (KAN-128) */
+  confSim:()=>responder('sim',ACT),confOutro:()=>responder('nao',ACT),confNao:()=>naoConfirmar(),
   copy:()=>{const t=$('#shtxt');copyText(t.value,t)},
   authMode:el=>{const em=val('le');S.authMode=el.dataset.v;try{localStorage.setItem('pelada-mode',S.authMode)}catch(e){}render();const i=$('#le');if(i){i.value=em;(em?$('#lp'):i).focus()}},
   login:async()=>{const e=val('le'),p=$('#lp').value;$('#lerr').textContent='';if(!e||!p){$('#lerr').textContent='Preencha e-mail e senha.';return}try{await B.login(e,p);try{localStorage.setItem('pelada-mode','login')}catch(x){}}catch(x){$('#lerr').textContent=authMsg(x)}},
@@ -55,8 +58,8 @@ const acoes={
   copyHere:()=>copyText(location.href),
   reset:async()=>{const e=val('le');if(!e){$('#lerr').textContent='Digite seu e-mail acima.';return}try{await B.reset(e);toast('Enviamos um link de redefinição para '+e)}catch(x){$('#lerr').textContent=authMsg(x)}},
   /* Sair (KAN-80): confere se ficou algo sem enviar, desconecta, apaga os dados do grupo guardados neste aparelho e recarrega. */
-  logout:()=>sairDaConta('#/'),
-  invSwitch:()=>sairDaConta(location.hash),
+  logout:el=>sairDaConta('#/',el),
+  invSwitch:el=>sairDaConta(location.hash,el),
   /* Mostrar/ocultar a senha enquanto digita (pelada-v17). */
   verSenha:el=>{const i=$('#'+el.dataset.v);if(!i)return;const on=i.type==='password';i.type=on?'text':'password';el.setAttribute('aria-pressed',String(on));
     el.textContent=tx(on?'login.ocultar':'login.mostrar');el.setAttribute('aria-label',tx(on?'login.ocultarSenha':'login.mostrarSenha'));i.focus()},

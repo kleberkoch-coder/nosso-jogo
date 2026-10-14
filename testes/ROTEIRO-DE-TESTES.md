@@ -65,6 +65,12 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
 - **Versão do app (v19, CT-KAN-107):** apresentação, cadastro, Entrar, Meus grupos e aba Grupo mostram a mesma versão do service worker; contraste da versão no tema escuro (apresentação e Entrar).
 - **Ícones (KAN-59, decisão de 09/10/2026: manter os atuais):** os 5 ícones guardados pelo service worker (favicon-32, apple-touch-icon, icon-192, icon-512, maskable-512) existem e carregam como imagem.
 - **Correções da Qualidade (v22):** identificador com código no link é ignorado (KAN-76, rodada, jogadores e link do jogador); trocar a cor com a tela desatualizada não desfaz o sorteio (KAN-108); presença carregando mostra "Carregando…" (KAN-109); aviso de lista fechada em duplas sem "+ Pôr no time" (KAN-110); texto "Continuar com o Google" em todo o app (KAN-112). Jogo fixo que passa da meia-noite (KAN-111) está no teste de regra `rodadas-fixas`. As regras novas (identificador válido em presença e voto) estão nos testes do emulador.
+- **Caixa e confirmações (v30, KAN-128, 129 e 135):**
+  - Caixa como componente: saldo, entradas, saídas e pendências; nome com `<b>` ou `<script>` aparece como texto;
+  - "Recebi": aviso "Recebido de …" com Desfazer (44 × 44px, contraste AA nos dois temas, `role=status`), o rótulo do botão diz nome e valor; Desfazer devolve a pendência e o saldo; sem toque, some em 6 segundos e o pagamento fica;
+  - ✕ do lançamento abre a janela do app (Cancelar e Apagar lançamento), com o foco em Cancelar; botão da ação em coral com contraste AA e 44px nos dois temas; Esc e tocar fora não apagam, e o foco volta ao ✕; apagar oferece Desfazer;
+  - Excluir jogador por cima da janela do jogador: Cancelar volta ao formulário com o que foi digitado; Sair com alterações sem enviar pergunta na janela do app;
+  - em todo o roteiro, nenhuma caixa do navegador (`confirm` ou `alert`) aparece (CT-KAN-128-05).
 - **Uso no celular (v29, KAN-71, 72, 73, 74, 127 e 130):**
   - aba Rodada: "Sortear times (10)" fixo no rodapé e visível sem rolar; sem confirmados, desabilitado com "Faltam 4 para sortear"; uma lista só de presença, cada nome uma vez; filtros Todos, Vão (numerado na ordem de chegada), Não vão e Sem resposta somam certo, com 44px; explicação dos jogos fixos recolhida; depois de sortear, a tela vai até os times com o foco em "Times" e a barra sai;
   - abas: sombra à direita no começo e à esquerda depois de rolar; Caixa, Grupo e Ranking abertas ficam inteiras na barra; espaço lateral de 12px;
@@ -109,6 +115,7 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
 | pelada-v22 | 09/10/2026 | 147 de 147 passaram, 35 de 35 nas regras de negócio |
 | pelada-v23 | 09/10/2026 | 155 de 155 passaram, 41 de 41 nas regras de negócio |
 | pelada-v24 | 13/10/2026 | 156 de 156 passaram, 41 de 41 nas regras de negócio (mudança para o Firebase Hosting; mensagem do limite de grupos no singular) |
+| pelada-v30 | 14/10/2026 | 287 de 287 passaram (21 novas, de KAN-128, 129 e 135; os testes que aceitavam o confirm do navegador agora usam a janela do app), 55 de 55 nas regras de negócio |
 | pelada-v29 | 14/10/2026 | 266 de 266 passaram (37 novas, dos critérios de aceite de KAN-71, 72, 73, 74, 127 e 130), 49 de 49 nas regras de negócio |
 | pelada-v28 | 14/10/2026 | 229 de 229 passaram (18 novas, dos casos da Qualidade para KAN-77, 78, 79, 115, 116 e 133), 49 de 49 nas regras de negócio |
 | pelada-v27 | 14/10/2026 | 211 de 211 passaram (Entrar no topo da apresentação em 390, 360 e 320 px, KAN-136) |

@@ -177,11 +177,13 @@ Cada grupo pode **criar posições próprias** (sigla de até 4 letras e nome) e
   - ao criar, a janela troca para o link da votação, pronto para o WhatsApp (corrigido na v12: antes ela fechava sozinha).
 - **Caixa:**
   - mensalidade, diária (diaristas e avulsos que jogaram), outras entradas e despesas;
-  - pendências do mês e cobrança pronta para o WhatsApp, com Pix.
+  - pendências do mês e cobrança pronta para o WhatsApp, com Pix;
+  - **"Recebi" com Desfazer** (pelada-v30, KAN-129): o pagamento grava na hora e o aviso "Recebido de Bruno: R$ 80,00 · Desfazer" fica 6 segundos. Apagar um lançamento também oferece Desfazer.
 
 ## Padrões de interface
 - **Design System** (`claude/DESIGN-SYSTEM.md` e a página do Design System): fonte da verdade para cores, tipografia, componentes e acessibilidade. Valores novos entram primeiro nele.
 - Loading em todo botão de ação. As janelas só fecham depois que a gravação termina.
+- **Confirmações na janela do app** (pelada-v30, KAN-128): nada de caixa do navegador ("OK" e "Cancelar"). A pergunta é curta, uma linha diz o que acontece e o botão diz a ação ("Excluir rodada", "Apagar partida"), em coral quando apaga algo. O foco abre em Cancelar; Esc e tocar fora não fazem nada. Por cima de outra janela, Cancelar volta ao formulário sem perder o que foi digitado.
 - O cursor já vem no primeiro campo relevante, e o Enter envia.
 - Os textos de compartilhamento são gerados prontos para o WhatsApp.
 - **Visual (decisão de 7 out. 2026, Design System v2, direção "Equilíbrio"; aplicado na `pelada-v12`):**

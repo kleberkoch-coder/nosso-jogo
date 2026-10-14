@@ -54,7 +54,9 @@ jobs:
               echo "::notice::No ar: $esperada em $ENDERECO"
               # O portal (outro site) pode levar alguns segundos a mais para aparecer.
               for k in $(seq 1 18); do
-                if curl -fsS "$PORTAL/?conferir=$RANDOM" | grep -q "<title>Portal do Nosso Jogo</title>"; then echo "::notice::Portal no ar em $PORTAL"; exit 0; fi
+                # Lê a página inteira antes de procurar o título (com "grep -q" no cano, o curl era cortado e a conferência falhava à toa).
+                pagina=$(curl -fsS "$PORTAL/?conferir=$RANDOM" || true)
+                if [[ "$pagina" == *"<title>Portal do Nosso Jogo</title>"* ]]; then echo "::notice::Portal no ar em $PORTAL"; exit 0; fi
                 sleep 10
               done
               echo "::error::O portal não respondeu em $PORTAL: $(curl -sS "$PORTAL/" | head -c 200 | tr -d '\n')"

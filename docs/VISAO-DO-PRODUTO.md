@@ -44,7 +44,9 @@ Plataforma para **qualquer pessoa no mundo** organizar seus jogos recorrentes ou
 | `#/convite/{grupo}/{token}` | Convite para ser administrador. |
 
 ## Área administrativa do portal (pelada-v26, KAN-115 e KAN-116)
-- Endereço `#/portal`, com o botão **Portal** em Meus grupos. Só para o administrador do portal: por enquanto o e-mail do Kleber, confirmado (entrar com o Google). A lista está nas regras do Firebase e em `src/dominio/planos.ts`.
+- **Site separado:** `https://nosso-jogo-portal.web.app` (decisão do Kleber em 13/10/2026). O app dos clientes não tem nenhuma tela, botão ou código do portal.
+- **Sem criação de conta:** só "Entrar com o Google". Só entram as contas Google cujo **identificador** está na lista das regras do Firebase (`adminPortal()`), incluído à mão numa proposta aprovada pelo Kleber. Conta do portal: `portalnossojogo@gmail.com`, com verificação em 2 etapas, usada só no computador pessoal.
+- **Próximo passo de isolamento:** portal num projeto Firebase separado, ligado ao banco por um pequeno servidor, quando o projeto for para o plano Blaze (KAN-120).
 - Mostra cada cliente (conta de organizador ou administrador): e-mail, plano e validade, grupos ativos e inativos, último acesso, última rodada gravada e data de registro. Busca por e-mail ou nome de grupo; filtros por plano, "sem acesso há mais de 30 dias" e "plano vence em até 7 dias".
 - **Nunca** mostra notas, caixa, Pix ou contatos dos grupos.
 - Só o administrador do portal consegue **listar** todos os grupos; qualquer pessoa continua abrindo um grupo pelo link (KAN-133).

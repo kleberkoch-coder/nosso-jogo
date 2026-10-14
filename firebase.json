@@ -2,35 +2,100 @@
   "firestore": {
     "rules": "firestore.rules"
   },
-  "hosting": {
-    "public": "dist",
-    "ignore": ["**/.*"],
-    "cleanUrls": false,
-    "headers": [
-      {
-        "source": "/sw.js",
-        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
-      },
-      {
-        "source": "/",
-        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
-      },
-      {
-        "source": "/index.html",
-        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
-      },
-      {
-        "source": "/manifest.webmanifest",
-        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
-      },
-      {
-        "source": "**/*.map",
-        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
-      },
-      {
-        "source": "/icons/**",
-        "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800" }]
-      }
-    ]
-  }
+  "hosting": [
+    {
+      "public": "dist",
+      "ignore": [
+        "**/.*"
+      ],
+      "cleanUrls": false,
+      "headers": [
+        {
+          "source": "/sw.js",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        {
+          "source": "/",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        {
+          "source": "/index.html",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        {
+          "source": "/manifest.webmanifest",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        {
+          "source": "**/*.map",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        {
+          "source": "/icons/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=604800"
+            }
+          ]
+        }
+      ],
+      "site": "nosso-jogo-f4762"
+    },
+    {
+      "site": "nosso-jogo-portal",
+      "public": "dist-portal",
+      "ignore": [
+        "**/.*"
+      ],
+      "headers": [
+        {
+          "source": "**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            },
+            {
+              "key": "X-Robots-Tag",
+              "value": "noindex, nofollow"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "Referrer-Policy",
+              "value": "no-referrer"
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

@@ -192,7 +192,8 @@ Atenção: se o mesmo jogador abrir o link pelo navegador do WhatsApp e depois p
 - Cada aparelho vê só o próprio voto; ninguém consegue ver em quem os outros votaram.
 - Limite conhecido: quem abrir a votação em outro navegador consegue votar de novo, porque os jogadores não têm conta.
 
-**Portal do Nosso Jogo** (desde a pelada-v26): em **Meus grupos**, o botão **Portal** abre a lista de clientes, com plano, grupos, último acesso e última rodada. Só aparece para o e-mail de administração do portal, e é preciso entrar com o **Google** (o Firebase exige e-mail confirmado).
+**Portal do Nosso Jogo** (desde a pelada-v26): site separado em **https://nosso-jogo-portal.web.app**, só para a administração. Não tem criação de conta: clique em **Entrar com o Google** com a conta do portal (`portalnossojogo@gmail.com`), de preferência no computador pessoal. Ele mostra a lista de clientes com plano, grupos, último acesso e última rodada.
+- **Liberar uma conta no portal:** entre com ela; se não estiver liberada, a tela mostra o **identificador** da conta. Peça na conversa do projeto para incluí-lo nas regras (proposta de mudança + Merge). Não há outro jeito de liberar.
 
 Para ajustar os planos sem versão nova: no console do Firebase, **Firestore Database** > **Dados** > coleção `sistema` > documento `planos`, campo `planos` (tipo **map**), com um mapa por plano (`gratis`, `A`, `B`...), cada um com `nome` (texto), `grupos` e `admins` (número, ou **null** para ilimitado) e `recursos` (**array** de textos). Sem esse documento, valem Grátis, A e B padrão. Os limites dos planos ainda não valem no app (KAN-119).
 

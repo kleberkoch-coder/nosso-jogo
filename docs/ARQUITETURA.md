@@ -190,6 +190,7 @@ A montagem (`npm run build`) imprime estes números. Eles são registrados aqui 
 | pelada-v27 | 7 de 47 | 1 de 15 | 28 | 2 | 68,1 KB |
 | pelada-v28 | 7 de 55 | 1 de 15 | 28 | 2 | 67,7 KB (ações divididas em 8 arquivos; textos do portal fora do app) |
 | pelada-v29 | 7 de 55 | 1 de 15 | 28 | 2 | 70,5 KB (melhorias de uso no celular: KAN-71, 72, 73, 74, 127 e 130) |
+| pelada-v32 | 9 de 56 | 2 de 15 | 24 | 3 | 73,0 KB (aviso de lista diferente só depois da presença chegar, KAN-137) |
 | pelada-v31 | 9 de 56 | 2 de 15 | 24 | 3 | 73,0 KB (abrir o grupo sem piscar a aba Rodada, KAN-137) |
 | pelada-v30 | 9 de 56 | 2 de 15 | 24 | 3 | 72,9 KB (Caixa como componente e regra do caixa com teste, KAN-135; confirmação do app, KAN-128) |
 

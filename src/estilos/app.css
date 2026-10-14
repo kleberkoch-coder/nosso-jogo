@@ -125,7 +125,10 @@ body.is-landing main{max-width:none;padding:0}
 .ld-nav .row{flex-wrap:nowrap}.ld-logo{white-space:nowrap}
 /* Celular estreito: o "Entrar" do topo sai (o botão "Já tenho conta" fica logo abaixo) para caber o seletor de tema. */
 .ld-nav .btn{white-space:nowrap}
-@media (max-width:440px){.ld-nav .ld-enter{display:none}.ld-wrap{padding:0 16px}.ld-logo{font-size:21px;gap:8px}.ld-nav .row{gap:6px!important}}
+/* Celular: Entrar continua no topo (quem já tem conta não precisa rolar). Botões mais compactos para caber em 360px. */
+@media (max-width:440px){.ld-wrap{padding:0 16px}.ld-logo{font-size:19px;gap:7px}.ld-mark{width:26px;height:26px}.ld-nav .row{gap:6px!important}.ld-nav .btn{padding:8px 11px;font-size:14px}.ld-nav .ld-ic{padding:6px 9px}}
+@media (max-width:360px){.ld-logo .ld-txt{display:none}}
+.ld-logo{min-width:0;flex:0 1 auto}.ld-mark{flex-shrink:0}.ld-txt{overflow:hidden;text-overflow:ellipsis}.ld-nav .row{flex-shrink:0;margin-left:8px}
 @media (max-width:400px){.ld-nav .ld-gr{display:none}}
 html,body{overscroll-behavior-y:none}
 body{-webkit-tap-highlight-color:transparent;margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);-webkit-font-smoothing:antialiased}

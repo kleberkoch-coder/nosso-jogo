@@ -16,6 +16,7 @@ Atualizado a cada entrega (quando a proposta é aberta) e de novo depois do Merg
 
 | Versão | Proposta | Testes do app | Regras de negócio | Regras do Firebase (emulador) | Tamanho | Mapa de origem | Regras publicadas | No ar |
 |---|---|---|---|---|---|---|---|---|
+| pelada-v27 | (a preencher na proposta) | ✅ 211 de 211 (site e portal compactados) | ✅ 49 de 49 | | 68,1 KB | ✅ | não mudaram | aguardando Merge |
 | pelada-v26 | [#27](https://github.com/kleberkoch-coder/nosso-jogo/pull/27) | ✅ 208 de 208 (site e portal compactados) | ✅ 49 de 49 | ✅ 59 de 59 (2 casos temporariamente pulados, da #21) | 68,0 KB (portal à parte: 51,7 KB) | ✅ | ⚠️ mudam: publicadas no Merge (plano só pelo portal, último acesso, listar grupos só no portal) | aguardando Merge |
 | pelada-v25 | [#24](https://github.com/kleberkoch-coder/nosso-jogo/pull/24) | ✅ 195 de 195 (site compactado) | ✅ 41 de 41 | ✅ 50 de 50 (2 casos temporariamente pulados, da #21) | 67,5 KB | ✅ | ✅ publicadas no Merge (ordem e nome da presença, datas do jogo fixo, mensalidade e diária) | ✅ Merge 13/10 14h29; **conferido no ar** (pelada-v25 em https://nosso-jogo-f4762.web.app) |
 | pelada-v24 | [#22](https://github.com/kleberkoch-coder/nosso-jogo/pull/22) | ✅ 156 de 156 (site compactado) | ✅ 41 de 41 | ✅ 40 de 40 | 67,4 KB | ✅ | não mudaram | ✅ Merge 13/10 10h02; **conferido no ar** pela automação "Publicar o site" (pelada-v24 em https://nosso-jogo-f4762.web.app). Com ela, a v20 a v23 também foram ao ar |

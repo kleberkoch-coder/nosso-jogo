@@ -16,6 +16,7 @@ Atualizado a cada entrega (quando a proposta é aberta) e de novo depois do Merg
 
 | Versão | Proposta | Testes do app | Regras de negócio | Regras do Firebase (emulador) | Tamanho | Mapa de origem | Regras publicadas | No ar |
 |---|---|---|---|---|---|---|---|---|
+| pelada-v31 | [#35](https://github.com/kleberkoch-coder/nosso-jogo/pull/35) | ✅ 289 de 289 (site e portal compactados) | ✅ 55 de 55 | ✅ 59 de 59 | 73,0 KB | ✅ | não mudaram | aguardando Merge (depois da #34) |
 | pelada-v30 | [#34](https://github.com/kleberkoch-coder/nosso-jogo/pull/34) | ✅ 287 de 287 (site e portal compactados) | ✅ 55 de 55 | ✅ 59 de 59 | 72,9 KB (portal 46,1 KB) | ✅ | não mudaram | aguardando Merge |
 | pelada-v29 | [#33](https://github.com/kleberkoch-coder/nosso-jogo/pull/33) | ✅ 266 de 266 (site e portal compactados) | ✅ 49 de 49 | ✅ 59 de 59 | 70,5 KB (portal 45,1 KB) | ✅ | não mudaram | ✅ Merge 14/10 16h36; **conferido no ar** pela automação "Publicar o site" (pelada-v29) |
 | pelada-v28 | [#31](https://github.com/kleberkoch-coder/nosso-jogo/pull/31) | ✅ 229 de 229 (site e portal compactados) | ✅ 49 de 49 | ✅ 59 de 59 (nenhum caso pulado) | 67,7 KB (portal 43,5 KB) | ✅ | ✅ publicadas no Merge (limites de avulsos e grupos obrigatórios de novo, KAN-134) | ✅ Merge 14/10 14h16; **conferido no ar** pela automação "Publicar o site" (pelada-v28 e portal). Netlify apagado e acessos removidos pelo Kleber (14/10) |

@@ -1,0 +1,65 @@
+/* Ações: Conta, login, tema e diálogos gerais. Fazem parte de ACT (src/acoes.js). */
+import { abrirHist, buscarHist, estadoHist } from '../telas/historico.js';
+import { CAIXA_K, cfg, editPc, ptipo } from '../dominio/caixa.js';
+import { APP, COL, SPORTS, col, hasPos, porTime, porTimePadrao, posKeys, posLabel, posTag, sport, tn } from '../dominio/esportes.js';
+import { attendance, curRodada, dupName, fdia, fixos, fmtL, freq, gname, grpAtivo, isAvulso, lvl, lvlIn, normName, players, pname, ppos, rodById, rodadas, setLvl } from '../dominio/grupo.js';
+import { draw } from '../dominio/sorteio.js';
+import { foraDosTimes, fotoDoSorteio } from '../dominio/divergencia.ts';
+import { reservas, sugerirTimes, titulares } from '../dominio/times.ts';
+import { tp, tx } from '../i18n/index.js';
+import { shareDlg, txtConvite, txtTimes } from '../dominio/whatsapp.js';
+import { copyText, semConexao } from '../eventos.js';
+import { B, op, setCAP, sleep } from '../nucleo/backend.js';
+import { avulsosEsgotados, gruposEsgotados, limite } from '../dominio/limites.ts';
+import { editApp, editRat, editRod, saveContato, setPres } from '../nucleo/edicoes.js';
+import { addMatch, apagarLanc, apagarPartidasDaRodada, delMatch as apagarPartida, gravarVotacao, recalcular, salvarLanc } from '../nucleo/partidas.js';
+import { GB, S, clean, w } from '../nucleo/estado.js';
+import { linkConvite, linkProxima, linkRodada, linkVoto } from '../nucleo/links.js';
+import { $, DIAS, brl, cl, esc, fdate, fmonth, inAppBrowser, key, toast, today, uid } from '../nucleo/util.js';
+import { upMyGroup } from '../rotas.js';
+import { pendencias } from '../telas/caixa.js';
+import { groupForm, porTimeAjuda, readGroupForm, schedRow } from '../telas/grupo-form.js';
+import { AUTH_CANCEL, authMsg, pwOk } from '../telas/login.js';
+import { actx, elapsed, setActx, sumPts } from '../telas/partida.js';
+import { MEK, myLocal } from '../telas/publico-rodada.js';
+import { tally } from '../telas/votacao.js';
+import { closeDlg, closeDlgNow, dlg, drawPreview, openDlg, playerDlg, posField, rodDlg, val } from '../ui/dialogos.js';
+import { changed, render } from '../ui/render.js';
+import { TEMA_K, applyTheme, closeThemeMenu, openThemeMenu, themeAnchor, themeMenuEl } from '../ui/tema.js';
+import { LOCAL } from '../i18n/formatos.js';
+import { ACT } from '../acoes.js';
+
+async function sairDaConta(destino){
+  if(!(await B.semPendencias(3000))&&!confirm(tx('sair.pendentes')))return;
+  const limpou=await B.logout();
+  if(limpou===false)alert(tx('sair.outrasAbas'));
+  try{sessionStorage.clear()}catch(e){}
+  location.replace(location.pathname+location.search+destino);location.reload()}
+const acoes={
+  tab:el=>{S.tab=el.dataset.v;render();window.scrollTo(0,0)},
+  themeMenu:el=>{if(themeMenuEl&&themeAnchor===el){closeThemeMenu(true);return}openThemeMenu(el)},
+  setTheme:el=>{const t=el.dataset.v;try{if(t==='auto')localStorage.removeItem(TEMA_K);else localStorage.setItem(TEMA_K,t)}catch(e){}
+    const fromMenu=!!el.closest('.theme-menu');closeThemeMenu(fromMenu);applyTheme();render()},
+  close:closeDlg,
+  copy:()=>{const t=$('#shtxt');copyText(t.value,t)},
+  authMode:el=>{const em=val('le');S.authMode=el.dataset.v;try{localStorage.setItem('pelada-mode',S.authMode)}catch(e){}render();const i=$('#le');if(i){i.value=em;(em?$('#lp'):i).focus()}},
+  login:async()=>{const e=val('le'),p=$('#lp').value;$('#lerr').textContent='';if(!e||!p){$('#lerr').textContent='Preencha e-mail e senha.';return}try{await B.login(e,p);try{localStorage.setItem('pelada-mode','login')}catch(x){}}catch(x){$('#lerr').textContent=authMsg(x)}},
+  signup:async()=>{const e=val('le'),p=$('#lp').value;if(!pwOk(p)){$('#lerr').textContent='A senha não atende aos requisitos.';return}if(p!==$('#lp2').value){$('#lerr').textContent='As senhas não conferem.';return}
+    $('#lerr').textContent='';try{await B.signup(e,p);try{localStorage.setItem('pelada-mode','login')}catch(x){}}catch(x){$('#lerr').textContent=authMsg(x)}},
+  google:async()=>{const le=$('#lerr');if(le)le.textContent='';
+    if(!B.demo&&inAppBrowser()){openDlg(`<h3>Abra no navegador</h3><p>O Google não permite entrar por dentro deste aplicativo. Abra o link no <b>Chrome</b> ou no <b>Safari</b> e toque de novo em <b>Continuar com o Google</b>.</p>
+      <p class="small muted">Dica: toque nos três pontinhos (⋮ ou ⋯) no canto da tela e escolha <b>Abrir no navegador</b>. Ou entre com e-mail e senha aqui mesmo.</p>
+      <div class="dlg-f"><button class="btn" data-a="close">Fechar</button><button class="btn primary" data-a="copyHere">Copiar link</button></div>`);return}
+    try{await B.google(val('le'));try{localStorage.setItem('pelada-mode','login')}catch(x){}}
+    catch(x){if(AUTH_CANCEL.includes(x&&x.code))return;console.warn(x);const m=authMsg(x);if($('#lerr'))$('#lerr').textContent=m;else toast(m,6000)}},
+  copyHere:()=>copyText(location.href),
+  reset:async()=>{const e=val('le');if(!e){$('#lerr').textContent='Digite seu e-mail acima.';return}try{await B.reset(e);toast('Enviamos um link de redefinição para '+e)}catch(x){$('#lerr').textContent=authMsg(x)}},
+  /* Sair (KAN-80): confere se ficou algo sem enviar, desconecta, apaga os dados do grupo guardados neste aparelho e recarrega. */
+  logout:()=>sairDaConta('#/'),
+  invSwitch:()=>sairDaConta(location.hash),
+  /* Mostrar/ocultar a senha enquanto digita (pelada-v17). */
+  verSenha:el=>{const i=$('#'+el.dataset.v);if(!i)return;const on=i.type==='password';i.type=on?'text':'password';el.setAttribute('aria-pressed',String(on));
+    el.textContent=tx(on?'login.ocultar':'login.mostrar');el.setAttribute('aria-label',tx(on?'login.ocultarSenha':'login.mostrarSenha'));i.focus()},
+};
+
+export { acoes, sairDaConta };

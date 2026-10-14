@@ -138,7 +138,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .top-in{max-width:960px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-end;gap:12px;position:relative;z-index:1;flex-wrap:wrap}
 .top h1{font:800 40px/.95 var(--display);margin:0}
 .top .sub{opacity:.8;font-size:14px;margin-top:6px}
-.chip{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--chalk);cursor:pointer}
+.chip{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:6px 12px;min-height:36px;font-size:13px;color:var(--chalk);cursor:pointer}
 .chip-ic{min-width:38px;min-height:34px;padding:4px 10px;font-size:16px;line-height:1;display:inline-flex;align-items:center;justify-content:center}
 .ld-ic{padding:6px 10px;font-size:17px;line-height:1}
 .demo{background:var(--bib);color:var(--bib-ink);font-size:13px;text-align:center;padding:6px 12px}

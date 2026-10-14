@@ -140,7 +140,7 @@ Medido a cada versão, no celular de 390px:
   - o site passa a ser publicado no **Firebase Hosting** (`https://nosso-jogo-f4762.web.app`), no mesmo projeto do banco e no plano grátis (Spark), pela automação "Publicar o site" (`.github/workflows/publicar-site.yml`), com a mesma conta de serviço das regras. Desde 13/10/2026 essa conta tem só os papéis de publicar (**Administrador das regras do Firebase**, **Administrador do Firebase Hosting**, **Leitor de chaves de API**, **Leitor do Service Usage** e **Consumidor do Service Usage**). Antes tinha **Administrador do Firebase**, que também lia os dados dos grupos. A troca foi testada republicando regras e site;
   - a automação **confere no endereço oficial que a versão no ar é a do `site/sw.js`** e fica vermelha se não for. O "No ar" do `testes/VERIFICACOES-GITHUB.md` passa a vir dessa conferência;
   - as **prévias** das propostas saem num canal de prévia do Firebase Hosting (`.github/workflows/previa.yml`), em modo demonstração, com o link comentado na proposta e validade de 7 dias;
-  - o **Netlify** não monta mais prévias nem ramos (`netlify.toml`). Se voltar a publicar a `main`, gera só a página "O Nosso Jogo mudou de endereço", que leva ao endereço novo mantendo o link (`#/p/...`) e desliga o service worker antigo nos celulares.
+  - o **Netlify foi desligado** em 14/10/2026 (pelada-v28): site apagado, acesso ao GitHub removido e endereço antigo tirado do login e do App Check. O endereço `nossosjogos.netlify.app` deixou de existir, para ninguém continuar usando o app antigo (v19), sem as correções de segurança. Com isso, os limites contra abuso voltaram a ser obrigatórios nas regras (KAN-134).
 - **Impacto para quem usa:** o endereço muda. Administradores entram de novo uma vez no endereço novo, e o tema e o "quem sou eu" do link são escolhidos de novo, porque o navegador guarda isso por endereço. Os dados dos grupos não mudam (o banco é o mesmo).
 - **Próximo passo:** domínio próprio, depois da decisão do nome. Ele é ligado à mesma hospedagem, e o endereço `web.app` continua funcionando.
 - **Para os agentes:** o endereço oficial é `https://nosso-jogo-f4762.web.app`. Não sugerir voltar ao Netlify.
@@ -188,6 +188,7 @@ A montagem (`npm run build`) imprime estes números. Eles são registrados aqui 
 | pelada-v25 | 6 de 46 | 1 de 15 | 28 | 2 | 67,5 KB |
 | pelada-v26 | 7 de 47 | 1 de 15 | 28 | 2 | 68,0 KB (portal à parte) |
 | pelada-v27 | 7 de 47 | 1 de 15 | 28 | 2 | 68,1 KB |
+| pelada-v28 | 7 de 55 | 1 de 15 | 28 | 2 | 67,7 KB (ações divididas em 8 arquivos; textos do portal fora do app) |
 
 As 5 regras de negócio com teste próprio previsto: sorteio, ranking, pendências do caixa, rodadas fixas (próxima data) e apuração da votação. Os testes ficam em `testes/regras/` com o nome da regra (`sorteio.test.mjs`, `ranking.test.mjs`, `caixa.test.mjs`, `rodadas-fixas.test.mjs`, `votacao.test.mjs`) e rodam com `npm run regras` (testador do próprio Node, que lê TypeScript direto). Desde a pelada-v15 já existe o primeiro teste de regra, lista × times (`lista-sorteio.test.mjs`), e na v16 entrou jogadores por time e reservas (`times.test.mjs`); eles não entram na conta das 5. Para uma regra ganhar teste, ela precisa sair do código que lê o estado, como foi feito em `src/dominio/divergencia.ts`.
 
@@ -201,7 +202,8 @@ As 5 regras de negócio com teste próprio previsto: sorteio, ranking, pendênci
 | `dominio/` | Regras de negócio sem tela: `esportes.js` (catálogo), `grupo.js`, `rodadas.js`, `caixa.js`, `sorteio.js`, `whatsapp.js` (textos para compartilhar), `limites.ts` (limites contra abuso) |
 | `ui/` | `render.js` (desenho da tela e abas), `tema.js`, `dialogos.js` |
 | `telas/` | Uma tela por arquivo: `apresentacao`, `login`, `convite`, `grupos`, `rodada`, `historico`, `grupo-form`, `grupo`, `jogadores`, `partida`, `ranking`, `caixa`, `votacao`, `publico-voto` e o componente `PublicoRodada.tsx` (link do jogador; `publico-rodada.js` guarda o "quem sou eu" do aparelho) |
-| `acoes.js` | O que cada botão (`data-a`) faz |
+| `acoes.js` e `acoes/` | O que cada botão (`data-a`) faz, dividido por assunto desde a pelada-v28: `conta`, `grupo`, `rodada`, `jogadores`, `partida`, `caixa`, `votacao` e `publico` |
+| `portal/` | Portal do Nosso Jogo, site separado (`main.js`, `tela.js` e `textos.js`, com dicionário próprio) |
 | `eventos.js` | Cliques, teclas e campos: liga a tela às ações, com o carregando dos botões |
 | `rotas.js` | Endereços (`#/p/...`, `#/g/...`) e carregamento de dados por tela |
 | `inicio.js` | Inicialização: escolhe Firebase ou demonstração e acompanha o login |

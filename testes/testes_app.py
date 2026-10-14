@@ -154,6 +154,15 @@ with sync_playwright() as pw:
     hsm = pg.evaluate("Math.min(...[...document.querySelectorAll('.btn.sm')].map(b=>b.getBoundingClientRect().height).filter(h=>h>0))")
     ok(hsm >= 36, f'botões pequenos com 36px ou mais ({hsm:.0f}px)')
     shot('02-rodada-claro'); contraste(pg, 'Rodada (claro)')
+    # ---------- v31 (defeito do Kleber, 14/10): ao abrir o grupo, enquanto as rodadas chegam, a aba Rodada mostra "Carregando…"
+    # e não pisca "Nenhuma rodada marcada" nem a lista de outra rodada
+    for aba_c in ('rodada', 'partida'):
+        pg.evaluate("S.loaded.rodF=false"); pg.click(f'[data-a=tab][data-v={aba_c}]'); pg.wait_for_timeout(150)
+        tc = pg.inner_text('main')
+        ok('Carregando' in tc and 'Nenhuma rodada' not in tc and 'Sem times' not in tc and pg.locator('[data-a=mark]').count() == 0,
+           f'v31: aba {aba_c} espera as rodadas chegarem ("Carregando…"), sem piscar outra tela')
+        pg.evaluate("S.loaded.rodF=true")
+    pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(300)
     # ---------- v29 (KAN-71): sortear sem rolar a tela; uma lista só de presença com filtros
     pg.evaluate("scrollTo(0,0)"); pg.wait_for_timeout(150)
     bar = pg.evaluate("(()=>{const b=document.querySelector('.acao-fixa [data-a=drawDlg]');if(!b)return null;const r=b.getBoundingClientRect();return {t:b.textContent.trim(),top:r.top,bot:r.bottom,h:r.height,dis:b.disabled}})()")

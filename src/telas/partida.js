@@ -3,12 +3,13 @@ import { col, sport, tn } from '../dominio/esportes.js';
 import { curRodada, pname } from '../dominio/grupo.js';
 import { S } from '../nucleo/estado.js';
 import { esc } from '../nucleo/util.js';
-import { rodadaPicker } from './rodada.js';
+import { rodadaPicker, rodadasProntas } from './rodada.js';
 import { partidasDe } from '../nucleo/partidas.js';
 import { tx } from '../i18n/index.js';
 
 /* ---------- Partida ---------- */
 function vPartida(){
+  if(!rodadasProntas())return `<div class="empty muted">${tx('comum.carregando')}</div>`;
   const r=curRodada();
   if(!r||!r.times)return `<div class="panel empty"><h2>Sem times sorteados</h2><p class="muted">Sorteie os times na aba Rodada para começar.</p><button class="btn" data-a="tab" data-v="rodada">Ir para a rodada</button></div>`;
   if(!S.live||S.live.rid!==r.id||S.live.a>=r.times.length||S.live.b>=r.times.length)S.live={rid:r.id,a:0,b:1,goals:[],dur:cfg().minutes*60,el:0,run:false,st:0,beeped:false};

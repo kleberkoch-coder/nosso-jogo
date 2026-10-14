@@ -15,15 +15,15 @@ import { editApp, editRat, editRod, saveContato, setPres } from '../nucleo/edico
 import { addMatch, apagarLanc, apagarPartidasDaRodada, delMatch as apagarPartida, gravarVotacao, recalcular, salvarLanc } from '../nucleo/partidas.js';
 import { GB, S, clean, w } from '../nucleo/estado.js';
 import { linkConvite, linkProxima, linkRodada, linkVoto } from '../nucleo/links.js';
-import { $, DIAS, brl, cl, esc, fdate, fmonth, inAppBrowser, key, toast, today, uid } from '../nucleo/util.js';
+import { $, DIAS, brl, cl, esc, fdate, fmonth, inAppBrowser, key, toast, toastAcao, today, uid, usarAvisoAcao } from '../nucleo/util.js';
 import { upMyGroup } from '../rotas.js';
-import { pendencias } from '../telas/caixa.js';
+import { pendencias } from '../telas/Caixa.tsx';
 import { groupForm, porTimeAjuda, readGroupForm, schedRow } from '../telas/grupo-form.js';
 import { AUTH_CANCEL, authMsg, pwOk } from '../telas/login.js';
 import { actx, elapsed, setActx, sumPts } from '../telas/partida.js';
 import { MEK, myLocal } from '../telas/publico-rodada.js';
 import { tally } from '../telas/votacao.js';
-import { closeDlg, closeDlgNow, dlg, drawPreview, openDlg, playerDlg, posField, rodDlg, val } from '../ui/dialogos.js';
+import { avisar, closeDlg, closeDlgNow, confirmou, dlg, drawPreview, naoConfirmar, openDlg, playerDlg, posField, responder, rodDlg, val } from '../ui/dialogos.js';
 import { changed, render } from '../ui/render.js';
 import { TEMA_K, applyTheme, closeThemeMenu, openThemeMenu, themeAnchor, themeMenuEl } from '../ui/tema.js';
 import { LOCAL } from '../i18n/formatos.js';
@@ -46,7 +46,7 @@ const acoes={
     if(!cats.length){toast('Escolha ao menos uma categoria.');return}
     const id=B.newId(),o={rid:val('vr'),rdate:(rodById(val('vr'))||{}).date||'',title:val('vt')||'Votação',cats,open:true,selfVote:$('#vsf').checked,createdAt:Date.now()};S.vot[id]=o;S.vid=id;changed();w(GB.set('votacoes/'+id,o));/* A janela troca para o link da votação; não fecha ao terminar de salvar. */shareDlg('Link da votação',`🗳️ *${o.title}*\nVote aqui: ${linkVoto(id)}`)},
   toggleVote:()=>{const antes=S.vot[S.vid],v=cl(antes);if(v.open){v.open=false;v.resultado=tally(v,S.votos)}else v.open=true;S.vot[S.vid]=v;return gravarVotacao(S.vid,antes,v)},
-  delVote:()=>{if(!confirm('Excluir esta votação?'))return;const vid=S.vid,antes=S.vot[vid];Object.keys(S.votos).forEach(u=>GB.del('votacoes/'+vid+'/votos/'+u));delete S.vot[vid];S.vid=null;return gravarVotacao(vid,antes,null)},
+  delVote:el=>{if(confirmou(el,{titulo:'Excluir esta votação?',texto:'Os votos e o resultado somem, e os destaques saem do ranking. Não dá para desfazer.',acao:'Excluir votação',perigo:true})!=='sim')return;const vid=S.vid,antes=S.vot[vid];Object.keys(S.votos).forEach(u=>GB.del('votacoes/'+vid+'/votos/'+u));delete S.vot[vid];S.vid=null;return gravarVotacao(vid,antes,null)},
   shareVote:()=>{const v=S.vot[S.vid];let t=`🗳️ *${v.title}*\n`;if(v.open)t+=`Vote aqui: ${linkVoto(S.vid)}`;else t+='\n'+v.cats.map(c=>`🏅 ${c.name}: ${(v.resultado?.[c.id]?.winners||[]).map(pname).join(' e ')||'sem votos'}`).join('\n');shareDlg('Votação',t)},
 };
 

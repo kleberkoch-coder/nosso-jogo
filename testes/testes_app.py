@@ -66,6 +66,15 @@ CORES = ['Laranja', 'Azul', 'Amarelo', 'Vermelho', 'Roxo', 'Branco', 'Verde', 'P
 pres_k = lambda g, r, p: f'grupos/{g}/rodadas/{r}/presencas/{p}'
 lim_k = lambda g, r: f'grupos/{g}/rodadas/{r}/limites/avulsos'
 
+# Janela de confirmação do app (KAN-128): responde Sim (botão da ação) ou Cancelar.
+def confirmar_app(pg, sim=True):
+    try:
+        pg.wait_for_selector('#dlg .conf [data-a=confSim]', timeout=3000)
+    except Exception:
+        return False
+    pg.click('#dlg .conf [data-a=confSim]' if sim else '#dlg .conf [data-a=confNao]'); pg.wait_for_timeout(500)
+    return True
+
 def adicionar_pelo_link(pg, nome):
     pg.click('[data-a=pubAdd]'); pg.wait_for_timeout(300); pg.fill('#anm', nome); pg.click('[data-a=pubSaveAdd]'); pg.wait_for_timeout(1200)
     return pg.evaluate("n=>Object.keys(S.pres).find(id=>S.pres[id].nome===n)||null", nome)
@@ -75,9 +84,10 @@ with sync_playwright() as pw:
     ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2, has_touch=True, color_scheme='light', service_workers='block')
     pg = ctx.new_page()
     pg.on('pageerror', lambda e: errs.append(str(e)))
-    # Janelas de confirmação (confirm): recusadas, a não ser quando o teste liga aceitar['v'].
-    aceitar = {'v': False}
-    pg.on('dialog', lambda d: d.accept() if aceitar['v'] else d.dismiss())
+    # KAN-128: o app não usa mais as caixas do navegador (confirm e alert). Se alguma aparecer, é anotada e recusada,
+    # e o teste "CT-KAN-128-05" no fim falha. As confirmações agora são a janela do app: ver conf() abaixo.
+    nativos = []
+    pg.on('dialog', lambda d: (nativos.append(d.message[:60]), d.dismiss()))
     pg.on('console', lambda m: errs.append('console: ' + m.text) if m.type == 'error' else None)
     sem_traducao = []
     pg.on('console', lambda m: sem_traducao.append(m.text) if m.type == 'warning' and m.text.startswith('Texto sem tradução') else None)
@@ -198,7 +208,10 @@ with sync_playwright() as pw:
     ok(bool(mv) and min(mv) >= 36 and (pg.get_attribute('[data-a=move]', 'aria-label') or '').startswith('Mover '), f'CT-KAN-130-03: ⇄ com área de 36 × 36px e nome do jogador para leitor de tela ({min(mv):.0f}px)')
 
     # ---------- v15 (KAN-90 a KAN-92): lista fechada, sorteio fecha a lista, aviso de lista diferente dos times e pôr no time
-    mark = lambda pid, v: pg.click(f'[data-a=mark][data-p="{pid}"][data-v={v}]')
+    # Com times sorteados, mudar presença abre a confirmação do app (KAN-128): responde Sim, a não ser que sim=False.
+    def mark(pid, v, sim=True):
+        pg.click(f'[data-a=mark][data-p="{pid}"][data-v={v}]'); pg.wait_for_timeout(150)
+        if pg.locator('#dlg .conf').count(): confirmar_app(pg, sim)
     ok(pg.evaluate("!!S.rod[S.rid].locked"), 'CT-KAN-91-01: sortear fecha a lista')
     ok(pg.locator('[data-a=mark]').count() == 0 and 'Lista fechada pelo sorteio' in pg.inner_text('main'), 'CT-KAN-90-01: com a lista fechada o administrador não marca presença')
     ok(pg.locator('[data-a=addAvulso]').count() == 0, 'CT-KAN-90-01: com a lista fechada some o "Adicionar avulso" da presença')
@@ -213,12 +226,12 @@ with sync_playwright() as pw:
     ok(st[0] and st[1] == 'in' and st[2] == conf0 + 1, f'CT-KAN-92-02: quem é posto no time entra no time e na lista de confirmados ({conf0} → {st[2]})')
     ok(pg.locator('.warn-div').count() == 0, 'CT-KAN-92-02: pôr no time não gera aviso de divergência')
     # Reabrir a lista e mudar presença com times sorteados
-    aceitar['v'] = True; pg.click('[data-a=lock]'); pg.wait_for_timeout(600)
+    pg.click('[data-a=lock]'); confirmar_app(pg, True); pg.wait_for_timeout(300)
     ok(pg.locator('[data-a=mark]').count() > 0, 'CT-KAN-90-02: reabrir a lista volta a permitir marcar presença')
     t0p = pg.evaluate("S.rod[S.rid].times[0].players[0]")
-    aceitar['v'] = False; mark(t0p, 'out'); pg.wait_for_timeout(500)
+    mark(t0p, 'out', False); pg.wait_for_timeout(300)
     ok(pg.evaluate("(id)=>S.pres[id].s", t0p) == 'in', 'CT-KAN-91-02: com times sorteados, mudar presença pede confirmação (Cancelar não muda)')
-    aceitar['v'] = True; mark(t0p, 'out'); pg.wait_for_timeout(600)
+    mark(t0p, 'out'); pg.wait_for_timeout(300)
     fora = pg.evaluate("Object.keys(S.jog).find(id=>!S.pres[id])")
     mark(fora, 'in'); pg.wait_for_timeout(600)
     aviso = pg.inner_text('.warn-div') if pg.locator('.warn-div').count() else ''
@@ -245,7 +258,7 @@ with sync_playwright() as pw:
     pg.goto(URL + '#/p/' + gid_fut); pg.wait_for_timeout(900)
     ok(pg.locator('.mk.lg button').count() == 0 and 'Lista fechada' in pg.inner_text('main') and pg.locator('.team').count() >= 2, 'CT-KAN-91-01: link mostra a lista fechada e os times')
     pg.goto(URL + '#/g/' + gid_fut); pg.wait_for_timeout(900); pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(400)
-    pg.click('[data-a=lock]'); pg.wait_for_timeout(600)  # reabre para os testes do link público abaixo
+    pg.click('[data-a=lock]'); confirmar_app(pg, True); pg.wait_for_timeout(300)  # reabre para os testes do link público abaixo
 
     # ---------- Partida, ranking, caixa, votação
     pg.click('[data-a=tab][data-v=partida]'); pg.wait_for_timeout(400)
@@ -264,7 +277,7 @@ with sync_playwright() as pw:
     ok(j0 == 10, f'CT-KAN-87-02: partida salva já entra no ranking sem recalcular ({j0} jogos de jogadores)')
     # Apagar uma partida desconta do ranking
     pg.click('[data-a=tab][data-v=partida]'); pg.wait_for_timeout(400); pg.click('[data-a=saveMatch]'); pg.wait_for_timeout(800)
-    aceitar['v'] = True; pg.locator('[data-a=delMatch]').last.click(); pg.wait_for_timeout(800); aceitar['v'] = False
+    pg.locator('[data-a=delMatch]').last.click(); confirmar_app(pg, True); pg.wait_for_timeout(500)
     pg.click('[data-a=tab][data-v=ranking]'); pg.wait_for_timeout(500)
     j1 = pg.evaluate("Object.values(S.res).reduce((s,d)=>s+Object.values(d.jog||{}).reduce((a,x)=>a+(x.j||0),0),0)")
     ok(j1 == 10 and pg.locator('[data-a=delMatch]').count() == 0, f'CT-KAN-87-03: apagar partida desconta do ranking ({j1})')
@@ -272,7 +285,7 @@ with sync_playwright() as pw:
     pg.evaluate("(g)=>{const K='pelada-demo-v2',s=JSON.parse(localStorage.getItem('pelada-demo-v2')),m=Object.keys(s).find(k=>k.startsWith('grupos/'+g+'/resumos/'));const d=s[m];const p=Object.keys(d.jog)[0];d.jog[p].j=99;localStorage.setItem(K,JSON.stringify(s))}", gid_fut)
     pg.reload(); pg.wait_for_timeout(1200); pg.click('[data-a=tab][data-v=ranking]'); pg.wait_for_timeout(600)
     ok('99' in pg.inner_text('table'), 'CT-KAN-87-04: ficha estragada aparece no ranking (preparação)')
-    aceitar['v'] = True; pg.click('[data-a=recalc]'); pg.wait_for_timeout(1500); aceitar['v'] = False
+    pg.click('[data-a=recalc]'); confirmar_app(pg, True); pg.wait_for_timeout(1200)
     j2 = pg.evaluate("Object.values(S.res).reduce((s,d)=>s+Object.values(d.jog||{}).reduce((a,x)=>a+(x.j||0),0),0)")
     ok(j2 == 10 and '99' not in pg.inner_text('table'), f'CT-KAN-87-04: Recalcular refaz o ranking a partir das partidas ({j2})')
     shot('17-ranking-resumos'); contraste(pg, 'Ranking com Recalcular')
@@ -283,6 +296,69 @@ with sync_playwright() as pw:
     ok(kp[0] == kp[1] and kp[2] == 'R$ 0,00', f'CT-KAN-87-05: saldo, entradas e saídas batem com os lançamentos ({kp})')
     cx = pg.evaluate("(g)=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2')),m=S.month,d=s['grupos/'+g+'/resumos/'+m]||{};return (d.cx||{}).ent||0}", gid_fut)
     ok(cx == 8000, f'CT-KAN-87-05: ficha do mês guarda as entradas do caixa em centavos ({cx})')
+    # ---------- v30 (KAN-135): Caixa como componente; nome com código aparece como texto
+    ok(pg.locator('#caixaRaiz .kpis').count() == 1 and pg.locator('#pendLista li').count() >= 1, 'CT-KAN-135-01: aba Caixa (componente) mostra saldo, entradas, saídas e pendências')
+    pid0 = pg.evaluate("Object.keys(S.jog)[0]"); nome0 = pg.evaluate("(id)=>S.jog[id].name", pid0)
+    pg.evaluate("(id)=>{S.jog[id]=Object.assign({},S.jog[id],{name:'<b>Negrito</b><script>window.__xss=1</script>'})}", pid0)
+    pg.click('[data-a=tab][data-v=caixa]'); pg.wait_for_timeout(300)
+    ok('<b>Negrito</b>' in pg.inner_text('#caixaRaiz') and pg.locator('#caixaRaiz b', has_text='Negrito').count() == 0 and not pg.evaluate("!!window.__xss"),
+       'CT-KAN-135-02: nome com <b> ou <script> aparece como texto no Caixa, sem executar')
+    pg.evaluate("(a)=>{S.jog[a[0]]=Object.assign({},S.jog[a[0]],{name:a[1]})}", [pid0, nome0]); pg.click('[data-a=tab][data-v=caixa]'); pg.wait_for_timeout(300)
+    # ---------- v30 (KAN-129): "Recebi" com Desfazer
+    npend = pg.locator('#pendLista [data-a=payPend]').count(); saldo0 = pg.locator('.kpis .money').first.inner_text()
+    b0 = pg.locator('#pendLista [data-a=payPend]').first; lbl = b0.get_attribute('aria-label') or ''
+    nome_p = pg.locator('#pendLista li .pn').first.inner_text().split(' Mensalidade')[0].split(' Diária')[0].strip()
+    ok(lbl.startswith('Recebi de ' + nome_p + ', R$'), f'CT-KAN-129-05: "Recebi" diz o nome e o valor para o leitor de tela ({lbl})')
+    b0.click(); pg.wait_for_timeout(500)
+    tt = pg.inner_text('#toast'); und = pg.locator('#toast [data-a=avisoAcao]')
+    ok(tt.startswith('Recebido de ' + nome_p + ': R$') and und.is_visible() and und.inner_text() == 'Desfazer' and pg.get_attribute('#toast', 'role') == 'status',
+       f'CT-KAN-129-01: depois de Recebi, aviso "Recebido de …" com Desfazer ({tt!r})')
+    ok(pg.locator('#pendLista [data-a=payPend]').count() == npend - 1, 'CT-KAN-129-01: o pagamento entra na hora (sai dos pendentes)')
+    bb = und.bounding_box()
+    ok(bb['width'] >= 44 and bb['height'] >= 44, f"CT-KAN-129-04: Desfazer com área de 44 × 44px ({bb['width']:.0f}×{bb['height']:.0f})")
+    for tema in ('light', 'dark'):
+        pg.evaluate("(t)=>document.documentElement.dataset.theme=t", tema)
+        cr = pg.evaluate("""()=>{const L=c=>{const m=c.match(/[\\d.]+/g).map(Number);const f=v=>{v/=255;return v<=.03928?v/12.92:((v+.055)/1.055)**2.4};return .2126*f(m[0])+.7152*f(m[1])+.0722*f(m[2])};
+          const b=document.querySelector('#toast [data-a=avisoAcao]'),a=L(getComputedStyle(b).color),c=L(getComputedStyle(document.getElementById('toast')).backgroundColor);return (Math.max(a,c)+.05)/(Math.min(a,c)+.05)}""")
+        ok(cr >= 4.5, f'CT-KAN-129-04: Desfazer com contraste {cr:.1f}:1 no tema {tema}')
+    pg.evaluate("document.documentElement.removeAttribute('data-theme')")
+    und.click(); pg.wait_for_timeout(600)
+    ok(pg.locator('#pendLista [data-a=payPend]').count() == npend and pg.locator('.kpis .money').first.inner_text() == saldo0 and 'Pagamento desfeito' in pg.inner_text('#toast'),
+       'CT-KAN-129-02: Desfazer apaga o lançamento, a pessoa volta para Pendentes e o saldo volta ao anterior')
+    pg.locator('#pendLista [data-a=payPend]').first.click(); pg.wait_for_timeout(300); pg.mouse.move(5, 5)
+    nl0 = pg.locator('#lanLista [data-a=delLan]').count(); pg.wait_for_timeout(6600)
+    ok(not pg.evaluate("document.getElementById('toast').classList.contains('on')") and pg.locator('#pendLista [data-a=payPend]').count() == npend - 1,
+       'CT-KAN-129-03: sem toque, o aviso some depois de 6 segundos e o pagamento fica gravado')
+    # ---------- v30 (KAN-128): janela de confirmação do app
+    xb = pg.locator('#lanLista [data-a=delLan]').first; xb.focus(); pg.keyboard.press('Enter'); pg.wait_for_timeout(300)
+    cj = pg.evaluate("(()=>{const c=document.querySelector('#dlg .conf');if(!c)return null;return {t:c.querySelector('h3').textContent,b:[...c.querySelectorAll('button')].map(b=>b.textContent),foco:document.activeElement.dataset.a,so:document.querySelectorAll('#dlgBody > *').length}})()")
+    ok(bool(cj) and cj['t'] == 'Apagar este lançamento?' and cj['b'] == ['Cancelar', 'Apagar lançamento'] and cj['so'] == 1 and not nativos,
+       f'CT-KAN-128-01: ✕ do lançamento abre a janela do app "Apagar este lançamento?" com Cancelar e Apagar lançamento ({cj})')
+    ok(bool(cj) and cj['foco'] == 'confNao', 'CT-KAN-128-06: a janela abre com o foco em Cancelar')
+    for tema in ('light', 'dark'):
+        pg.evaluate("(t)=>document.documentElement.dataset.theme=t", tema)
+        m = pg.evaluate("""()=>{const L=c=>{const m=c.match(/[\\d.]+/g).map(Number);const f=v=>{v/=255;return v<=.03928?v/12.92:((v+.055)/1.055)**2.4};return .2126*f(m[0])+.7152*f(m[1])+.0722*f(m[2])};
+          const b=document.querySelector('#dlg [data-a=confSim]'),s=getComputedStyle(b),a=L(s.color),c=L(s.backgroundColor),of=getComputedStyle(document.documentElement).getPropertyValue('--out-fill').trim();
+          return {cr:(Math.max(a,c)+.05)/(Math.min(a,c)+.05),h:b.getBoundingClientRect().height,fundo:s.backgroundColor,of}}""")
+        ok(m['cr'] >= 4.5 and m['h'] >= 44, f"CT-KAN-128-03: botão da ação que apaga em out-fill/on-out, contraste {m['cr']:.1f}:1 e {m['h']:.0f}px no tema {tema}")
+    pg.evaluate("document.documentElement.removeAttribute('data-theme')")
+    pg.keyboard.press('Escape'); pg.wait_for_timeout(300)
+    ok(not pg.evaluate("document.getElementById('dlg').open") and pg.locator('#lanLista [data-a=delLan]').count() == nl0 and pg.evaluate("document.activeElement.dataset.a") == 'delLan',
+       'CT-KAN-128-02/06: Esc fecha sem apagar e o foco volta para o ✕')
+    pg.locator('#lanLista [data-a=delLan]').first.click(); pg.wait_for_timeout(300); pg.mouse.click(8, 8); pg.wait_for_timeout(300)
+    ok(not pg.evaluate("document.getElementById('dlg').open") and pg.locator('#lanLista [data-a=delLan]').count() == nl0, 'CT-KAN-128-02: tocar fora fecha sem apagar')
+    pg.locator('#lanLista [data-a=delLan]').first.click(); confirmar_app(pg, True)
+    ok(pg.locator('#lanLista [data-a=delLan]').count() == nl0 - 1 and 'Lançamento apagado' in pg.inner_text('#toast') and pg.locator('#toast [data-a=avisoAcao]').is_visible(),
+       'CT-KAN-128-01/KAN-129: Apagar lançamento apaga e oferece Desfazer')
+    pg.click('#toast [data-a=avisoAcao]'); pg.wait_for_timeout(500)
+    ok(pg.locator('#lanLista [data-a=delLan]').count() == nl0, 'CT-KAN-129: Desfazer devolve o lançamento apagado')
+    # Confirmação por cima de outra janela: Excluir jogador > Cancelar volta ao formulário, com o que foi digitado
+    pg.click('[data-a=tab][data-v=jogadores]'); pg.wait_for_timeout(300); pg.locator('[data-a=editPlayer]').first.click(); pg.wait_for_timeout(300)
+    pg.fill('#pnm', 'Nome Em Edição'); pg.click('#dlg [data-a=delPlayer]'); pg.wait_for_timeout(300)
+    t1 = pg.inner_text('#dlg .conf h3') if pg.locator('#dlg .conf').count() else ''
+    confirmar_app(pg, False)
+    ok(t1.startswith('Excluir ') and pg.locator('#pnm').is_visible() and pg.input_value('#pnm') == 'Nome Em Edição', f'CT-KAN-128: confirmação por cima do jogador; Cancelar volta ao formulário com o que foi digitado ({t1})')
+    pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(300)
     pg.click('[data-a=tab][data-v=votacao]'); pg.wait_for_timeout(300); pg.click('[data-a=newVote]'); pg.wait_for_timeout(200)
     pg.click('[data-a=saveVote]'); pg.wait_for_timeout(800)
     ok(pg.locator('#shtxt').is_visible(), 'votação criada e link para o WhatsApp continua aberto')
@@ -376,7 +452,7 @@ with sync_playwright() as pw:
     pg.evaluate("S.rod[S.rid].np=0"); pg.click('[data-a=lock]'); pg.wait_for_timeout(700)
     depois = pg.evaluate("(a)=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2'));const d=s['grupos/'+a[0]+'/rodadas/'+a[1]]||{};return [!!d.locked,d.np||0]}", [gid_fut, rid])
     ok(antes >= 1 and depois[0] and depois[1] == antes, f'CT-KAN-83: fechar a lista não apaga partida salva por outro aparelho ({antes} → {depois[1]})')
-    pg.click('[data-a=lock]'); pg.wait_for_timeout(500)
+    pg.click('[data-a=lock]'); pg.wait_for_timeout(300); confirmar_app(pg, False)  # com times, reabrir pede confirmação; aqui fica fechada (como antes da v30)
     # v18 (KAN-86): grupo com partidas no formato antigo é migrado na abertura
     pg.evaluate("""(g)=>{const K='pelada-demo-v2',s=JSON.parse(localStorage.getItem(K));const d=new Date();d.setDate(d.getDate()-63);d.setHours(12);
       const ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');const js=Object.keys(S.jog);
@@ -719,8 +795,11 @@ with sync_playwright() as pw:
     pg.goto(URL + '#/g/' + gid_fut); pg.wait_for_timeout(1000); pg.click('[data-a=tab][data-v=grupo]'); pg.wait_for_timeout(400)
     pg.click('[data-a=inviteLink]'); pg.wait_for_timeout(500); token = pg.evaluate("S.convite&&S.convite.token"); pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(200)
     # Sair (KAN-80): com algo ainda sem enviar, pergunta antes; Cancelar mantém a pessoa conectada
-    pg.evaluate("window.__demoPendente=true"); aceitar['v'] = False
+    pg.evaluate("window.__demoPendente=true")
     pg.click('#topright [data-a=logout]'); pg.wait_for_timeout(800)
+    sj = pg.inner_text('#dlg .conf') if pg.locator('#dlg .conf').count() else ''
+    ok('Sair sem enviar' in sj and 'Sair mesmo assim' in sj, 'CT-KAN-128: Sair com alterações sem enviar pergunta na janela do app ("Sair mesmo assim")')
+    confirmar_app(pg, False)
     ok(pg.evaluate("!!(S.user&&!S.user.anon)"), 'CT-KAN-80-03: com alterações sem enviar, Sair pergunta antes e Cancelar mantém conectado')
     pg.evaluate("window.__demoPendente=false")
     pg.click('#topright [data-a=logout]'); pg.wait_for_timeout(1500)
@@ -1034,6 +1113,7 @@ with sync_playwright() as pw:
 
 errs = [e for e in errs if not re.search(r'ERR_TUNNEL|fonts\.g|icons/|favicon|ERR_NAME|ERR_INTERNET|net::', e)]
 ok(not sem_traducao, 'todos os textos têm tradução no dicionário' + ('' if not sem_traducao else ': ' + ' | '.join(sem_traducao[:5])))
+ok(not nativos, 'CT-KAN-128-05: nenhuma caixa do navegador (confirm ou alert) apareceu em todo o roteiro' + (f' ({nativos[:3]})' if nativos else ''))
 ok(not errs, 'nenhum erro de JavaScript' + ('' if not errs else ': ' + ' | '.join(errs[:5])))
 falhas = [r for r in res if not r['ok']]
 json.dump({'total': len(res), 'falhas': len(falhas), 'resultados': res}, open(f'{OUT}/resultado.json', 'w'), ensure_ascii=False, indent=1)

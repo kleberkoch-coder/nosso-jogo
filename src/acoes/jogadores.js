@@ -15,15 +15,15 @@ import { editApp, editRat, editRod, saveContato, setPres } from '../nucleo/edico
 import { addMatch, apagarLanc, apagarPartidasDaRodada, delMatch as apagarPartida, gravarVotacao, recalcular, salvarLanc } from '../nucleo/partidas.js';
 import { GB, S, clean, w } from '../nucleo/estado.js';
 import { linkConvite, linkProxima, linkRodada, linkVoto } from '../nucleo/links.js';
-import { $, DIAS, brl, cl, esc, fdate, fmonth, inAppBrowser, key, toast, today, uid } from '../nucleo/util.js';
+import { $, DIAS, brl, cl, esc, fdate, fmonth, inAppBrowser, key, toast, toastAcao, today, uid, usarAvisoAcao } from '../nucleo/util.js';
 import { upMyGroup } from '../rotas.js';
-import { pendencias } from '../telas/caixa.js';
+import { pendencias } from '../telas/Caixa.tsx';
 import { groupForm, porTimeAjuda, readGroupForm, schedRow } from '../telas/grupo-form.js';
 import { AUTH_CANCEL, authMsg, pwOk } from '../telas/login.js';
 import { actx, elapsed, setActx, sumPts } from '../telas/partida.js';
 import { MEK, myLocal } from '../telas/publico-rodada.js';
 import { tally } from '../telas/votacao.js';
-import { closeDlg, closeDlgNow, dlg, drawPreview, openDlg, playerDlg, posField, rodDlg, val } from '../ui/dialogos.js';
+import { avisar, closeDlg, closeDlgNow, confirmou, dlg, drawPreview, naoConfirmar, openDlg, playerDlg, posField, responder, rodDlg, val } from '../ui/dialogos.js';
 import { changed, render } from '../ui/render.js';
 import { TEMA_K, applyTheme, closeThemeMenu, openThemeMenu, themeAnchor, themeMenuEl } from '../ui/tema.js';
 import { LOCAL } from '../i18n/formatos.js';
@@ -34,13 +34,13 @@ const acoes={
   star:()=>{},
   waLink:()=>{},
   savePlayer:el=>{const name=val('pnm');if(name.length<2){toast('Digite o nome.');return}const nw=el.dataset.new,id=el.dataset.p||nw||B.newId(),v=+$('#plv').value;
-    if(Object.entries(S.jog).some(([k,x])=>k!==id&&normName(x.name)===normName(name))&&!confirm('Já existe um jogador chamado "'+name+'". Cadastrar mesmo assim?'))return;
+    if(Object.entries(S.jog).some(([k,x])=>k!==id&&normName(x.name)===normName(name))&&confirmou(el,{titulo:'Já existe um jogador chamado "'+name+'"',texto:'Cadastrar outro com o mesmo nome?',acao:'Cadastrar mesmo assim'})!=='sim')return;
     const old=S.jog[id]||{},tp=val('ptp'),data=Object.assign({},old,{name,pos:val('ppos'),ativo:old.ativo!==false,criado:old.criado||(nw&&S.avul[nw]?.criado)||Date.now()});delete data.tipo;
     S.jog[id]=data;changed();w(GB.set('jogadores/'+id,clean(data)));if(ptipo(id)!==tp||!((S.pc||{}).tipos||{})[id])editPc(a=>{a.tipos[id]=tp});editRat(a=>setLvl(a,id,v));saveContato(id,val('ptel'),val('pmail'));
     if(nw&&S.avul[nw]){delete S.avul[nw];w(GB.del('avulsos/'+nw))}closeDlg();toast('Jogador salvo.')},
-  toggleJog:el=>{const id=el.dataset.p,o=Object.assign({},S.jog[id]),on=o.ativo===false;if(!on&&!confirm('Inativar '+o.name+'? Ele sai das listas de presença, mas o histórico continua.'))return;
+  toggleJog:el=>{const id=el.dataset.p,o=Object.assign({},S.jog[id]),on=o.ativo===false;if(!on&&confirmou(el,{titulo:'Inativar '+o.name+'?',texto:'Ele sai das listas de presença, mas o histórico continua.',acao:'Inativar jogador'})!=='sim')return;
     o.ativo=on;if(on)delete o.inativadoEm;else o.inativadoEm=Date.now();S.jog[id]=o;changed();closeDlg();toast(on?'Jogador reativado.':'Jogador inativado.');return w(GB.set('jogadores/'+id,clean(o)))},
-  delPlayer:el=>{const id=el.dataset.p;if(!confirm('Excluir '+pname(id)+' definitivamente? Para manter o histórico, prefira Inativar.'))return;delete S.jog[id];w(GB.del('jogadores/'+id));editRat(a=>{delete a.stars[id];a.sep=a.sep.filter(s=>!s.includes(id))});if(((S.pc||{}).tipos||{})[id])editPc(a=>{delete a.tipos[id]});closeDlg()},
+  delPlayer:el=>{const id=el.dataset.p;if(confirmou(el,{titulo:'Excluir '+pname(id)+'?',texto:'Ele sai do elenco de vez. Para manter o histórico, prefira Inativar.',acao:'Excluir jogador',perigo:true})!=='sim')return;delete S.jog[id];w(GB.del('jogadores/'+id));editRat(a=>{delete a.stars[id];a.sep=a.sep.filter(s=>!s.includes(id))});if(((S.pc||{}).tipos||{})[id])editPc(a=>{delete a.tipos[id]});closeDlg()},
   addSep:()=>{const o=players().map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');openDlg(`<h3>Não colocar no mesmo time</h3><label class="f"><span>Jogador</span><select class="sel" id="sa">${o}</select></label><label class="f"><span>e</span><select class="sel" id="sb">${o}</select></label><div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveSep">Adicionar par</button></div>`)},
   saveSep:()=>{const a=val('sa'),b=val('sb');if(a===b){toast('Escolha duas pessoas diferentes.');return}editRat(x=>{if(!x.sep.some(s=>key(s[0],s[1])===key(a,b)))x.sep.push([a,b])});closeDlg()},
   delSep:el=>editRat(x=>{x.sep.splice(+el.dataset.v,1)}),

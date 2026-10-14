@@ -72,6 +72,14 @@ Times em pastel, sempre com o nome da cor: laranja #F4B183, azul #9DBBF0, amarel
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo; **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v30)
+- **Janela de confirmação** (KAN-128): variação da janela (`dlg`) no lugar do `confirm()` e do `alert()` do navegador.
+  - Título em pergunta curta ("Excluir a rodada de seg, 19/10?"), uma linha do que acontece em `muted` e os botões "Cancelar" (`btn`) e o verbo da ação.
+  - Ação que apaga: `btn perigo` (fundo `out-fill`, texto `on-out`, borda `out`); ação que não apaga: `primary`. Botões de 44px.
+  - Foco em Cancelar; Esc e tocar fora fecham sem fazer nada; o foco volta ao botão que abriu. O botão da ação mostra carregando e a janela só fecha depois de gravar.
+  - Por cima de outra janela, o formulário fica guardado e volta ao Cancelar. Aviso de uma linha (no lugar do `alert`) tem só "Entendi".
+- **Aviso flutuante com ação** (KAN-129): "Recebido de Bruno: R$ 80,00 · Desfazer". Fica 6 segundos e o tempo para com o dedo em cima. O botão de texto tem 44 × 44px, sublinhado, na cor do texto do aviso (contraste AA nos dois temas), e o aviso tem `role="status"`.
+
 ## Componentes (pelada-v29)
 - **Barra de ação fixa no rodapé** (KAN-71): só na aba Rodada, enquanto os times não foram sorteados. Fundo `surface`, borda `line` em cima, botão `bib` de 44px na largura toda.
   - Normal: "Sortear times (10)", com a quantidade de confirmados.

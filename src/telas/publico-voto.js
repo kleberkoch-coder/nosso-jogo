@@ -8,7 +8,7 @@ import { candidates } from './votacao.js';
 
 /* ---------- Página pública de votação ---------- */
 function renderPublicVoto(){
-  $('#tabsnav').hidden=true;$('#topright').innerHTML='';$('#gsub').textContent=tx('voto.subtitulo');
+  $('#tabsnav').hidden=true;$('#topright').replaceChildren();$('#gsub').textContent=tx('voto.subtitulo');
   const v=S.vot[S.route.id];
   if(!S.loaded.v||!S.loaded.app){main.innerHTML=`<div class="empty muted">${tx('comum.carregando')}</div>`;return}
   if(!grpAtivo()){main.innerHTML=`<div class="panel empty"><h2>${esc(gname())}</h2><p class="muted">${tx('voto.grupoInativo')}</p></div>`;return}

@@ -15,15 +15,15 @@ import { editApp, editRat, editRod, saveContato, setPres } from '../nucleo/edico
 import { addMatch, apagarLanc, apagarPartidasDaRodada, delMatch as apagarPartida, gravarVotacao, recalcular, salvarLanc } from '../nucleo/partidas.js';
 import { GB, S, clean, w } from '../nucleo/estado.js';
 import { linkConvite, linkProxima, linkRodada, linkVoto } from '../nucleo/links.js';
-import { $, DIAS, brl, cl, esc, fdate, fmonth, inAppBrowser, key, toast, today, uid } from '../nucleo/util.js';
+import { $, DIAS, brl, cl, esc, fdate, fmonth, inAppBrowser, key, toast, toastAcao, today, uid, usarAvisoAcao } from '../nucleo/util.js';
 import { upMyGroup } from '../rotas.js';
-import { pendencias } from '../telas/caixa.js';
+import { pendencias } from '../telas/Caixa.tsx';
 import { groupForm, porTimeAjuda, readGroupForm, schedRow } from '../telas/grupo-form.js';
 import { AUTH_CANCEL, authMsg, pwOk } from '../telas/login.js';
 import { actx, elapsed, setActx, sumPts } from '../telas/partida.js';
 import { MEK, myLocal } from '../telas/publico-rodada.js';
 import { tally } from '../telas/votacao.js';
-import { closeDlg, closeDlgNow, dlg, drawPreview, openDlg, playerDlg, posField, rodDlg, val } from '../ui/dialogos.js';
+import { avisar, closeDlg, closeDlgNow, confirmou, dlg, drawPreview, naoConfirmar, openDlg, playerDlg, posField, responder, rodDlg, val } from '../ui/dialogos.js';
 import { changed, render } from '../ui/render.js';
 import { TEMA_K, applyTheme, closeThemeMenu, openThemeMenu, themeAnchor, themeMenuEl } from '../ui/tema.js';
 import { LOCAL } from '../i18n/formatos.js';
@@ -39,8 +39,13 @@ const acoes={
   saveLan:()=>{const k=val('lk'),v=+val('lv');if(!(v>0)){toast('Informe um valor.');return}if((k==='mensal'||k==='diaria')&&!val('lp2')){toast('Escolha o jogador.');return}
     const d=val('ld')||today();let ref=d.slice(0,7);if(k==='diaria'){const r=rodadas().find(r=>r.date===d);ref=r?r.id:d}
     const id=B.newId(),o={k,pid:val('lp2')||null,v,d,ref,note:val('ln')};closeDlg();toast('Lançamento salvo.');return salvarLanc(id,o)},
-  payPend:el=>{const p=pendencias(S.month)[+el.dataset.v];if(!p)return;const id=B.newId(),o={k:p.k,pid:p.pid,v:p.v,d:today(),ref:p.ref,note:''};return salvarLanc(id,o)},
-  delLan:el=>{if(confirm('Apagar este lançamento?'))return apagarLanc(el.dataset.v)},
+  /* KAN-129: "Recebi" grava na hora e o aviso oferece "Desfazer" por 6 segundos. */
+  payPend:el=>{const p=pendencias(S.month)[+el.dataset.v];if(!p)return;const id=B.newId(),o={k:p.k,pid:p.pid,v:p.v,d:today(),ref:p.ref,note:''};
+    const r=salvarLanc(id,o);toastAcao(tx('caixa.recebido',{nome:pname(p.pid),valor:brl(p.v)}),tx('caixa.desfazer'),()=>{const d=apagarLanc(id);toast(tx('caixa.pagamentoDesfeito'));return d});return r},
+  /* Apagar (depois da confirmação) também oferece "Desfazer": o lançamento volta com o mesmo código. */
+  _apagarLan:id=>{const o=S.caixa[id];if(!o)return;const r=apagarLanc(id);toastAcao(tx('caixa.apagado'),tx('caixa.desfazer'),()=>{const d=salvarLanc(id,o);toast(tx('caixa.apagadoVolta'));return d});return r},
+  avisoAcao:()=>usarAvisoAcao(),
+  delLan:el=>{if(confirmou(el,{titulo:'Apagar este lançamento?',texto:'O valor sai do saldo e do mês.',acao:'Apagar lançamento',perigo:true})!=='sim')return;return ACT._apagarLan(el.dataset.v)},
   shareCob:()=>{const by={};pendencias(S.month).forEach(x=>(by[x.pid]=by[x.pid]||[]).push(x));
     let t=`💰 *${gname()} — pendências de ${fmonth(S.month).toLowerCase()}*\n\n`+Object.entries(by).map(([pid,xs])=>`• ${pname(pid)}: ${brl(xs.reduce((s,x)=>s+x.v,0))} (${xs.map(x=>x.label).join(', ')})`).join('\n');
     if(cfg().pix)t+=`\n\nPix: ${cfg().pix}`;shareDlg('Cobrança',t)},

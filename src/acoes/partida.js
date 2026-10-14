@@ -15,15 +15,15 @@ import { editApp, editRat, editRod, saveContato, setPres } from '../nucleo/edico
 import { addMatch, apagarLanc, apagarPartidasDaRodada, delMatch as apagarPartida, gravarVotacao, recalcular, salvarLanc } from '../nucleo/partidas.js';
 import { GB, S, clean, w } from '../nucleo/estado.js';
 import { linkConvite, linkProxima, linkRodada, linkVoto } from '../nucleo/links.js';
-import { $, DIAS, brl, cl, esc, fdate, fmonth, inAppBrowser, key, toast, today, uid } from '../nucleo/util.js';
+import { $, DIAS, brl, cl, esc, fdate, fmonth, inAppBrowser, key, toast, toastAcao, today, uid, usarAvisoAcao } from '../nucleo/util.js';
 import { upMyGroup } from '../rotas.js';
-import { pendencias } from '../telas/caixa.js';
+import { pendencias } from '../telas/Caixa.tsx';
 import { groupForm, porTimeAjuda, readGroupForm, schedRow } from '../telas/grupo-form.js';
 import { AUTH_CANCEL, authMsg, pwOk } from '../telas/login.js';
 import { actx, elapsed, setActx, sumPts } from '../telas/partida.js';
 import { MEK, myLocal } from '../telas/publico-rodada.js';
 import { tally } from '../telas/votacao.js';
-import { closeDlg, closeDlgNow, dlg, drawPreview, openDlg, playerDlg, posField, rodDlg, val } from '../ui/dialogos.js';
+import { avisar, closeDlg, closeDlgNow, confirmou, dlg, drawPreview, naoConfirmar, openDlg, playerDlg, posField, responder, rodDlg, val } from '../ui/dialogos.js';
 import { changed, render } from '../ui/render.js';
 import { TEMA_K, applyTheme, closeThemeMenu, openThemeMenu, themeAnchor, themeMenuEl } from '../ui/tema.js';
 import { LOCAL } from '../i18n/formatos.js';
@@ -43,9 +43,9 @@ const acoes={
     addMatch(r.id,{id:uid(),ca:ta.c,cb:tb.c,pa:ta.players.slice(),pb:tb.players.slice(),ga,gb,goals:L.goals.map(g=>({t:g.t,pid:g.pid,og:g.og,pts:g.pts||1})),at:Date.now()});
     let na=L.a,nb=L.b;if(r.times.length>2){const win=ga>gb?L.a:gb>ga?L.b:L.a,out=win===L.a?L.b:L.a,next=[...Array(r.times.length).keys()].filter(i=>i!==L.a&&i!==L.b);na=win;nb=next.concat(out)[0]}
     S.live={rid:r.id,a:na,b:nb,goals:[],dur:L.dur,el:0,run:false,st:0,beeped:false};toast(`Salvo: ${tn(ta.c)} ${ga} × ${gb} ${tn(tb.c)}`)},
-  delMatch:el=>{if(confirm('Apagar esta partida?'))return apagarPartida(curRodada().id,el.dataset.v)},
+  delMatch:el=>{if(confirmou(el,{titulo:'Apagar esta partida?',texto:'O placar e os pontos dela saem do ranking. Não dá para desfazer.',acao:'Apagar partida',perigo:true})!=='sim')return;return apagarPartida(curRodada().id,el.dataset.v)},
   /* Recalcular os totais (KAN-87): ranking (ano, mês ou tudo) ou caixa (mês). */
-  recalc:el=>{const p=el.dataset.v;if(!confirm(tx('resumo.confirmaRecalcular')))return;return recalcular(p).catch(e=>{console.warn(e);toast(tx('resumo.erroRecalcular'))})},
+  recalc:el=>{const p=el.dataset.v;if(confirmou(el,{titulo:tx('resumo.recalcularTitulo'),texto:tx('resumo.confirmaRecalcular'),acao:tx('resumo.recalcularAcao')})!=='sim')return;return recalcular(p).catch(e=>{console.warn(e);toast(tx('resumo.erroRecalcular'))})},
 };
 
 export { acoes };

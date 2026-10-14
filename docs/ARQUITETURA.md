@@ -127,6 +127,13 @@ Medido a cada versão, no celular de 390px:
   - a regra fica em `src/dominio/resumos.ts`, com teste próprio (`testes/regras/ranking.test.mjs`, compara com o cálculo antigo);
   - riscos aceitos: Recalcular ao mesmo tempo que outro administrador salva uma partida pode sobrescrever aquele incremento (basta recalcular de novo); aparelho com a v17 em cache que encerrar votação ou apagar rodada não ajusta as fichas até alguém usar Recalcular.
 
+### D16. Planos e área administrativa sem servidor (13 out. 2026, pelada-v26, KAN-115 e KAN-116)
+- **Decisão:** o plano é por conta (`contas/{uid}`: `plano`, `planoAte`), e o catálogo de planos fica em `sistema/planos`, com os padrões em `src/dominio/planos.ts`. O app pergunta pelo recurso (`temRecurso`), nunca pelo nome do plano. Validade vencida volta ao Grátis.
+- **Quem grava o plano:** só o administrador do portal. Regra `adminPortal()`: login com o Google **e** identificador (uid) na lista escrita nas regras. Não depende de e-mail nem de nenhum campo do banco: só muda com uma proposta aprovada no GitHub.
+- **Portal em site separado** (decisão do Kleber em 13/10/2026): `nosso-jogo-portal.web.app`, montado de `src/portal/` para `dist-portal/` e publicado pela mesma automação. Sem criação de conta, só Google. O app dos clientes não carrega nenhum código do portal, então uma falha no app não alcança a tela do portal. Isolamento total (projeto Firebase separado + servidor de ponte) fica para o plano Blaze. A própria conta grava só o contador de grupos e o último acesso, e as regras conferem campo a campo (`camposMudados()`).
+- **Lista de clientes:** lida na hora pelo administrador do portal (fichas de conta, grupos, e-mail do dono no cadastro de administradores e a última rodada gravada de cada grupo). Funciona bem para dezenas ou poucas centenas de clientes; com mais, os números passam a vir de um resumo diário (KAN-118, com servidor).
+- **Achado de segurança corrigido junto (KAN-133):** a coleção `grupos` era de leitura pública também para **listar**, então qualquer pessoa conseguia baixar nomes, dias e locais de todos os grupos. Agora qualquer pessoa lê **um** grupo (o link público continua igual), mas só o administrador do portal lista todos.
+
 ### D15. Hospedagem no Firebase Hosting, publicada pelo GitHub (13 out. 2026, pelada-v24)
 - **Contexto:** em 10/10 o plano grátis do Netlify ficou sem créditos e pausou as publicações. O site no ar ficou na v19 enquanto os Merges da v20 à v23 aconteciam, e as regras do Firebase (publicadas pelo GitHub) seguiram em frente: a v19 passou a ser recusada ao pôr avulso pelo link e ao criar grupo. A correção temporária das regras (proposta #21) liberou de novo. Ninguém percebeu antes porque o "No ar" era anotado com base no Merge, sem conferir o site.
 - **Decisão:**
@@ -179,6 +186,7 @@ A montagem (`npm run build`) imprime estes números. Eles são registrados aqui 
 | pelada-v23 | 6 de 46 | 1 de 15 | 28 | 2 | 67,3 KB |
 | pelada-v24 | 6 de 46 | 1 de 15 | 28 | 2 | 67,4 KB |
 | pelada-v25 | 6 de 46 | 1 de 15 | 28 | 2 | 67,5 KB |
+| pelada-v26 | 7 de 48 | 1 de 16 | 28 | 2 | 70,2 KB |
 
 As 5 regras de negócio com teste próprio previsto: sorteio, ranking, pendências do caixa, rodadas fixas (próxima data) e apuração da votação. Os testes ficam em `testes/regras/` com o nome da regra (`sorteio.test.mjs`, `ranking.test.mjs`, `caixa.test.mjs`, `rodadas-fixas.test.mjs`, `votacao.test.mjs`) e rodam com `npm run regras` (testador do próprio Node, que lê TypeScript direto). Desde a pelada-v15 já existe o primeiro teste de regra, lista × times (`lista-sorteio.test.mjs`), e na v16 entrou jogadores por time e reservas (`times.test.mjs`); eles não entram na conta das 5. Para uma regra ganhar teste, ela precisa sair do código que lê o estado, como foi feito em `src/dominio/divergencia.ts`.
 

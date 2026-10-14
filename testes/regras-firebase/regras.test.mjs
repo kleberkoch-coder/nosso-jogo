@@ -5,7 +5,7 @@
 import { after, before, beforeEach, describe, test } from 'node:test';
 import fs from 'node:fs';
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
-import { deleteDoc, doc, getDoc, increment, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, increment, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
 let env;
 const G = 'grupos/g1';
@@ -16,10 +16,19 @@ const db = {
   outro: () => env.authenticatedContext('outro', senha).firestore(),      // administrador de OUTRO grupo
   anon: () => env.authenticatedContext('anon1', { firebase: { sign_in_provider: 'anonymous' } }).firestore(), // jogador pelo link
   semLogin: () => env.unauthenticatedContext().firestore(),
+  admEmail: () => env.authenticatedContext('adm', { email: 'adm@x.com', firebase: { sign_in_provider: 'password' } }).firestore(),
+  portal: () => env.authenticatedContext('kleber', { email: 'kleberkoch@gmail.com', email_verified: true, firebase: { sign_in_provider: 'google.com' } }).firestore(),
+  // Mesmo e-mail do Kleber, mas outra conta (outro identificador): não entra.
+  portalSemConfirmar: () => env.authenticatedContext('falso', { email: 'kleberkoch@gmail.com', email_verified: true, firebase: { sign_in_provider: 'google.com' } }).firestore(),
+  // Identificador certo, mas entrando por e-mail e senha: não entra (o portal só aceita Google).
+  portalSenha: () => env.authenticatedContext('kleber', { email: 'kleberkoch@gmail.com', firebase: { sign_in_provider: 'password' } }).firestore(),
 };
 
 before(async () => {
-  env = await initializeTestEnvironment({ projectId: 'demo-nosso-jogo', firestore: { rules: fs.readFileSync('firestore.rules', 'utf8') } });
+  // Nos testes, o administrador do portal é a conta 'kleber' (no ar, a lista tem só o identificador real do Kleber).
+  const regras = fs.readFileSync('firestore.rules', 'utf8').replace(/\/\*ADMINS_PORTAL\*\/\[[^\]]*\]/, "/*ADMINS_PORTAL*/['kleber']");
+  if (!regras.includes("['kleber']")) throw new Error('Marcador ADMINS_PORTAL não encontrado em firestore.rules');
+  env = await initializeTestEnvironment({ projectId: 'demo-nosso-jogo', firestore: { rules: regras } });
 });
 after(async () => { await env.cleanup(); });
 beforeEach(async () => {
@@ -296,6 +305,52 @@ describe('segurança do link (KAN-77, KAN-78, KAN-79)', () => {
   });
   test('KAN-79: grupo antigo pode apagar os valores (migração)', async () => {
     await assertSucceeds(updateDoc(doc(db.adm(), 'grupos/g3'), { cfg: {} }));
+  });
+});
+
+describe('planos e portal (KAN-115, KAN-116)', () => {
+  test('a própria conta grava o último acesso, o e-mail dela e a data de registro', async () => {
+    await assertSucceeds(setDoc(doc(db.admEmail(), 'contas/adm'), { acesso: Date.now(), email: 'adm@x.com', criada: Date.now() }, { merge: true }));
+  });
+  test('último acesso de mais de 10 minutos atrás, de outra conta ou com e-mail de outra pessoa é recusado', async () => {
+    await assertFails(setDoc(doc(db.admEmail(), 'contas/adm'), { acesso: Date.now() - 3600000 }, { merge: true }));
+    await assertFails(setDoc(doc(db.admEmail(), 'contas/outro'), { acesso: Date.now() }, { merge: true }));
+    await assertFails(setDoc(doc(db.admEmail(), 'contas/adm'), { acesso: Date.now(), email: 'outro@x.com' }, { merge: true }));
+  });
+  test('a conta não grava o próprio plano (KAN-115, critério 4)', async () => {
+    await assertFails(setDoc(doc(db.admEmail(), 'contas/adm'), { plano: 'B' }, { merge: true }));
+    await assertFails(setDoc(doc(db.admEmail(), 'contas/adm'), { acesso: Date.now(), plano: 'B' }, { merge: true }));
+  });
+  test('com o último acesso gravado, o contador de grupos continua funcionando', async () => {
+    await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), 'contas/adm'), { acesso: Date.now(), email: 'adm@x.com', criada: 1 }); });
+    const f = db.adm(), b = writeBatch(f);
+    b.set(doc(f, 'grupos/gnovo'), { name: 'Novo', owner: 'adm', ativo: true, createdAt: 1 });
+    b.set(doc(f, 'contas/adm'), { ng: increment(1), ult: 'gnovo' }, { merge: true });
+    await assertSucceeds(b.commit());
+  });
+  test('o administrador do portal lista as contas e lê o e-mail dos organizadores', async () => {
+    await assertSucceeds(getDocs(collection(db.portal(), 'contas')));
+    await assertSucceeds(getDoc(doc(db.portal(), G + '/membros/dono')));
+  });
+  test('o administrador do portal dá um plano com validade, mas não mexe no último acesso nem no contador', async () => {
+    await assertSucceeds(setDoc(doc(db.portal(), 'contas/adm'), { plano: 'A', planoAte: Date.now() + 864e5 }, { merge: true }));
+    await assertFails(setDoc(doc(db.portal(), 'contas/adm'), { acesso: 1 }, { merge: true }));
+    await assertFails(setDoc(doc(db.portal(), 'contas/adm'), { ng: 0 }, { merge: true }));
+  });
+  test('KAN-133: qualquer pessoa lê um grupo pelo link, mas só o administrador do portal lista todos', async () => {
+    await assertSucceeds(getDoc(doc(db.semLogin(), G)));
+    await assertFails(getDocs(collection(db.semLogin(), 'grupos')));
+    await assertFails(getDocs(collection(db.adm(), 'grupos')));
+    await assertSucceeds(getDocs(collection(db.portal(), 'grupos')));
+  });
+  test('o identificador certo entrando por e-mail e senha não acessa o portal', async () => {
+    await assertFails(getDocs(collection(db.portalSenha(), 'contas')));
+  });
+  test('outras contas, mesmo com o e-mail do Kleber, não veem a lista de clientes nem dão plano', async () => {
+    await assertFails(getDocs(collection(db.adm(), 'contas')));
+    await assertFails(getDocs(collection(db.portalSemConfirmar(), 'contas')));
+    await assertFails(setDoc(doc(db.portalSemConfirmar(), 'contas/adm'), { plano: 'B' }, { merge: true }));
+    await assertFails(getDoc(doc(db.anon(), G + '/membros/dono')));
   });
 });
 

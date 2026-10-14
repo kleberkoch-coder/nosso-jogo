@@ -39,7 +39,7 @@ jobs:
           echo "$CHAVE" > "$RUNNER_TEMP/chave.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/chave.json"
           set +e
-          npx --yes firebase-tools@13 hosting:channel:deploy "pr-$PR" --expires 7d --project nosso-jogo-f4762 --non-interactive --json > "$RUNNER_TEMP/previa.json" 2> "$RUNNER_TEMP/erro.txt"
+          npx --yes firebase-tools@13 hosting:channel:deploy "pr-$PR" --only nosso-jogo-f4762 --expires 7d --project nosso-jogo-f4762 --non-interactive --json > "$RUNNER_TEMP/previa.json" 2> "$RUNNER_TEMP/erro.txt"
           status=$?
           rm -f "$RUNNER_TEMP/chave.json"
           if [ "$status" -ne 0 ]; then

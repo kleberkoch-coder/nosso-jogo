@@ -1,4 +1,4 @@
-# Publica o site no Firebase Hosting quando o app muda na main (ou seja, depois que o Kleber
+# Publica o site (e o Portal, em outro endereço) no Firebase Hosting quando o app muda na main (ou seja, depois que o Kleber
 # aprova a proposta com Merge). Desde a pelada-v24 (decisão D15), substitui a publicação do Netlify.
 # No fim, confere no endereço oficial que a versão no ar é a mesma do site/sw.js: se não for, fica vermelho.
 name: Publicar o site
@@ -12,6 +12,7 @@ concurrency: publicar-site
 
 env:
   ENDERECO: https://nosso-jogo-f4762.web.app
+  PORTAL: https://nosso-jogo-portal.web.app
 
 jobs:
   publicar:
@@ -49,7 +50,11 @@ jobs:
           esperada=$(grep -oE "VERSION = '[^']+'" site/sw.js | cut -d"'" -f2)
           for i in $(seq 1 30); do
             no_ar=$(curl -fsS "$ENDERECO/sw.js?conferir=$RANDOM" | grep -oE "VERSION = '[^']+'" | cut -d"'" -f2)
-            if [ "$no_ar" = "$esperada" ]; then echo "::notice::No ar: $esperada em $ENDERECO"; exit 0; fi
+            if [ "$no_ar" = "$esperada" ]; then
+              echo "::notice::No ar: $esperada em $ENDERECO"
+              curl -fsS "$PORTAL/?conferir=$RANDOM" | grep -q "<title>Portal do Nosso Jogo</title>" && echo "::notice::Portal no ar em $PORTAL" || { echo "::error::O portal não respondeu em $PORTAL"; exit 1; }
+              exit 0
+            fi
             sleep 10
           done
           echo "::error::O site no ar mostra '${no_ar:-nada}', mas a versão aprovada é '$esperada'."

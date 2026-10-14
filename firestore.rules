@@ -83,6 +83,36 @@ service cloud.firestore {
         && getAfter(conta(request.auth.uid)).data.get('ult', '') == gid
         && getAfter(conta(request.auth.uid)).data.get('ng', 0) == (exists(conta(request.auth.uid)) ? get(conta(request.auth.uid)).data.get('ng', 0) : 0) + 1;
     }
+    // Administrador do portal (KAN-116): só as contas Google cujo identificador (uid) está nesta lista.
+    // O portal fica num site separado (sem criação de conta); o identificador é incluído aqui à mão,
+    // numa proposta de mudança aprovada pelo Kleber. Lista vazia = ninguém acessa.
+    function adminPortal() {
+      return realUser() && request.auth.token.firebase.sign_in_provider == 'google.com'
+        && request.auth.uid in /*ADMINS_PORTAL*/[];
+    }
+    function camposMudados() {
+      return resource == null ? request.resource.data.keys() : request.resource.data.diff(resource.data).affectedKeys();
+    }
+    // Contador de grupos (KAN-89): só sobe de 1 em 1, junto com a criação de um grupo da própria conta, até o limite.
+    function contadorOk(uid) {
+      return camposMudados().hasOnly(['ng', 'ult'])
+        && idValido(request.resource.data.get('ult', ''))
+        && request.resource.data.ng == (resource == null ? 0 : resource.data.get('ng', 0)) + 1
+        && request.resource.data.ng <= limGrupos()
+        && !exists(grp(request.resource.data.ult))
+        && existsAfter(grp(request.resource.data.ult))
+        && getAfter(grp(request.resource.data.ult)).data.owner == uid;
+    }
+    // Último acesso (KAN-116): a hora de agora (com folga de 10 minutos), o e-mail da própria conta e a data do primeiro registro.
+    function acessoOk() {
+      return camposMudados().hasOnly(['acesso', 'email', 'criada'])
+        && request.resource.data.acesso is int
+        && request.resource.data.acesso <= request.time.toMillis() + 60000
+        && request.resource.data.acesso >= request.time.toMillis() - 600000
+        && request.resource.data.get('email', request.auth.token.email) == request.auth.token.email
+        && (resource == null || !('criada' in resource.data) || request.resource.data.criada == resource.data.criada)
+        && (!('criada' in request.resource.data) || request.resource.data.criada is int);
+    }
     function nomeOk(campo) {
       return !(campo in request.resource.data) || (request.resource.data[campo] is string && request.resource.data[campo].size() <= 40);
     }
@@ -93,17 +123,17 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Quantos grupos cada conta já criou (KAN-89). Só sobe de 1 em 1, junto com a criação de um grupo dela, até o limite.
+    // Ficha de cada conta: contador de grupos (KAN-89), último acesso (KAN-116) e plano (KAN-115).
     match /contas/{uid} {
-      allow read: if realUser() && request.auth.uid == uid;
-      allow create, update: if realUser() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['ng', 'ult'])
-        && idValido(request.resource.data.get('ult', ''))
-        && request.resource.data.ng == (resource == null ? 0 : resource.data.get('ng', 0)) + 1
-        && request.resource.data.ng <= limGrupos()
-        && !exists(grp(request.resource.data.ult))
-        && existsAfter(grp(request.resource.data.ult))
-        && getAfter(grp(request.resource.data.ult)).data.owner == uid;
+      // Cada conta lê a própria ficha; o administrador do portal lê todas (KAN-116).
+      allow read: if (realUser() && request.auth.uid == uid) || adminPortal();
+      // A própria conta grava só o contador de grupos (KAN-89) ou o último acesso (KAN-116). Nunca o plano.
+      allow create, update: if realUser() && request.auth.uid == uid && (contadorOk(uid) || acessoOk());
+      // O plano (KAN-115) só é gravado pelo administrador do portal (e, no futuro, pelo servidor de pagamento).
+      allow create, update: if adminPortal() && camposMudados().hasOnly(['plano', 'planoAte', 'obs'])
+        && request.resource.data.get('plano', 'gratis') is string && request.resource.data.get('plano', 'gratis').size() <= 20
+        && (!('planoAte' in request.resource.data) || request.resource.data.planoAte == null || request.resource.data.planoAte is int)
+        && (!('obs' in request.resource.data) || (request.resource.data.obs is string && request.resource.data.obs.size() <= 200));
       allow delete: if false;
     }
 
@@ -113,8 +143,10 @@ service cloud.firestore {
     }
 
     match /grupos/{gid} {
-      // Nome e configurações do grupo aparecem nos links públicos.
-      allow read: if true;
+      // Nome e configurações do grupo aparecem nos links públicos (ler UM grupo).
+      // Listar todos os grupos, só o administrador do portal (KAN-133).
+      allow get: if true;
+      allow list: if adminPortal();
       // Grupo novo conta no limite de grupos por conta (KAN-89); nome com até 40 letras.
       // TEMPORÁRIO (10/10/2026): o site no ar ainda é a v19, que não grava o contador de grupos (o Netlify pausou as publicações).
       // Enquanto isso, o contador é opcional. Voltar a exigir grupoContado(gid) quando a v23 ou mais nova estiver no ar.
@@ -130,7 +162,7 @@ service cloud.firestore {
 
       // Administradores do grupo.
       match /membros/{uid} {
-        allow read: if isMember(gid) || (signed() && request.auth.uid == uid);
+        allow read: if isMember(gid) || (signed() && request.auth.uid == uid) || adminPortal();
         allow create: if realUser() && request.auth.uid == uid && request.resource.data.uid == uid && (
           // quem criou o grupo vira organizador
           (request.resource.data.role == 'owner' && get(grp(gid)).data.owner == uid)

@@ -92,6 +92,25 @@ fs.writeFileSync(path.join(LEGIVEL, 'index.html'), legivel);
 for (const f of ['sw.js', 'manifest.webmanifest']) fs.copyFileSync(path.join('site', f), path.join(OUT, f));
 fs.cpSync('site/icons', path.join(OUT, 'icons'), { recursive: true });
 
+/* Portal do Nosso Jogo (KAN-116): site separado, só para a administração. Vai para dist-portal/
+   e é publicado em outro endereço do Firebase Hosting. Usa a mesma configuração do Firebase do app. */
+const PORTAL = 'dist-portal';
+{
+  const cfgBloco = /<script>\s*window\.FIREBASE_CONFIG[\s\S]*?<\/script>/.exec(fs.readFileSync('site/index.html', 'utf8'));
+  if (!cfgBloco) throw new Error('Não achei a configuração do Firebase em site/index.html para o portal.');
+  let mp = fs.readFileSync('site/portal.html', 'utf8').replace('<!--CONFIG-->', () => cfgBloco[0]);
+  const rp = await esbuild.build({ entryPoints: ['src/portal/main.js'], bundle: true, format: 'iife', target: ['es2020'], outdir: PORTAL, write: false,
+    minify: true, legalComments: 'none', charset: 'utf8', logLevel: 'warning', define: { __VERSAO__: JSON.stringify(VERSAO) },
+    jsx: 'automatic', jsxImportSource: 'preact', alias: process.env.PREACT_SRC ? { 'preact/jsx-runtime': process.env.PREACT_SRC + '/jsx-runtime/src/index.js', 'preact/hooks': process.env.PREACT_SRC + '/hooks/src/index.js', 'preact': process.env.PREACT_SRC + '/src/index.js' } : {} });
+  const js = rp.outputFiles.find(f => f.path.endsWith('.js')).text, css = rp.outputFiles.find(f => f.path.endsWith('.css')).text;
+  if (/<\/script/i.test(js)) throw new Error('O código do portal contém "</script".');
+  mp = mp.replace('<!--ESTILOS-->', () => '<style>\n' + css + '</style>').replace('<!--CODIGO-->', () => '<script>\n' + js + '</script>');
+  fs.rmSync(PORTAL, { recursive: true, force: true }); fs.mkdirSync(path.join(PORTAL, 'icons'), { recursive: true });
+  fs.writeFileSync(path.join(PORTAL, 'index.html'), mp);
+  fs.copyFileSync('site/icons/favicon-32.png', path.join(PORTAL, 'icons', 'favicon-32.png'));
+  console.log(`Portal montado em ${PORTAL}/ (${(Buffer.byteLength(mp) / 1024).toFixed(1)} KB)`);
+}
+
 const kb = n => (n / 1024).toFixed(1) + ' KB';
 const gz = zlib.gzipSync(html, { level: 9 }).length;
 const gzLeg = zlib.gzipSync(legivel, { level: 9 }).length;
@@ -99,7 +118,7 @@ console.log(`Site ${VERSAO} montado em ${OUT}/ em ${Date.now() - t0} ms · index
 
 /* Painel da dívida técnica (docs/ARQUITETURA.md, D12): números que devem melhorar a cada versão. */
 const arquivos = [];
-(function varre(d) { for (const f of fs.readdirSync(d, { withFileTypes: true })) { const c = path.join(d, f.name); if (f.isDirectory()) varre(c); else if (/\.(js|ts|tsx)$/.test(f.name)) arquivos.push(c); } })('src');
+(function varre(d) { for (const f of fs.readdirSync(d, { withFileTypes: true })) { const c = path.join(d, f.name); if (f.isDirectory()) { if (f.name !== 'portal') varre(c) } else if (/\.(js|ts|tsx)$/.test(f.name)) arquivos.push(c); } })('src');
 const emTS = arquivos.filter(f => /\.tsx?$/.test(f)).length;
 const telas = arquivos.filter(f => f.includes(path.join('src', 'telas')) && !f.endsWith('publico-rodada.js'));
 const telasComp = telas.filter(f => f.endsWith('.tsx')).length;

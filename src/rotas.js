@@ -46,6 +46,12 @@ function parseRoute(){const h=location.hash.replace(/^#\/?/,'').split('/');
   if(h[0]==='entrar')return{n:'auth',mode:'login'};if(h[0]==='criar')return{n:'auth',mode:'signup'};
   if(h[0]==='convite'&&h[1]&&h[2])return{n:'inv',gid:h[1],token:h[2]};
   return{n:'home'}}
+/* Último acesso da conta (KAN-116): no máximo uma vez por dia por aparelho, sem atrasar a abertura.
+   Na primeira vez, grava também a data de registro e o e-mail (vistos na área administrativa do portal). */
+function registrarAcesso(){const u=S.user;if(!u||u.anon)return;const k='nj-acesso-'+u.uid,hoje=new Date().toDateString();
+  try{if(localStorage.getItem(k)===hoje)return;localStorage.setItem(k,hoje)}catch(e){}
+  B.get('contas/'+u.uid).catch(()=>null).then(c=>{const agora=Date.now(),o={acesso:agora};if(u.email)o.email=u.email;if(!c||!c.criada)o.criada=agora;
+    return B.patch('contas/'+u.uid,o)}).catch(e=>console.warn('acesso',e))}
 function upMyGroup(gid,patch){const me=cl(S.me)||{grupos:{}};me.grupos=me.grupos||{};me.grupos[gid]=Object.assign({},me.grupos[gid]||{},patch);S.me=me;return B.set('usuarios/'+S.user.uid,me)}
 function addMyGroup(gid,name,role,sp,spn){return upMyGroup(gid,{name,role,sport:sp||'futebol',sportName:spn||''})}
 function syncName(){const g=S.me?.grupos?.[S.gid],a=S.app;if(S.route.n!=='admin'||!a||!S.mem||!g)return;
@@ -59,6 +65,7 @@ function setupRoute(){
   Object.assign(S,{avul:{},cont:{},pc:null,migrando:false,gid:R.gid||null,app:null,mem:null,membros:{},convite:null,rat:null,caixa:{},presRid:undefined,limAv:null,limCfg:null,votosVid:undefined,dataOn:false,rod:{},rodF:{},rodP:{},rodAll:null,res:null,resK:null,parts:{},partsRid:null,migr:null,migrandoDados:false,rodMes:{},rodMesM:null,rodX:{},rodXid:null,hist:null,pres:{},vot:{},votos:{},myVote:null,jog:{},rid:null,vid:null,live:null});
   if(logged)subRaw('me','usuarios/'+S.user.uid,d=>{S.me=d||{grupos:{}};syncName();
     if(S.route.n==='home'&&!S.homeShown){S.homeShown=true;const all=Object.entries(S.me.grupos||{}),g=all.filter(([,v])=>v.ativo!==false).map(([k])=>k);if(g.length===1)location.hash='#/g/'+g[0];else if(!all.length)setTimeout(()=>{if(S.route.n==='home'&&!dlg.open)ACT.newGroup()},250)}});
+  if(logged)registrarAcesso();
   if(S.gid)sub('app','config/app',d=>{S.app=d;if(R.next)resolveNext();syncName();migrarPrivado()});
   const anon=()=>{if(!S.user)B.anon().catch(()=>toast('Não foi possível conectar. Recarregue a página.'))};
   if(R.n==='r')subLimCfg();

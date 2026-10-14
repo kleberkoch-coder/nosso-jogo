@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Portal do Nosso Jogo</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1F5A40">
+<script>
+(function(){try{var t=localStorage.getItem('nj-tema');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}})();
+</script>
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- A configuração do Firebase vem do site/index.html na montagem (mesmo projeto do app). -->
+<!--CONFIG-->
+<!--ESTILOS-->
+<style>.uid{font:600 15px ui-monospace,Menlo,monospace;word-break:break-all;background:var(--surface-2);padding:6px 10px;border-radius:8px}#ptopo{display:flex;gap:8px;align-items:center;color:var(--chalk)}</style>
+</head>
+<body>
+<div id="demo" class="demo" hidden>Modo demonstração: os dados ficam só neste navegador.</div>
+<header class="top"><div class="top-in">
+  <div><h1>Portal do Nosso Jogo</h1><div class="sub">Área da administração · não é o app dos clientes</div></div>
+  <div class="toprow"><div id="ptopo"></div></div>
+</div></header>
+<main id="pmain"><div class="empty muted">Carregando…</div></main>
+<!--CODIGO-->
+</body>
+</html>

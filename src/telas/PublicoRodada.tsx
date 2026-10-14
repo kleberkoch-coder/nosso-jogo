@@ -2,11 +2,12 @@
    O Preact monta a tela a partir do estado (S) e escapa todo texto sozinho: aqui não há innerHTML.
    Os botões continuam com data-a, então as ações, o carregando e o aviso de sem sinal são os mesmos do resto do app. */
 import { render } from 'preact';
+import { useState } from 'preact/hooks';
 import { APP, COL, hasPos, posLabel, sport, sportName, tn } from '../dominio/esportes.js';
-import { attendance, fixos, gname, grpAtivo, isAvulso, players, pname, ppos, rodById } from '../dominio/grupo.js';
+import { attendance, fixos, gname, grpAtivo, isAvulso, normName, players, pname, ppos, rodById } from '../dominio/grupo.js';
 import { hora } from '../dominio/rodadas.js';
 import { LOCAL } from '../i18n/formatos.js';
-import { tx } from '../i18n/index.js';
+import { tp, tx } from '../i18n/index.js';
 import { S as estado } from '../nucleo/estado.js';
 import { $, fdate, main } from '../nucleo/util.js';
 import { myLocal } from './publico-rodada.js';
@@ -87,24 +88,48 @@ function PublicoRodada() {
   const a = attendance() as { inn: string[] }, me = myLocal() as string | null;
   const ids: string[] = players().map((p: { id: string }) => p.id).concat(Object.keys(S.pres).filter(id => isAvulso(id) && S.pres[id].nome));
   const lista = [...new Set(ids)].sort((x, y) => (x === me ? -1 : y === me ? 1 : pname(x).localeCompare(pname(y), LOCAL)));
+  const aberta = !r.locked;
+  /* KAN-127: com a lista aberta, "Você vai?" vem logo depois do resumo e os times ficam recolhidos.
+     Com a lista fechada, os times vêm primeiro e a lista de respostas é que fica recolhida.
+     Fora dos blocos recolhidos, cada nome aparece uma vez só. */
+  const times = r.times ? <div class="teams">{r.times.map((t, i) => <Time key={i} t={t} />)}</div> : null;
   return (
     <div class="stack">
       <div class="panel"><div class="hero-r">
         <div><h2>{fdate(r.date)}{r.time ? ' · ' + hora(r) : ''}</h2><div class="muted">{r.place || tx('publico.localADefinir')}</div></div>
         <div class="count">{a.inn.length}<small>{tx('publico.confirmados')}</small></div>
       </div></div>
-      {r.times && <div class="panel"><h3>{tx('publico.timesSorteados')}</h3><div class="teams">{r.times.map((t, i) => <Time key={i} t={t} />)}</div></div>}
-      <div class="panel">
-        <h3>{r.locked ? tx('publico.listaFechada') : tx('publico.voceVai')}</h3>
-        <p class="small muted" style={{ marginTop: '-6px' }}>{r.locked ? tx('publico.listaFechadaTexto') : tx('publico.instrucao')}</p>
-        <ul class="plist">{lista.length ? lista.map(id => <Linha key={id} id={id} r={r} me={me} />) : <li class="muted small">{tx('publico.listaVazia')}</li>}</ul>
-        {!r.locked && (avulsosEsgotados(st().limAv, st().limCfg)
-          ? <p class="small muted aviso-limite" style={{ marginTop: '14px' }}>{tx('limite.avulsosPublico')}</p>
-          : <div class="row" style={{ marginTop: '14px' }}><span class="small muted" style={{ flex: 1 }}>{tx('publico.semNome')}</span><button class="btn primary" data-a="pubAdd">{tx('publico.adicionarNome')}</button></div>)}
-      </div>
+      {times && !aberta && <div class="panel"><h3>{tx('publico.timesSorteados')}</h3>{times}</div>}
+      {aberta ? <Lista r={r} lista={lista} me={me} /> : (
+        <details class="panel"><summary>{tx('publico.listaFechada')} · {tx('publico.verLista', { n: lista.length })}</summary>
+          <p class="small muted" style={{ marginTop: '8px' }}>{tx('publico.listaFechadaTexto')}</p>
+          <ul class="plist">{lista.map(id => <Linha key={id} id={id} r={r} me={me} />)}</ul>
+        </details>)}
+      {times && aberta && <details class="panel"><summary>{tx('publico.verTimes', { n: r.times!.length })}</summary><div style={{ marginTop: '12px' }}>{times}</div></details>}
       <Placar rid={r.id} />
-      {a.inn.length > 0 && <div class="panel"><h3>{tx('publico.confirmadosTitulo')}</h3><ol class="plist">{a.inn.map((id, i) => <li key={id}><span class="num">{i + 1}</span><span class="pn">{pname(id)}</span><Pos id={id} /></li>)}</ol></div>}
+      {a.inn.length > 0 && <details class="panel"><summary>{tp('publico.confirmadosVer', a.inn.length)}</summary><ol class="plist">{a.inn.map((id, i) => <li key={id}><span class="num">{i + 1}</span><span class="pn">{pname(id)}</span><Pos id={id} /></li>)}</ol></details>}
       <div class="foot"><a href="#/">{tx('publico.rodape', { app: APP })}</a></div>
+    </div>
+  );
+}
+
+/* "Você vai?" com a busca pelo nome (KAN-127): filtra enquanto digita, sem diferenciar acentos e maiúsculas. */
+function Lista({ r, lista, me }: { r: Rodada; lista: string[]; me: string | null }) {
+  const [busca, setBusca] = useState('');
+  const q = normName(busca) as string;
+  const vis = q ? lista.filter(id => (normName(pname(id)) as string).includes(q)) : lista;
+  const esgotou = avulsosEsgotados(st().limAv, st().limCfg);
+  return (
+    <div class="panel">
+      <h3>{tx('publico.voceVai')}</h3>
+      <p class="small muted" style={{ marginTop: '-6px' }}>{tx('publico.instrucao')}</p>
+      {lista.length > 0 && <label class="f busca-nome"><span>{tx('publico.buscar')}</span>
+        <input class="inp" id="pbusca" type="search" autocomplete="off" enterkeyhint="search" value={busca} onInput={e => setBusca((e.target as HTMLInputElement).value)} /></label>}
+      <ul class="plist">{vis.length ? vis.map(id => <Linha key={id} id={id} r={r} me={me} />)
+        : <li class="muted small">{lista.length ? tx('publico.buscarVazio') : tx('publico.listaVazia')}</li>}</ul>
+      {esgotou
+        ? <p class="small muted aviso-limite" style={{ marginTop: '14px' }}>{tx('limite.avulsosPublico')}</p>
+        : <div class="row" style={{ marginTop: '14px' }}><span class="small muted" style={{ flex: 1 }}>{tx('publico.semNome')}</span><button class="btn primary" data-a="pubAdd" data-v={busca.trim()}>{tx('publico.adicionarNome')}</button></div>}
     </div>
   );
 }

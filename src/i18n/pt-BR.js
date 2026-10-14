@@ -44,6 +44,16 @@ export default {
   'publico.semNome': 'Seu nome não está na lista?',
   'publico.adicionarNome': 'Adicionar meu nome',
   'publico.confirmadosTitulo': 'Confirmados',
+  'rodada.timesAjuda': 'O sorteio libera com pelo menos 4 confirmados. Quantidade de times é escolhida na hora.',
+  'rodada.timesPronto': 'Tudo pronto: toque no botão do rodapé para sortear. A quantidade de times é escolhida na hora.',
+  'rodada.faltam.um': 'Falta 1 para sortear',
+  'rodada.faltam.outros': 'Faltam {n} para sortear',
+  'publico.buscar': 'Procure seu nome',
+  'publico.buscarVazio': 'Não achou? Toque em Adicionar meu nome.',
+  'publico.verTimes': 'Ver times ({n})',
+  'publico.verLista': 'Ver lista ({n})',
+  'publico.confirmadosVer.um': '1 confirmado · ver nome',
+  'publico.confirmadosVer.outros': '{n} confirmados · ver nomes',
   'publico.rodape': 'Organize seus jogos com o {app} →',
 
   /* abas */

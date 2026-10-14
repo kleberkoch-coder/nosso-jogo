@@ -9,7 +9,8 @@ import { $, esc, nextSat } from '../nucleo/util.js';
 
 /* =================== diálogos =================== */
 const dlg=$('#dlg');
-function openDlg(h){$('#dlgBody').innerHTML=h;if(!dlg.open)dlg.showModal()}
+/* KAN-74: com botão principal no rodapé, o teclado do celular mostra "Concluir" e o Enter envia (ver eventos.js). */
+function openDlg(h){const b=$('#dlgBody');b.innerHTML=h;if(b.querySelector('.dlg-f .btn.primary,.dlg-f .btn.bib'))b.querySelectorAll('input.inp:not([enterkeyhint])').forEach(i=>{if(i.id!=='avq')i.setAttribute('enterkeyhint','done')});if(!dlg.open)dlg.showModal()}
 function closeDlgNow(){if(dlg.open)dlg.close()}
 function closeDlg(){if(CAP){CAP.close=true;return}closeDlgNow()}
 dlg.addEventListener('click',e=>{if(e.target===dlg)closeDlg()});

@@ -3,7 +3,7 @@ import { col, sport, tn } from '../dominio/esportes.js';
 import { curRodada, pname } from '../dominio/grupo.js';
 import { S } from '../nucleo/estado.js';
 import { esc } from '../nucleo/util.js';
-import { rodadaPicker, rodadasProntas } from './rodada.js';
+import { rodadaPicker, rodadasProntas } from './rodada-partes.js';
 import { partidasDe } from '../nucleo/partidas.js';
 import { tx } from '../i18n/index.js';
 

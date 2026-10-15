@@ -1,17 +1,10 @@
 import { horaCampo } from '../ui/hora.js';
 import { SPORTS, porTimePadrao } from '../dominio/esportes.js';
 import { tx } from '../i18n/index.js';
-import { dupName, fixos, freq, schedTxt } from '../dominio/grupo.js';
+import { dupName, fixos, freq } from '../dominio/grupo.js';
 import { $, DIAS, esc, toast, uid } from '../nucleo/util.js';
 import { val } from '../ui/dialogos.js';
 
-function fixPanel(){const f=fixos();
-  if(!f.length)return freq()==='fixo'?`<div class="row small muted">Os dias fixos do grupo ainda não foram definidos.<button class="btn sm" data-a="editGroup">Definir dias e horários</button></div>`:'';
-  /* KAN-71: painel compacto; a explicação fica em "Como funciona". */
-  /* KAN-150: dia, horário e local já aparecem no cartão da rodada e na aba Grupo; aqui fica só o link permanente. */
-  return `<div class="panel fixos"><div class="row between"><div><h3 style="margin:0">${tx('fixos.titulo')}</h3><div class="small muted">${tx('fixos.ajuda')}</div></div>
-  <div class="row"><button class="btn sm primary" data-a="shareFixo">Mandar no WhatsApp</button><button class="btn sm" data-a="copyFixo">Copiar link</button><button class="btn sm" data-a="editGroup">Editar dias</button></div></div>
-  <details class="small" style="margin-top:8px"><summary>Como funciona</summary><p class="muted" style="margin:6px 0 0">A confirmação da semana seguinte abre sozinha assim que o jogo termina. Para pular uma data (feriado), use "Cancelar esta data" no cartão da rodada.</p></details></div>`}
 function schedRow(x){x=x||{dow:1,ini:'20:00',fim:'22:00',place:''};
   return `<div class="srow" data-id="${esc(x.id||'')}"><select class="sel sd" aria-label="Dia da semana">${DIAS.map((d,i)=>`<option value="${i}" ${i===+x.dow?'selected':''}>${d}</option>`).join('')}</select>
   ${horaCampo('','si',x.ini||'',false,'Início')}${horaCampo('','sf',x.fim||'',true,'Término')}
@@ -45,4 +38,4 @@ function readGroupForm(except){const box=$('#ngBox'),err=$('#ngErr');err.textCon
     const seen=new Set();for(const x of fixos){const k=x.dow+'|'+x.ini;if(seen.has(k)){toast('Há dois horários iguais no mesmo dia.');return null}seen.add(k)}}
   return{name,sport:sp,sportName:spn,freq:fq,fixos,porTime:pt}}
 
-export { fixPanel, groupForm, porTimeAjuda, readGroupForm, schedRow };
+export { groupForm, porTimeAjuda, readGroupForm, schedRow };

@@ -126,15 +126,39 @@ console.log(`Site ${VERSAO} montado em ${OUT}/ em ${Date.now() - t0} ms · link 
 const arquivos = [];
 (function varre(d) { for (const f of fs.readdirSync(d, { withFileTypes: true })) { const c = path.join(d, f.name); if (f.isDirectory()) { if (f.name !== 'portal') varre(c) } else if (/\.(js|ts|tsx)$/.test(f.name)) arquivos.push(c); } })('src');
 const emTS = arquivos.filter(f => /\.tsx?$/.test(f)).length;
-const telas = arquivos.filter(f => f.includes(path.join('src', 'telas')) && !f.endsWith('publico-rodada.js'));
+const telas = arquivos.filter(f => f.includes(path.join('src', 'telas')) && !f.endsWith('publico-rodada.js') && !f.endsWith('-partes.js'));
 const telasComp = telas.filter(f => f.endsWith('.tsx')).length;
 const innerHTML = arquivos.reduce((n, f) => n + (fs.readFileSync(f, 'utf8').match(/innerHTML/g) || []).length, 0);
 // Conta só as 5 regras previstas na D12 (outros testes de regra são bem-vindos, mas não entram nesta conta).
 const REGRAS = /^(sorteio|ranking|caixa|rodadas-fixas|votacao)\.test\./;
 const testesRegra = fs.existsSync('testes/regras') ? fs.readdirSync('testes/regras').filter(f => REGRAS.test(f)).length : 0;
-console.log(`Dívida técnica: ${emTS} de ${arquivos.length} arquivos em TypeScript · ${telasComp} de ${telas.length} telas como componente · innerHTML em ${innerHTML} pontos · ${testesRegra} de 5 regras de negócio com teste próprio`);
+/* Textos de tela escritos direto no código, fora do dicionário (D3). Conta frases que começam com maiúscula
+   dentro de textos e HTML, sem os comentários. É uma medida aproximada, mas sempre igual: serve para ver se sobe ou desce. */
+const RX_TEXTO = /(?<=['"`>]|\$\{[^}]*\}\s?)([A-ZÁÉÍÓÚÂÊÔÃÕ][a-zà-úç]+(?:[ ,.:?!][ ]?[A-Za-zà-úçÁÉÍÓÚ]+){1,})/g;
+const semComentario = t => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/.*$/gm, '$1');
+const textosFixos = arquivos.filter(f => !f.includes(path.join('src', 'i18n'))).reduce((n, f) => n + (semComentario(fs.readFileSync(f, 'utf8')).match(RX_TEXTO) || []).length, 0);
+console.log(`Dívida técnica: ${emTS} de ${arquivos.length} arquivos em TypeScript · ${telasComp} de ${telas.length} telas como componente · innerHTML em ${innerHTML} pontos · ${textosFixos} textos fora do dicionário · ${testesRegra} de 5 regras de negócio com teste próprio`);
+
+/* KAN-154: a dívida não pode piorar (D12). Os tetos ficam em docs/divida.json; quando um número melhora, o teto desce na mesma entrega. */
+{
+  const teto = JSON.parse(fs.readFileSync('docs/divida.json', 'utf8'));
+  const medidas = [
+    ['innerHTML', innerHTML, 'pontos com innerHTML (monte a tela como componente; ver docs/DESIGN-SYSTEM.md)', 'max'],
+    ['textosFixos', textosFixos, 'textos de tela fora do dicionário (use tx() e src/i18n/pt-BR.js)', 'max'],
+    ['arquivosSemTipos', arquivos.length - emTS, 'arquivos sem TypeScript (arquivo novo nasce .ts ou .tsx)', 'max'],
+    ['telasComponente', telasComp, 'telas como componente', 'min'],
+    ['testesRegra', testesRegra, 'regras de negócio com teste próprio', 'min'],
+  ];
+  const piorou = medidas.filter(([k, v, , t]) => (t === 'max' ? v > teto[k] : v < teto[k]));
+  for (const [k, v, txt, t] of piorou) console.error(`A dívida técnica piorou: ${v} ${txt}; o limite é ${teto[k]} (${t === 'max' ? 'máximo' : 'mínimo'}, docs/divida.json).`);
+  const melhorou = medidas.filter(([k, v, , t]) => (t === 'max' ? v < teto[k] : v > teto[k]));
+  if (melhorou.length) console.log('Melhorou: ' + melhorou.map(([k, v]) => `${k} ${teto[k]} → ${v}`).join(' · ') + '. Atualize docs/divida.json nesta entrega.');
+  if (piorou.length) process.exit(1);
+}
 
 /* Orçamento de desempenho (docs/ARQUITETURA.md, D7): até 80 KB comprimido, sem contar a biblioteca do Firebase. */
-const LIMITE = 80 * 1024, LIMITE_LINK = 50 * 1024; // KAN-149: o link do jogador (página + pedaços que ela carrega logo) tem limite próprio
+// KAN-149: o link do jogador (página + pedaços que ela carrega logo) tem limite próprio.
+// Desde a v43 o total vai até 85 KB: a divisão em pedaços e os componentes custam um pouco no total, que só quem administra baixa (D7).
+const LIMITE = 85 * 1024, LIMITE_LINK = 50 * 1024;
 if (gz > LIMITE) { console.error(`Passou do orçamento de desempenho: ${kb(gz)} comprimido (limite ${kb(LIMITE)}).`); process.exit(1); }
 if (gzPub > LIMITE_LINK) { console.error(`O link do jogador passou do orçamento: ${kb(gzPub)} comprimido (limite ${kb(LIMITE_LINK)}).`); process.exit(1); }

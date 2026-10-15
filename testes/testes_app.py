@@ -167,6 +167,9 @@ with sync_playwright() as pw:
     hsm = pg.evaluate("Math.min(...[...document.querySelectorAll('.btn.sm')].map(b=>b.getBoundingClientRect().height).filter(h=>h>0))")
     ok(hsm >= 36, f'botões pequenos com 36px ou mais ({hsm:.0f}px)')
     shot('02-rodada-claro'); contraste(pg, 'Rodada (claro)')
+    # v43 (KAN-153): a aba Rodada é componente e usa os componentes do Design System
+    rc = pg.evaluate("(()=>{const r=document.getElementById('rodadaRaiz');return r?{hero:!!r.querySelector('.hero-r'),seg:r.querySelectorAll('.seg-filtro [data-a=presFiltro]').length,corta:!!r.querySelector('[data-corta]')}:null})()")
+    ok(rc and rc['hero'] and rc['seg'] == 4 and rc['corta'], f'CT-KAN-153-01: aba Rodada montada como componente, com filtros e texto cortado ({rc})')
     # ---------- v31 (defeito do Kleber, 14/10): ao abrir o grupo, enquanto as rodadas chegam, a aba Rodada mostra "Carregando…"
     # e não pisca "Nenhuma rodada marcada" nem a lista de outra rodada
     for aba_c in ('rodada', 'partida'):

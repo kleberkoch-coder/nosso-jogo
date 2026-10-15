@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v42 (15/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v43 (15/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -91,15 +91,17 @@ Atualizado na pelada-v42 (15/10/2026). Toda entrega que mudar uma regra atualiza
 - Proposta (PR) com testes verdes e prévia; `VERSION` do `site/sw.js` sobe; o Kleber aprova com Merge.
 - O Merge publica o site e, se mudaram, as regras do Firebase; a automação confere a versão no ar.
 - Na mesma entrega: atualizar este arquivo, os docs afetados, a pasta `app/` do projeto e os cartões do Jira ([Entrega], Em análise).
-- Limite de tamanho (D7): o link do jogador até 50 KB comprimido; o app inteiro, com a gestão, até 80 KB.
+- Limite de tamanho (D7): o link do jogador até 50 KB comprimido; o app inteiro, com a gestão, até 85 KB.
+- Dívida técnica não piora (D12, KAN-154): a montagem falha se aumentar innerHTML, textos fora do dicionário ou arquivos sem tipos, ou se diminuírem as telas como componente (tetos em `docs/divida.json`).
+- Tela mexida, tela migrada: tela tocada vira componente TypeScript + Preact na mesma entrega, usando `src/ui/componentes.tsx`; componente visual novo entra antes no Design System (KAN-152, KAN-153).
 - A gestão (telas e ações de quem tem conta, página inicial e convite) fica em `src/admin.js` e só baixa quando alguém entra com conta; o link público e a votação nunca a baixam (KAN-149). Tela ou ação nova de gestão entra por lá.
 
 ## Mapa de impacto (o que mexer quando muda X)
 | Assunto | Tela | Ações | Regra (sem tela) | Dados no Firebase | Testes |
 |---|---|---|---|---|---|
 | Presença pelo link | `telas/PublicoRodada.tsx` | `acoes/publico.js` | `nucleo/edicoes.js` (setPres) | `rodadas/{rid}/presencas`, `limites/avulsos` | `testes_app.py` (link), `regras-firebase` (presença) |
-| Presença na gestão | `telas/rodada.js` | `acoes/rodada.js` | `dominio/grupo.js` (attendance, curRodada) | idem | `testes_app.py` (Rodada) |
-| Sorteio e times | `telas/rodada.js` | `acoes/rodada.js` | `dominio/sorteio.js`, `times.ts`, `divergencia.ts` | `rodadas/{rid}` (times, cores, base) | `regras/times`, `lista-sorteio` |
+| Presença na gestão | `telas/Rodada.tsx` | `acoes/rodada.js` | `dominio/grupo.js` (attendance, curRodada) | idem | `testes_app.py` (Rodada) |
+| Sorteio e times | `telas/Rodada.tsx` | `acoes/rodada.js` | `dominio/sorteio.js`, `times.ts`, `divergencia.ts` | `rodadas/{rid}` (times, cores, base) | `regras/times`, `lista-sorteio` |
 | Partida e ranking | `telas/partida.js`, `ranking.js` | `acoes/partida.js` | `nucleo/partidas.js`, `dominio/resumos.ts` | `rodadas/{rid}/partidas`, `resumos/{mês}` | `regras/ranking` |
 | Votação | `telas/votacao.js`, `publico-voto.js` | `acoes/votacao.js` | `telas/votacao.js` (tally) | `votacoes/{vid}`, `votos` | `testes_app.py` (votação) |
 | Caixa | `telas/Caixa.tsx` | `acoes/caixa.js` | `dominio/caixa-regras.ts`, `caixa.js` | `caixa/{id}`, `privado/caixa`, `resumos` | `regras/caixa` |

@@ -16,6 +16,8 @@ import { renderPublicVoto } from '../telas/publico-voto.js';
 /* =================== render =================== */
 let rq=false;function changed(){if(rq)return;rq=true;requestAnimationFrame(()=>{rq=false;render()})}
 const TABS=[['rodada','Rodada'],['historico','abas.historico'],['jogadores','Jogadores'],['partida','Partida'],['ranking','Ranking'],['caixa','Caixa'],['votacao','Votação'],['grupo','Grupo']];
+/* Elemento simples sem montar HTML como texto (KAN-154). */
+function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt)e.textContent=txt;return e}
 function render(){renderCore();applyBusy();subtituloCompleto()}
 /* KAN-146: texto que pode ser longo (local, subtítulo) fica numa linha só, com "…". Quando corta, o texto inteiro aparece
    ao passar o mouse (title) e ao tocar nele, que abre e fecha (no celular não existe "passar o mouse"). Vale para #gsub e [data-corta]. */
@@ -36,8 +38,8 @@ function renderCore(){
   document.body.classList.remove('is-landing');
   /* KAN-149: página inicial, convite e gestão vêm da parte de gestão, que carrega na primeira vez. */
   const A=adm();
-  if(!A&&(R.n==='home'||R.n==='inv'||(logged&&R.n==='admin'))){main.innerHTML=`<div class="empty muted">${tx('comum.carregando')}</div>`;
-    carregarAdmin().then(()=>render(),()=>{main.innerHTML=`<div class="panel empty"><h2>${tx('comum.naoCarregouTitulo')}</h2><p class="muted">${tx('comum.naoCarregou')}</p></div>`});return}
+  if(!A&&(R.n==='home'||R.n==='inv'||(logged&&R.n==='admin'))){main.replaceChildren(el('div','empty muted',tx('comum.carregando')));
+    carregarAdmin().then(()=>render(),()=>{const p=el('div','panel empty');p.append(el('h2','',tx('comum.naoCarregouTitulo')),el('p','muted',tx('comum.naoCarregou')));main.replaceChildren(p)});return}
   if(R.n==='home'&&!logged&&!isStandalone()){document.body.classList.add('is-landing');$('#tabsnav').hidden=true;main.innerHTML=A.vLanding();return}
   if(R.n==='inv')return A.renderInvite();
   if(!logged){main.innerHTML=vAuth();return}
@@ -52,6 +54,7 @@ function renderCore(){
   ensurePres();ensureVotos();ensureExtras();
   main.innerHTML=(grpAtivo()?'':`<div class="inbar"><span>Grupo inativo desde ${fdia(S.app.inativadoEm)}. Os links públicos não aceitam confirmações nem votos.</span>${isOwnerMe()?'<button class="btn sm" data-a="toggleAtivo">Reativar</button>':''}</div>`)+{rodada:A.vRodada,jogadores:A.vJogadores,partida:A.vPartida,ranking:A.vRanking,caixa:A.vCaixa,votacao:A.vVotacao,historico:A.vHistorico,grupo:A.vGrupo}[S.tab]();
   if(S.tab==='caixa')A.montarCaixa();
+  if(S.tab==='rodada')A.montarRodada();
   if(S.tab==='partida')A.tick();
 }
 

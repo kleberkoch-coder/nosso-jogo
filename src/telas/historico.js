@@ -6,7 +6,7 @@ import { B } from '../nucleo/backend.js';
 import { S, gp } from '../nucleo/estado.js';
 import { $, esc, fdate, fmonth, toast, today } from '../nucleo/util.js';
 import { changed } from '../ui/render.js';
-import { teamCard } from './rodada.js';
+import { teamCard } from './rodada-partes.js';
 
 /* ---------- Histórico (D10, KAN-85) ----------
    Busca rodadas antigas por mês ou por período, 20 de cada vez, sem ficar ouvindo o banco.

@@ -72,6 +72,22 @@ Times em pastel, sempre com o nome da cor: laranja #F4B183, azul #9DBBF0, amarel
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo; **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v31 a v43)
+Registrados na pelada-v43 (KAN-152). Desde a v43, os componentes reaproveitáveis ficam em `src/ui/componentes.tsx` (TypeScript + Preact); tela nova ou migrada usa estes, não HTML montado à mão.
+
+- **Botão** (`Botao`): classes `btn`, `primary`, `bib`, `ghost`, `perigo`, `sm`. Todo botão que grava mostra carregando (`busy`: texto some, girador no centro, largura mantida) e não aceita segundo toque. Desabilitado com motivo: o texto diz o que falta ("Faltam 2 para sortear"), nunca só cinza.
+- **Pergunta de descarte** (KAN-140): janela de formulário com algo preenchido não fecha ao tocar fora nem com Esc; pergunta "Descartar o que você preencheu?" com "Continuar editando" (`btn`, com foco) e "Descartar" (`btn perigo`). Formulário vazio ou sem mudança fecha direto.
+- **Texto cortado** (`TextoCortado`, atributo `data-corta`; KAN-144, KAN-146): texto longo (local, subtítulo) numa linha só com "…". Quando corta, ganha sublinhado pontilhado; passar o mouse mostra o texto inteiro (`title`) e tocar abre ou fecha (`role="button"`, `aria-expanded`, Enter e espaço funcionam). Nunca cria rolagem lateral.
+- **Como chegar** (`ComoChegar`, classe `chip-mapa`; KAN-141): rótulo "Como chegar:" em `muted` e dois chips de 36px, "Google Maps" e "Waze", borda `field-border`, fundo `surface`. Abrem em nova aba a busca pelo texto do local (sem custo de API). Só aparecem quando há local.
+- **Campo de horário** (KAN-151): hora (00–23) e minutos (00–59) em dois campos de 52px com 44px de altura, números tabulares, separados por ":" em `muted`. Setas ▲▼ (`hseta`, 44 × 36px, cor `brand`) acima e abaixo de cada campo; segurar repete. Aceita digitar qualquer minuto (10:03). Término é opcional ("—" até escolher) e começa no horário de início. Nunca o relógio do celular.
+- **Seletor segmentado com contagem** (`Segmentado`, classe `seg seg-filtro`; KAN-71): opções de 44px com o rótulo e a contagem embaixo; a escolhida usa `primary` e `aria-pressed`.
+- **Barra de ação fixa** (classe `acao-fixa`): ver pelada-v29.
+- **Ficha de dados** (classe `ficha`; KAN-150): lista de rótulo e valor (`dl`). Rótulo em `muted`, negrito. No computador, duas colunas; até 520px, o rótulo fica inteiro em cima do valor.
+- **Painel do link permanente** (KAN-150): título "Link permanente", uma linha de ajuda em `muted` e os botões "Mandar no WhatsApp" (`primary sm`) e "Copiar link" (`sm`). Não repete dia, hora nem local, que ficam no cartão da rodada.
+- **Login com Google** (KAN-142): botão "Continuar com o Google" em `btn` na largura toda, com o "G" colorido oficial, acima do divisor "ou com e-mail e senha". Se a aba não bater (criar conta com Google que já existe, ou o contrário), entra mesmo assim e avisa num aviso flutuante.
+- **Regras da senha** (KAN-10, classe `pwr`): lista em duas colunas, 13px, em `muted`, com "○" para o que falta e "✓" em `in` para o que já foi cumprido: 8 caracteres, maiúscula, minúscula, número e caractere especial.
+- **Carregando a gestão** (KAN-149): ao abrir a gestão pela primeira vez, a área principal mostra "Carregando…" em `muted`; sem internet, "Não foi possível carregar" com a orientação de recarregar.
+
 ## Componentes (pelada-v30)
 - **Janela de confirmação** (KAN-128): variação da janela (`dlg`) no lugar do `confirm()` e do `alert()` do navegador.
   - Título em pergunta curta ("Excluir a rodada de seg, 19/10?"), uma linha do que acontece em `muted` e os botões "Cancelar" (`btn`) e o verbo da ação.

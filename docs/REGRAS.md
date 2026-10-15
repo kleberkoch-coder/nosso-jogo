@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v41 (15/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v42 (15/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -22,7 +22,7 @@ Atualizado na pelada-v41 (15/10/2026). Toda entrega que mudar uma regra atualiza
 - Limites: 30 avulsos novos pelo link por rodada e 20 grupos criados por conta, por contadores nas regras; os números ficam em `sistema/limites` (KAN-89, KAN-134).
 - Qualquer um lê um grupo pelo link; só o portal lista todos os grupos (KAN-133).
 - Sair apaga a cópia local dos dados; com algo sem enviar, pergunta antes (KAN-80).
-- App Check em observação; ligar o bloqueio antes de cobrar (KAN-88, lembrete em 20/10).
+- App Check em observação, com a chave "Nosso Jogo web 2" desde a v42. Só ligar o bloqueio (Aplicar) com mais de 99% de chamadas verificadas por 7 dias; ligado antes, ele derrubou o login em 15/10 (KAN-88, lembrete em 20/10).
 - Mudança no `firestore.rules`: testes no emulador e aviso destacado ao Kleber; é publicada no Merge.
 
 ## Grupos e papéis

@@ -115,6 +115,7 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
 | pelada-v22 | 09/10/2026 | 147 de 147 passaram, 35 de 35 nas regras de negócio |
 | pelada-v23 | 09/10/2026 | 155 de 155 passaram, 41 de 41 nas regras de negócio |
 | pelada-v24 | 13/10/2026 | 156 de 156 passaram, 41 de 41 nas regras de negócio (mudança para o Firebase Hosting; mensagem do limite de grupos no singular) |
+| pelada-v42 | 15/10/2026 | chave nova do App Check (KAN-88); roteiro completo no GitHub |
 | pelada-v41 | 15/10/2026 | 333 de 333 passaram (KAN-75: emoji, votação e nome do ponto pelo esporte; KAN-149: o link do jogador não baixa a gestão), 55 de 55 nas regras de negócio |
 | pelada-v40 | 15/10/2026 | 327 de 327 passaram (KAN-150: ficha do grupo no celular e painel do link permanente; KAN-151: campo de horário com hora e minutos, setas e digitação) |
 | pelada-v39 | 15/10/2026 | 318 de 318 passaram (KAN-146: local numa linha com "ver tudo"; seletor e cabeçalho sem o local) |

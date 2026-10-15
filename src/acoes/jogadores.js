@@ -19,7 +19,7 @@ import { $, DIAS, brl, cl, esc, fdate, fmonth, inAppBrowser, key, toast, toastAc
 import { upMyGroup } from '../rotas.js';
 import { pendencias } from '../telas/Caixa.tsx';
 import { groupForm, porTimeAjuda, readGroupForm, schedRow } from '../telas/grupo-form.js';
-import { AUTH_CANCEL, authMsg, pwOk } from '../telas/login.js';
+import { AUTH_CANCEL, authMsg, pwFalta, pwOk } from '../telas/login.js';
 import { actx, elapsed, setActx, sumPts } from '../telas/partida.js';
 import { MEK, myLocal } from '../telas/publico-rodada.js';
 import { tally } from '../telas/votacao.js';

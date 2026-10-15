@@ -37,7 +37,10 @@
 .srow{display:grid;grid-template-columns:1.3fr 1fr 1fr auto;gap:6px;align-items:center;padding:8px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;background:var(--surface-2)}
 .srow .sl{grid-column:1/-1}
 .srow .inp,.srow .sel{padding:8px}
-.ficha{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:14px 0 0;font-size:14px}
+.ficha{display:grid;grid-template-columns:minmax(110px,max-content) minmax(0,1fr);gap:6px 16px;margin:14px 0 0;font-size:14px}
+.ficha dd{min-width:0}
+/* KAN-150: no celular, o rótulo fica em cima do valor (a coluna do rótulo não é mais espremida por um valor longo) */
+@media (max-width:520px){.ficha{grid-template-columns:minmax(0,1fr);gap:2px 0}.ficha dd{margin-bottom:10px}}
 .ficha dt{color:var(--muted);font-weight:600}.ficha dd{margin:0}
 .stat{font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px}
 .stat.on{background:var(--in-soft);color:var(--in)}.stat.off{background:var(--out-soft);color:var(--out)}

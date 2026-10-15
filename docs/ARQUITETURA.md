@@ -190,6 +190,7 @@ A montagem (`npm run build`) imprime estes números. Eles são registrados aqui 
 | pelada-v27 | 7 de 47 | 1 de 15 | 28 | 2 | 68,1 KB |
 | pelada-v28 | 7 de 55 | 1 de 15 | 28 | 2 | 67,7 KB (ações divididas em 8 arquivos; textos do portal fora do app) |
 | pelada-v29 | 7 de 55 | 1 de 15 | 28 | 2 | 70,5 KB (melhorias de uso no celular: KAN-71, 72, 73, 74, 127 e 130) |
+| pelada-v40 | 9 de 56 | 2 de 15 | 24 | 3 | 75,6 KB (aba Grupo no celular e painel do link permanente, KAN-150) |
 | pelada-v39 | 9 de 56 | 2 de 15 | 24 | 3 | 75,5 KB (local numa linha só, KAN-146) |
 | pelada-v38 | 9 de 56 | 2 de 15 | 24 | 3 | 75,3 KB (subtítulo cortado abre ao tocar, KAN-145) |
 | pelada-v37 | 9 de 56 | 2 de 15 | 24 | 3 | 75,1 KB (texto longo quebra dentro da tela, KAN-144) |

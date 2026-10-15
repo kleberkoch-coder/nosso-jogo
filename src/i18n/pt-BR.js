@@ -163,6 +163,9 @@ export default {
   'div.manter': 'Manter os times assim',
   'div.tirado': '{nome} saiu do time.',
   'div.mantidos': 'Times mantidos. O aviso foi apagado.',
+  /* painel do link permanente na aba Rodada (KAN-150) */
+  'fixos.titulo': 'Link permanente',
+  'fixos.ajuda': 'Abre sempre a próxima rodada. Mande uma vez e deixe fixado no grupo.',
   /* janelas (KAN-140) */
   'janela.descartarTitulo': 'Descartar o que você preencheu?',
   'janela.descartarTexto': 'A janela vai fechar e o que foi digitado aqui se perde.',

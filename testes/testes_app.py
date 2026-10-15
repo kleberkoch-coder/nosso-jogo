@@ -418,6 +418,14 @@ with sync_playwright() as pw:
     ok(ab == [True, True, 'true', True], f'CT-KAN-146-03: tocar no local abre o texto inteiro, sem rolagem lateral ({ab})')
     pg.click('.hero-r [data-corta]'); pg.wait_for_timeout(200)
     ok(not pg.evaluate("document.querySelector('.hero-r [data-corta]').classList.contains('aberto')"), 'CT-KAN-146-03: tocar de novo fecha')
+    # ---------- v40 (KAN-150): painel do link permanente sem repetir dia, hora e local; aba Grupo legível no celular
+    if pg.locator('.fixos').count():
+        fx = pg.inner_text('.fixos')
+        ok('Link permanente' in fx and not re.search(r'\d{2}:\d{2}', fx) and '0123456789' not in fx, f'CT-KAN-150-01: o painel do link permanente não repete dia, horário e local ({fx[:60]!r})')
+    pg.click('[data-a=tab][data-v=grupo]'); pg.wait_for_timeout(400)
+    fi = pg.evaluate("(()=>{const d=[...document.querySelectorAll('.ficha dt')].map(e=>Math.round(e.getBoundingClientRect().width));return [Math.min(...d),document.documentElement.scrollWidth<=innerWidth]})()")
+    ok(fi[0] >= 200 and fi[1], f'CT-KAN-150-02: na aba Grupo, no celular, os rótulos ficam inteiros em cima do valor ({fi})')
+    pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(400)
     pl = ctx.new_page(); pl.goto(URL + '#/p/' + gid_fut); pl.wait_for_timeout(1200)
     larg = pl.evaluate("[document.documentElement.scrollWidth, innerWidth]"); pl.close()
     ok(larg[0] <= larg[1], f'CT-KAN-144-02: nem o link do jogador ({larg})')

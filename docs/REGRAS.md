@@ -84,7 +84,7 @@ Atualizado na pelada-v40 (15/10/2026). Toda entrega que mudar uma regra atualiza
 - Janela de formulário com algo preenchido: tocar fora ou Esc pergunta "Descartar o que você preencheu?" antes de fechar (KAN-140).
 - Confirmações na janela do app (nunca `confirm` ou `alert`): pergunta curta, consequência, botão com o verbo; coral quando apaga (KAN-128).
 - Local e outros textos longos: numa linha só com "…" (sublinhado pontilhado quando corta); passar o mouse mostra o texto inteiro e tocar abre ou fecha. O seletor de rodadas e o cabeçalho não mostram o local. Nada pode criar rolagem lateral (KAN-144, KAN-146).
-- Horários (início e término) são escolhidos numa lista de 15 em 15 minutos, nunca no relógio do celular, que corta botões no Android com letra grande (KAN-151).
+- Horário (início e término): campo do app com hora (00–23) e minutos (00–59), setas ▲▼ e digitação; qualquer minuto vale (ex.: 10:03); nunca o relógio do celular, que corta botões no Android com letra grande (KAN-151).
 - Alvos de toque: 44px nos principais, 36px nos pequenos. Contraste WCAG AA nos temas claro e escuro.
 
 ## Entrega (como toda mudança vai ao ar)

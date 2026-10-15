@@ -339,3 +339,10 @@ dialog::backdrop{background:rgba(5,20,12,.55)}
 [data-corta].cortado{text-decoration:underline dotted;text-underline-offset:3px}
 [data-corta].aberto{white-space:normal;overflow-wrap:anywhere}
 .linha-local:has(.aberto){flex-wrap:wrap}
+/* KAN-151: campo de horário com hora e minutos, setas ▲▼ e digitação */
+.hora{display:inline-flex;align-items:center;gap:4px}
+.hora .hc{display:inline-flex;flex-direction:column;align-items:center}
+.hora .inp{width:52px;text-align:center;font-size:18px;font-variant-numeric:tabular-nums;padding:6px 4px;min-height:var(--touch-min)}
+.hora .hdois{font-weight:700;font-size:18px;color:var(--muted)}
+.hseta{min-width:var(--touch-min);min-height:var(--touch-compact);border:0;background:transparent;color:var(--brand,var(--primary));font-size:16px;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;border-radius:8px}
+.hseta:active{background:var(--surface-2)}

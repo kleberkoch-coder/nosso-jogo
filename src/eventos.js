@@ -8,7 +8,7 @@ import { $, esc, toast } from './nucleo/util.js';
 import { checkPw } from './telas/login.js';
 import { MEK } from './telas/publico-rodada.js';
 import { closeDlgNow, drawPreview } from './ui/dialogos.js';
-import { render } from './ui/render.js';
+import { render, subtituloCompleto } from './ui/render.js';
 import { closeThemeMenu, themeMenuEl } from './ui/tema.js';
 import { tx } from './i18n/index.js';
 
@@ -16,6 +16,7 @@ function avisoPendente(pub){toast(pub?tx('comum.pendentePublico'):tx('comum.pend
 function semConexao(){toast(navigator.onLine?tx('comum.conectando'):tx('comum.semInternet'))}
 function copyText(s,ta){(navigator.clipboard?navigator.clipboard.writeText(s):Promise.reject()).then(()=>toast(tx('comum.copiado'))).catch(()=>{if(ta){ta.select();try{document.execCommand('copy');toast(tx('comum.copiado'))}catch(e){}}else prompt(tx('comum.copieLink'),s)})}
 document.addEventListener('click',e=>{
+  const sub=e.target.closest('#gsub[role=button]');if(sub){sub.classList.toggle('aberto');subtituloCompleto();return}
   const a=e.target.closest('a.btn,a.chip');if(a&&!a.dataset.a&&(a.getAttribute('href')||'').startsWith('#')){setBusy(a,true);setTimeout(()=>setBusy(a,false),4000);return}
   const el=e.target.closest('[data-a]');if(!el||el.disabled||el.classList.contains('busy'))return;const f=ACT[el.dataset.a];if(!f)return;
   if(el.tagName!=='A')e.preventDefault();
@@ -46,7 +47,7 @@ document.addEventListener('change',e=>{const t=e.target;
   else if(c==='dur'){S.live.dur=+v*60;S.live.beeped=false}else if(c==='rank')S.rankSort=v;else if(c==='rankAno'){S.rankAno=v;S.rankMes=''}else if(c==='rankMes')S.rankMes=v;else if(c==='month')S.month=v;else if(c==='vid')S.vid=v;
   else if(c==='voter'){try{localStorage.setItem(MEK,v)}catch(x){}if(S.myVote)S.myVote.pid=v;else S.myVote={pid:v,v:{}}}
   render()});
-document.addEventListener('keydown',e=>{if(e.key!=='Enter')return;const id=e.target.id;if(['le','lp','lp2'].includes(id)){e.preventDefault();if(S.authMode==='signup'){const b=$('#sgBtn');if(b&&!b.disabled)b.click()}else $('[data-a=login]')?.click()}else if(id==='ngn'){e.preventDefault();$('[data-a=createGroup]')?.click()}
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.id==='gsub'&&e.target.getAttribute('role')==='button'){e.preventDefault();e.target.click();return}if(e.key!=='Enter')return;const id=e.target.id;if(['le','lp','lp2'].includes(id)){e.preventDefault();if(S.authMode==='signup'){const b=$('#sgBtn');if(b&&!b.disabled)b.click()}else $('[data-a=login]')?.click()}else if(id==='ngn'){e.preventDefault();$('[data-a=createGroup]')?.click()}
   /* KAN-74: em qualquer janela, Enter (ou "Ir" no teclado do celular) num campo de texto aciona o botão principal do rodapé.
      Fica de fora: área de texto, listas de escolha, caixas de marcar e a busca de nomes (#avq). */
   else if(!e.isComposing&&enterEnvia(e.target)){const b=[...document.querySelectorAll('#dlg .dlg-f .btn.primary,#dlg .dlg-f .btn.bib')].pop();if(b&&!b.disabled&&!b.classList.contains('busy')){e.preventDefault();b.click()}}});

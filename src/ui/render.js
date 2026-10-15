@@ -26,7 +26,12 @@ import { vVotacao } from '../telas/votacao.js';
 /* =================== render =================== */
 let rq=false;function changed(){if(rq)return;rq=true;requestAnimationFrame(()=>{rq=false;render()})}
 const TABS=[['rodada','Rodada'],['historico','abas.historico'],['jogadores','Jogadores'],['partida','Partida'],['ranking','Ranking'],['caixa','Caixa'],['votacao','Votação'],['grupo','Grupo']];
-function render(){renderCore();applyBusy()}
+function render(){renderCore();applyBusy();subtituloCompleto()}
+/* KAN-145: o subtítulo do cabeçalho corta com "…" (KAN-144). Quando corta, o texto inteiro aparece ao passar o mouse
+   (title) e ao tocar nele (abre e fecha), para o celular, que não tem "passar o mouse". */
+function subtituloCompleto(){const g=$('#gsub');if(!g)return;const corta=g.classList.contains('aberto')||g.scrollWidth>g.clientWidth+1;
+  if(corta){g.title=g.textContent;g.setAttribute('role','button');g.tabIndex=0;g.setAttribute('aria-expanded',String(g.classList.contains('aberto')))}
+  else{g.removeAttribute('title');g.removeAttribute('role');g.removeAttribute('tabindex');g.removeAttribute('aria-expanded')}}
 function renderCore(){
   document.body.classList.remove('is-landing');
   $('#demo').hidden=!(B&&B.demo);
@@ -62,6 +67,6 @@ function sombraAbas(){const t=$('#tabs'),n=$('#tabsnav');if(!t||!n)return;n.clas
 function abasNoLugar(){const t=$('#tabs'),k=S.gid+'/'+S.tab;
   if(k!==abaCentrada){abaCentrada=k;const a=t.querySelector('[aria-selected="true"]');if(a){const ar=a.getBoundingClientRect(),tr=t.getBoundingClientRect();t.scrollLeft+=(ar.left+ar.width/2)-(tr.left+tr.width/2)}}
   sombraAbas()}
-$('#tabs').addEventListener('scroll',sombraAbas,{passive:true});addEventListener('resize',sombraAbas);
+$('#tabs').addEventListener('scroll',sombraAbas,{passive:true});addEventListener('resize',()=>{sombraAbas();subtituloCompleto()});
 
-export { changed, render };
+export { changed, render, subtituloCompleto };

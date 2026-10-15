@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v35 (15/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v36 (15/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -41,7 +41,7 @@ Atualizado na pelada-v35 (15/10/2026). Toda entrega que mudar uma regra atualiza
 ## Rodadas e presença
 - Frequente: a próxima rodada de cada dia fixo existe sozinha; o link permanente vira quando o jogo termina; uma data pode ser cancelada.
 - Esporádico: o administrador cria cada rodada.
-- Local é texto livre; com local, o link, a aba Rodada e o convite do WhatsApp mostram "Como chegar" (Google Maps e Waze, por busca do texto, sem custo) (KAN-141).
+- Local é texto livre, até 200 letras (cabe o endereço completo, KAN-143); com local, o link, a aba Rodada e o convite do WhatsApp mostram "Como chegar" (Google Maps e Waze, por busca do texto, sem custo) (KAN-141).
 - Ordem da lista = hora da confirmação; tocar Vou de novo não muda; desmarcar e voltar vai para o fim (KAN-78).
 - Lista fechada vale para todos (link e gestão); o administrador reabre.
 - Presença mudada por outro aparelho: registra e avisa o administrador, não trava.

@@ -387,13 +387,23 @@ with sync_playwright() as pw:
     pg.click('[data-a=close]'); pg.wait_for_timeout(300)
     # ---------- v35 (KAN-141): local com "Como chegar" no Google Maps e no Waze
     pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(400)
-    pg.click('[data-a=editRod]'); pg.wait_for_timeout(300); pg.fill('#rpl', 'Society do Zé, Rua das Flores 100'); pg.click('[data-a=saveRod]'); pg.wait_for_timeout(800)
+    pg.click('[data-a=editRod]'); pg.wait_for_timeout(300); END_LONGO = 'Society do Zé, Av. Pref. Luis Latorre, 5501 - Retiro, Jundiaí - SP, 13214-205, Brasil'
+    pg.fill('#rpl', END_LONGO); ok(pg.input_value('#rpl') == END_LONGO, f'CT-KAN-143-01: o local aceita o endereço completo ({len(END_LONGO)} letras)')
+    pg.click('[data-a=saveRod]'); pg.wait_for_timeout(800)
+    ok(pg.evaluate("S.rod[S.rid].place") == END_LONGO and 'Jundia%C3%AD' in (pg.get_attribute('.hero-r .chip-mapa', 'href') or ''), 'CT-KAN-143-01: endereço completo gravado e levado inteiro para o mapa')
     hm = pg.evaluate("[...document.querySelectorAll('.hero-r .chip-mapa')].map(a=>[a.textContent,a.href,a.target])")
     ok(len(hm) == 2 and 'google.com/maps/search/?api=1&query=Society%20do%20Z%C3%A9' in hm[0][1] and 'waze.com/ul?q=Society' in hm[1][1] and hm[0][2] == '_blank',
        f'CT-KAN-141-01: aba Rodada mostra "Como chegar" com Google Maps e Waze ({[x[0] for x in hm]})')
     pg.click('[data-a=shareConvite]'); pg.wait_for_timeout(300)
     ok('🗺️ https://www.google.com/maps/search/' in pg.input_value('#shtxt'), 'CT-KAN-141-02: o convite do WhatsApp leva o link do mapa')
     pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(200)
+    pg.click('[data-a=tab][data-v=grupo]'); pg.wait_for_timeout(300); pg.click('[data-a=editGroup]'); pg.wait_for_timeout(300)
+    if pg.locator('#sched .sl').count():
+        pg.locator('#sched .sl').first.fill(END_LONGO)
+        ok(pg.locator('#sched .sl').first.input_value() == END_LONGO and pg.get_attribute('#sched .sl', 'maxlength') == '200', 'CT-KAN-143-02: o local dos dias fixos aceita o endereço completo (limite de 200 letras)')
+    pg.mouse.click(8, 8); pg.wait_for_timeout(300)
+    if pg.locator('#dlg .conf').count(): confirmar_app(pg, True)
+    pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(300)
     # ---------- v35 (KAN-140): tocar fora ou Esc numa janela preenchida pergunta antes de descartar
     pg.click('[data-a=newRod]'); pg.wait_for_timeout(300); pg.mouse.click(8, 8); pg.wait_for_timeout(300)
     ok(not pg.evaluate("document.getElementById('dlg').open"), 'CT-KAN-140-01: janela sem nada preenchido fecha direto ao tocar fora')

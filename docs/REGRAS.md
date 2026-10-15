@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v40 (15/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v41 (15/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -9,7 +9,7 @@ Atualizado na pelada-v40 (15/10/2026). Toda entrega que mudar uma regra atualiza
 - "Continuar com o Google" entra ou cria a conta em qualquer aba; se a aba não bater, o app avisa (KAN-142).
 - Senha: 8+ caracteres, maiúscula, minúscula, número e um especial da lista do Firebase (`^ $ * . [ ] { } ( ) ? " ! @ # % & / \ , > < ' : ; | _ ~`). Vale no app (`telas/login.js`) e na política de senha do Firebase, em modo Exigir; as duas mudam juntas (KAN-10).
 - Cada grupo é independente: elenco, rodadas, caixa, votações e administradores.
-- Nada específico de esporte no código: posições, pontuação, duplas e textos vêm do catálogo `SPORTS`.
+- Nada específico de esporte no código: posições, pontuação, duplas e textos vêm do catálogo `SPORTS`. Emoji do convite, exemplos da votação (posição-chave só se o esporte tiver) e o nome do ponto ("+2 pontos", "Gol", "TD (+6)") também (KAN-75).
 - Celular primeiro, funciona com sinal fraco (grava no aparelho e envia depois).
 - Vários idiomas: nenhum texto de tela fica no código; tudo vai para o dicionário (`i18n/pt-BR.js`, chamado por `tx`). Tela mexida migra seus textos na mesma entrega (D3).
 
@@ -91,7 +91,8 @@ Atualizado na pelada-v40 (15/10/2026). Toda entrega que mudar uma regra atualiza
 - Proposta (PR) com testes verdes e prévia; `VERSION` do `site/sw.js` sobe; o Kleber aprova com Merge.
 - O Merge publica o site e, se mudaram, as regras do Firebase; a automação confere a versão no ar.
 - Na mesma entrega: atualizar este arquivo, os docs afetados, a pasta `app/` do projeto e os cartões do Jira ([Entrega], Em análise).
-- Limite de tamanho: 80 KB comprimido (D7).
+- Limite de tamanho (D7): o link do jogador até 50 KB comprimido; o app inteiro, com a gestão, até 80 KB.
+- A gestão (telas e ações de quem tem conta, página inicial e convite) fica em `src/admin.js` e só baixa quando alguém entra com conta; o link público e a votação nunca a baixam (KAN-149). Tela ou ação nova de gestão entra por lá.
 
 ## Mapa de impacto (o que mexer quando muda X)
 | Assunto | Tela | Ações | Regra (sem tela) | Dados no Firebase | Testes |
@@ -105,5 +106,6 @@ Atualizado na pelada-v40 (15/10/2026). Toda entrega que mudar uma regra atualiza
 | Grupo e convite | `telas/grupo.js`, `grupo-form.js`, `convite.js` | `acoes/grupo.js` | `dominio/limites.ts` | `grupos/{gid}`, `membros`, `privado/convite`, `contas/{uid}` | `regras/limites`, `regras-firebase` |
 | Planos e portal | `portal/` | `portal/tela.js` | `dominio/planos.ts` | `contas/{uid}`, `sistema/planos` | `regras/planos`, portal em `testes_app.py` |
 | Janelas e avisos | `ui/dialogos.js`, `nucleo/util.js` (toast) | `acoes/conta.js` (confSim) | — | — | `testes_app.py` (CT-KAN-128) |
-| Esportes | catálogo em `dominio/esportes.js` | — | — | `grupos/{gid}` (sport, posx) | `testes_app.py` (outros esportes) |
+| Tamanho e carga | `ui/render.js` (espera a gestão) | `acoes.js` (só públicas) | `admin.js`, `nucleo/carga-admin.js`, `build.mjs` | — | `testes_app.py` (CT-KAN-149) |
+| Esportes | catálogo em `dominio/esportes.js` | — | — | `grupos/{gid}` (sport, posx) | `testes_app.py` (outros esportes, CT-KAN-75) |
 Qualquer mudança em `firestore.rules` afeta todas as linhas: rodar o emulador (`testes/regras-firebase`) e avisar o Kleber.

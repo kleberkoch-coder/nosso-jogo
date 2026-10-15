@@ -1,32 +1,13 @@
 /* Ações: Conta, login, tema e diálogos gerais. Fazem parte de ACT (src/acoes.js). */
-import { abrirHist, buscarHist, estadoHist } from '../telas/historico.js';
-import { CAIXA_K, cfg, editPc, ptipo } from '../dominio/caixa.js';
-import { APP, COL, SPORTS, col, hasPos, porTime, porTimePadrao, posKeys, posLabel, posTag, sport, tn } from '../dominio/esportes.js';
-import { attendance, curRodada, dupName, fdia, fixos, fmtL, freq, gname, grpAtivo, isAvulso, lvl, lvlIn, normName, players, pname, ppos, rodById, rodadas, setLvl } from '../dominio/grupo.js';
-import { draw } from '../dominio/sorteio.js';
-import { foraDosTimes, fotoDoSorteio } from '../dominio/divergencia.ts';
-import { reservas, sugerirTimes, titulares } from '../dominio/times.ts';
-import { tp, tx } from '../i18n/index.js';
-import { shareDlg, txtConvite, txtTimes } from '../dominio/whatsapp.js';
-import { copyText, semConexao } from '../eventos.js';
-import { B, op, setCAP, sleep } from '../nucleo/backend.js';
-import { avulsosEsgotados, gruposEsgotados, limite } from '../dominio/limites.ts';
-import { editApp, editRat, editRod, saveContato, setPres } from '../nucleo/edicoes.js';
-import { addMatch, apagarLanc, apagarPartidasDaRodada, delMatch as apagarPartida, gravarVotacao, recalcular, salvarLanc } from '../nucleo/partidas.js';
-import { GB, S, clean, w } from '../nucleo/estado.js';
-import { linkConvite, linkProxima, linkRodada, linkVoto } from '../nucleo/links.js';
-import { $, DIAS, brl, cl, esc, fdate, fmonth, inAppBrowser, key, toast, toastAcao, today, uid, usarAvisoAcao } from '../nucleo/util.js';
-import { upMyGroup } from '../rotas.js';
-import { pendencias } from '../telas/Caixa.tsx';
-import { groupForm, porTimeAjuda, readGroupForm, schedRow } from '../telas/grupo-form.js';
+import { tx } from '../i18n/index.js';
+import { copyText } from '../eventos.js';
+import { B } from '../nucleo/backend.js';
+import { S } from '../nucleo/estado.js';
+import { $, inAppBrowser, toast } from '../nucleo/util.js';
 import { AUTH_CANCEL, authMsg, avisoGoogle, pwFalta, pwOk } from '../telas/login.js';
-import { actx, elapsed, setActx, sumPts } from '../telas/partida.js';
-import { MEK, myLocal } from '../telas/publico-rodada.js';
-import { tally } from '../telas/votacao.js';
-import { avisar, closeDlg, closeDlgNow, confirmou, dlg, drawPreview, naoConfirmar, openDlg, playerDlg, posField, responder, rodDlg, val } from '../ui/dialogos.js';
-import { changed, render } from '../ui/render.js';
+import { avisar, closeDlg, confirmou, dlg, naoConfirmar, openDlg, responder, val } from '../ui/dialogos.js';
+import { render } from '../ui/render.js';
 import { TEMA_K, applyTheme, closeThemeMenu, openThemeMenu, themeAnchor, themeMenuEl } from '../ui/tema.js';
-import { LOCAL } from '../i18n/formatos.js';
 import { ACT } from '../acoes.js';
 
 async function sairDaConta(destino,el){

@@ -1,4 +1,5 @@
 import { ACT } from './acoes.js';
+import { adm, carregarAdmin } from './nucleo/carga-admin.js';
 import { cfg } from './dominio/caixa.js';
 import { posTag } from './dominio/esportes.js';
 import { fmtL, normName } from './dominio/grupo.js';
@@ -7,7 +8,7 @@ import { S } from './nucleo/estado.js';
 import { $, esc, toast } from './nucleo/util.js';
 import { checkPw } from './telas/login.js';
 import { MEK } from './telas/publico-rodada.js';
-import { closeDlgNow, drawPreview } from './ui/dialogos.js';
+import { closeDlgNow } from './ui/dialogos.js';
 import { render, subtituloCompleto } from './ui/render.js';
 import { closeThemeMenu, themeMenuEl } from './ui/tema.js';
 import { tx } from './i18n/index.js';
@@ -18,7 +19,7 @@ function copyText(s,ta){(navigator.clipboard?navigator.clipboard.writeText(s):Pr
 document.addEventListener('click',e=>{
   const sub=e.target.closest('#gsub[role=button],[data-corta][role=button]');if(sub){sub.classList.toggle('aberto');subtituloCompleto();return}
   const a=e.target.closest('a.btn,a.chip');if(a&&!a.dataset.a&&(a.getAttribute('href')||'').startsWith('#')){setBusy(a,true);setTimeout(()=>setBusy(a,false),4000);return}
-  const el=e.target.closest('[data-a]');if(!el||el.disabled||el.classList.contains('busy'))return;const f=ACT[el.dataset.a];if(!f)return;
+  const el=e.target.closest('[data-a]');if(!el||el.disabled||el.classList.contains('busy'))return;const f=ACT[el.dataset.a];if(!f){/* KAN-149: ação de gestão antes de a parte de gestão chegar: carrega e toca de novo. */if(!adm()){e.preventDefault();setBusy(el,true);carregarAdmin().then(()=>{setBusy(el,false);if(ACT[el.dataset.a])el.click()},()=>{setBusy(el,false);semConexao()})}return}
   if(el.tagName!=='A')e.preventDefault();
   const cap=[];cap.close=false;setCAP(cap);let res;
   try{res=f(el,e)}catch(err){console.error(err)}finally{setCAP(null)}
@@ -41,7 +42,7 @@ document.addEventListener('keydown',e=>{if(!themeMenuEl)return;const bs=[...them
 addEventListener('resize',()=>closeThemeMenu());
 document.addEventListener('change',e=>{const t=e.target;
   if(t.id==='lk'){const c=cfg();$('#lv').value=t.value==='mensal'?c.mensal:t.value==='diaria'?c.diaria:'';return}
-  if(t.classList.contains('dp')){drawPreview();return}
+  if(t.classList.contains('dp')){adm()?.drawPreview();return}
   const el=t.closest('[data-c]');if(!el)return;const v=el.value,c=el.dataset.c;
   if(c==='rid'){S.rid=v;S.live=null}else if(c==='ta'){S.live.a=+v;S.live.goals=[]}else if(c==='tb'){S.live.b=+v;S.live.goals=[]}
   else if(c==='dur'){S.live.dur=+v*60;S.live.beeped=false}else if(c==='rank')S.rankSort=v;else if(c==='rankAno'){S.rankAno=v;S.rankMes=''}else if(c==='rankMes')S.rankMes=v;else if(c==='month')S.month=v;else if(c==='vid')S.vid=v;

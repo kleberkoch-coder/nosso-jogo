@@ -23,7 +23,8 @@ import { AUTH_CANCEL, authMsg, avisoGoogle, pwFalta, pwOk } from '../telas/login
 import { actx, elapsed, setActx, sumPts } from '../telas/partida.js';
 import { MEK, myLocal } from '../telas/publico-rodada.js';
 import { tally } from '../telas/votacao.js';
-import { avisar, closeDlg, closeDlgNow, confirmou, dlg, drawPreview, naoConfirmar, openDlg, playerDlg, posField, responder, rodDlg, val } from '../ui/dialogos.js';
+import { avisar, closeDlg, closeDlgNow, confirmou, dlg, naoConfirmar, openDlg, posField, responder, val } from '../ui/dialogos.js';
+import { drawPreview, playerDlg, rodDlg } from '../ui/dialogos-gestao.js';
 import { changed, render } from '../ui/render.js';
 import { TEMA_K, applyTheme, closeThemeMenu, openThemeMenu, themeAnchor, themeMenuEl } from '../ui/tema.js';
 import { LOCAL } from '../i18n/formatos.js';
@@ -49,7 +50,8 @@ const acoes={
     closeDlg()},
   delRod:el=>{const r=curRodada();if(confirmou(el,{titulo:'Excluir a rodada de '+fdate(r.date)+'?',texto:'A lista, os times e as partidas desta rodada somem, e as partidas saem do ranking. Não dá para desfazer.',acao:'Excluir rodada',perigo:true})!=='sim')return;Object.keys(S.pres).forEach(p=>GB.del('rodadas/'+r.id+'/presencas/'+p));
     return apagarPartidasDaRodada(r.id,r.date).then(()=>{w(GB.del('rodadas/'+r.id));delete S.rod[r.id];S.rid=null;changed()})},
-  shareFixo:()=>{const f=fixos();shareDlg('Link permanente',`⚽ *${gname()}*\n${f.map(x=>`Toda ${DIAS[x.dow].toLowerCase()}, ${x.ini}${x.fim?' às '+x.fim:''}${x.place?' — '+x.place:''}`).join('\n')}\n\nConfirme sua presença sempre neste link:\n${linkProxima()}`)},
+  /* KAN-75: o emoji vem do esporte do grupo; "Todo" no sábado e no domingo. */
+  shareFixo:()=>{const f=fixos();shareDlg(tx('fixos.titulo'),tx('fixos.convite',{emoji:sport().e,grupo:gname(),dias:f.map(x=>tx(x.dow===0||x.dow===6?'fixos.diaTodo':'fixos.diaToda',{dia:DIAS[x.dow].toLowerCase(),ini:x.ini,fim:x.fim?tx('fixos.ate',{fim:x.fim}):'',local:x.place?' — '+x.place:''})).join('\n'),link:linkProxima()}))},
   copyFixo:()=>copyText(linkProxima()),
   cancelRod:el=>{const r=curRodada();if(!r.cancelada&&confirmou(el,{titulo:'Cancelar o jogo de '+fdate(r.date)+'?',texto:'O link permanente passa a mostrar a rodada seguinte. Dá para reativar depois.',acao:'Cancelar esta data',cancelar:'Voltar',perigo:true})!=='sim')return;editRod(r.id,x=>{x.cancelada=!x.cancelada});if(!r.cancelada)toast('Data cancelada.')},
   lock:el=>{const r=curRodada();if(r.locked&&r.times&&confirmou(el,{titulo:tx('lista.reabrirTitulo'),texto:tx('lista.confirmaReabrir'),acao:tx('lista.reabrirAcao')})!=='sim')return;return editRod(r.id,x=>{x.locked=!x.locked})},

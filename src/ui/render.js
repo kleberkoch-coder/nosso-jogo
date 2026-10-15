@@ -6,22 +6,12 @@ import { S } from '../nucleo/estado.js';
 import { $, esc, fdate, main } from '../nucleo/util.js';
 import { isStandalone } from '../pwa.js';
 import { ensureExtras, ensurePres, ensureVotos } from '../rotas.js';
+import { adm, carregarAdmin } from '../nucleo/carga-admin.js';
 import { tx } from '../i18n/index.js';
 import { desmontarPublico } from '../telas/PublicoRodada.tsx';
-import { vHistorico } from '../telas/historico.js';
-import { vLanding } from '../telas/apresentacao.js';
-import { montarCaixa, vCaixa } from '../telas/Caixa.tsx';
-import { renderInvite } from '../telas/convite.js';
-import { vGrupo } from '../telas/grupo.js';
-import { vHome } from '../telas/grupos.js';
-import { vJogadores } from '../telas/jogadores.js';
 import { vAuth } from '../telas/login.js';
-import { tick, vPartida } from '../telas/partida.js';
 import { renderPublicRodada } from '../telas/publico-rodada.js';
 import { renderPublicVoto } from '../telas/publico-voto.js';
-import { vRanking } from '../telas/ranking.js';
-import { vRodada } from '../telas/rodada.js';
-import { vVotacao } from '../telas/votacao.js';
 
 /* =================== render =================== */
 let rq=false;function changed(){if(rq)return;rq=true;requestAnimationFrame(()=>{rq=false;render()})}
@@ -44,10 +34,14 @@ function renderCore(){
   $('#tabsnav').hidden=true;$('#gsub').textContent='Presença, sorteio de times, placar, ranking e caixa dos seus jogos';
   $('#topright').innerHTML=logged?`${R.n!=='home'?'<button class="chip" data-a="groupsDlg">⇄ Grupos</button>':''}<button class="chip" data-a="logout">Sair</button>`:(R.n==='auth'?'<a class="chip" href="#/">← Início</a>':'');
   document.body.classList.remove('is-landing');
-  if(R.n==='home'&&!logged&&!isStandalone()){document.body.classList.add('is-landing');$('#tabsnav').hidden=true;main.innerHTML=vLanding();return}
-  if(R.n==='inv')return renderInvite();
+  /* KAN-149: página inicial, convite e gestão vêm da parte de gestão, que carrega na primeira vez. */
+  const A=adm();
+  if(!A&&(R.n==='home'||R.n==='inv'||(logged&&R.n==='admin'))){main.innerHTML=`<div class="empty muted">${tx('comum.carregando')}</div>`;
+    carregarAdmin().then(()=>render(),()=>{main.innerHTML=`<div class="panel empty"><h2>${tx('comum.naoCarregouTitulo')}</h2><p class="muted">${tx('comum.naoCarregou')}</p></div>`});return}
+  if(R.n==='home'&&!logged&&!isStandalone()){document.body.classList.add('is-landing');$('#tabsnav').hidden=true;main.innerHTML=A.vLanding();return}
+  if(R.n==='inv')return A.renderInvite();
   if(!logged){main.innerHTML=vAuth();return}
-  if(R.n==='home'){main.innerHTML=vHome();return}
+  if(R.n==='home'){main.innerHTML=A.vHome();return}
   if(!S.loaded.mem||!S.loaded.app){main.innerHTML='<div class="empty muted">Carregando…</div>';return}
   if(!S.app){main.innerHTML=`<div class="panel empty auth"><h2>Grupo não encontrado</h2><p class="muted">Ele pode ter sido excluído.</p><a class="btn" href="#/">Meus grupos</a></div>`;return}
   if(!isAdmin()){main.innerHTML=`<div class="panel empty auth"><h2>Sem acesso</h2><p class="muted">Sua conta (${esc(S.user.email)}) não administra o grupo ${esc(gname())}. Peça ao organizador um link de convite.</p><div class="row" style="justify-content:center"><a class="btn" href="#/">Meus grupos</a>${S.me?.grupos?.[S.gid]?'<button class="btn ghost danger" data-a="forgetGroup">Remover da minha lista</button>':''}</div></div>`;return}
@@ -56,9 +50,9 @@ function renderCore(){
   $('#tabs').innerHTML=TABS.map(([k,l])=>`<button class="tab" role="tab" aria-selected="${S.tab===k}" data-a="tab" data-v="${k}">${l.startsWith('abas.')?tx(l):l}</button>`).join('');
   abasNoLugar();
   ensurePres();ensureVotos();ensureExtras();
-  main.innerHTML=(grpAtivo()?'':`<div class="inbar"><span>Grupo inativo desde ${fdia(S.app.inativadoEm)}. Os links públicos não aceitam confirmações nem votos.</span>${isOwnerMe()?'<button class="btn sm" data-a="toggleAtivo">Reativar</button>':''}</div>`)+{rodada:vRodada,jogadores:vJogadores,partida:vPartida,ranking:vRanking,caixa:vCaixa,votacao:vVotacao,historico:vHistorico,grupo:vGrupo}[S.tab]();
-  if(S.tab==='caixa')montarCaixa();
-  if(S.tab==='partida')tick();
+  main.innerHTML=(grpAtivo()?'':`<div class="inbar"><span>Grupo inativo desde ${fdia(S.app.inativadoEm)}. Os links públicos não aceitam confirmações nem votos.</span>${isOwnerMe()?'<button class="btn sm" data-a="toggleAtivo">Reativar</button>':''}</div>`)+{rodada:A.vRodada,jogadores:A.vJogadores,partida:A.vPartida,ranking:A.vRanking,caixa:A.vCaixa,votacao:A.vVotacao,historico:A.vHistorico,grupo:A.vGrupo}[S.tab]();
+  if(S.tab==='caixa')A.montarCaixa();
+  if(S.tab==='partida')A.tick();
 }
 
 /* KAN-72: a aba aberta fica no centro da barra (só quando muda de aba ou de grupo, para não brigar com quem está rolando)

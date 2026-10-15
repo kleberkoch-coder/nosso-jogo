@@ -23,7 +23,8 @@ import { AUTH_CANCEL, authMsg, avisoGoogle, pwFalta, pwOk } from '../telas/login
 import { actx, elapsed, setActx, sumPts } from '../telas/partida.js';
 import { MEK, myLocal } from '../telas/publico-rodada.js';
 import { tally } from '../telas/votacao.js';
-import { avisar, closeDlg, closeDlgNow, confirmou, dlg, drawPreview, naoConfirmar, openDlg, playerDlg, posField, responder, rodDlg, val } from '../ui/dialogos.js';
+import { avisar, closeDlg, closeDlgNow, confirmou, dlg, naoConfirmar, openDlg, posField, responder, val } from '../ui/dialogos.js';
+import { drawPreview, playerDlg, rodDlg } from '../ui/dialogos-gestao.js';
 import { changed, render } from '../ui/render.js';
 import { TEMA_K, applyTheme, closeThemeMenu, openThemeMenu, themeAnchor, themeMenuEl } from '../ui/tema.js';
 import { LOCAL } from '../i18n/formatos.js';
@@ -34,7 +35,7 @@ const acoes={
     <label class="f"><span>Rodada</span><select class="sel" id="vr">${rs.map(r=>`<option value="${r.id}">${fdate(r.date)}${r.place?' — '+esc(r.place):''}</option>`).join('')}</select></label>
     <label class="f"><span>Título</span><input class="inp" id="vt" value="Craque da rodada" maxlength="50"></label>
     <div class="f"><span class="lbl">O que votar</span>${[['best','Melhor jogador'],...(sport().key?[['gk','Melhor '+posLabel(sport().key).toLowerCase()]]:[]),...(hasPos()?[['pos','Melhor de cada posição']]:[]),['worst','Pior jogador (bagre)']].map(([k,l],i)=>`<label class="row small" style="margin-bottom:6px"><input type="checkbox" class="vc" value="${k}" ${i===0?'checked':''}> ${l}</label>`).join('')}
-    <input class="inp" id="vx" placeholder="Outra categoria (opcional), ex.: Gol mais bonito" maxlength="40"></div>
+    <input class="inp" id="vx" placeholder="${tx('votacao.outraCategoria')}" maxlength="40"></div>
     <label class="row small" style="margin-bottom:12px"><input type="checkbox" id="vsf"> Pode votar em si mesmo</label>
     <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveVote">Abrir votação</button></div>`)},
   saveVote:()=>{const sel=[...dlg.querySelectorAll('.vc:checked')].map(x=>x.value),cats=[];

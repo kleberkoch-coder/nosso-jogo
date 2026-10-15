@@ -23,17 +23,22 @@ import { AUTH_CANCEL, authMsg, avisoGoogle, pwFalta, pwOk } from '../telas/login
 import { actx, elapsed, setActx, sumPts } from '../telas/partida.js';
 import { MEK, myLocal } from '../telas/publico-rodada.js';
 import { tally } from '../telas/votacao.js';
-import { avisar, closeDlg, closeDlgNow, confirmou, dlg, drawPreview, naoConfirmar, openDlg, playerDlg, posField, responder, rodDlg, val } from '../ui/dialogos.js';
+import { avisar, closeDlg, closeDlgNow, confirmou, dlg, naoConfirmar, openDlg, posField, responder, val } from '../ui/dialogos.js';
+import { drawPreview, playerDlg, rodDlg } from '../ui/dialogos-gestao.js';
 import { changed, render } from '../ui/render.js';
 import { TEMA_K, applyTheme, closeThemeMenu, openThemeMenu, themeAnchor, themeMenuEl } from '../ui/tema.js';
 import { LOCAL } from '../i18n/formatos.js';
 import { ACT } from '../acoes.js';
 
+/* KAN-75: título da janela do ponto, pelo catálogo do esporte.
+   "+2" vira "+2 pontos"; "Gol" fica "Gol"; "TD" vira "TD (+6)"; "2 pts" fica como está. */
+function nomePonto(sc,SP){const [r,p]=sc;if(/^\+\d+$/.test(r))return r+' '+(p===1?SP.unit:SP.word.toLowerCase());return p>1&&!/\d/.test(r)?r+' (+'+p+')':r}
+
 const acoes={
   goal:el=>{const r=curRodada(),L=S.live,t=el.dataset.v,ti=t==='a'?L.a:L.b,oi=t==='a'?L.b:L.a,SP=sport(),sc=SP.score[+el.dataset.i||0],pts=sc[1];
-    openDlg(`<h3>${esc(sc[0].replace('+',''))}${pts>1&&!/\d/.test(sc[0])?' (+'+pts+')':''} — ${tn(r.times[ti].c)}</h3><p class="small muted">Quem marcou?</p><div class="vgrid">${r.times[ti].players.map(id=>`<button class="opt" data-a="addGoal" data-v="${t}" data-p="${id}" data-pts="${pts}">${esc(pname(id))}</button>`).join('')}</div>
-    ${SP.og?`<p class="small muted" style="margin-top:14px">Contra (jogador do adversário)</p><div class="vgrid">${r.times[oi].players.map(id=>`<button class="opt" data-a="addGoal" data-v="${t}" data-p="${id}" data-og="1" data-pts="${pts}">${esc(pname(id))}</button>`).join('')}</div>`:''}
-    <div class="dlg-f"><button class="btn" data-a="addGoal" data-v="${t}" data-pts="${pts}">Sem autor</button><button class="btn" data-a="close">Cancelar</button></div>`)},
+    openDlg(`<h3>${esc(tx('partida.pontoTime',{ponto:nomePonto(sc,SP),time:tn(r.times[ti].c)}))}</h3><p class="small muted">${tx('partida.quemMarcou')}</p><div class="vgrid">${r.times[ti].players.map(id=>`<button class="opt" data-a="addGoal" data-v="${t}" data-p="${id}" data-pts="${pts}">${esc(pname(id))}</button>`).join('')}</div>
+    ${SP.og?`<p class="small muted" style="margin-top:14px">${tx('partida.contra')}</p><div class="vgrid">${r.times[oi].players.map(id=>`<button class="opt" data-a="addGoal" data-v="${t}" data-p="${id}" data-og="1" data-pts="${pts}">${esc(pname(id))}</button>`).join('')}</div>`:''}
+    <div class="dlg-f"><button class="btn" data-a="addGoal" data-v="${t}" data-pts="${pts}">${tx('partida.semAutor')}</button><button class="btn" data-a="close">${tx('comum.cancelar')}</button></div>`)},
   addGoal:el=>{S.live.goals.push({t:el.dataset.v,pid:el.dataset.p||null,og:!!el.dataset.og,pts:+el.dataset.pts||1});closeDlg();render()},
   undoGoal:()=>{S.live.goals.pop();render()},
   clock:()=>{const L=S.live;try{if(!actx)setActx(new(window.AudioContext||window.webkitAudioContext)());if(actx.state==='suspended')actx.resume()}catch(e){}

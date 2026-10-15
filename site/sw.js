@@ -1,11 +1,28 @@
 /* Service worker do site da pelada.
    Ao publicar uma nova versão, troque o número abaixo para os celulares atualizarem. */
-const VERSION = 'pelada-v40';
+const VERSION = 'pelada-v41';
 const SHELL = ['./', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png'];
+/* Preenchidas na montagem (build.mjs, KAN-149): pedaços de código do link público e da gestão. */
+const CHUNKS = [];
+const GESTAO = [];
+
+/* Os pedaços da gestão só são guardados para usar sem internet nos aparelhos que já usaram a gestão
+   (o celular de quem só confirma presença não baixa o que não usa). */
+async function usouGestao() {
+  for (const k of await caches.keys()) {
+    if (k === VERSION) continue;
+    const c = await caches.open(k);
+    if ((await c.keys()).some(r => /\/chunks\/admin-/.test(r.url))) return true;
+  }
+  return false;
+}
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)));
+  e.waitUntil(caches.open(VERSION).then(async c => {
+    await c.addAll(SHELL.concat(CHUNKS));
+    if (await usouGestao()) await c.addAll(GESTAO).catch(() => {});
+  }));
 });
 
 self.addEventListener('activate', e => {
@@ -14,7 +31,11 @@ self.addEventListener('activate', e => {
     .then(() => self.clients.claim()));
 });
 
-self.addEventListener('message', e => { if (e.data === 'skipWaiting') self.skipWaiting(); });
+self.addEventListener('message', e => {
+  if (e.data === 'skipWaiting') self.skipWaiting();
+  /* A página carregou a gestão: guarda os pedaços dela para abrir sem internet (KAN-149). */
+  if (e.data === 'gestao') e.waitUntil(caches.open(VERSION).then(c => c.addAll(GESTAO)).catch(() => {}));
+});
 
 const CDN = u => u.hostname === 'fonts.googleapis.com' || u.hostname === 'fonts.gstatic.com' ||
   (u.hostname === 'www.gstatic.com' && u.pathname.startsWith('/firebasejs/'));

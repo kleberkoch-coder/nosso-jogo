@@ -12,10 +12,17 @@ const t0 = Date.now();
 /* Versão do app: vem do VERSION do site/sw.js (fonte única) e aparece nas telas (pelada-v19). */
 const VERSAO = (/VERSION\s*=\s*'([^']+)'/.exec(fs.readFileSync('site/sw.js', 'utf8')) || [])[1];
 if (!VERSAO) throw new Error('Não achei o VERSION em site/sw.js.');
+/* Publicado (minify): módulos com divisão de código (KAN-149). O ponto de partida vai embutido no index.html;
+   o código comum vai em chunks/ e a parte de gestão (src/admin.js) só baixa quando alguém entra com conta.
+   Os nomes levam um código do conteúdo: versão nova = arquivo novo, sem misturar com cópia antiga guardada no celular.
+   Cópia legível: um arquivo só, para os agentes lerem. */
 const montar = minify => esbuild.build({
   entryPoints: ['src/main.js'],
   bundle: true,
-  format: 'iife',
+  format: minify ? 'esm' : 'iife',
+  splitting: minify,
+  entryNames: '[name]',
+  chunkNames: 'chunks/[name]-[hash]',
   target: ['es2020'],
   outdir: OUT,
   write: false,
@@ -47,23 +54,45 @@ if (process.env.CONTEXT === 'deploy-preview') {
   console.log('Prévia: modo demonstração (sem dados reais).');
 }
 for (const mark of ['<!--ESTILOS-->', '<!--CODIGO-->']) if (!modelo.includes(mark)) throw new Error('Marcador ausente em site/index.html: ' + mark);
-function pagina(r) {
-  const pick = ext => r.outputFiles.find(f => f.path.endsWith(ext)).text;
+const rel = f => path.relative(OUT, f.path).split(path.sep).join('/');
+/* Arquivos que um módulo importa direto (não os que ele só carrega quando precisa, com import()). */
+const importsDiretos = txt => [...txt.matchAll(/(?:from|import)\s*"\.\/([^"]+\.js)"/g)].map(m => m[1]);
+function pagina(r, modulos) {
+  const pick = ext => r.outputFiles.find(f => rel(f) === 'main' + ext).text;
   const js = pick('.js'), css = pick('.css');
   if (/<\/script/i.test(js)) throw new Error('O código contém "</script": não pode ser embutido no HTML.');
-  return modelo.replace('<!--ESTILOS-->', () => '<style>\n' + css + '</style>').replace('<!--CODIGO-->', () => '<script>\n' + js + '</script>');
+  let pre = '';
+  if (modulos) pre = modulos.map(c => `<link rel="modulepreload" href="${c}">\n`).join('');
+  return modelo.replace('<!--ESTILOS-->', () => pre + '<style>\n' + css + '</style>')
+    .replace('<!--CODIGO-->', () => '<script' + (modulos ? ' type="module"' : '') + '>\n' + js + '</script>');
 }
 const [rMin, rLeg] = await Promise.all([montar(true), montar(false)]);
-const html = pagina(rMin), legivel = pagina(rLeg);
+/* Pedaços que o link público precisa logo (o que main.js importa direto, e o que eles importam) e os da gestão. */
+const pedacos = new Map(rMin.outputFiles.filter(f => /^chunks\/.*\.js$/.test(rel(f))).map(f => [rel(f), f.text]));
+const nucleo = [], fila = importsDiretos(rMin.outputFiles.find(f => rel(f) === 'main.js').text);
+while (fila.length) { const c = fila.shift(); if (nucleo.includes(c)) continue; nucleo.push(c); const t = pedacos.get(c); if (!t) throw new Error('Pedaço não encontrado: ' + c); importsDiretos(t).forEach(x => fila.push('chunks/' + x)); }
+const gestao = [...pedacos.keys()].filter(c => !nucleo.includes(c));
+const html = pagina(rMin, nucleo), legivel = pagina(rLeg, null);
 const mapas = rMin.outputFiles.filter(f => f.path.endsWith('.map'));
 
 fs.rmSync(OUT, { recursive: true, force: true });
-fs.mkdirSync(OUT, { recursive: true });
+fs.mkdirSync(path.join(OUT, 'chunks'), { recursive: true });
 fs.writeFileSync(path.join(OUT, 'index.html'), html);
-for (const m of mapas) fs.writeFileSync(path.join(OUT, path.basename(m.path)), m.text);
+for (const [c, t] of pedacos) fs.writeFileSync(path.join(OUT, c), t);
+for (const m of mapas) fs.writeFileSync(path.join(OUT, rel(m)), m.text);
 fs.rmSync(LEGIVEL, { recursive: true, force: true }); fs.mkdirSync(LEGIVEL, { recursive: true });
 fs.writeFileSync(path.join(LEGIVEL, 'index.html'), legivel);
-for (const f of ['sw.js', 'manifest.webmanifest']) fs.copyFileSync(path.join('site', f), path.join(OUT, f));
+/* O service worker recebe a lista dos pedaços: os do link público são guardados na instalação; os da gestão,
+   só nos aparelhos que já usaram a gestão (o celular do jogador não baixa o que não usa). */
+{
+  let sw = fs.readFileSync('site/sw.js', 'utf8');
+  for (const [nome, lista] of [['CHUNKS', nucleo], ['GESTAO', gestao]]) {
+    const n0 = sw.length; sw = sw.replace(`const ${nome} = [];`, `const ${nome} = ${JSON.stringify(lista.map(c => './' + c))};`);
+    if (sw.length === n0) throw new Error(`Não achei "const ${nome} = [];" em site/sw.js.`);
+  }
+  fs.writeFileSync(path.join(OUT, 'sw.js'), sw);
+}
+fs.copyFileSync(path.join('site', 'manifest.webmanifest'), path.join(OUT, 'manifest.webmanifest'));
 fs.cpSync('site/icons', path.join(OUT, 'icons'), { recursive: true });
 
 /* Portal do Nosso Jogo (KAN-116): site separado, só para a administração. Vai para dist-portal/
@@ -86,9 +115,12 @@ const PORTAL = 'dist-portal';
 }
 
 const kb = n => (n / 1024).toFixed(1) + ' KB';
-const gz = zlib.gzipSync(html, { level: 9 }).length;
-const gzLeg = zlib.gzipSync(legivel, { level: 9 }).length;
-console.log(`Site ${VERSAO} montado em ${OUT}/ em ${Date.now() - t0} ms · index.html ${kb(Buffer.byteLength(html))} (${kb(gz)} comprimido; sem compactar seria ${kb(gzLeg)}) · cópia legível em ${LEGIVEL}/`);
+const z = t => zlib.gzipSync(t, { level: 9 }).length;
+const gzPub = z(html) + nucleo.reduce((n, c) => n + z(pedacos.get(c)), 0);
+const gzGest = gestao.reduce((n, c) => n + z(pedacos.get(c)), 0);
+const gz = gzPub + gzGest;
+const gzLeg = z(legivel);
+console.log(`Site ${VERSAO} montado em ${OUT}/ em ${Date.now() - t0} ms · link do jogador ${kb(gzPub)} comprimido · com a gestão ${kb(gz)} (sem compactar seria ${kb(gzLeg)}) · ${pedacos.size} pedaços · cópia legível em ${LEGIVEL}/`);
 
 /* Painel da dívida técnica (docs/ARQUITETURA.md, D12): números que devem melhorar a cada versão. */
 const arquivos = [];
@@ -103,5 +135,6 @@ const testesRegra = fs.existsSync('testes/regras') ? fs.readdirSync('testes/regr
 console.log(`Dívida técnica: ${emTS} de ${arquivos.length} arquivos em TypeScript · ${telasComp} de ${telas.length} telas como componente · innerHTML em ${innerHTML} pontos · ${testesRegra} de 5 regras de negócio com teste próprio`);
 
 /* Orçamento de desempenho (docs/ARQUITETURA.md, D7): até 80 KB comprimido, sem contar a biblioteca do Firebase. */
-const LIMITE = 80 * 1024;
+const LIMITE = 80 * 1024, LIMITE_LINK = 50 * 1024; // KAN-149: o link do jogador (página + pedaços que ela carrega logo) tem limite próprio
 if (gz > LIMITE) { console.error(`Passou do orçamento de desempenho: ${kb(gz)} comprimido (limite ${kb(LIMITE)}).`); process.exit(1); }
+if (gzPub > LIMITE_LINK) { console.error(`O link do jogador passou do orçamento: ${kb(gzPub)} comprimido (limite ${kb(LIMITE_LINK)}).`); process.exit(1); }

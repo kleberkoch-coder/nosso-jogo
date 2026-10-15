@@ -4,6 +4,7 @@ import { B, op } from './backend.js';
 import { GB, S, clean, gp, w } from './estado.js';
 import { cl, toast } from './util.js';
 import { changed } from '../ui/render.js';
+import { partidasDe } from './partidas-lista.js';
 
 /* ---------- Partidas na subpasta da rodada (D10, KAN-86) e totais por mês (D11, KAN-87) ----------
    Partida: grupos/{gid}/rodadas/{rid}/partidas/{id}. A ficha da rodada guarda só a contagem (np).
@@ -30,7 +31,6 @@ function opResumo(c){if(!c.mes)return null;localResumo(c);return{tipo:'patch',p:
 const sem=ops=>ops.filter(Boolean);
 
 /* Partidas da rodada aberta, na ordem em que foram salvas. */
-function partidasDe(rid){if(S.partsRid!==rid)return[];return Object.entries(S.parts||{}).map(([id,m])=>Object.assign({id},m)).sort((a,b)=>(a.at||0)-(b.at||0))}
 
 function addMatch(rid,m){const r=rodById(rid);if(!r)return Promise.resolve();
   const doc=clean(Object.assign({},m,{rid,date:r.date}));

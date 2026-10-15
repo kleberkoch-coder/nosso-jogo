@@ -1,0 +1,28 @@
+# Baixa pacotes de ferramentas (ex.: Prettier) e os guarda como anexo da execução.
+# Serve para quem constrói o app num ambiente sem acesso ao registro do npm (KAN-155).
+name: Ferramentas para o ambiente de construção
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore: [main]
+    paths: ['.github/workflows/ferramentas.yml', 'package.json']
+jobs:
+  pacotes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Empacotar as ferramentas na versão do package.json
+        run: |
+          mkdir pacotes && cd pacotes
+          v=$(node -p "require('../package.json').devDependencies.prettier")
+          npm pack "prettier@$v"
+          ls -l
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ferramentas
+          path: pacotes
+          retention-days: 7

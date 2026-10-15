@@ -1,6 +1,4 @@
-import { buscarHist, estadoHist } from './telas/historico.js';
-import { anoRank } from './telas/ranking.js';
-import { migrar, verificarRodadas } from './nucleo/partidas.js';
+import { adm, carregarAdmin } from './nucleo/carga-admin.js';
 import { ACT } from './acoes.js';
 import { migrarPrivado } from './dominio/caixa.js';
 import { curRodada, isAdmin, upcoming, ymd } from './dominio/grupo.js';
@@ -26,11 +24,11 @@ const Q_PROX={campo:'date',ordem:'asc',limite:12},Q_REC={campo:'date',ordem:'des
 function juntarRod(){S.rod=Object.assign({},S.rodP||{},S.rodF||{});regAvulsos()}
 /* Dados que só carregam quando a aba precisa deles (D10): todas as rodadas no ranking, as do mês no caixa e a rodada de uma votação antiga. */
 function ensureExtras(){
-  if(S.route.n!=='admin'||!S.dataOn)return;
+  const A=adm();if(S.route.n!=='admin'||!S.dataOn||!A)return;
   /* Partidas e totais por mês (pelada-v18): move dados antigos uma vez e mantém tudo no lugar novo. */
-  migrar();verificarRodadas();
+  A.migrar();A.verificarRodadas();
   /* Fichas de resumo: o ranking lê só as do ano escolhido (até 12). */
-  const want=S.tab==='ranking'?anoRank():null;
+  const want=S.tab==='ranking'?A.anoRank():null;
   if(want){if(S.resK!==want){S.resK=want;S.res={};subQ('res','resumos',want==='todos'?{campo:'mes',ordem:'asc'}:{campo:'mes',de:want+'-01',ate:want+'-12',ordem:'asc'},d=>{S.res=d||{}})}}
   else if(SUBS.res){drop('res');S.res=null;S.resK=null}
   /* Partidas só da rodada aberta na aba Partida. */
@@ -38,7 +36,7 @@ function ensureExtras(){
   else if(SUBS.parts){drop('parts');S.partsRid=null;S.parts={}}
   if(S.tab==='caixa'){const m=S.month;if(S.rodMesM!==m){S.rodMesM=m;S.rodMes={};subQ('rodMes','rodadas',{campo:'date',de:m+'-01',ate:m+'-31',ordem:'asc'},d=>{S.rodMes=d||{}})}}
   else if(SUBS.rodMes){drop('rodMes');S.rodMesM=null}
-  if(S.tab==='historico'){const h=estadoHist();if(!h.buscou&&!h.carregando&&!h.auto){h.auto=true;buscarHist(false)}}
+  if(S.tab==='historico'){const h=A.estadoHist();if(!h.buscou&&!h.carregando&&!h.auto){h.auto=true;A.buscarHist(false)}}
   if(S.tab==='votacao'){const v=S.vot[S.vid];const rid=v&&v.rid;if(rid&&!S.rod[rid]&&S.rodXid!==rid){S.rodXid=rid;sub('rodX','rodadas/'+rid,d=>{S.rodX=d?{[rid]:d}:{}})}}}
 function parseRoute(){const h=location.hash.replace(/^#\/?/,'').split('/');
   if(h[0]==='p'&&h[1]){if(h[2]==='r'&&h[3])return{n:'r',gid:h[1],id:h[3]};if(h[2]==='v'&&h[3])return{n:'v',gid:h[1],id:h[3]};return{n:'r',gid:h[1],id:null,next:true}}
@@ -59,12 +57,14 @@ function syncName(){const g=S.me?.grupos?.[S.gid],a=S.app;if(S.route.n!=='admin'
   if(Object.keys(want).some(k=>(g[k]??null)!==(want[k]??null)))upMyGroup(S.gid,want).catch(()=>{})}
 function setupRoute(){
   closeDlgNow();dropAll();S.route=parseRoute();const R=S.route,logged=!!(S.user&&!S.user.anon);
+  /* KAN-149: fora do link público, a parte de gestão já começa a baixar enquanto o Firebase conecta. */
+  if(R.n!=='r'&&R.n!=='v'&&!(R.n==='auth'))carregarAdmin().catch(()=>{});
   if(R.n==='auth'){if(logged){location.hash='#/';return}S.authMode=R.mode}
   window.scrollTo(0,0);
   if(R.n==='r'||R.n==='v'){try{localStorage.setItem('pelada-last',location.hash)}catch(e){}}
   Object.assign(S,{avul:{},cont:{},pc:null,migrando:false,gid:R.gid||null,app:null,mem:null,membros:{},convite:null,rat:null,caixa:{},presRid:undefined,limAv:null,limCfg:null,votosVid:undefined,dataOn:false,rod:{},rodF:{},rodP:{},rodAll:null,res:null,resK:null,parts:{},partsRid:null,migr:null,migrandoDados:false,rodMes:{},rodMesM:null,rodX:{},rodXid:null,hist:null,pres:{},vot:{},votos:{},myVote:null,jog:{},rid:null,vid:null,live:null});
   if(logged)subRaw('me','usuarios/'+S.user.uid,d=>{S.me=d||{grupos:{}};syncName();
-    if(S.route.n==='home'&&!S.homeShown){S.homeShown=true;const all=Object.entries(S.me.grupos||{}),g=all.filter(([,v])=>v.ativo!==false).map(([k])=>k);if(g.length===1)location.hash='#/g/'+g[0];else if(!all.length)setTimeout(()=>{if(S.route.n==='home'&&!dlg.open)ACT.newGroup()},250)}});
+    if(S.route.n==='home'&&!S.homeShown){S.homeShown=true;const all=Object.entries(S.me.grupos||{}),g=all.filter(([,v])=>v.ativo!==false).map(([k])=>k);if(g.length===1)location.hash='#/g/'+g[0];else if(!all.length)setTimeout(()=>{if(S.route.n==='home'&&!dlg.open)carregarAdmin().then(()=>ACT.newGroup(),()=>{})},250)}});
   if(logged)registrarAcesso();
   if(S.gid)sub('app','config/app',d=>{S.app=d;if(R.next)resolveNext();syncName();migrarPrivado()});
   const anon=()=>{if(!S.user)B.anon().catch(()=>toast('Não foi possível conectar. Recarregue a página.'))};

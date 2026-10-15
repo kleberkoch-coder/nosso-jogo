@@ -23,7 +23,8 @@ import { AUTH_CANCEL, authMsg, avisoGoogle, pwFalta, pwOk } from '../telas/login
 import { actx, elapsed, setActx, sumPts } from '../telas/partida.js';
 import { MEK, myLocal } from '../telas/publico-rodada.js';
 import { tally } from '../telas/votacao.js';
-import { avisar, closeDlg, closeDlgNow, confirmou, dlg, drawPreview, naoConfirmar, openDlg, playerDlg, posField, responder, rodDlg, val } from '../ui/dialogos.js';
+import { avisar, closeDlg, closeDlgNow, confirmou, dlg, naoConfirmar, openDlg, posField, responder, val } from '../ui/dialogos.js';
+import { drawPreview, playerDlg, rodDlg } from '../ui/dialogos-gestao.js';
 import { changed, render } from '../ui/render.js';
 import { TEMA_K, applyTheme, closeThemeMenu, openThemeMenu, themeAnchor, themeMenuEl } from '../ui/tema.js';
 import { LOCAL } from '../i18n/formatos.js';

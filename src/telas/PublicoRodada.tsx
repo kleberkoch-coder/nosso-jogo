@@ -11,7 +11,7 @@ import { tp, tx } from '../i18n/index.js';
 import { S as estado } from '../nucleo/estado.js';
 import { $, fdate, main } from '../nucleo/util.js';
 import { myLocal } from './publico-rodada.js';
-import { partidasDe } from '../nucleo/partidas.js';
+import { partidasDe } from '../nucleo/partidas-lista.js';
 import { linkMaps, linkWaze } from '../nucleo/links.js';
 import { avulsosEsgotados } from '../dominio/limites';
 

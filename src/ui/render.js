@@ -27,11 +27,12 @@ import { vVotacao } from '../telas/votacao.js';
 let rq=false;function changed(){if(rq)return;rq=true;requestAnimationFrame(()=>{rq=false;render()})}
 const TABS=[['rodada','Rodada'],['historico','abas.historico'],['jogadores','Jogadores'],['partida','Partida'],['ranking','Ranking'],['caixa','Caixa'],['votacao','Votação'],['grupo','Grupo']];
 function render(){renderCore();applyBusy();subtituloCompleto()}
-/* KAN-145: o subtítulo do cabeçalho corta com "…" (KAN-144). Quando corta, o texto inteiro aparece ao passar o mouse
-   (title) e ao tocar nele (abre e fecha), para o celular, que não tem "passar o mouse". */
-function subtituloCompleto(){const g=$('#gsub');if(!g)return;const corta=g.classList.contains('aberto')||g.scrollWidth>g.clientWidth+1;
-  if(corta){g.title=g.textContent;g.setAttribute('role','button');g.tabIndex=0;g.setAttribute('aria-expanded',String(g.classList.contains('aberto')))}
-  else{g.removeAttribute('title');g.removeAttribute('role');g.removeAttribute('tabindex');g.removeAttribute('aria-expanded')}}
+/* KAN-146: texto que pode ser longo (local, subtítulo) fica numa linha só, com "…". Quando corta, o texto inteiro aparece
+   ao passar o mouse (title) e ao tocar nele, que abre e fecha (no celular não existe "passar o mouse"). Vale para #gsub e [data-corta]. */
+function subtituloCompleto(){document.querySelectorAll('#gsub,[data-corta]').forEach(g=>{const ab=g.classList.contains('aberto'),corta=ab||g.scrollWidth>g.clientWidth+1;
+  g.classList.toggle('cortado',corta&&!ab);
+  if(corta){g.title=g.textContent;g.setAttribute('role','button');g.tabIndex=0;g.setAttribute('aria-expanded',String(ab))}
+  else{g.removeAttribute('title');g.removeAttribute('role');g.removeAttribute('tabindex');g.removeAttribute('aria-expanded')}})}
 function renderCore(){
   document.body.classList.remove('is-landing');
   $('#demo').hidden=!(B&&B.demo);
@@ -50,7 +51,7 @@ function renderCore(){
   if(!S.loaded.mem||!S.loaded.app){main.innerHTML='<div class="empty muted">Carregando…</div>';return}
   if(!S.app){main.innerHTML=`<div class="panel empty auth"><h2>Grupo não encontrado</h2><p class="muted">Ele pode ter sido excluído.</p><a class="btn" href="#/">Meus grupos</a></div>`;return}
   if(!isAdmin()){main.innerHTML=`<div class="panel empty auth"><h2>Sem acesso</h2><p class="muted">Sua conta (${esc(S.user.email)}) não administra o grupo ${esc(gname())}. Peça ao organizador um link de convite.</p><div class="row" style="justify-content:center"><a class="btn" href="#/">Meus grupos</a>${S.me?.grupos?.[S.gid]?'<button class="btn ghost danger" data-a="forgetGroup">Remover da minha lista</button>':''}</div></div>`;return}
-  const r0=curRodada();$('#gsub').textContent=`${sport().e} ${sportName()}`+(r0?' · ':'')+(r0?`Próxima: ${fdate(r0.date)}${r0.time?' · '+hora(r0):''}${r0.place?' — '+r0.place:''}`:'');
+  const r0=curRodada();$('#gsub').textContent=`${sport().e} ${sportName()}`+(r0?' · ':'')+(r0?`Próxima: ${fdate(r0.date)}${r0.time?' · '+hora(r0):''}`:'');
   $('#tabsnav').hidden=false;
   $('#tabs').innerHTML=TABS.map(([k,l])=>`<button class="tab" role="tab" aria-selected="${S.tab===k}" data-a="tab" data-v="${k}">${l.startsWith('abas.')?tx(l):l}</button>`).join('');
   abasNoLugar();

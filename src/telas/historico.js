@@ -46,7 +46,7 @@ function vLista(h){
   if(!h.buscou)return h.carregando?`<div class="empty muted">${tx('comum.carregando')}</div>`:'';
   if(!h.itens.length)return `<div class="panel empty"><p class="muted">${h.modo==='mes'?tx('hist.vazioMes',{mes:esc(fmonth(h.mes))}):tx('hist.vazioPeriodo')}</p></div>`;
   const li=id=>{const r=h.docs[id],np=r.np!=null?r.np:(r.matches||[]).length;
-    return `<li><span class="pn"><b>${esc(fdate(r.date))}</b>${r.time?' · '+esc(hora(r)):''}<br><span class="tag">${esc(r.place||tx('publico.localADefinir'))}${r.cancelada?' · '+tx('hist.cancelada'):''}${r.times?' · '+tp('hist.times',r.times.length):''}${np?' · '+tp('hist.partidas',np):''}</span></span><button class="btn sm" data-a="histAbrir" data-v="${esc(id)}">${tx('hist.abrir')}</button></li>`};
+    return `<li><span class="pn"><b>${esc(fdate(r.date))}</b>${r.time?' · '+esc(hora(r)):''}<br><span class="tag linha-local"><span class="corta" data-corta>${esc(r.place||tx('publico.localADefinir'))}</span><span class="extra">${r.cancelada?' · '+tx('hist.cancelada'):''}${r.times?' · '+tp('hist.times',r.times.length):''}${np?' · '+tp('hist.partidas',np):''}</span></span></span><button class="btn sm" data-a="histAbrir" data-v="${esc(id)}">${tx('hist.abrir')}</button></li>`};
   return `<div class="panel"><ul class="plist">${h.itens.map(li).join('')}</ul>
     ${h.fim?'':`<div class="row" style="justify-content:center;margin-top:12px"><button class="btn" data-a="histMais">${tx('hist.verMais')}</button></div>`}</div>`}
 
@@ -55,7 +55,7 @@ function vDetalhe(h){const id=h.sel,r=comCores(h.docs[id]);if(!r)return '';
   const ms=h.parts||[],vs=Object.entries(S.vot||{}).filter(([,v])=>v.rid===id);
   const nomeP=pid=>esc((pres&&pres[pid]&&pres[pid].nome)||pname(pid));
   return `<div class="stack"><div class="row"><button class="btn sm" data-a="histVoltar">← ${tx('hist.voltar')}</button></div>
-  <div class="panel"><h2>${esc(fdate(r.date))}${r.time?' · '+esc(hora(r)):''}</h2><div class="muted">${esc(r.place||tx('publico.localADefinir'))}${r.cancelada?' · '+tx('hist.cancelada'):''}</div></div>
+  <div class="panel"><h2>${esc(fdate(r.date))}${r.time?' · '+esc(hora(r)):''}</h2><div class="muted linha-local"><span class="corta" data-corta>${esc(r.place||tx('publico.localADefinir'))}</span><span class="extra">${r.cancelada?' · '+tx('hist.cancelada'):''}</span></div></div>
   <div class="panel"><h3>${tx('hist.confirmados')} ${pres?'('+inn.length+')':''}</h3>${!pres?`<p class="muted small">${tx('comum.carregando')}</p>`:inn.length?`<ol class="plist">${inn.map((pid,i)=>`<li><span class="num">${i+1}</span><span class="pn">${nomeP(pid)}</span></li>`).join('')}</ol>`:`<p class="muted small">${tx('hist.semConfirmados')}</p>`}</div>
   <div class="panel"><h3>${tx('hist.timesTitulo')}</h3>${r.times?`<div class="teams">${r.times.map((t,i)=>teamCard(t,i,false)).join('')}</div>`:`<p class="muted small">${tx('hist.semSorteio')}</p>`}</div>
   <div class="panel"><h3>${tx('hist.partidasTitulo')}</h3>${!h.parts?`<p class="muted small">${tx('comum.carregando')}</p>`:ms.length?`<ul class="plist wrap">${ms.map((m,i)=>{const gs=(m.goals||[]).filter(g=>g.pid&&!g.og);

@@ -225,6 +225,7 @@ Os agentes leem o app pelo projeto do Claude, e não pelo GitHub. Por isso, toda
 | `app/sw.js` e `app/manifest.webmanifest` | `site/sw.js` e `site/manifest.webmanifest` | toda versão (o `sw.js` muda a `VERSION`) |
 | `app/firestore.rules` | `firestore.rules` | quando as regras mudarem |
 | `app/LEIA-ME.md` | `LEIA-ME.md` | quando o uso mudar |
+| `REGRAS.md` | `docs/REGRAS.md` | toda entrega que mudar uma regra ou o mapa de impacto (desde 15/10/2026) |
 | `VISAO-DO-PRODUTO.md`, `docs/ARQUITETURA.md`, `DESIGN-SYSTEM.md` | `docs/` | quando mudarem |
 | `testes/ROTEIRO-DE-TESTES.md` e `testes/testes_app.py` | `testes/` | quando mudarem |
 | `testes/VERIFICACOES-GITHUB.md` | `testes/` (resultado das verificações do GitHub e do site no ar, que os agentes não enxergam) | toda entrega (ao abrir a proposta) e de novo depois do Merge |

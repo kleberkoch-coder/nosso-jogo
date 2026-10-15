@@ -115,6 +115,7 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
 | pelada-v22 | 09/10/2026 | 147 de 147 passaram, 35 de 35 nas regras de negócio |
 | pelada-v23 | 09/10/2026 | 155 de 155 passaram, 41 de 41 nas regras de negócio |
 | pelada-v24 | 13/10/2026 | 156 de 156 passaram, 41 de 41 nas regras de negócio (mudança para o Firebase Hosting; mensagem do limite de grupos no singular) |
+| pelada-v37 | 15/10/2026 | 314 de 314 passaram (KAN-144: local de 200 letras sem espaço não estoura a aba Rodada nem o link) |
 | pelada-v36 | 15/10/2026 | 312 de 312 passaram (KAN-143: local aceita o endereço completo, até 200 letras) |
 | pelada-v35 | 15/10/2026 | 309 de 309 passaram (KAN-140 janela preenchida pergunta antes de descartar; KAN-141 Como chegar; KAN-142 aviso do Google na aba errada) |
 | pelada-v34 | 15/10/2026 | 300 de 300 passaram (KAN-10: senha com minúscula e especiais da lista do Firebase; textos do login no dicionário) |

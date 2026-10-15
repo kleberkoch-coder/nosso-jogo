@@ -320,3 +320,8 @@ dialog::backdrop{background:rgba(5,20,12,.55)}
 .mapa{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px}
 .chip-mapa{display:inline-flex;align-items:center;min-height:var(--touch-compact);padding:0 12px;border:1px solid var(--field-border);border-radius:999px;background:var(--surface);color:var(--ink);font-weight:600;text-decoration:none}
 .chip-mapa:hover{border-color:var(--ink)}
+/* KAN-144: textos longos sem espaço (local, nomes) quebram dentro da tela em vez de empurrar o layout */
+.hero-r>div:first-child{min-width:0;flex:1 1 220px}
+.hero-r .muted,.panel,.team,.plist .pn,.small,.muted{overflow-wrap:anywhere}
+#gsub{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.top-in>div:first-child{min-width:0;max-width:100%}

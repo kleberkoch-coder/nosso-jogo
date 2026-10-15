@@ -64,7 +64,7 @@ Plataforma para **qualquer pessoa no mundo** organizar seus jogos recorrentes ou
 - Erros de login aparecem em português abaixo do formulário. Fechar a janela do Google não mostra erro. Botões de login não têm limite de tempo (giram até a resposta), porque não existe "salvar para depois" em login.
 - Todo campo de senha tem o botão **Mostrar/Ocultar** dentro do campo (pelada-v17); o cursor continua no campo.
 - **Versão do app sempre visível** (pelada-v19): rodapé da apresentação, abaixo do login e cadastro, em Meus grupos e no fim da aba Grupo ("Nosso Jogo · versão N"). O número vem do service worker, então mostra exatamente a versão que está no aparelho.
-- A senha exige no mínimo 8 caracteres, 1 maiúscula, 1 número e 1 caractere especial, com checklist ao vivo e confirmação de senha.
+- A senha exige no mínimo 8 caracteres, 1 maiúscula, 1 minúscula, 1 número e 1 caractere especial da lista aceita pelo Firebase, com checklist ao vivo e confirmação de senha (pelada-v34, KAN-10). A mesma regra está na política de senha do Firebase, em modo Exigir, para valer também fora do app. Se a senha for recusada, a mensagem diz o que falta.
 - A tela de login tem as abas "Criar conta" e "Entrar". No primeiro acesso do aparelho, ela abre em "Criar conta".
 - Depois do login:
   - nenhum grupo: abre "Meus grupos" com a janela de criar grupo aberta;

@@ -115,6 +115,7 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
 | pelada-v22 | 09/10/2026 | 147 de 147 passaram, 35 de 35 nas regras de negócio |
 | pelada-v23 | 09/10/2026 | 155 de 155 passaram, 41 de 41 nas regras de negócio |
 | pelada-v24 | 13/10/2026 | 156 de 156 passaram, 41 de 41 nas regras de negócio (mudança para o Firebase Hosting; mensagem do limite de grupos no singular) |
+| pelada-v34 | 15/10/2026 | 300 de 300 passaram (KAN-10: senha com minúscula e especiais da lista do Firebase; textos do login no dicionário) |
 | pelada-v33 | 15/10/2026 | 295 de 295 passaram (KAN-138: rodada com votação não sorteia de novo; com partida salva, pergunta antes) |
 | pelada-v32 | 14/10/2026 | 290 de 290 passaram (KAN-137: sem o aviso "A lista mudou" enquanto a presença carrega) |
 | pelada-v31 | 14/10/2026 | 289 de 289 passaram (KAN-137: abas Rodada e Partida esperam as rodadas chegarem, sem piscar) |

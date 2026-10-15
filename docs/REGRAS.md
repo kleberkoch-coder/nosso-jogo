@@ -1,14 +1,16 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v33 (15/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v34 (15/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
-- Só organizador e administradores têm conta: e-mail com senha forte (8+, maiúscula, número, especial) ou Google.
+- Só organizador e administradores têm conta: e-mail com senha forte ou Google.
+- Senha: 8+ caracteres, maiúscula, minúscula, número e um especial da lista do Firebase (`^ $ * . [ ] { } ( ) ? " ! @ # % & / \ , > < ' : ; | _ ~`). Vale no app (`telas/login.js`) e na política de senha do Firebase, em modo Exigir; as duas mudam juntas (KAN-10).
 - Cada grupo é independente: elenco, rodadas, caixa, votações e administradores.
 - Nada específico de esporte no código: posições, pontuação, duplas e textos vêm do catálogo `SPORTS`.
-- Celular primeiro, funciona com sinal fraco (grava no aparelho e envia depois). Interface em pt-BR, textos no dicionário `i18n/pt-BR.js`.
+- Celular primeiro, funciona com sinal fraco (grava no aparelho e envia depois).
+- Vários idiomas: nenhum texto de tela fica no código; tudo vai para o dicionário (`i18n/pt-BR.js`, chamado por `tx`). Tela mexida migra seus textos na mesma entrega (D3).
 
 ## Privacidade e segurança (valem nas regras do Firebase, não só na tela)
 - Só administradores veem notas, caixa (mensalidade, diária, Pix), contatos, tipo do jogador e votos individuais.

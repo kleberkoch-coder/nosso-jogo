@@ -385,6 +385,27 @@ with sync_playwright() as pw:
     pg.click('[data-a=saveVote]'); pg.wait_for_timeout(800)
     ok(pg.locator('#shtxt').is_visible(), 'votação criada e link para o WhatsApp continua aberto')
     pg.click('[data-a=close]'); pg.wait_for_timeout(300)
+    # ---------- v35 (KAN-141): local com "Como chegar" no Google Maps e no Waze
+    pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(400)
+    pg.click('[data-a=editRod]'); pg.wait_for_timeout(300); pg.fill('#rpl', 'Society do Zé, Rua das Flores 100'); pg.click('[data-a=saveRod]'); pg.wait_for_timeout(800)
+    hm = pg.evaluate("[...document.querySelectorAll('.hero-r .chip-mapa')].map(a=>[a.textContent,a.href,a.target])")
+    ok(len(hm) == 2 and 'google.com/maps/search/?api=1&query=Society%20do%20Z%C3%A9' in hm[0][1] and 'waze.com/ul?q=Society' in hm[1][1] and hm[0][2] == '_blank',
+       f'CT-KAN-141-01: aba Rodada mostra "Como chegar" com Google Maps e Waze ({[x[0] for x in hm]})')
+    pg.click('[data-a=shareConvite]'); pg.wait_for_timeout(300)
+    ok('🗺️ https://www.google.com/maps/search/' in pg.input_value('#shtxt'), 'CT-KAN-141-02: o convite do WhatsApp leva o link do mapa')
+    pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(200)
+    # ---------- v35 (KAN-140): tocar fora ou Esc numa janela preenchida pergunta antes de descartar
+    pg.click('[data-a=newRod]'); pg.wait_for_timeout(300); pg.mouse.click(8, 8); pg.wait_for_timeout(300)
+    ok(not pg.evaluate("document.getElementById('dlg').open"), 'CT-KAN-140-01: janela sem nada preenchido fecha direto ao tocar fora')
+    pg.click('[data-a=newRod]'); pg.wait_for_timeout(300); pg.fill('#rpl', 'Arena Nova'); pg.mouse.click(8, 8); pg.wait_for_timeout(300)
+    cj = pg.inner_text('#dlg .conf') if pg.locator('#dlg .conf').count() else ''
+    ok('Descartar o que você preencheu?' in cj and 'Continuar editando' in cj, 'CT-KAN-140-02: tocar fora com algo preenchido pergunta antes de descartar')
+    confirmar_app(pg, False)
+    ok(pg.locator('#rpl').is_visible() and pg.input_value('#rpl') == 'Arena Nova', 'CT-KAN-140-02: "Continuar editando" volta ao formulário com o que foi digitado')
+    pg.keyboard.press('Escape'); pg.wait_for_timeout(300)
+    ok(pg.locator('#dlg .conf').count() == 1, 'CT-KAN-140-03: Esc com algo preenchido também pergunta')
+    confirmar_app(pg, True)
+    ok(not pg.evaluate("document.getElementById('dlg').open"), 'CT-KAN-140-03: "Descartar" fecha a janela')
     # ---------- v33 (KAN-138, decisão do Kleber 15/10): rodada com votação não pode ser sorteada de novo
     pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(400)
     ok(pg.locator('[data-a=drawDlg]').count() == 0 and 'exclua a votação' in pg.inner_text('main'),
@@ -1155,6 +1176,20 @@ with sync_playwright() as pw:
     a5 = ver111(gid_nt)
     ok(all('21/10' in x[0] and 'Quadra gravada' in x[1] for x in a5), f'CT-KAN-111-04: rodada já gravada é a que aparece ({a5[0][0]} · {a5[0][1][:30]})')
     ctx2.close()
+    # ---------- v35 (KAN-142): "Continuar com o Google" na aba errada entra ou cria a conta e avisa (navegador separado)
+    ctx3 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block'); p3 = ctx3.new_page()
+    p3.on('pageerror', lambda e: errs.append(str(e)))
+    p3.goto(URL + '#/criar'); p3.wait_for_timeout(600)
+    p3.fill('#le', 'ja.tenho@teste.com'); p3.fill('#lp', 'Jogo@2026'); p3.fill('#lp2', 'Jogo@2026'); p3.keyboard.press('Enter'); p3.wait_for_timeout(1200)
+    p3.evaluate("localStorage.removeItem('pelada-demo-v2-u');localStorage.setItem('pelada-mode','signup')"); p3.reload(); p3.wait_for_timeout(600); p3.goto(URL + '#/criar'); p3.wait_for_timeout(600)
+    p3.fill('#le', 'ja.tenho@teste.com'); p3.click('[data-a=google]'); p3.wait_for_timeout(1300)
+    t3 = p3.inner_text('#toast')
+    ok('já tinha conta com esse Google' in t3 and p3.evaluate("!!(S.user&&!S.user.anon)"), f'CT-KAN-142-01: "Criar conta" com Google de conta que já existe entra nela e avisa ({t3!r})')
+    p3.evaluate("localStorage.removeItem('pelada-demo-v2-u');localStorage.setItem('pelada-mode','login')"); p3.reload(); p3.wait_for_timeout(600); p3.goto(URL + '#/entrar'); p3.wait_for_timeout(600)
+    p3.fill('#le', 'conta.nova@teste.com'); p3.click('[data-a=google]'); p3.wait_for_timeout(1300)
+    t4 = p3.inner_text('#toast')
+    ok('Conta criada com o Google' in t4, f'CT-KAN-142-02: "Entrar" com Google de conta nova cria a conta e avisa ({t4!r})')
+    ctx3.close()
     b.close()
 
 errs = [e for e in errs if not re.search(r'ERR_TUNNEL|fonts\.g|icons/|favicon|ERR_NAME|ERR_INTERNET|net::', e)]

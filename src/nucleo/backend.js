@@ -78,12 +78,15 @@ function LocalBackend(){
       else if(v&&v.$op==='apagar')delete a[f];else if(v&&v.$op==='somar')a[f]=(a[f]||0)+v.n;else a[f]=cl(v)}
     store[p]=d};
   const setU=u=>{user=u;try{localStorage.setItem(K+'-u',JSON.stringify(u))}catch(e){}acb.forEach(f=>f(u))};
-  const lg=async(e,p)=>{if(!e||!p)throw{code:'auth/invalid-credential'};setU({uid:'u-'+e.toLowerCase().replace(/[^a-z0-9]/g,''),email:e.toLowerCase(),verificado:true,anon:false,via:p==='google'?'google':'senha'})};
+  /* Demonstração: lembra as contas já usadas neste navegador, para o Google saber se a conta é nova (KAN-142). */
+  const CT=K+'-contas',contas=()=>{try{return JSON.parse(localStorage.getItem(CT)||'[]')}catch(x){return[]}};
+  const lembrar=e=>{try{const c=contas();if(!c.includes(e)){c.push(e);localStorage.setItem(CT,JSON.stringify(c))}}catch(x){}};
+  const lg=async(e,p)=>{if(!e||!p)throw{code:'auth/invalid-credential'};lembrar(e.toLowerCase());setU({uid:'u-'+e.toLowerCase().replace(/[^a-z0-9]/g,''),email:e.toLowerCase(),verificado:true,anon:false,via:p==='google'?'google':'senha'})};
   return{demo:true,
     onAuth(cb){acb.add(cb);setTimeout(()=>cb(user),0)},
     login:lg,signup:lg,reset:async()=>{},logout:async()=>{setU(null);return true},
     semPendencias:async()=>!window.__demoPendente,
-    google:async hint=>{await sleep(500);const e=/\S+@\S+\.\S+/.test(hint||'')?hint:'organizador.teste@gmail.com';return lg(e,'google')},
+    google:async hint=>{await sleep(500);const e=/\S+@\S+\.\S+/.test(hint||'')?hint:'organizador.teste@gmail.com',novo=!contas().includes(e.toLowerCase());await lg(e,'google');return{additionalUserInfo:{isNewUser:novo}}},
     redirectResult:async()=>null,
     anon:async()=>setU({uid:'anon-'+uid(),email:null,anon:true}),
     sub(path,cb){const s={path,cb};subs.add(s);setTimeout(()=>cb(cl(read(path))),0);return()=>subs.delete(s)},

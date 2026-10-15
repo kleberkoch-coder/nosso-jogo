@@ -22,6 +22,11 @@ const AUTH_K={'auth/invalid-credential':'credencial','auth/invalid-login-credent
 function authMsg(e,senha){const k=AUTH_K[(e&&e.code)||''];
   if(k==='senhaFraca'&&senha!=null){const f=pwFalta(senha);if(f.length)return tx('auth.senhaFalta',{itens:f.join(', ')})}
   return tx('auth.'+(k||'generico'))}
+/* KAN-142: "Continuar com o Google" entra ou cria a conta, em qualquer aba (é o padrão do Google e não tem risco).
+   Quando a aba não bate com o que aconteceu, o app avisa, para a pessoa entender. */
+function avisoGoogle(r,modo){const i=r&&r.additionalUserInfo;if(!i)return null;
+  if(modo==='signup'&&i.isNewUser===false)return tx('auth.googleJaTinha');
+  if(modo==='login'&&i.isNewUser===true)return tx('auth.googleCriou');return null}
 /* ---------- login ---------- */
 function vAuth(msg){const m=S.authMode;
   const form=m==='signup'?`<h2>${tx('login.criarTitulo')}</h2>
@@ -55,4 +60,4 @@ function checkPw(){const p=$('#lp'),p2=$('#lp2'),b=$('#sgBtn');if(!p||!p2||!b)re
   b.disabled=!(pwOk(p.value)&&p.value===p2.value&&/\S+@\S+\.\S+/.test(val('le')));
   $('#lerr').textContent=p2.value&&p.value!==p2.value?tx('senha.naoConferem'):''}
 
-export { AUTH_CANCEL, ESPECIAIS, authMsg, checkPw, pwFalta, pwOk, vAuth };
+export { AUTH_CANCEL, ESPECIAIS, authMsg, avisoGoogle, checkPw, pwFalta, pwOk, vAuth };

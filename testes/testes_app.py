@@ -384,6 +384,31 @@ with sync_playwright() as pw:
     confirmar_app(pg, False)
     ok(t1.startswith('Excluir ') and pg.locator('#pnm').is_visible() and pg.input_value('#pnm') == 'Nome Em Edição', f'CT-KAN-128: confirmação por cima do jogador; Cancelar volta ao formulário com o que foi digitado ({t1})')
     pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(300)
+    if pg.locator('#dlg .conf').count(): confirmar_app(pg, True)
+    # ---------- v44 (KAN-156): telefone nacional e internacional, e e-mail com formato mínimo
+    pid156 = pg.locator('[data-a=editPlayer]').first.get_attribute('data-p')
+    pg.locator('[data-a=editPlayer]').first.click(); pg.wait_for_timeout(300)
+    ok(pg.locator('#ptel').get_attribute('placeholder') and 'outro país' in pg.inner_text('#dlg'), 'CT-KAN-156-02: campo de telefone mostra a dica para número de outro país')
+    pg.fill('#ptel', '9876-54'); pg.click('#dlg [data-a=savePlayer]'); pg.wait_for_timeout(400)
+    ok(pg.evaluate("document.getElementById('dlg').open") and 'Telefone incompleto' in pg.inner_text('#toast') and pg.evaluate("document.activeElement.id") == 'ptel',
+       'CT-KAN-156-03: telefone curto não salva, avisa e volta o cursor ao campo')
+    pg.fill('#ptel', '11 98765-43ab'); pg.click('#dlg [data-a=savePlayer]'); pg.wait_for_timeout(400)
+    ok(pg.evaluate("document.getElementById('dlg').open") and 'Telefone inválido' in pg.inner_text('#toast'), 'CT-KAN-156-03: telefone com letras não salva')
+    pg.fill('#ptel', '+1 (415) 555-0100'); pg.fill('#pmail', 'ana@clube'); pg.click('#dlg [data-a=savePlayer]'); pg.wait_for_timeout(400)
+    ok(pg.evaluate("document.getElementById('dlg').open") and 'E-mail inválido' in pg.inner_text('#toast') and pg.evaluate("document.activeElement.id") == 'pmail',
+       'CT-KAN-156-04: e-mail sem terminação não salva e volta o cursor ao campo')
+    pg.fill('#pmail', 'ana@clube.com.br'); pg.click('#dlg [data-a=savePlayer]'); pg.wait_for_timeout(600)
+    ct156 = pg.evaluate("(id)=>S.cont&&S.cont[id]", pid156)
+    ok(not pg.evaluate("document.getElementById('dlg').open") and ct156 and ct156['tel'] == '+14155550100' and ct156['email'] == 'ana@clube.com.br',
+       f'CT-KAN-156-02: número dos EUA gravado no formato internacional ({ct156})')
+    ok(pg.locator(f'a[href="https://wa.me/14155550100"]').count() >= 1, 'CT-KAN-156-02: link do WhatsApp abre o número dos EUA, sem o 55 na frente')
+    pg.locator(f'[data-a=editPlayer][data-p="{pid156}"]').click(); pg.wait_for_timeout(300)
+    pg.fill('#ptel', '(11) 98765-4321'); pg.click('#dlg [data-a=savePlayer]'); pg.wait_for_timeout(600)
+    ok(pg.evaluate("(id)=>S.cont[id].tel", pid156) == '+5511987654321' and pg.locator('a[href="https://wa.me/5511987654321"]').count() >= 1,
+       'CT-KAN-156-01: número brasileiro com DDD vira +55 e o link do WhatsApp abre certo')
+    pg.locator(f'[data-a=editPlayer][data-p="{pid156}"]').click(); pg.wait_for_timeout(300)
+    ok(pg.input_value('#ptel') == '(11) 98765-4321', 'CT-KAN-156-01: ao editar, o número brasileiro aparece fácil de ler')
+    pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(300)
     pg.click('[data-a=tab][data-v=votacao]'); pg.wait_for_timeout(300); pg.click('[data-a=newVote]'); pg.wait_for_timeout(200)
     pg.click('[data-a=saveVote]'); pg.wait_for_timeout(800)
     ok(pg.locator('#shtxt').is_visible(), 'votação criada e link para o WhatsApp continua aberto')

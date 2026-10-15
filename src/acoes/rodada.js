@@ -10,6 +10,7 @@ import { tp, tx } from '../i18n/index.js';
 import { shareDlg, txtConvite, txtTimes } from '../dominio/whatsapp.js';
 import { copyText } from '../eventos.js';
 import { B, setCAP, sleep } from '../nucleo/backend.js';
+import { campoTelefone, lerContato } from '../ui/contato-form';
 import { editApp, editRat, editRod, saveContato, setPres } from '../nucleo/edicoes.js';
 import { apagarPartidasDaRodada } from '../nucleo/partidas.js';
 import { GB, S, w } from '../nucleo/estado.js';
@@ -59,22 +60,22 @@ const acoes={
       <div class="vgrid" id="avlist">${regs.map(([id,a])=>`<button class="opt" data-a="pickAvulso" data-p="${id}" data-n="${esc(normName(a.nome))}">${posTag(id)}<span>${esc(a.nome)}</span><span class="tag" style="margin-left:auto">${fmtL(lvl(id))}</span></button>`).join('')}</div></div>
       <p class="small muted" style="margin:4px 0 10px">Ou cadastre um avulso novo:</p>`:''}
     <label class="f"><span>Nome</span><input class="inp" id="anm" maxlength="40"></label>${posField('apos')}<div class="f"><span class="lbl">Nota de 1 a 10</span>${lvlIn(5)}</div>
-    <label class="f"><span>Telefone / WhatsApp (opcional)</span><input class="inp" id="ptel" type="tel" inputmode="tel" maxlength="20"></label>
+    ${campoTelefone('',tx('contato.telOpcional'))}
     <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveAvulso">Adicionar confirmado</button></div>`)},
   pickAvulso:el=>{const id=el.dataset.p,a=S.avul[id];closeDlg();const ps=[setPres(curRodada().id,id,{s:'in',nome:a.nome,avulso:true,pos:a.pos||''})];
     if(S.alvoTime!=null)ps.push(porNoTime(S.alvoTime,id));else toast(a.nome+' confirmado.');S.alvoTime=null;return Promise.all(ps)},
-  saveAvulso:el=>{const n=val('anm');if(n.length<2){toast('Digite o nome.');return}
+  saveAvulso:el=>{const n=val('anm');if(n.length<2){toast('Digite o nome.');return}const ct=lerContato('ptel');if(!ct)return;
     const same=Object.entries(S.avul||{}).find(([,a])=>normName(a.nome)===normName(n));if(same){const c=confirmou(el,{titulo:n+' já jogou aqui antes',texto:'Usar o cadastro dele (posição, nota e contato)?',acao:'Usar o cadastro',nao:'Cadastrar como novo'});if(!c)return;if(c==='sim')return ACT.pickAvulso({dataset:{p:same[0]}})}
     const id=B.newId(),v=+$('#plv').value,pos=val('apos'),o={nome:n,pos,criado:Date.now()};S.avul[id]=o;
-    const ps=[setPres(curRodada().id,id,{s:'in',nome:n,avulso:true,pos}),w(GB.set('avulsos/'+id,o)),editRat(a=>setLvl(a,id,v))];if(S.alvoTime!=null){ps.push(porNoTime(S.alvoTime,id));S.alvoTime=null}const c=saveContato(id,val('ptel'),'');if(c)ps.push(c);closeDlg();return Promise.all(ps)},
+    const ps=[setPres(curRodada().id,id,{s:'in',nome:n,avulso:true,pos}),w(GB.set('avulsos/'+id,o)),editRat(a=>setLvl(a,id,v))];if(S.alvoTime!=null){ps.push(porNoTime(S.alvoTime,id));S.alvoTime=null}const c=saveContato(id,ct.tel,'');if(c)ps.push(c);closeDlg();return Promise.all(ps)},
   editAvulso:el=>{const id=el.dataset.p,a=S.avul[id]||{nome:pname(id),pos:ppos(id)},ct=(S.cont||{})[id]||{};
     openDlg(`<h3>Avulso: ${esc(a.nome)}</h3><label class="f"><span>Nome</span><input class="inp" id="anm" maxlength="40" value="${esc(a.nome)}"></label>${posField('apos',a.pos)}
     <div class="f"><span class="lbl">Nota de 1 a 10 (só administradores veem)</span>${lvlIn(lvl(id))}</div>
-    <label class="f"><span>Telefone / WhatsApp</span><input class="inp" id="ptel" type="tel" inputmode="tel" maxlength="20" value="${esc(ct.tel||'')}"></label>
+    ${campoTelefone(ct.tel||'',tx('contato.telRotulo'))}
     <p class="small muted" style="margin-top:-4px">Registrado em ${fdia(a.criado)}</p>
     <div class="dlg-f"><button class="btn ghost danger" data-a="delAvulso" data-p="${id}">Esquecer avulso</button><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveAvEdit" data-p="${id}">Salvar</button></div>`)},
-  saveAvEdit:el=>{const id=el.dataset.p,n=val('anm');if(n.length<2){toast('Digite o nome.');return}const o=Object.assign({criado:Date.now()},S.avul[id]||{},{nome:n,pos:val('apos')||''});S.avul[id]=o;changed();
-    const ps=[w(GB.set('avulsos/'+id,o)),editRat(a=>setLvl(a,id,+$('#plv').value))];const c=saveContato(id,val('ptel'),'');if(c)ps.push(c);closeDlg();toast('Avulso atualizado.');return Promise.all(ps)},
+  saveAvEdit:el=>{const id=el.dataset.p,n=val('anm');if(n.length<2){toast('Digite o nome.');return}const ct=lerContato('ptel');if(!ct)return;const o=Object.assign({criado:Date.now()},S.avul[id]||{},{nome:n,pos:val('apos')||''});S.avul[id]=o;changed();
+    const ps=[w(GB.set('avulsos/'+id,o)),editRat(a=>setLvl(a,id,+$('#plv').value))];const c=saveContato(id,ct.tel,'');if(c)ps.push(c);closeDlg();toast('Avulso atualizado.');return Promise.all(ps)},
   delAvulso:el=>{const id=el.dataset.p;if(confirmou(el,{titulo:'Esquecer este avulso?',texto:'Ele some da lista de "já jogaram aqui". O histórico de partidas continua.',acao:'Esquecer avulso',perigo:true})!=='sim')return;delete S.avul[id];changed();closeDlg();return w(GB.del('avulsos/'+id))},
   promote:el=>{const id=el.dataset.p,p=S.avul?.[id]||{nome:S.pres[id]?.nome,pos:S.pres[id]?.pos};playerDlg(null,{id,name:p?.nome,pos:p?.pos,tipo:'diarista'});$('[data-a=savePlayer]').dataset.p='';$('[data-a=savePlayer]').dataset.new=id},
   drawDlg:el=>{const r0=curRodada();

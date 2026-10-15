@@ -8,14 +8,15 @@ import { fdia, lvl, lvlIn } from '../dominio/grupo.js';
 import { S } from '../nucleo/estado.js';
 import { $, esc, nextSat } from '../nucleo/util.js';
 import { openDlg, posField } from './dialogos.js';
+import { campoTelefone } from './contato-form';
 
 const starIn=st=>`<div class="starin" id="pst" data-v="${st}">${[1,2,3,4,5].map(i=>`<button type="button" class="${i<=st?'on':''}" data-a="star" data-v="${i}" aria-label="${i} estrelas">★</button>`).join('')}</div>`;
 function playerDlg(id,prefill){const p=id?S.jog[id]:null,cid=id||prefill?.id,st=cid?lvl(cid):5,ct=(S.cont||{})[cid]||{};
   openDlg(`<h3>${p?'Editar jogador':'Novo jogador'}</h3><label class="f"><span>Nome ou apelido</span><input class="inp" id="pnm" value="${esc(p?.name||prefill?.name||'')}" maxlength="40"></label>
   ${posField('ppos',p?.pos||prefill?.pos)}<div class="f"><span class="lbl">Nota de 1 a 10 (só administradores veem)</span>${lvlIn(st)}</div>
   <label class="f"><span>Tipo</span><select class="sel" id="ptp"><option value="mensalista">Mensalista</option><option value="diarista" ${(p?ptipo(id):prefill?.tipo)==='diarista'?'selected':''}>Diarista</option></select></label>
-  <div class="row"><label class="f" style="flex:1;min-width:150px"><span>Telefone / WhatsApp</span><input class="inp" id="ptel" type="tel" inputmode="tel" maxlength="20" value="${esc(ct.tel||'')}" placeholder="(11) 98765-4321"></label>
-  <label class="f" style="flex:1;min-width:150px"><span>E-mail (opcional)</span><input class="inp" id="pmail" type="email" maxlength="60" value="${esc(ct.email||'')}"></label></div>
+  ${campoTelefone(ct.tel||'',tx('contato.telRotulo'))}
+  <label class="f"><span>${tx('contato.emailRotulo')}</span><input class="inp" id="pmail" type="email" autocomplete="email" maxlength="100" value="${esc(ct.email||'')}" placeholder="${tx('contato.emailExemplo')}"></label>
   ${p?`<p class="small muted" style="margin-top:-4px">Cadastrado em ${fdia(p.criado)} · ${p.ativo===false?'<b style="color:var(--out)">inativo</b>':'ativo'}</p>`:''}
   <div class="dlg-f">${p?`<button class="btn ghost danger" data-a="delPlayer" data-p="${id}">Excluir</button><button class="btn" data-a="toggleJog" data-p="${id}">${p.ativo===false?'Reativar':'Inativar'}</button>`:''}<button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="savePlayer" data-p="${id||''}">Salvar jogador</button></div>`);
   setTimeout(()=>$('#pnm')?.focus(),50)}

@@ -19,7 +19,7 @@ function grpAtivo(a){a=a||S.app;return !a||a.ativo!==false}
 const fdia=ts=>ts?new Date(ts).toLocaleDateString(LOCAL,{day:'2-digit',month:'2-digit',year:'numeric'}):'—';
 const normName=x=>String(x||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
 function dupName(name,except){return Object.entries((S.me&&S.me.grupos)||{}).some(([g,v])=>g!==except&&normName(v.name)===normName(name))}
-const schedTxt=x=>`${DIAS[x.dow]}, ${x.ini}${x.fim?'–'+x.fim:''}${x.place?' · '+esc(x.place):''}`;
+const schedTxt=x=>`${DIAS[x.dow]}, ${x.ini}${x.fim?'–'+x.fim:''}${x.place?' · <span class="corta" data-corta>'+esc(x.place)+'</span>':''}`;
 /* Próxima data dos jogos fixos: regra em rodadas-fixas.ts, com teste próprio (D12). */
 function virtualFixos(){if(!grpAtivo())return [];return proximasFixas(fixos(),S.rod,new Date())}
 function virtualFromId(id){const m=/^f-(\d{4}-\d{2}-\d{2})-(\d{4})$/.exec(id||'');if(!m)return null;const dow=new Date(m[1]+'T12:00').getDay();

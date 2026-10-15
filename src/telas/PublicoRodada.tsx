@@ -104,7 +104,7 @@ function PublicoRodada() {
   return (
     <div class="stack">
       <div class="panel"><div class="hero-r">
-        <div><h2>{fdate(r.date)}{r.time ? ' · ' + hora(r) : ''}</h2><div class="muted">{r.place || tx('publico.localADefinir')}</div>{r.place && <Mapa local={r.place} />}</div>
+        <div><h2>{fdate(r.date)}{r.time ? ' · ' + hora(r) : ''}</h2><div class="muted linha-local"><span class="corta" data-corta>{r.place || tx('publico.localADefinir')}</span></div>{r.place && <Mapa local={r.place} />}</div>
         <div class="count">{a.inn.length}<small>{tx('publico.confirmados')}</small></div>
       </div></div>
       {times && !aberta && <div class="panel"><h3>{tx('publico.timesSorteados')}</h3>{times}</div>}

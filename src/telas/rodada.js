@@ -14,7 +14,7 @@ import { fixPanel } from './grupo-form.js';
 /* ---------- Rodada (admin) ---------- */
 /* Seletor da aba Rodada (D10): as próximas e as últimas 4. As mais antigas ficam na aba Histórico. */
 function rodadaPicker(r){const rs=rodadasJanela();if(r&&!rs.some(x=>x.id===r.id))rs.push(r);
-  return `<div class="rsel"><select class="sel" data-c="rid" aria-label="Rodada">${rs.map(x=>`<option value="${x.id}" ${x.id===r.id?'selected':''}>${fdate(x.date)}${x.place?' — '+esc(x.place):''}${x.cancelada?' (cancelada)':x.fixo?' · fixo':''}</option>`).join('')}</select><button class="btn" data-a="newRod">Nova rodada</button><button class="btn ghost" data-a="tab" data-v="historico">${tx('hist.atalho')}</button></div>`}
+  return `<div class="rsel"><select class="sel" data-c="rid" aria-label="Rodada">${rs.map(x=>`<option value="${x.id}" ${x.id===r.id?'selected':''}>${fdate(x.date)}${x.time?' · '+esc(hora(x)):''}${x.cancelada?' (cancelada)':x.fixo?' · fixo':''}</option>`).join('')}</select><button class="btn" data-a="newRod">Nova rodada</button><button class="btn ghost" data-a="tab" data-v="historico">${tx('hist.atalho')}</button></div>`}
 /* Ao abrir o grupo, as rodadas chegam em duas buscas (próximas e recentes). Até as duas chegarem, a tela espera:
    antes disso aparecia "Nenhuma rodada marcada" ou a lista de outra rodada por um instante (defeito do Kleber, 14/10). */
 const rodadasProntas=()=>!!(S.loaded.rodF&&S.loaded.rodP);
@@ -32,7 +32,7 @@ function vRodada(){
   const altTag=id=>presAlterada(id)?' <span class="tag alt" title="Resposta mudada por um aparelho diferente do que respondeu primeiro">· mudado por outro aparelho</span>':'';
   if(r.cancelada)return `<div class="stack">${rodadaPicker(r)}${fixPanel()}<div class="panel empty"><h2>${esc(fdate(r.date))} cancelada</h2><p class="muted">Sem jogo nesta data. O link permanente já mostra a rodada seguinte.</p><button class="btn" data-a="cancelRod">Reativar esta data</button></div></div>`;
   return `<div class="stack">${rodadaPicker(r)}${fixPanel()}
-  <div class="panel"><div class="hero-r"><div><h2>${esc(fdate(r.date))}${r.time?' · '+esc(hora(r)):''}</h2><div class="muted">${esc(r.place||'Local a definir')}${r.fixo?' · jogo fixo':''}${r.locked?' · lista fechada':''}</div>${r.place?vMapa(r.place):''}</div>
+  <div class="panel"><div class="hero-r"><div><h2>${esc(fdate(r.date))}${r.time?' · '+esc(hora(r)):''}</h2><div class="muted linha-local"><span class="corta" data-corta>${esc(r.place||'Local a definir')}</span><span class="extra">${r.fixo?' · jogo fixo':''}${r.locked?' · lista fechada':''}</span></div>${r.place?vMapa(r.place):''}</div>
     <div class="count">${carregou?a.inn.length:'…'}<small>confirmados</small></div></div>
     ${carregou?vDivergencia(r):''}
     ${carregou&&alt.length?`<div class="warn-alt"><b>${alt.length===1?'1 resposta foi mudada':alt.length+' respostas foram mudadas'} por outro aparelho:</b> ${alt.map(id=>esc(pname(id))+' ('+(S.pres[id].s==='in'?'vai':'não vai')+')').join(', ')}. Confira com o jogador. Se estiver errado, corrija em Marcar presença.</div>`:''}

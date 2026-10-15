@@ -328,3 +328,11 @@ dialog::backdrop{background:rgba(5,20,12,.55)}
 /* KAN-145: subtítulo cortado abre ao tocar */
 #gsub[role=button]{cursor:pointer}
 #gsub.aberto{white-space:normal;overflow-wrap:anywhere}
+/* KAN-146: local numa linha só, com "…"; tocar abre o texto inteiro */
+.linha-local{display:flex;min-width:0;max-width:100%}
+.linha-local .extra{flex:none;white-space:nowrap}
+[data-corta]{display:inline-block;max-width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
+[data-corta][role=button]{cursor:pointer}
+[data-corta].cortado{text-decoration:underline dotted;text-underline-offset:3px}
+[data-corta].aberto{white-space:normal;overflow-wrap:anywhere}
+.linha-local:has(.aberto){flex-wrap:wrap}

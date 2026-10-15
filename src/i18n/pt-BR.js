@@ -163,6 +163,19 @@ export default {
   'div.manter': 'Manter os times assim',
   'div.tirado': '{nome} saiu do time.',
   'div.mantidos': 'Times mantidos. O aviso foi apagado.',
+  /* janelas (KAN-140) */
+  'janela.descartarTitulo': 'Descartar o que você preencheu?',
+  'janela.descartarTexto': 'A janela vai fechar e o que foi digitado aqui se perde.',
+  'janela.descartar': 'Descartar',
+  'janela.continuarEditando': 'Continuar editando',
+  /* local no mapa (KAN-141) */
+  'mapa.google': 'Google Maps',
+  'mapa.waze': 'Waze',
+  'mapa.abrir': 'Como chegar:',
+  'mapa.abrirEm': 'Abrir {local} no {app}',
+  /* Google na aba errada (KAN-142) */
+  'auth.googleJaTinha': 'Você já tinha conta com esse Google. Entramos nela.',
+  'auth.googleCriou': 'Conta criada com o Google. Bem-vindo!',
   /* login e cadastro (pelada-v34: textos fora do código, KAN-10) */
   'login.criarTitulo': 'Crie sua conta grátis',
   'login.criarAjuda': 'Primeiro acesso? Comece por aqui. Com a conta você cria um grupo para cada jogo que organiza (futebol, vôlei, basquete…) e convida outros administradores. Jogadores não precisam de conta: eles confirmam presença pelo link que você manda.',

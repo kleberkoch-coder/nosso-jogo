@@ -6,6 +6,7 @@ import { attendance, curRodada, fmtL, freq, grpAtivo, isAvulso, lvl, lvlTag, pla
 import { hora } from '../dominio/rodadas.js';
 import { quality } from '../dominio/sorteio.js';
 import { presAlterada } from '../nucleo/edicoes.js';
+import { linkMaps, linkWaze } from '../nucleo/links.js';
 import { S } from '../nucleo/estado.js';
 import { esc, fdate } from '../nucleo/util.js';
 import { fixPanel } from './grupo-form.js';
@@ -31,7 +32,7 @@ function vRodada(){
   const altTag=id=>presAlterada(id)?' <span class="tag alt" title="Resposta mudada por um aparelho diferente do que respondeu primeiro">· mudado por outro aparelho</span>':'';
   if(r.cancelada)return `<div class="stack">${rodadaPicker(r)}${fixPanel()}<div class="panel empty"><h2>${esc(fdate(r.date))} cancelada</h2><p class="muted">Sem jogo nesta data. O link permanente já mostra a rodada seguinte.</p><button class="btn" data-a="cancelRod">Reativar esta data</button></div></div>`;
   return `<div class="stack">${rodadaPicker(r)}${fixPanel()}
-  <div class="panel"><div class="hero-r"><div><h2>${esc(fdate(r.date))}${r.time?' · '+esc(hora(r)):''}</h2><div class="muted">${esc(r.place||'Local a definir')}${r.fixo?' · jogo fixo':''}${r.locked?' · lista fechada':''}</div></div>
+  <div class="panel"><div class="hero-r"><div><h2>${esc(fdate(r.date))}${r.time?' · '+esc(hora(r)):''}</h2><div class="muted">${esc(r.place||'Local a definir')}${r.fixo?' · jogo fixo':''}${r.locked?' · lista fechada':''}</div>${r.place?vMapa(r.place):''}</div>
     <div class="count">${carregou?a.inn.length:'…'}<small>confirmados</small></div></div>
     ${carregou?vDivergencia(r):''}
     ${carregou&&alt.length?`<div class="warn-alt"><b>${alt.length===1?'1 resposta foi mudada':alt.length+' respostas foram mudadas'} por outro aparelho:</b> ${alt.map(id=>esc(pname(id))+' ('+(S.pres[id].s==='in'?'vai':'não vai')+')').join(', ')}. Confira com o jogador. Se estiver errado, corrija em Marcar presença.</div>`:''}
@@ -67,6 +68,9 @@ function vPresenca(r,a,carregou,avs,altTag){
     ${carregou&&!a.inn.length&&f!=='in'&&ids.length?'<p class="small muted" style="margin:10px 0 0">Ninguém confirmou ainda. Mande o link no grupo.</p>':''}
     <${f==='in'?'ol':'ul'} class="plist" id="presLista">${carregou?vis.map(linha).join(''):''}${!carregou||!vis.length?`<li class="muted small">${vazio}</li>`:''}</${f==='in'?'ol':'ul'}></div>`}
 
+/* KAN-141: "Como chegar" com Google Maps e Waze (o mesmo do link do jogador). */
+function vMapa(l){const a=(u,app)=>`<a class="chip-mapa" href="${esc(u)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(tx('mapa.abrirEm',{local:l,app}))}">${esc(app)}</a>`;
+  return `<div class="mapa small"><span class="muted">${tx('mapa.abrir')}</span>${a(linkMaps(l),tx('mapa.google'))}${a(linkWaze(l),tx('mapa.waze'))}</div>`}
 function teamCard(t,ti,admin){const R=rat(),c=col(t.c);
   const rs=id=>(t.res||[]).includes(id)?1:0,ps=t.players.slice().sort((a,b)=>rs(a)-rs(b)||posIdx(ppos(a))-posIdx(ppos(b)));
   const avg=t.players.reduce((s,id)=>s+lvl(id),0)/Math.max(1,t.players.length);

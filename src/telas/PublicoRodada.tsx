@@ -12,6 +12,7 @@ import { S as estado } from '../nucleo/estado.js';
 import { $, fdate, main } from '../nucleo/util.js';
 import { myLocal } from './publico-rodada.js';
 import { partidasDe } from '../nucleo/partidas.js';
+import { linkMaps, linkWaze } from '../nucleo/links.js';
 import { avulsosEsgotados } from '../dominio/limites';
 
 type Rodada = { id: string; date: string; time?: string; place?: string; locked?: boolean; cancelada?: boolean; times?: { c: number; players: string[]; res?: string[] }[] | null };
@@ -39,6 +40,13 @@ function Time({ t }: { t: { c: number; players: string[]; res?: string[] } }) {
       <ul>{ps.map(id => <li key={id} class={rs(id) ? 'reserva' : ''}><Pos id={id} /><span class="pn">{pname(id)}{rs(id) ? <> <span class="tag">· {tx('times.reserva')}</span></> : null}</span></li>)}</ul>
     </div>
   );
+}
+
+/* KAN-141: "Como chegar" com Google Maps e Waze. */
+function Mapa({ local }: { local: string }) {
+  return <div class="mapa small"><span class="muted">{tx('mapa.abrir')}</span>
+    <a class="chip-mapa" href={linkMaps(local)} target="_blank" rel="noopener noreferrer" aria-label={tx('mapa.abrirEm', { local, app: tx('mapa.google') })}>{tx('mapa.google')}</a>
+    <a class="chip-mapa" href={linkWaze(local)} target="_blank" rel="noopener noreferrer" aria-label={tx('mapa.abrirEm', { local, app: tx('mapa.waze') })}>{tx('mapa.waze')}</a></div>;
 }
 
 function Aviso({ titulo, texto, extra }: { titulo: string; texto: string; extra?: preact.ComponentChildren }) {
@@ -96,7 +104,7 @@ function PublicoRodada() {
   return (
     <div class="stack">
       <div class="panel"><div class="hero-r">
-        <div><h2>{fdate(r.date)}{r.time ? ' · ' + hora(r) : ''}</h2><div class="muted">{r.place || tx('publico.localADefinir')}</div></div>
+        <div><h2>{fdate(r.date)}{r.time ? ' · ' + hora(r) : ''}</h2><div class="muted">{r.place || tx('publico.localADefinir')}</div>{r.place && <Mapa local={r.place} />}</div>
         <div class="count">{a.inn.length}<small>{tx('publico.confirmados')}</small></div>
       </div></div>
       {times && !aberta && <div class="panel"><h3>{tx('publico.timesSorteados')}</h3>{times}</div>}

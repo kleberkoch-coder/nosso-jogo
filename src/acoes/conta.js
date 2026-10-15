@@ -19,7 +19,7 @@ import { $, DIAS, brl, cl, esc, fdate, fmonth, inAppBrowser, key, toast, toastAc
 import { upMyGroup } from '../rotas.js';
 import { pendencias } from '../telas/Caixa.tsx';
 import { groupForm, porTimeAjuda, readGroupForm, schedRow } from '../telas/grupo-form.js';
-import { AUTH_CANCEL, authMsg, pwFalta, pwOk } from '../telas/login.js';
+import { AUTH_CANCEL, authMsg, avisoGoogle, pwFalta, pwOk } from '../telas/login.js';
 import { actx, elapsed, setActx, sumPts } from '../telas/partida.js';
 import { MEK, myLocal } from '../telas/publico-rodada.js';
 import { tally } from '../telas/votacao.js';
@@ -53,7 +53,7 @@ const acoes={
     if(!B.demo&&inAppBrowser()){openDlg(`<h3>Abra no navegador</h3><p>O Google não permite entrar por dentro deste aplicativo. Abra o link no <b>Chrome</b> ou no <b>Safari</b> e toque de novo em <b>Continuar com o Google</b>.</p>
       <p class="small muted">Dica: toque nos três pontinhos (⋮ ou ⋯) no canto da tela e escolha <b>Abrir no navegador</b>. Ou entre com e-mail e senha aqui mesmo.</p>
       <div class="dlg-f"><button class="btn" data-a="close">Fechar</button><button class="btn primary" data-a="copyHere">Copiar link</button></div>`);return}
-    try{await B.google(val('le'));try{localStorage.setItem('pelada-mode','login')}catch(x){}}
+    try{const modo=S.authMode,r=await B.google(val('le')),av=avisoGoogle(r,modo);if(av)toast(av,6000);try{localStorage.setItem('pelada-mode','login')}catch(x){}}
     catch(x){if(AUTH_CANCEL.includes(x&&x.code))return;console.warn(x);const m=authMsg(x);if($('#lerr'))$('#lerr').textContent=m;else toast(m,6000)}},
   copyHere:()=>copyText(location.href),
   reset:async()=>{const e=val('le');if(!e){$('#lerr').textContent=tx('auth.digiteEmail');return}try{await B.reset(e);toast(tx('auth.linkEnviado',{email:e}))}catch(x){$('#lerr').textContent=authMsg(x)}},

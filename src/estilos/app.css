@@ -316,3 +316,7 @@ dialog::backdrop{background:rgba(5,20,12,.55)}
 .conf-txt{color:var(--muted);margin:0 0 12px;line-height:1.5}
 .conf .dlg-f .btn{min-height:var(--touch-min)}
 .btn.perigo{background:var(--out-fill);color:var(--on-out);border-color:var(--out)}
+/* KAN-141: "Como chegar" (Google Maps e Waze) */
+.mapa{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px}
+.chip-mapa{display:inline-flex;align-items:center;min-height:var(--touch-compact);padding:0 12px;border:1px solid var(--field-border);border-radius:999px;background:var(--surface);color:var(--ink);font-weight:600;text-decoration:none}
+.chip-mapa:hover{border-color:var(--ink)}

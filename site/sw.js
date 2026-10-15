@@ -1,6 +1,6 @@
 /* Service worker do site da pelada.
    Ao publicar uma nova versão, troque o número abaixo para os celulares atualizarem. */
-const VERSION = 'pelada-v36';
+const VERSION = 'pelada-v38';
 const SHELL = ['./', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png'];
 

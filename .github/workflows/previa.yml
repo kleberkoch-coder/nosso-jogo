@@ -1,9 +1,11 @@
 # Prévia de cada proposta de mudança no Firebase Hosting (substitui a prévia do Netlify, decisão D15).
 # Roda em modo demonstração (sem dados reais) e expira em 7 dias. O link é comentado na proposta.
 name: Prévia da proposta
+# Proposta só de documentos não gera prévia: o app é o mesmo que está no ar.
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+    paths-ignore: ['**.md', 'docs/**']
 
 concurrency:
   group: previa-${{ github.event.pull_request.number }}

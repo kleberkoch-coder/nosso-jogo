@@ -1,9 +1,12 @@
 # Monta o site e roda o roteiro de testes em modo demonstração a cada proposta de mudança.
 name: Testes do app
+# Proposta só de documentos (arquivos .md e a pasta docs/) não roda os testes: nada no app mudou.
 on:
   pull_request:
+    paths-ignore: ['**.md', 'docs/**']
   push:
     branches: [main]
+    paths-ignore: ['**.md', 'docs/**']
   workflow_dispatch:
 
 jobs:

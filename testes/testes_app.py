@@ -422,6 +422,24 @@ with sync_playwright() as pw:
     if pg.locator('.fixos').count():
         fx = pg.inner_text('.fixos')
         ok('Link permanente' in fx and not re.search(r'\d{2}:\d{2}', fx) and '0123456789' not in fx, f'CT-KAN-150-01: o painel do link permanente não repete dia, horário e local ({fx[:60]!r})')
+    # KAN-151: horário com hora (00–23) e minutos (00–59), setas ▲▼ e digitação; qualquer minuto (ex.: 10:03)
+    pg.click('[data-a=newRod]'); pg.wait_for_timeout(300)
+    hi = '#dlg [data-hora]:has(#rtm)'
+    pg.fill(hi + ' .hh', '10'); pg.fill(hi + ' .hm', '03')
+    ok(pg.input_value('#rtm') == '10:03', f'CT-KAN-151-01: digitar 10 e 03 grava 10:03 ({pg.input_value("#rtm")})')
+    pg.click(hi + ' [data-hseta="+m"]'); pg.wait_for_timeout(100)
+    ok(pg.input_value('#rtm') == '10:04', f'CT-KAN-151-02: ▲ nos minutos soma 1 ({pg.input_value("#rtm")})')
+    pg.fill(hi + ' .hh', '23'); pg.click(hi + ' [data-hseta="+h"]'); pg.wait_for_timeout(100)
+    ok(pg.input_value('#rtm') == '00:04', f'CT-KAN-151-02: ▲ na hora 23 volta para 00 ({pg.input_value("#rtm")})')
+    pg.fill(hi + ' .hh', '99'); ok(pg.input_value(hi + ' .hh') == '23', 'CT-KAN-151-03: hora não passa de 23')
+    tf = '#dlg [data-hora]:has(#rfm)'
+    ok(pg.input_value('#rfm') == '' and pg.input_value(tf + ' .hh') == '', 'CT-KAN-151-04: término pode ficar vazio')
+    pg.click(tf + ' [data-hseta="+h"]'); pg.wait_for_timeout(100)
+    ok(pg.input_value('#rfm') == '23:04', f'CT-KAN-151-04: a primeira seta do término parte do início ({pg.input_value("#rfm")})')
+    hb = pg.evaluate("[...document.querySelectorAll('#dlg [data-hseta]')].map(b=>Math.min(b.getBoundingClientRect().width,b.getBoundingClientRect().height))")
+    ok(min(hb) >= 36 and pg.evaluate("document.documentElement.scrollWidth<=innerWidth"), f'CT-KAN-151-05: setas com 36px ou mais e sem rolagem lateral ({min(hb):.0f}px)')
+    pg.keyboard.press('Escape'); pg.wait_for_timeout(200)
+    if pg.locator('#dlg .conf').count(): confirmar_app(pg, True)
     pg.click('[data-a=tab][data-v=grupo]'); pg.wait_for_timeout(400)
     fi = pg.evaluate("(()=>{const d=[...document.querySelectorAll('.ficha dt')].map(e=>Math.round(e.getBoundingClientRect().width));return [Math.min(...d),document.documentElement.scrollWidth<=innerWidth]})()")
     ok(fi[0] >= 200 and fi[1], f'CT-KAN-150-02: na aba Grupo, no celular, os rótulos ficam inteiros em cima do valor ({fi})')
@@ -1168,7 +1186,7 @@ with sync_playwright() as pw:
     p2.goto(URL + '#/criar'); p2.wait_for_timeout(800)
     p2.fill('#le', 'relogio@teste.com'); p2.fill('#lp', 'Jogo@2026'); p2.fill('#lp2', 'Jogo@2026'); p2.keyboard.press('Enter'); p2.wait_for_timeout(1200)
     p2.fill('#ngn', 'Sexta Noite')
-    p2.select_option('#sched .sd', '5'); p2.fill('#sched .si', '23:00'); p2.fill('#sched .sf', '01:00')
+    p2.select_option('#sched .sd', '5'); p2.fill('#sched .srow [data-hora]:nth-of-type(1) .hh', '23'); p2.fill('#sched .srow [data-hora]:nth-of-type(1) .hm', '00'); p2.fill('#sched .srow [data-hora]:nth-of-type(2) .hh', '01'); p2.fill('#sched .srow [data-hora]:nth-of-type(2) .hm', '00')
     p2.click('[data-a=createGroup]'); p2.wait_for_timeout(1500)
     gid_nt = p2.url.split('#/g/')[1]
     elenco_e_presenca(p2, 5)

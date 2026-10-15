@@ -1,3 +1,4 @@
+import { horaCampo } from './hora.js';
 import { cfg, ptipo } from '../dominio/caixa.js';
 import { hasPos, porTime, sport } from '../dominio/esportes.js';
 import { resumo } from '../dominio/times.ts';
@@ -72,7 +73,7 @@ function playerDlg(id,prefill){const p=id?S.jog[id]:null,cid=id||prefill?.id,st=
   <div class="dlg-f">${p?`<button class="btn ghost danger" data-a="delPlayer" data-p="${id}">Excluir</button><button class="btn" data-a="toggleJog" data-p="${id}">${p.ativo===false?'Reativar':'Inativar'}</button>`:''}<button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="savePlayer" data-p="${id||''}">Salvar jogador</button></div>`);
   setTimeout(()=>$('#pnm')?.focus(),50)}
 function rodDlg(r){const c=cfg();openDlg(`<h3>${r?'Editar rodada':'Nova rodada'}</h3>
-  <div class="row"><label class="f" style="flex:1"><span>Data</span><input class="inp" type="date" id="rdt" value="${r?.date||nextSat()}"></label><label class="f" style="width:120px"><span>Início</span><input class="inp" type="time" id="rtm" value="${r?.time||c.time}"></label><label class="f" style="width:120px"><span>Término</span><input class="inp" type="time" id="rfm" value="${r?.fim||''}"></label></div>
+  <div class="row"><label class="f" style="flex:1 1 100%"><span>Data</span><input class="inp" type="date" id="rdt" value="${r?.date||nextSat()}"></label><label class="f" style="width:auto"><span>Início</span>${horaCampo('rtm','',r?.time||c.time,false,'Início')}</label><label class="f" style="width:auto"><span>Término</span>${horaCampo('rfm','',r?.fim||'',true,'Término')}</label></div>
   <label class="f"><span>Local</span><input class="inp" id="rpl" value="${esc(r?.place??c.place)}" maxlength="200" placeholder="Ex.: Society do Zé, Av. Brasil 100, Jundiaí"></label>
   <p class="small muted">Quantidade de times e jogadores é definida na hora do sorteio.</p>
   <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveRod" data-v="${r?r.id:''}">${r?'Salvar':'Criar rodada'}</button></div>`)}

@@ -166,6 +166,11 @@ export default {
   /* painel do link permanente na aba Rodada (KAN-150) */
   'fixos.titulo': 'Link permanente',
   'fixos.ajuda': 'Abre sempre a próxima rodada. Mande uma vez e deixe fixado no grupo.',
+  /* campo de horário (KAN-151) */
+  'hora.hora': 'hora',
+  'hora.minutos': 'minutos',
+  'hora.mais': 'Aumentar {campo}',
+  'hora.menos': 'Diminuir {campo}',
   /* janelas (KAN-140) */
   'janela.descartarTitulo': 'Descartar o que você preencheu?',
   'janela.descartarTexto': 'A janela vai fechar e o que foi digitado aqui se perde.',

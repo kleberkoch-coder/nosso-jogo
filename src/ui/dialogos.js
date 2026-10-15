@@ -73,7 +73,7 @@ function playerDlg(id,prefill){const p=id?S.jog[id]:null,cid=id||prefill?.id,st=
   setTimeout(()=>$('#pnm')?.focus(),50)}
 function rodDlg(r){const c=cfg();openDlg(`<h3>${r?'Editar rodada':'Nova rodada'}</h3>
   <div class="row"><label class="f" style="flex:1"><span>Data</span><input class="inp" type="date" id="rdt" value="${r?.date||nextSat()}"></label><label class="f" style="width:120px"><span>Início</span><input class="inp" type="time" id="rtm" value="${r?.time||c.time}"></label><label class="f" style="width:120px"><span>Término</span><input class="inp" type="time" id="rfm" value="${r?.fim||''}"></label></div>
-  <label class="f"><span>Local</span><input class="inp" id="rpl" value="${esc(r?.place??c.place)}" placeholder="Ex.: Society do Zé"></label>
+  <label class="f"><span>Local</span><input class="inp" id="rpl" value="${esc(r?.place??c.place)}" maxlength="200" placeholder="Ex.: Society do Zé, Av. Brasil 100, Jundiaí"></label>
   <p class="small muted">Quantidade de times e jogadores é definida na hora do sorteio.</p>
   <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveRod" data-v="${r?r.id:''}">${r?'Salvar':'Criar rodada'}</button></div>`)}
 function drawPreview(){const box=$('#drawBox');if(!box)return;const k=[...box.querySelectorAll('.dp:checked')].length;if(sport().pairs)box.dataset.n=Math.max(1,Math.floor(k/2));const n=+box.dataset.n,T=porTime();

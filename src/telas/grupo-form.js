@@ -13,7 +13,7 @@ function fixPanel(){const f=fixos();
 function schedRow(x){x=x||{dow:1,ini:'20:00',fim:'22:00',place:''};
   return `<div class="srow" data-id="${esc(x.id||'')}"><select class="sel sd" aria-label="Dia da semana">${DIAS.map((d,i)=>`<option value="${i}" ${i===+x.dow?'selected':''}>${d}</option>`).join('')}</select>
   <input class="inp si" type="time" value="${esc(x.ini||'')}" aria-label="Início"><input class="inp sf" type="time" value="${esc(x.fim||'')}" aria-label="Término">
-  <button class="btn sm ghost danger" data-a="rmSched" aria-label="Remover dia">✕</button><input class="inp sl" value="${esc(x.place||'')}" maxlength="60" placeholder="Local (opcional)"></div>`}
+  <button class="btn sm ghost danger" data-a="rmSched" aria-label="Remover dia">✕</button><input class="inp sl" value="${esc(x.place||'')}" maxlength="200" placeholder="Local (opcional)"></div>`}
 function groupForm(g,editing){const sp=g.sport||'futebol',fq=editing?freq(g):'fixo',fx=(g.cfg&&g.cfg.fixos)||[];
   return `<div id="ngBox" data-sp="${sp}" data-sp-ant="${sp}" data-freq="${fq}">
   <label class="f"><span>Nome do grupo</span><input class="inp" id="ngn" maxlength="40" value="${esc(g.name||'')}" placeholder="Ex.: Futebol de Segunda"></label>

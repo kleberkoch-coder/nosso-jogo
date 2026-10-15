@@ -27,6 +27,7 @@ import { avisar, closeDlg, closeDlgNow, confirmou, dlg, drawPreview, naoConfirma
 import { changed, render } from '../ui/render.js';
 import { TEMA_K, applyTheme, closeThemeMenu, openThemeMenu, themeAnchor, themeMenuEl } from '../ui/tema.js';
 import { LOCAL } from '../i18n/formatos.js';
+import { nPartidas, temVotacao } from '../telas/rodada.js';
 import { ACT } from '../acoes.js';
 
 /* Põe a pessoa direto num time (sai de qualquer outro) e a inclui na foto do sorteio, para não gerar aviso. */
@@ -83,7 +84,10 @@ const acoes={
     const ps=[w(GB.set('avulsos/'+id,o)),editRat(a=>setLvl(a,id,+$('#plv').value))];const c=saveContato(id,val('ptel'),'');if(c)ps.push(c);closeDlg();toast('Avulso atualizado.');return Promise.all(ps)},
   delAvulso:el=>{const id=el.dataset.p;if(confirmou(el,{titulo:'Esquecer este avulso?',texto:'Ele some da lista de "já jogaram aqui". O histórico de partidas continua.',acao:'Esquecer avulso',perigo:true})!=='sim')return;delete S.avul[id];changed();closeDlg();return w(GB.del('avulsos/'+id))},
   promote:el=>{const id=el.dataset.p,p=S.avul?.[id]||{nome:S.pres[id]?.nome,pos:S.pres[id]?.pos};playerDlg(null,{id,name:p?.nome,pos:p?.pos,tipo:'diarista'});$('[data-a=savePlayer]').dataset.p='';$('[data-a=savePlayer]').dataset.new=id},
-  drawDlg:()=>{const a=attendance(),T=porTime(),fora=new Set(cfg().foraPos||[]),k=a.inn.length,dentro=a.inn.filter(id=>!(hasPos()&&fora.has(ppos(id)))).length,
+  drawDlg:el=>{const r0=curRodada();
+    if(r0&&r0.times&&temVotacao(r0)){toast(tx('sorteio.bloqueadoVotacao'),6000);return}
+    if(r0&&r0.times&&nPartidas(r0)&&confirmou(el,{titulo:tx('sorteio.comPartidasTitulo'),texto:tp('sorteio.comPartidas',nPartidas(r0)),acao:tx('div.sortearDeNovo')})!=='sim')return;
+    const a=attendance(),T=porTime(),fora=new Set(cfg().foraPos||[]),k=a.inn.length,dentro=a.inn.filter(id=>!(hasPos()&&fora.has(ppos(id)))).length,
       n=sport().pairs?Math.max(1,Math.floor(dentro/2)):sugerirTimes(dentro,T);
     openDlg(`<div id="drawBox" data-n="${n}" data-nov="${cfg().novelty}" data-fora="${esc([...fora].join(','))}"><h3>${sport().pairs?'Sortear duplas':'Sortear times'}</h3>
     <p class="small muted" style="margin-top:-6px">${sport().pairs?tx('sorteio.infoDuplas'):tx('sorteio.info',{n:T})}</p>

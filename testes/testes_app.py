@@ -53,6 +53,7 @@ def elenco_e_presenca(pg, n):
 
 def sortear(pg):
     pg.click('[data-a=drawDlg]'); pg.wait_for_timeout(300)
+    if pg.locator('#dlg .conf').count(): confirmar_app(pg, True)  # rodada com partida salva pede confirmação (KAN-138)
     pg.click('#drawGo'); pg.wait_for_timeout(2500)
 
 # Banco de demonstração (localStorage 'pelada-demo-v2'). O app só lê o banco ao abrir: depois de PUT/DEL, recarregue a página.
@@ -372,6 +373,11 @@ with sync_playwright() as pw:
     pg.click('[data-a=saveVote]'); pg.wait_for_timeout(800)
     ok(pg.locator('#shtxt').is_visible(), 'votação criada e link para o WhatsApp continua aberto')
     pg.click('[data-a=close]'); pg.wait_for_timeout(300)
+    # ---------- v33 (KAN-138, decisão do Kleber 15/10): rodada com votação não pode ser sorteada de novo
+    pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(400)
+    ok(pg.locator('[data-a=drawDlg]').count() == 0 and 'exclua a votação' in pg.inner_text('main'),
+       'CT-KAN-138-01: com votação na rodada, "Sortear de novo" some e o aviso explica como liberar')
+    ok(pg.locator('[data-a=move]').count() > 0, 'CT-KAN-138-01: mover jogador continua disponível com votação')
     # Votação pública (sugerido pela Qualidade na v12): chip de tema, voto registrado e contraste nos dois temas
     vid = pg.evaluate("S.vid")
     pg.goto(URL + '#/p/' + gid_fut + '/v/' + vid); pg.wait_for_timeout(1000)
@@ -535,6 +541,18 @@ with sync_playwright() as pw:
     pg.click('[data-a=tab][data-v=partida]'); pg.wait_for_timeout(400)
     ok(not pg.evaluate("document.getElementById('clock').classList.contains('pisca')"), 'CT-KAN-73-03: ao redesenhar a tela, o cronômetro não volta a piscar')
     pg.click('[data-a=clock]'); pg.click('[data-a=clockReset]'); pg.wait_for_timeout(300)
+    # ---------- v33 (KAN-138): com partida salva (sem votação), sortear de novo pede confirmação
+    pg.click('[data-a=saveMatch]'); pg.wait_for_timeout(800)
+    pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(400)
+    t_antes = pg.evaluate("JSON.stringify(S.rod[S.rid].times.map(t=>t.players))")
+    pg.locator('.panel [data-a=drawDlg]').first.click(); pg.wait_for_timeout(300)
+    cj = pg.inner_text('#dlg .conf') if pg.locator('#dlg .conf').count() else ''
+    ok('Sortear de novo com partidas salvas?' in cj and 'continua no ranking' in cj, f'CT-KAN-138-02: com partida salva, "Sortear de novo" avisa antes ({cj[:60]!r})')
+    confirmar_app(pg, False)
+    ok(pg.evaluate("JSON.stringify(S.rod[S.rid].times.map(t=>t.players))") == t_antes and not pg.evaluate("document.getElementById('dlg').open"), 'CT-KAN-138-02: Cancelar não mexe nos times')
+    pg.locator('.panel [data-a=drawDlg]').first.click(); pg.wait_for_timeout(300); confirmar_app(pg, True)
+    ok(pg.locator('#drawGo').is_visible(), 'CT-KAN-138-02: confirmando, abre a janela do sorteio')
+    pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(300)
 
     # ---------- v16 (KAN-94 e KAN-95): jogadores por time definido no grupo, reservas e posições fora do sorteio
     pg.click('[data-a=groupsDlg]'); pg.wait_for_timeout(300); pg.click('#dlg [data-a=newGroup]'); pg.wait_for_timeout(300)
@@ -751,7 +769,10 @@ with sync_playwright() as pw:
     pg.locator('.team [data-a=color][data-v="1"]').click(); pg.wait_for_timeout(800)
     d0 = pg.evaluate(RODDB, [gid_fut, rid_main])
     pg.evaluate("S.rod[S.rid]=Object.assign({},S.rod[S.rid]);delete S.rod[S.rid].cores")  # este aparelho não viu a troca de cor
+    # A rodada principal tem votação (desde a v33 isso bloqueia sortear de novo); aqui a votação sai só da memória para testar as cores
+    pg.evaluate("window.__votGuardada=S.vot;S.vot={}"); pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(300)
     sortear(pg)
+    pg.evaluate("S.vot=window.__votGuardada"); pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(300)
     d1 = pg.evaluate(RODDB, [gid_fut, rid_main])
     ok((d0.get('cores') or {}).get('1') is not None and d1.get('drawnAt') != d0.get('drawnAt') and d1.get('cores') == d0.get('cores') and d1.get('locked'),
        f'CT-KAN-108-02: sortear de novo com a tela desatualizada grava o sorteio novo e mantém as cores escolhidas ({d1.get("cores")})')
@@ -792,6 +813,7 @@ with sync_playwright() as pw:
         ok(pg.evaluate(SEM_XSS) and pg.locator('[data-a=mark],.team').count() > 0, f'CT-KAN-76-12: {nome_g}: presença com código é ignorada na aba Rodada (nada é executado)')
         d0 = pg.evaluate(RODDB, [g, rg])
         pg.click('[data-a=drawDlg]'); pg.wait_for_timeout(300)
+        if pg.locator('#dlg .conf').count(): confirmar_app(pg, True)  # basquete tem partida salva (KAN-138)
         vals = pg.evaluate("[...document.querySelectorAll('#drawBox .dp')].map(x=>x.value)")
         pg.click('#drawGo'); pg.wait_for_timeout(2500)
         d1 = pg.evaluate(RODDB, [g, rg])

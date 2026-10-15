@@ -17,6 +17,10 @@ function rodadaPicker(r){const rs=rodadasJanela();if(r&&!rs.some(x=>x.id===r.id)
 /* Ao abrir o grupo, as rodadas chegam em duas buscas (próximas e recentes). Até as duas chegarem, a tela espera:
    antes disso aparecia "Nenhuma rodada marcada" ou a lista de outra rodada por um instante (defeito do Kleber, 14/10). */
 const rodadasProntas=()=>!!(S.loaded.rodF&&S.loaded.rodP);
+/* KAN-138 (decisão do Kleber, 15/10): com votação na rodada, os times não podem ser sorteados de novo
+   (a votação foi feita sobre esses times). Com partidas salvas pode, mas o app avisa antes. */
+const temVotacao=r=>!!r&&Object.values(S.vot||{}).some(v=>v&&v.rid===r.id);
+const nPartidas=r=>(r&&r.np)||0;
 function vRodada(){
   if(!rodadasProntas())return `<div class="empty muted">${tx('comum.carregando')}</div>`;
   const r=curRodada();
@@ -34,7 +38,8 @@ function vRodada(){
     <div class="row" style="margin-top:12px"><button class="btn sm primary" data-a="shareConvite">Mandar link no WhatsApp</button><button class="btn sm" data-a="copyLink">Copiar link</button><button class="btn sm" data-a="editRod">Editar</button>
     <button class="btn sm" data-a="lock">${r.locked?'Reabrir lista':'Fechar lista'}</button>${r.fixo?'<button class="btn sm ghost danger" data-a="cancelRod">Cancelar esta data</button>':'<button class="btn sm ghost danger" data-a="delRod">Excluir</button>'}</div></div>
   ${vPresenca(r,a,carregou,avs,altTag)}
-  <div class="panel"><div class="row between"><h3 style="margin:0" id="timesTit" tabindex="-1">Times</h3>${r.times?`<button class="btn bib" data-a="drawDlg" ${a.inn.length>=4?'':'disabled'}>Sortear de novo</button>`:''}</div>
+  <div class="panel"><div class="row between"><h3 style="margin:0" id="timesTit" tabindex="-1">Times</h3>${r.times&&!temVotacao(r)?`<button class="btn bib" data-a="drawDlg" ${a.inn.length>=4?'':'disabled'}>Sortear de novo</button>`:''}</div>
+    ${r.times&&temVotacao(r)?`<p class="small muted aviso-votacao" style="margin:8px 0 0">${tx('sorteio.bloqueadoVotacao')}</p>`:''}
     ${!r.times?`<p class="muted small" style="margin-bottom:0">${tx(a.inn.length<4?'rodada.timesAjuda':'rodada.timesPronto')}</p>`:''}
     ${r.times?`<div class="teams" style="margin-top:12px">${r.times.map((t,ti)=>teamCard(t,ti,true)).join('')}</div>
     ${q?`<div class="quality"><span>Diferença de nota média: <b>${fmtL(Math.round(q.diff*10)/10)}</b></span>${q.gk?`<span>${esc(posLabel(sport().key))}s: <b>${q.gk.join(' × ')}</b></span>`:''}${q.nsep?`<span>Separações respeitadas: <b>${q.nsep-q.viol}/${q.nsep}</b></span>`:''}${q.newPct!=null?`<span>Parcerias novas vs. rodada anterior: <b>${q.newPct}%</b></span>`:''}</div>`:''}
@@ -76,6 +81,6 @@ function vDivergencia(r){const d=divergencia(r,S.pres);if(!d.saiu.length&&!d.ent
   const linha=(txt,btn)=>`<li><span class="pn">${txt}</span>${btn}</li>`;
   return `<div class="warn-alt warn-div" role="status"><b>${tx('div.titulo')}</b> ${tx(pares?'div.ajudaDuplas':'div.ajuda')}
     <ul class="plist wrap" style="margin:8px 0">${d.saiu.map(id=>linha(tx('div.naoVaiMais',{nome:esc(pname(id))}),b('divTirar',id,tx('div.tirar')))).join('')}${d.entrou.map(id=>linha(tx('div.confirmouDepois',{nome:esc(pname(id))}),b('divPor',id,tx('div.por')))).join('')}</ul>
-    <div class="row"><button class="btn sm bib" data-a="drawDlg">${tx('div.sortearDeNovo')}</button><button class="btn sm" data-a="divManter">${tx('div.manter')}</button></div></div>`}
+    <div class="row">${temVotacao(r)?'':`<button class="btn sm bib" data-a="drawDlg">${tx('div.sortearDeNovo')}</button>`}<button class="btn sm" data-a="divManter">${tx('div.manter')}</button></div></div>`}
 
-export { rodadaPicker, rodadasProntas, teamCard, vRodada };
+export { nPartidas, rodadaPicker, rodadasProntas, teamCard, temVotacao, vRodada };

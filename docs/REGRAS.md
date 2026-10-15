@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v39 (15/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v40 (15/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -39,6 +39,7 @@ Atualizado na pelada-v39 (15/10/2026). Toda entrega que mudar uma regra atualiza
 - Pares "não colocar no mesmo time" são respeitados no sorteio.
 
 ## Rodadas e presença
+- Aba Rodada não repete informação: dia, hora e local ficam no cartão da rodada; o painel de cima é só o "Link permanente" (KAN-150).
 - Frequente: a próxima rodada de cada dia fixo existe sozinha; o link permanente vira quando o jogo termina; uma data pode ser cancelada.
 - Esporádico: o administrador cria cada rodada.
 - Local é texto livre, até 200 letras (cabe o endereço completo, KAN-143); com local, o link, a aba Rodada e o convite do WhatsApp mostram "Como chegar" (Google Maps e Waze, por busca do texto, sem custo) (KAN-141).
@@ -83,6 +84,7 @@ Atualizado na pelada-v39 (15/10/2026). Toda entrega que mudar uma regra atualiza
 - Janela de formulário com algo preenchido: tocar fora ou Esc pergunta "Descartar o que você preencheu?" antes de fechar (KAN-140).
 - Confirmações na janela do app (nunca `confirm` ou `alert`): pergunta curta, consequência, botão com o verbo; coral quando apaga (KAN-128).
 - Local e outros textos longos: numa linha só com "…" (sublinhado pontilhado quando corta); passar o mouse mostra o texto inteiro e tocar abre ou fecha. O seletor de rodadas e o cabeçalho não mostram o local. Nada pode criar rolagem lateral (KAN-144, KAN-146).
+- Horários (início e término) são escolhidos numa lista de 15 em 15 minutos, nunca no relógio do celular, que corta botões no Android com letra grande (KAN-151).
 - Alvos de toque: 44px nos principais, 36px nos pequenos. Contraste WCAG AA nos temas claro e escuro.
 
 ## Entrega (como toda mudança vai ao ar)

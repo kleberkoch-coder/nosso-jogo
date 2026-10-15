@@ -418,6 +418,19 @@ with sync_playwright() as pw:
     ok(ab == [True, True, 'true', True], f'CT-KAN-146-03: tocar no local abre o texto inteiro, sem rolagem lateral ({ab})')
     pg.click('.hero-r [data-corta]'); pg.wait_for_timeout(200)
     ok(not pg.evaluate("document.querySelector('.hero-r [data-corta]').classList.contains('aberto')"), 'CT-KAN-146-03: tocar de novo fecha')
+    # ---------- v40 (KAN-150): painel do link permanente sem repetir dia, hora e local; aba Grupo legível no celular
+    if pg.locator('.fixos').count():
+        fx = pg.inner_text('.fixos')
+        ok('Link permanente' in fx and not re.search(r'\d{2}:\d{2}', fx) and '0123456789' not in fx, f'CT-KAN-150-01: o painel do link permanente não repete dia, horário e local ({fx[:60]!r})')
+    # KAN-151: horário escolhido numa lista (de 15 em 15 minutos), sem o relógio do celular
+    pg.click('[data-a=newRod]'); pg.wait_for_timeout(300)
+    hr = pg.evaluate("(()=>{const a=document.getElementById('rtm'),b=document.getElementById('rfm');return [a.tagName,a.options.length,!!a.value,b.tagName,b.options[0].value]})()")
+    ok(hr[0] == 'SELECT' and hr[1] >= 96 and hr[2] and hr[3] == 'SELECT' and hr[4] == '', f'CT-KAN-151-01: início e término da rodada são listas de horários (término pode ficar vazio) ({hr})')
+    pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(300)
+    pg.click('[data-a=tab][data-v=grupo]'); pg.wait_for_timeout(400)
+    fi = pg.evaluate("(()=>{const d=[...document.querySelectorAll('.ficha dt')].map(e=>Math.round(e.getBoundingClientRect().width));return [Math.min(...d),document.documentElement.scrollWidth<=innerWidth]})()")
+    ok(fi[0] >= 200 and fi[1], f'CT-KAN-150-02: na aba Grupo, no celular, os rótulos ficam inteiros em cima do valor ({fi})')
+    pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(400)
     pl = ctx.new_page(); pl.goto(URL + '#/p/' + gid_fut); pl.wait_for_timeout(1200)
     larg = pl.evaluate("[document.documentElement.scrollWidth, innerWidth]"); pl.close()
     ok(larg[0] <= larg[1], f'CT-KAN-144-02: nem o link do jogador ({larg})')
@@ -1160,7 +1173,7 @@ with sync_playwright() as pw:
     p2.goto(URL + '#/criar'); p2.wait_for_timeout(800)
     p2.fill('#le', 'relogio@teste.com'); p2.fill('#lp', 'Jogo@2026'); p2.fill('#lp2', 'Jogo@2026'); p2.keyboard.press('Enter'); p2.wait_for_timeout(1200)
     p2.fill('#ngn', 'Sexta Noite')
-    p2.select_option('#sched .sd', '5'); p2.fill('#sched .si', '23:00'); p2.fill('#sched .sf', '01:00')
+    p2.select_option('#sched .sd', '5'); p2.select_option('#sched .si', '23:00'); p2.select_option('#sched .sf', '01:00')
     p2.click('[data-a=createGroup]'); p2.wait_for_timeout(1500)
     gid_nt = p2.url.split('#/g/')[1]
     elenco_e_presenca(p2, 5)

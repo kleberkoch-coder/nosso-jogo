@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v43 (15/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v44 (15/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -35,6 +35,7 @@ Atualizado na pelada-v43 (15/10/2026). Toda entrega que mudar uma regra atualiza
 
 ## Jogadores
 - Ficha: nome, posição, nota de 1 a 10 (meio ponto), tipo mensalista ou diarista, contato. Inativar é diferente de excluir.
+- Telefone: sem "+", é brasileiro (DDD + número, 10 ou 11 dígitos); com "+" (ou "00") e o código do país, vale qualquer país (8 a 15 dígitos). Fica gravado no formato internacional (+55…); os antigos, sem "+", continuam brasileiros. E-mail precisa de nome@domínio.terminação. Inválido não salva (KAN-156; regra em `dominio/contato.ts`, com teste).
 - Avulso do link só vira cadastro depois de entrar num sorteio (ou se o administrador o adicionar); pode ser promovido ao elenco.
 - Pares "não colocar no mesmo time" são respeitados no sorteio.
 
@@ -93,6 +94,7 @@ Atualizado na pelada-v43 (15/10/2026). Toda entrega que mudar uma regra atualiza
 - Na mesma entrega: atualizar este arquivo, os docs afetados, a pasta `app/` do projeto e os cartões do Jira ([Entrega], Em análise).
 - Limite de tamanho (D7): o link do jogador até 50 KB comprimido; o app inteiro, com a gestão, até 85 KB.
 - Dívida técnica não piora (D12, KAN-154): a montagem falha se aumentar innerHTML, textos fora do dicionário ou arquivos sem tipos, ou se diminuírem as telas como componente (tetos em `docs/divida.json`).
+- O GitHub confere toda proposta (KAN-157, `testes/conferir-entrega.mjs`): app mudou → VERSION sobe; componente `.tsx` novo em `src/ui/` ou classe nova no CSS → `docs/DESIGN-SYSTEM.md` muda; tela ou ação mudou → `docs/REGRAS.md` muda (ou "sem mudança de regra" na proposta); `firestore.rules` mudou → a proposta avisa; checklist da proposta sem item em branco.
 - Tela mexida, tela migrada: tela tocada vira componente TypeScript + Preact na mesma entrega, usando `src/ui/componentes.tsx`; componente visual novo entra antes no Design System (KAN-152, KAN-153).
 - A gestão (telas e ações de quem tem conta, página inicial e convite) fica em `src/admin.js` e só baixa quando alguém entra com conta; o link público e a votação nunca a baixam (KAN-149). Tela ou ação nova de gestão entra por lá.
 

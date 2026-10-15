@@ -4,6 +4,7 @@ import { posKeys } from '../dominio/esportes.js';
 import { normName, players, pname, ppos, setLvl } from '../dominio/grupo.js';
 import { tp } from '../i18n/index.js';
 import { B } from '../nucleo/backend.js';
+import { lerContato } from '../ui/contato-form';
 import { editApp, editRat, saveContato } from '../nucleo/edicoes.js';
 import { GB, S, clean, w } from '../nucleo/estado.js';
 import { $, esc, key, toast } from '../nucleo/util.js';
@@ -16,10 +17,10 @@ const acoes={
   addPlayer:()=>playerDlg(null),editPlayer:el=>playerDlg(el.dataset.p),
   star:()=>{},
   waLink:()=>{},
-  savePlayer:el=>{const name=val('pnm');if(name.length<2){toast('Digite o nome.');return}const nw=el.dataset.new,id=el.dataset.p||nw||B.newId(),v=+$('#plv').value;
+  savePlayer:el=>{const name=val('pnm');if(name.length<2){toast('Digite o nome.');return}const ct=lerContato('ptel','pmail');if(!ct)return;const nw=el.dataset.new,id=el.dataset.p||nw||B.newId(),v=+$('#plv').value;
     if(Object.entries(S.jog).some(([k,x])=>k!==id&&normName(x.name)===normName(name))&&confirmou(el,{titulo:'Já existe um jogador chamado "'+name+'"',texto:'Cadastrar outro com o mesmo nome?',acao:'Cadastrar mesmo assim'})!=='sim')return;
     const old=S.jog[id]||{},tp=val('ptp'),data=Object.assign({},old,{name,pos:val('ppos'),ativo:old.ativo!==false,criado:old.criado||(nw&&S.avul[nw]?.criado)||Date.now()});delete data.tipo;
-    S.jog[id]=data;changed();w(GB.set('jogadores/'+id,clean(data)));if(ptipo(id)!==tp||!((S.pc||{}).tipos||{})[id])editPc(a=>{a.tipos[id]=tp});editRat(a=>setLvl(a,id,v));saveContato(id,val('ptel'),val('pmail'));
+    S.jog[id]=data;changed();w(GB.set('jogadores/'+id,clean(data)));if(ptipo(id)!==tp||!((S.pc||{}).tipos||{})[id])editPc(a=>{a.tipos[id]=tp});editRat(a=>setLvl(a,id,v));saveContato(id,ct.tel,ct.email);
     if(nw&&S.avul[nw]){delete S.avul[nw];w(GB.del('avulsos/'+nw))}closeDlg();toast('Jogador salvo.')},
   toggleJog:el=>{const id=el.dataset.p,o=Object.assign({},S.jog[id]),on=o.ativo===false;if(!on&&confirmou(el,{titulo:'Inativar '+o.name+'?',texto:'Ele sai das listas de presença, mas o histórico continua.',acao:'Inativar jogador'})!=='sim')return;
     o.ativo=on;if(on)delete o.inativadoEm;else o.inativadoEm=Date.now();S.jog[id]=o;changed();closeDlg();toast(on?'Jogador reativado.':'Jogador inativado.');return w(GB.set('jogadores/'+id,clean(o)))},

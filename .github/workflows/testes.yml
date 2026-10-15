@@ -15,9 +15,17 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      # Conferência da entrega (pelada-v44): versão, Design System, regras e checklist da proposta.
+      - name: Conferir a entrega (versão, Design System, regras e checklist)
+        if: github.event_name == 'pull_request'
+        env:
+          DESCRICAO_PR: ${{ github.event.pull_request.body }}
+        run: node testes/conferir-entrega.mjs "${{ github.event.pull_request.base.sha }}"
       - name: Conferir tipos, testar as regras de negócio e montar o site (inclui o orçamento de tamanho)
         run: |
           npm install --no-audit --no-fund

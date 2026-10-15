@@ -346,3 +346,6 @@ dialog::backdrop{background:rgba(5,20,12,.55)}
 .hora .hdois{font-weight:700;font-size:18px;color:var(--muted)}
 .hseta{min-width:var(--touch-min);min-height:var(--touch-compact);border:0;background:transparent;color:var(--brand,var(--primary));font-size:16px;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;border-radius:8px}
 .hseta:active{background:var(--surface-2)}
+
+/* KAN-156: dica embaixo do campo (ex.: telefone de outro país) */
+label.f>span.dica{display:block;margin:4px 0 0;font-weight:400}

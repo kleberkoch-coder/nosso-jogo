@@ -86,6 +86,7 @@ Registrados na pelada-v43 (KAN-152). Desde a v43, os componentes reaproveitávei
 - **Painel do link permanente** (KAN-150): título "Link permanente", uma linha de ajuda em `muted` e os botões "Mandar no WhatsApp" (`primary sm`) e "Copiar link" (`sm`). Não repete dia, hora nem local, que ficam no cartão da rodada.
 - **Login com Google** (KAN-142): botão "Continuar com o Google" em `btn` na largura toda, com o "G" colorido oficial, acima do divisor "ou com e-mail e senha". Se a aba não bater (criar conta com Google que já existe, ou o contrário), entra mesmo assim e avisa num aviso flutuante.
 - **Regras da senha** (KAN-10, classe `pwr`): lista em duas colunas, 13px, em `muted`, com "○" para o que falta e "✓" em `in` para o que já foi cumprido: 8 caracteres, maiúscula, minúscula, número e caractere especial.
+- **Campo de telefone** (KAN-156): rótulo "Telefone / WhatsApp", campo `tel` com exemplo "(11) 98765-4321" e uma dica embaixo, em `muted` e peso normal (classe `dica`): "De outro país? Comece com + e o código do país". Número brasileiro aparece como (11) 98765-4321; o de outro país, como foi gravado (+351…). Erro: aviso flutuante com o motivo (incompleto, números demais, inválido), e o cursor volta ao campo. O e-mail segue a mesma regra, com o exemplo "nome@exemplo.com".
 - **Carregando a gestão** (KAN-149): ao abrir a gestão pela primeira vez, a área principal mostra "Carregando…" em `muted`; sem internet, "Não foi possível carregar" com a orientação de recarregar.
 
 ## Componentes (pelada-v30)

@@ -16,7 +16,7 @@ Na pasta `app/` deste projeto: `app/index.html` (o app **montado**, num arquivo 
 
 **O que os agentes não enxergam** (GitHub, prévia e site no ar) fica em `testes/VERIFICACOES-GITHUB.md`: resultado dos testes sobre o site publicado, regras de negócio, regras do Firebase no emulador, tamanho do app, Merge feito e regras publicadas. Quem entrega a versão atualiza esse arquivo ao abrir a proposta e de novo depois do Merge. Os agentes usam como evidência, em vez de deixar cartões "parciais" por falta de acesso.
 
-As decisões técnicas ficam em `docs/ARQUITETURA.md`.
+**Regras em vigor, em resumo:** `REGRAS.md`, com uma linha por regra e o mapa de impacto (o que mexer quando muda cada assunto). Leia primeiro; o detalhe fica em `VISAO-DO-PRODUTO.md`. As decisões técnicas ficam em `docs/ARQUITETURA.md`.
 
 ## Como as decisões funcionam
 - **Demandas do PO, do UX, do Arquiteto e achados de segurança médios ou baixos:** chegam em **Ideia** com `para-avaliar`. Comente *aprovado* ou *recusado* no cartão; o agente dono move na próxima execução.

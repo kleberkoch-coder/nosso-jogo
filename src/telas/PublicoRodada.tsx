@@ -3,7 +3,7 @@
    Os botões continuam com data-a, então as ações, o carregando e o aviso de sem sinal são os mesmos do resto do app. */
 import { render } from 'preact';
 import { useState } from 'preact/hooks';
-import { APP, COL, hasPos, posLabel, sport, sportName, tn } from '../dominio/esportes.js';
+import { APP, COL, sport, sportName, tn } from '../dominio/esportes.js';
 import { attendance, fixos, gname, grpAtivo, isAvulso, normName, players, pname, ppos, rodById } from '../dominio/grupo.js';
 import { hora } from '../dominio/rodadas.js';
 import { LOCAL } from '../i18n/formatos.js';
@@ -12,7 +12,7 @@ import { S as estado } from '../nucleo/estado.js';
 import { $, fdate, main } from '../nucleo/util.js';
 import { myLocal } from './publico-rodada.js';
 import { partidasDe } from '../nucleo/partidas-lista.js';
-import { linkMaps, linkWaze } from '../nucleo/links.js';
+import { ComoChegar, Pos, TextoCortado } from '../ui/componentes';
 import { avulsosEsgotados } from '../dominio/limites';
 
 type Rodada = { id: string; date: string; time?: string; place?: string; locked?: boolean; cancelada?: boolean; times?: { c: number; players: string[]; res?: string[] }[] | null };
@@ -21,12 +21,6 @@ type Presenca = { s?: 'in' | 'out'; nome?: string };
 // O estado do app ainda é JavaScript sem tipos; aqui ele é lido como um objeto livre.
 // Sempre dentro das funções: ao carregar este módulo o estado ainda não existe (regra de ordem, docs/ARQUITETURA.md).
 const st = (): any => estado;
-
-function Pos({ id }: { id: string }) {
-  const k = ppos(id) as string;
-  if (!hasPos() || !k) return null;
-  return <span class={'pos ' + (k === sport().key ? 'GOL' : '')} title={posLabel(k)}>{k}</span>;
-}
 
 function Time({ t }: { t: { c: number; players: string[]; res?: string[] } }) {
   const c = COL[(t.c || 0) % COL.length], pares = !!(sport() as { pairs?: boolean }).pairs;
@@ -40,13 +34,6 @@ function Time({ t }: { t: { c: number; players: string[]; res?: string[] } }) {
       <ul>{ps.map(id => <li key={id} class={rs(id) ? 'reserva' : ''}><Pos id={id} /><span class="pn">{pname(id)}{rs(id) ? <> <span class="tag">· {tx('times.reserva')}</span></> : null}</span></li>)}</ul>
     </div>
   );
-}
-
-/* KAN-141: "Como chegar" com Google Maps e Waze. */
-function Mapa({ local }: { local: string }) {
-  return <div class="mapa small"><span class="muted">{tx('mapa.abrir')}</span>
-    <a class="chip-mapa" href={linkMaps(local)} target="_blank" rel="noopener noreferrer" aria-label={tx('mapa.abrirEm', { local, app: tx('mapa.google') })}>{tx('mapa.google')}</a>
-    <a class="chip-mapa" href={linkWaze(local)} target="_blank" rel="noopener noreferrer" aria-label={tx('mapa.abrirEm', { local, app: tx('mapa.waze') })}>{tx('mapa.waze')}</a></div>;
 }
 
 function Aviso({ titulo, texto, extra }: { titulo: string; texto: string; extra?: preact.ComponentChildren }) {
@@ -104,7 +91,7 @@ function PublicoRodada() {
   return (
     <div class="stack">
       <div class="panel"><div class="hero-r">
-        <div><h2>{fdate(r.date)}{r.time ? ' · ' + hora(r) : ''}</h2><div class="muted linha-local"><span class="corta" data-corta>{r.place || tx('publico.localADefinir')}</span></div>{r.place && <Mapa local={r.place} />}</div>
+        <div><h2>{fdate(r.date)}{r.time ? ' · ' + hora(r) : ''}</h2><div class="muted linha-local"><TextoCortado texto={r.place || tx('publico.localADefinir')} /></div>{r.place && <ComoChegar local={r.place} />}</div>
         <div class="count">{a.inn.length}<small>{tx('publico.confirmados')}</small></div>
       </div></div>
       {times && !aberta && <div class="panel"><h3>{tx('publico.timesSorteados')}</h3>{times}</div>}

@@ -17,7 +17,7 @@ export { vGrupo } from './telas/grupo.js';
 export { vHome } from './telas/grupos.js';
 export { vJogadores } from './telas/jogadores.js';
 export { tick, vPartida } from './telas/partida.js';
-export { vRodada } from './telas/rodada.js';
+export { montarRodada, vRodada } from './telas/Rodada';
 export { migrar, verificarRodadas } from './nucleo/partidas.js';
 export { drawPreview } from './ui/dialogos-gestao.js';
 export { vVotacao } from './telas/votacao-gestao.js';

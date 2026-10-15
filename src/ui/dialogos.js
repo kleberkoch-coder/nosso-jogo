@@ -58,11 +58,6 @@ dlg.addEventListener('cancel',e=>{e.preventDefault();fecharPerguntando()});
 dlg.addEventListener('close',()=>{if(conf){const c=conf;conf=null;if(c.fim)c.fim()}});
 /* Aviso de uma linha com "Entendi" (no lugar do alert): resolve quando a janela fecha. */
 function avisar(titulo,texto){return new Promise(res=>{confirmou(null,{titulo,texto,acao:'Entendi',unico:true,fim:res})})}
-/* KAN-151: horário escolhido numa lista de 15 em 15 minutos, no lugar do relógio do celular (no Android, com letra
-   grande, o relógio cortava o botão de confirmar). Um horário já gravado fora da grade continua na lista. */
-function horaSel(id,cls,v,opcional,rotulo){const hs=[];for(let m=0;m<1440;m+=15)hs.push(String(m/60|0).padStart(2,'0')+':'+String(m%60).padStart(2,'0'));
-  if(v&&!hs.includes(v)){hs.push(v);hs.sort()}
-  return `<select class="sel ${cls}"${id?` id="${id}"`:''} aria-label="${esc(rotulo)}">${opcional?`<option value="" ${v?'':'selected'}>—</option>`:''}${hs.map(h=>`<option value="${h}" ${h===v?'selected':''}>${h}</option>`).join('')}</select>`}
 const val=id=>(document.getElementById(id)?.value||'').trim();
 const posSel=(id,v)=>`<select class="sel" id="${id}">${sport().pos.map(([k,l])=>`<option value="${k}" ${(v||ppos(''))===k?'selected':''}>${l}</option>`).join('')}</select>`;
 const posField=(id,v)=>hasPos()?`<label class="f"><span>Posição</span>${posSel(id,v)}</label>`:'';
@@ -77,7 +72,7 @@ function playerDlg(id,prefill){const p=id?S.jog[id]:null,cid=id||prefill?.id,st=
   <div class="dlg-f">${p?`<button class="btn ghost danger" data-a="delPlayer" data-p="${id}">Excluir</button><button class="btn" data-a="toggleJog" data-p="${id}">${p.ativo===false?'Reativar':'Inativar'}</button>`:''}<button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="savePlayer" data-p="${id||''}">Salvar jogador</button></div>`);
   setTimeout(()=>$('#pnm')?.focus(),50)}
 function rodDlg(r){const c=cfg();openDlg(`<h3>${r?'Editar rodada':'Nova rodada'}</h3>
-  <div class="row"><label class="f" style="flex:1"><span>Data</span><input class="inp" type="date" id="rdt" value="${r?.date||nextSat()}"></label><label class="f" style="width:120px"><span>Início</span>${horaSel('rtm','',r?.time||c.time,false,'Início')}</label><label class="f" style="width:120px"><span>Término</span>${horaSel('rfm','',r?.fim||'',true,'Término')}</label></div>
+  <div class="row"><label class="f" style="flex:1"><span>Data</span><input class="inp" type="date" id="rdt" value="${r?.date||nextSat()}"></label><label class="f" style="width:120px"><span>Início</span><input class="inp" type="time" id="rtm" value="${r?.time||c.time}"></label><label class="f" style="width:120px"><span>Término</span><input class="inp" type="time" id="rfm" value="${r?.fim||''}"></label></div>
   <label class="f"><span>Local</span><input class="inp" id="rpl" value="${esc(r?.place??c.place)}" maxlength="200" placeholder="Ex.: Society do Zé, Av. Brasil 100, Jundiaí"></label>
   <p class="small muted">Quantidade de times e jogadores é definida na hora do sorteio.</p>
   <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveRod" data-v="${r?r.id:''}">${r?'Salvar':'Criar rodada'}</button></div>`)}
@@ -89,4 +84,4 @@ function drawPreview(){const box=$('#drawBox');if(!box)return;const k=[...box.qu
   $('#drawPrev').textContent=txt;
   $('#drawGo').disabled=sport().pairs?k<4:k<n*2;box.querySelectorAll('[data-a=dN]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.v===n));box.querySelectorAll('[data-a=dNov]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.v===+box.dataset.nov))}
 
-export { avisar, horaSel, closeDlg, closeDlgNow, confirmou, dlg, drawPreview, naoConfirmar, openDlg, playerDlg, posField, responder, rodDlg, val };
+export { avisar, closeDlg, closeDlgNow, confirmou, dlg, drawPreview, naoConfirmar, openDlg, playerDlg, posField, responder, rodDlg, val };

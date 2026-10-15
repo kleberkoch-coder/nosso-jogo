@@ -2,7 +2,7 @@ import { SPORTS, porTimePadrao } from '../dominio/esportes.js';
 import { tx } from '../i18n/index.js';
 import { dupName, fixos, freq, schedTxt } from '../dominio/grupo.js';
 import { $, DIAS, esc, toast, uid } from '../nucleo/util.js';
-import { horaSel, val } from '../ui/dialogos.js';
+import { val } from '../ui/dialogos.js';
 
 function fixPanel(){const f=fixos();
   if(!f.length)return freq()==='fixo'?`<div class="row small muted">Os dias fixos do grupo ainda não foram definidos.<button class="btn sm" data-a="editGroup">Definir dias e horários</button></div>`:'';
@@ -13,7 +13,7 @@ function fixPanel(){const f=fixos();
   <details class="small" style="margin-top:8px"><summary>Como funciona</summary><p class="muted" style="margin:6px 0 0">A confirmação da semana seguinte abre sozinha assim que o jogo termina. Para pular uma data (feriado), use "Cancelar esta data" no cartão da rodada.</p></details></div>`}
 function schedRow(x){x=x||{dow:1,ini:'20:00',fim:'22:00',place:''};
   return `<div class="srow" data-id="${esc(x.id||'')}"><select class="sel sd" aria-label="Dia da semana">${DIAS.map((d,i)=>`<option value="${i}" ${i===+x.dow?'selected':''}>${d}</option>`).join('')}</select>
-  ${horaSel('','si',x.ini||'',false,'Início')}${horaSel('','sf',x.fim||'',true,'Término')}
+  <input class="inp si" type="time" value="${esc(x.ini||'')}" aria-label="Início"><input class="inp sf" type="time" value="${esc(x.fim||'')}" aria-label="Término">
   <button class="btn sm ghost danger" data-a="rmSched" aria-label="Remover dia">✕</button><input class="inp sl" value="${esc(x.place||'')}" maxlength="200" placeholder="Local (opcional)"></div>`}
 function groupForm(g,editing){const sp=g.sport||'futebol',fq=editing?freq(g):'fixo',fx=(g.cfg&&g.cfg.fixos)||[];
   return `<div id="ngBox" data-sp="${sp}" data-sp-ant="${sp}" data-freq="${fq}">

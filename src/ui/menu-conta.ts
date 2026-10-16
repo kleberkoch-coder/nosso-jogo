@@ -1,13 +1,16 @@
 /* Menu da conta (KAN-166): o botão redondo com a inicial do e-mail, no canto do cabeçalho, como nos apps conhecidos.
-   Junta o que é da pessoa (e não do grupo): o e-mail, o país da conta (que vale para os grupos novos) e o Sair.
+   Junta o que é da pessoa (e não do grupo): o e-mail, o país da conta (que vale para os grupos novos), o tema
+   (KAN-169: com conta, o botão do tema sai do cabeçalho) e o Sair.
    Montado elemento por elemento, sem HTML em texto. As ações (contaPais, logout) são as de sempre. */
 import { LOCAL } from '../i18n/formatos.js';
 import { tx } from '../i18n/index.js';
 import { carregarAdmin } from '../nucleo/carga-admin.js';
 import { S as estado } from '../nucleo/estado.js';
+import * as tema from './tema.js';
 import { abrirMenu, closeThemeMenu } from './tema.js';
 
 const st = (): any => estado;
+const temaAtual = () => (tema.themeDef() || ['auto', '🌓', 'Automático']) as string[];
 const inicial = (email: string) => (String(email || '?').trim()[0] || '?').toUpperCase();
 const { fromCodePoint } = String;
 const bandeira = (iso: string) => fromCodePoint(...[...iso].map(c => 127397 + c.charCodeAt(0)));
@@ -65,11 +68,16 @@ export function abrirMenuConta(anchor: HTMLElement) {
     m.append(
       t,
       item('🌐', tx('conta.pais'), 'contaPais', bandeira(pais) + ' ' + nomePais(pais)),
+      item(temaAtual()[1], tx('conta.tema'), 'temaConta', temaAtual()[2]),
       sep,
       item('↪', tx('conta.sair'), 'logout')
     );
     m.addEventListener('click', (e: Event) => {
-      if ((e.target as HTMLElement).closest('[data-a]')) setTimeout(() => closeThemeMenu(), 0);
+      // Fecha este menu; se o item abriu outro (o do tema), deixa o novo aberto.
+      if ((e.target as HTMLElement).closest('[data-a]'))
+        setTimeout(() => {
+          if ((tema as { themeMenuEl: unknown }).themeMenuEl === m) closeThemeMenu();
+        }, 0);
     });
   });
 }

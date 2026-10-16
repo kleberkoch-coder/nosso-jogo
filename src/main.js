@@ -25,6 +25,7 @@ import { S } from './nucleo/estado.js';
 import { boot } from './inicio.js';
 
 /* Em modo demonstração (sem Firebase), o estado fica visível para os testes automáticos. */
-if (!(window.FIREBASE_CONFIG || {}).apiKey) window.S = S;
+// Também nos testes contra o emulador do Firebase (KAN-170), que nunca usam os dados reais.
+if (!(window.FIREBASE_CONFIG || {}).apiKey || window.FIREBASE_EMULADOR) window.S = S;
 
 boot();

@@ -45,6 +45,8 @@ async function boot() {
       return;
     }
   } else setB(wrapBackend(LocalBackend()));
+  // Testes (KAN-170): o roteiro espera as gravações chegarem ao banco antes de recarregar a página.
+  if (window.S) window.__njPendentes = ms => B.semPendencias(ms);
   try {
     S.authMode = localStorage.getItem('pelada-mode') || 'signup';
   } catch (e) {

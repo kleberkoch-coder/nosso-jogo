@@ -17,7 +17,7 @@ export { montarCaixa, vCaixa } from './telas/Caixa.tsx';
 export { renderInvite } from './telas/convite.js';
 export { vGrupo } from './telas/grupo.js';
 export { montarHome, vHome } from './telas/Grupos';
-export { montarJogadores, vJogadores } from './telas/Jogadores';
+export { guardarOrdemJogadores, montarJogadores, vJogadores } from './telas/Jogadores';
 export { tick } from './ui/placar.js';
 export { montarPartida, vPartida } from './telas/Partida';
 export { montarRodada, vRodada } from './telas/Rodada';

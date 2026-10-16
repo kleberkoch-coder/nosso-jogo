@@ -403,6 +403,8 @@ function syncVia() {
   w(GB.patch('membros/' + u.uid, { via: u.via }));
 }
 document.addEventListener('nj-via', syncVia);
+/* Gravação recusada pelo banco (KAN-170): lê de novo o que está gravado, para a tela não mostrar o que não foi salvo. */
+document.addEventListener('nj-gravacao-falhou', () => setTimeout(setupRoute, 0));
 function focusEmail() {
   let n = 0;
   const t = setInterval(() => {

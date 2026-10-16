@@ -2,7 +2,9 @@
    Por fora é a mesma tela de antes, mais o botão de importar. Os botões usam data-a (ações em acoes/jogadores.js). */
 import { render } from 'preact';
 import { ptipo } from '../dominio/caixa.js';
-import { fdia, players, pname, rat } from '../dominio/grupo.js';
+import { fdia, lvl, players, pname, ppos, rat } from '../dominio/grupo.js';
+import { hasPos, posKeys } from '../dominio/esportes.js';
+import { ORDENS, ordemValida, ordenarJogadores, type Ordem } from '../dominio/ordem-jogadores.ts';
 import { history } from '../dominio/sorteio.js';
 import { LOCAL } from '../i18n/formatos.js';
 import { tx } from '../i18n/index.js';
@@ -14,6 +16,49 @@ type Jogador = { id: string; name: string; criado?: number; ativo?: boolean };
 type Avulso = { nome?: string; criado?: number };
 
 const st = (): any => estado;
+
+/* Ordem da lista (KAN-168): fica guardada neste aparelho. */
+const ORDEM_K = 'nj-ordem-jogadores';
+export function ordemJogadores(): Ordem {
+  let v = null;
+  try {
+    v = localStorage.getItem(ORDEM_K);
+  } catch (e) {}
+  return ordemValida(v, hasPos());
+}
+export function guardarOrdemJogadores(v: string) {
+  try {
+    localStorage.setItem(ORDEM_K, ordemValida(v, hasPos()));
+  } catch (e) {}
+}
+function ordenar<T>(lista: T[], id: (x: T) => string, nome: (x: T) => string, criado: (x: T) => number | undefined) {
+  const itens = lista.map(x => ({
+    x,
+    id: id(x),
+    nome: nome(x),
+    pos: ppos(id(x)) as string,
+    nota: lvl(id(x)) as number,
+    tipo: ptipo(id(x)) as string,
+    criado: criado(x),
+  }));
+  return ordenarJogadores(itens, ordemJogadores(), { posicoes: posKeys() as string[], local: LOCAL }).map(i => i.x);
+}
+
+function SeletorOrdem() {
+  const atual = ordemJogadores();
+  return (
+    <label class="row ordem-jog">
+      <span class="small muted">{tx('jogadores.ordenarPor')}</span>
+      <select class="sel" data-c="ordemJog" value={atual}>
+        {ORDENS.filter(o => o !== 'posicao' || hasPos()).map(o => (
+          <option key={o} value={o} selected={o === atual}>
+            {tx('jogadores.ordem.' + o)}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
 
 function Contato({ id }: { id: string }) {
   const tel = (st().cont || {})[id]?.tel;
@@ -51,14 +96,24 @@ function LinhaJogador({ p }: { p: Jogador }) {
 function JogadoresTela() {
   const S = st(),
     R = rat() as { sep?: [string, string][] },
-    ps = players() as Jogador[];
-  const inativos = (Object.entries(S.jog) as [string, Jogador][])
-    .filter(([, p]) => p.ativo === false)
-    .map(([id, p]) => Object.assign({}, p, { id }))
-    .sort((a, b) => a.name.localeCompare(b.name, LOCAL));
-  const avs = (Object.entries(S.avul || {}) as [string, Avulso][])
-    .filter(([id]) => !S.jog[id])
-    .sort((a, b) => (a[1].nome || '').localeCompare(b[1].nome || '', LOCAL));
+    porJogador = (p: Jogador) => p.id,
+    nomeJ = (p: Jogador) => p.name,
+    criadoJ = (p: Jogador) => p.criado,
+    ps = ordenar(players() as Jogador[], porJogador, nomeJ, criadoJ);
+  const inativos = ordenar(
+    (Object.entries(S.jog) as [string, Jogador][])
+      .filter(([, p]) => p.ativo === false)
+      .map(([id, p]) => Object.assign({}, p, { id })),
+    porJogador,
+    nomeJ,
+    criadoJ
+  );
+  const avs = ordenar(
+    (Object.entries(S.avul || {}) as [string, Avulso][]).filter(([id]) => !S.jog[id]),
+    a => a[0],
+    a => a[1].nome || '',
+    a => a[1].criado
+  );
   const top = (Object.entries(history(null)) as [string, number][]).sort((a, b) => b[1] - a[1]).slice(0, 6);
   return (
     <div class="stack">
@@ -79,6 +134,7 @@ function JogadoresTela() {
         </div>
       </div>
       <div class="panel">
+        {ps.length > 1 ? <SeletorOrdem /> : null}
         <ul class="plist">
           {ps.length ? (
             ps.map(p => <LinhaJogador key={p.id} p={p} />)

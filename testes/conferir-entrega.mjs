@@ -5,8 +5,12 @@
    2. Entrou componente novo (src/ui/*) ou estilo novo (classe nova no src/estilos/app.css)? O docs/DESIGN-SYSTEM.md tem que mudar junto.
    3. Mudou tela ou ação (src/telas, src/acoes)? O docs/REGRAS.md tem que mudar, ou a proposta diz "sem mudança de regra".
    4. Mudou o firestore.rules? A proposta tem que avisar ("regras do Firebase").
-   5. A proposta traz o checklist de entrega preenchido (nenhum "- [ ]" sobrando). */
+   5. A proposta traz o checklist de entrega preenchido (nenhum "- [ ]" sobrando).
+   6. Todo tipo de dado que o app grava tem caso no roteiro de gravação (KAN-170): grava, recarrega e confere
+      (testes/persistencia-cobertura.json → testes/persistencia_app.py). Esta regra vale sempre, não só no que mudou. */
 import { execSync } from 'node:child_process';
+import fs from 'node:fs';
+import { tiposGravados } from './tipos-gravados.mjs';
 
 const base = process.argv[2];
 if (!base) {
@@ -62,6 +66,22 @@ if (/- \[ \]/.test(process.env.DESCRICAO_PR || ''))
   erros.push(
     'O checklist da descrição da proposta tem itens sem marcar ("- [ ]"). Marque ou explique o que ficou pendente.'
   );
+
+{
+  const cob = JSON.parse(fs.readFileSync('testes/persistencia-cobertura.json', 'utf8')),
+    roteiro = fs.readFileSync('testes/persistencia_app.py', 'utf8');
+  for (const t of tiposGravados()) {
+    const casos = cob[t];
+    if (!casos || !casos.length)
+      erros.push(
+        `O app grava "${t}", mas não há caso no roteiro de gravação (testes/persistencia-cobertura.json). Crie um caso em testes/persistencia_app.py que grava, recarrega e confere (KAN-170).`
+      );
+    else
+      for (const c of casos)
+        if (!c.startsWith('fora:') && !roteiro.includes('CT-KAN-170-' + c + ':'))
+          erros.push(`O caso ${c} do tipo "${t}" não existe em testes/persistencia_app.py.`);
+  }
+}
 
 if (erros.length) {
   erros.forEach(e => console.log('::error::' + e));

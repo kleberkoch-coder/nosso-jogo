@@ -196,6 +196,7 @@ export default {
   'conta.menu': 'Minha conta ({email})',
   'conta.titulo': 'Minha conta',
   'conta.pais': 'País e formatos',
+  'conta.tema': 'Tema',
   'conta.sair': 'Sair',
   /* país da conta, no cadastro (KAN-162); o resto do país, moeda e fuso fica nos textos da gestão */
   'login.pais': 'Seu país',

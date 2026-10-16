@@ -10,6 +10,7 @@ Atualizado a cada entrega (quando a proposta é aberta) e de novo depois do Merg
 - **Regras de negócio:** `npm run regras` (testes de `testes/regras/`), dentro da tarefa "montar".
 - **Tamanho:** app comprimido medido na montagem (decisão D7). Desde a v41, também o link do jogador (limite de 50 KB); desde a v43, o total vai até 85 KB; desde a v46, 90 KB; desde a v47, 95 KB.
 - **Conferência da entrega (desde a v44):** passo da tarefa "montar" que barra proposta sem VERSION nova, sem registro no Design System ou no REGRAS, ou com checklist em branco.
+- **Roteiro de gravação (desde a v50, KAN-170):** tarefa "persistencia": `testes/persistencia_app.py` com o app ligado ao emulador do Firebase (Firestore e login de verdade, com as regras). Grava cada tipo de dado, recarrega e confere; no fim, entra de novo num navegador limpo e confere tudo.
 - **Formato do código (desde a v45):** passo da tarefa "montar" que recusa código fora do formato do Prettier.
 - **Prévia:** roda em modo demonstração (não usa dados reais nem o App Check); o GitHub confere isso na tarefa "montar". Desde a v24, a prévia sai no Firebase Hosting (automação "Prévia da proposta").
 - **No ar:** desde a v24, vem da automação "Publicar o site", que **confere a versão no endereço oficial** (`https://nosso-jogo-f4762.web.app`). Antes disso, era anotado com base no Merge, e isso escondeu que a v20 a v23 não chegaram ao ar (ver abaixo).
@@ -18,7 +19,8 @@ Atualizado a cada entrega (quando a proposta é aberta) e de novo depois do Merg
 
 | Versão | Proposta | Testes do app | Regras de negócio | Regras do Firebase (emulador) | Tamanho | Mapa de origem | Regras publicadas | No ar |
 |---|---|---|---|---|---|---|---|---|
-| pelada-v49 | [#57](https://github.com/kleberkoch-coder/nosso-jogo/pull/57) | ✅ 382 de 382 (site e portal compactados) | ✅ 83 de 83 | ✅ 59 de 59 | link do jogador 46,1 KB; app inteiro 92,3 KB | ✅ | não mudaram | aguardando Merge |
+| pelada-v50 | [#58](https://github.com/kleberkoch-coder/nosso-jogo/pull/58) | ✅ 392 de 392 (site e portal compactados) · **gravação no emulador: 21 de 21** | ✅ 89 de 89 | ✅ 59 de 59 | link do jogador 46,4 KB; app inteiro 93,3 KB | ✅ | não mudaram | aguardando Merge. Prova do KAN-170: com o formato antigo das posições, a gravação no emulador falhou (16 de 21, "Nested arrays are not supported"), como em produção |
+| pelada-v49 | [#57](https://github.com/kleberkoch-coder/nosso-jogo/pull/57) | ✅ 382 de 382 (site e portal compactados) | ✅ 83 de 83 | ✅ 59 de 59 | link do jogador 46,1 KB; app inteiro 92,3 KB | ✅ | não mudaram | ✅ Merge 16/10 16h20; **conferido no ar** (pelada-v49) |
 | pelada-v48 | [#56](https://github.com/kleberkoch-coder/nosso-jogo/pull/56) | ✅ 379 de 379 (site e portal compactados) | ✅ 80 de 80 | ✅ 59 de 59 | link do jogador 45,7 KB; app inteiro 92,0 KB | ✅ | não mudaram | ✅ Merge 16/10 13h58; **conferido no ar** (pelada-v48) |
 | pelada-v47 | [#55](https://github.com/kleberkoch-coder/nosso-jogo/pull/55) | ✅ 375 de 375 (site e portal compactados) | ✅ 80 de 80 | ✅ 59 de 59 | link do jogador 45,1 KB; app inteiro 91,5 KB (limite novo 95 KB, D7: tabela de países) | ✅ | não mudaram | ✅ Merge 16/10 11h48; **conferido no ar** (pelada-v47) |
 | pelada-v46 | [#54](https://github.com/kleberkoch-coder/nosso-jogo/pull/54) | ✅ 353 de 353 (site e portal compactados) | ✅ 72 de 72 | ✅ 59 de 59 | link do jogador 44,5 KB; app inteiro 86,1 KB (limite novo 90 KB, D7) | ✅ | não mudaram | ✅ Merge 15/10 22h11; **conferido no ar** (pelada-v46) |

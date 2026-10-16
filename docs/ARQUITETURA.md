@@ -178,6 +178,17 @@ Medido a cada versão, no celular de 390px:
 - **Decisão:** tarefa `regras-firebase` no GitHub (`.github/workflows/testes.yml`) roda o emulador do Firestore com `testes/regras-firebase/regras.test.mjs` (21 casos: partidas, resumos, caixa, privado, Pix, presença pelo link, administradores). A proposta só fica verde se todos passarem; o resumo aparece como aviso na tarefa.
 - **Regra de trabalho:** toda mudança nas regras entra com casos novos nesse arquivo.
 
+### D17. Testar gravação contra o Firestore de verdade (16 out. 2026, pelada-v50, KAN-170)
+- **Contexto:** o defeito KAN-167 (posição que sumia ao recarregar) passou por todos os testes. O roteiro rodava no modo demonstração, que aceitava um formato que o Firestore recusa, e nenhum teste recarregava a página depois de gravar.
+- **Decisão:**
+  1. **Roteiro de gravação** (`testes/persistencia_app.py`): para cada tipo de dado, grava pela tela, espera chegar ao banco, recarrega e confere. No fim, entra de novo num navegador limpo e confere tudo.
+  2. **Emulador no GitHub:** a tarefa `persistencia` (`.github/workflows/testes.yml`) roda esse roteiro com o app ligado ao emulador do Firebase (Firestore e Authentication). A montagem de teste define `window.FIREBASE_EMULADOR`, e `nucleo/backend.js` chama `useEmulator`. Nunca toca nos dados reais e não usa App Check.
+  3. **Cobertura obrigatória:** `testes/tipos-gravados.mjs` lê do código cada tipo de dado gravado (GB/B.set, patch, del e lotes). `testes/persistencia-cobertura.json` liga cada tipo a um caso, e a conferência da entrega barra tipo novo sem caso.
+  4. **Erro de gravação com aviso:** `wrapBackend` transforma erro na hora de montar a gravação em promessa recusada; `w()` avisa "Não foi possível salvar" e a tela relê o que está gravado.
+  5. **Modo demonstração igual ao Firestore:** toda diferença conhecida vira recusa no modo demonstração (desde a v49, lista dentro de lista).
+- **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
+- **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
+
 ### D12. Ficar em JavaScript/TypeScript e pagar a dívida técnica aos poucos (8 out. 2026)
 - **Contexto:** a dúvida era se valeria trocar de linguagem para não acumular dívida técnica.
 - **Decisão:** não trocar. Todo app web roda em JavaScript; o caminho certo é o **TypeScript** (JavaScript com tipos conferidos antes de ir para o ar), que já começou na v14. As funções no servidor, quando vierem, também serão em TypeScript: uma linguagem só no produto inteiro.

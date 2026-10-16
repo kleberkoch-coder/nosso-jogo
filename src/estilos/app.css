@@ -2183,3 +2183,14 @@ label.f > span.dica {
   color: var(--muted);
   line-height: 1.2;
 }
+
+/* KAN-168: "Ordenar por" no topo da lista de jogadores */
+.ordem-jog {
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: nowrap;
+}
+.ordem-jog .sel {
+  width: auto;
+  min-height: 44px;
+}

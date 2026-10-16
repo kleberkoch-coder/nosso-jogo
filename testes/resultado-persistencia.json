@@ -1,0 +1,90 @@
+[
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P01: conta nova grava o país escolhido no cadastro"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P02: grupo novo (nome, país e moeda) continua depois de recarregar"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P03: posição criada continua depois de recarregar"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P04: elenco de exemplo, notas e par separado continuam (14 jogadores)"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P05: jogador novo com nota, tipo, telefone e e-mail continua depois de recarregar ({'id': 'mvbfmauj0g6m6k', 'nota': 8.5, 'tipo': 'diarista', 'tel': '+5511987654321', 'mail': 'ze@clube.com.br'})"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P06: nota mudada continua depois de recarregar"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P07: par separado novo continua depois de recarregar"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P08: mensalidade, diária e Pix continuam (150, 30)"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P09: jogadores importados da planilha continuam"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P10: presenças marcadas pela gestão continuam (10 de 10)"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P11: presença e avulso pelo link do jogador continuam depois de recarregar"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P12: times sorteados continuam (2 times)"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P13: partida salva continua depois de recarregar"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P14: lançamento do caixa continua depois de recarregar (1)"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P15: votação criada continua depois de recarregar (1)"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P15b: voto pelo link da votação continua depois de recarregar"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P15c: link de convite de administrador continua depois de recarregar"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P16: nome e moeda do grupo editados continuam"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P17: país da conta trocado continua depois de recarregar"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P18: gravação recusada avisa (\"Não foi possível salvar. Verifique a conexão.\") e a tela não mostra o que não foi salvo"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P19: em outro navegador, depois de entrar de novo, tudo vem do banco ({'nome': 'Persistência FC 2', 'pos': True, 'moeda': 'EUR', 'jog': 17, 'sep': 2, 'pix': 'pix-persistencia@teste.com', 'pais': 'US'})"
+ },
+ {
+  "ok": true,
+  "teste": "nenhum erro de JavaScript"
+ }
+]

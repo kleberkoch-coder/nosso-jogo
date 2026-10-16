@@ -182,6 +182,7 @@ document.addEventListener('change', e => {
     S.rankMes = '';
   } else if (c === 'rankMes') S.rankMes = v;
   else if (c === 'month') S.month = v;
+  else if (c === 'ordemJog') adm()?.guardarOrdemJogadores(v);
   else if (c === 'vid') S.vid = v;
   else if (c === 'voter') {
     try {

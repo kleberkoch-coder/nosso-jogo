@@ -74,6 +74,8 @@ function renderCore() {
   const title = R.n === 'home' || R.n === 'auth' ? APP : S.app ? gname() : APP;
   $('#gname').textContent = title;
   document.title = title;
+  // KAN-169: com conta, o tema fica no menu da conta; sem conta (link, login, apresentação), o botão continua.
+  $('#themeBtn').hidden = logged && R.n !== 'r' && R.n !== 'v';
   if (R.n !== 'r') desmontarPublico();
   if (R.n === 'r') return renderPublicRodada();
   if (R.n === 'v') return renderPublicVoto();

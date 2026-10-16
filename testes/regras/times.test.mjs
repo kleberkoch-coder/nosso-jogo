@@ -10,12 +10,14 @@ test('divide por igual entre os times escolhidos', () => {
 
 test('16 confirmados, time de 5, 4 times: 4 times de 4, sem reserva', () => {
   const r = resumo(16, 4, 5);
-  assert.equal(r.reservas, 0); assert.equal(r.completos, false);
+  assert.equal(r.reservas, 0);
+  assert.equal(r.completos, false);
 });
 
 test('16 confirmados, time de 5, 3 times: 6, 5 e 5, com 1 reserva', () => {
   const r = resumo(16, 3, 5);
-  assert.deepEqual(r.porTimeReal, [6, 5, 5]); assert.equal(r.reservas, 1);
+  assert.deepEqual(r.porTimeReal, [6, 5, 5]);
+  assert.equal(r.reservas, 1);
 });
 
 test('sugere quantos times completos cabem, entre 2 e 6', () => {
@@ -27,12 +29,21 @@ test('sugere quantos times completos cabem, entre 2 e 6', () => {
 
 test('reserva é quem confirmou por último no time', () => {
   const t = { a: 1, b: 5, c: 3, d: 9, e: 2, f: 7 };
-  assert.deepEqual(reservas(['a', 'b', 'c', 'd', 'e', 'f'], 5, id => t[id]), ['d']);
-  assert.deepEqual(reservas(['a', 'b', 'c'], 5, id => t[id]), []);
+  assert.deepEqual(
+    reservas(['a', 'b', 'c', 'd', 'e', 'f'], 5, id => t[id]),
+    ['d']
+  );
+  assert.deepEqual(
+    reservas(['a', 'b', 'c'], 5, id => t[id]),
+    []
+  );
 });
 
 test('duplas: com 3 numa dupla, o terceiro fica de reserva', () => {
-  assert.deepEqual(reservas(['a', 'b', 'c'], 2, id => ({ a: 1, b: 2, c: 3 })[id]), ['c']);
+  assert.deepEqual(
+    reservas(['a', 'b', 'c'], 2, id => ({ a: 1, b: 2, c: 3 })[id]),
+    ['c']
+  );
 });
 
 test('titulares não incluem reservas', () => {

@@ -4,15 +4,18 @@ const T = {
   'comum.carregando': 'Carregando…',
   'comum.copiado': 'Copiado.',
   'portal.titulo': 'Portal do Nosso Jogo',
-  'portal.entrarAjuda': 'Área da administração do Nosso Jogo. Não há cadastro aqui: só as contas Google liberadas entram.',
+  'portal.entrarAjuda':
+    'Área da administração do Nosso Jogo. Não há cadastro aqui: só as contas Google liberadas entram.',
   'portal.entrarGoogle': 'Entrar com o Google',
   'portal.erroEntrar': 'Não foi possível entrar com o Google. Tente de novo.',
-  'portal.negado': 'Esta conta ainda não está liberada no portal. Para liberar, o identificador abaixo precisa ser incluído nas regras do Firebase, numa proposta de mudança aprovada no GitHub.',
+  'portal.negado':
+    'Esta conta ainda não está liberada no portal. Para liberar, o identificador abaixo precisa ser incluído nas regras do Firebase, numa proposta de mudança aprovada no GitHub.',
   'portal.seuId': 'Identificador desta conta:',
   'portal.copiarId': 'Copiar identificador',
   'portal.sair': 'Sair',
   'portal.clientes': 'Clientes',
-  'portal.ajuda': 'Organizadores e administradores com conta. Aqui aparecem só dados de cadastro e de uso, nunca notas, caixa ou contatos dos grupos. O último acesso começou a ser registrado em 13/10/2026.',
+  'portal.ajuda':
+    'Organizadores e administradores com conta. Aqui aparecem só dados de cadastro e de uso, nunca notas, caixa ou contatos dos grupos. O último acesso começou a ser registrado em 13/10/2026.',
   'portal.buscar': 'Buscar por e-mail ou grupo',
   'portal.filtro': 'Filtrar clientes',
   'portal.todos': 'Todos os clientes',
@@ -32,7 +35,10 @@ const T = {
 };
 function tx(chave, vars) {
   let s = T[chave];
-  if (s == null) { console.warn('Texto sem tradução:', chave); s = chave; }
+  if (s == null) {
+    console.warn('Texto sem tradução:', chave);
+    s = chave;
+  }
   return vars ? s.replace(/\{(\w+)\}/g, (m, k) => (vars[k] != null ? vars[k] : m)) : s;
 }
 

@@ -115,6 +115,7 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
 | pelada-v22 | 09/10/2026 | 147 de 147 passaram, 35 de 35 nas regras de negócio |
 | pelada-v23 | 09/10/2026 | 155 de 155 passaram, 41 de 41 nas regras de negócio |
 | pelada-v24 | 13/10/2026 | 156 de 156 passaram, 41 de 41 nas regras de negócio (mudança para o Firebase Hosting; mensagem do limite de grupos no singular) |
+| pelada-v45 | 15/10/2026 | 342 de 342 passaram, 63 de 63 nas regras de negócio (KAN-155: código formatado com o Prettier; a conferência da formatação comparou o código compactado de 76 arquivos, e só o build.mjs mudou, de propósito) |
 | pelada-v44 | 15/10/2026 | 342 de 342 passaram (KAN-156: telefone internacional e e-mail; 8 novas), 63 de 63 nas regras de negócio (6 novas, de dominio/contato.ts); conferência da entrega no GitHub (KAN-157) |
 | pelada-v43 | 15/10/2026 | 334 de 334 passaram (KAN-153: aba Rodada como componente), 57 de 57 nas regras de negócio (KAN-154: trava da dívida) |
 | pelada-v42 | 15/10/2026 | chave nova do App Check (KAN-88); roteiro completo no GitHub |

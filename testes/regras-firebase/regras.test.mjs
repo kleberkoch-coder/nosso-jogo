@@ -5,36 +5,69 @@
 import { after, before, beforeEach, describe, test } from 'node:test';
 import fs from 'node:fs';
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
-import { collection, deleteDoc, doc, getDoc, getDocs, increment, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  increment,
+  setDoc,
+  updateDoc,
+  writeBatch,
+} from 'firebase/firestore';
 
 let env;
 const G = 'grupos/g1';
 const senha = { firebase: { sign_in_provider: 'password' } };
 const db = {
-  adm: () => env.authenticatedContext('adm', senha).firestore(),          // administrador do g1
-  dono: () => env.authenticatedContext('dono', senha).firestore(),        // organizador do g1
-  outro: () => env.authenticatedContext('outro', senha).firestore(),      // administrador de OUTRO grupo
+  adm: () => env.authenticatedContext('adm', senha).firestore(), // administrador do g1
+  dono: () => env.authenticatedContext('dono', senha).firestore(), // organizador do g1
+  outro: () => env.authenticatedContext('outro', senha).firestore(), // administrador de OUTRO grupo
   anon: () => env.authenticatedContext('anon1', { firebase: { sign_in_provider: 'anonymous' } }).firestore(), // jogador pelo link
   semLogin: () => env.unauthenticatedContext().firestore(),
-  admEmail: () => env.authenticatedContext('adm', { email: 'adm@x.com', firebase: { sign_in_provider: 'password' } }).firestore(),
-  portal: () => env.authenticatedContext('kleber', { email: 'kleberkoch@gmail.com', email_verified: true, firebase: { sign_in_provider: 'google.com' } }).firestore(),
+  admEmail: () =>
+    env.authenticatedContext('adm', { email: 'adm@x.com', firebase: { sign_in_provider: 'password' } }).firestore(),
+  portal: () =>
+    env
+      .authenticatedContext('kleber', {
+        email: 'kleberkoch@gmail.com',
+        email_verified: true,
+        firebase: { sign_in_provider: 'google.com' },
+      })
+      .firestore(),
   // Mesmo e-mail do Kleber, mas outra conta (outro identificador): não entra.
-  portalSemConfirmar: () => env.authenticatedContext('falso', { email: 'kleberkoch@gmail.com', email_verified: true, firebase: { sign_in_provider: 'google.com' } }).firestore(),
+  portalSemConfirmar: () =>
+    env
+      .authenticatedContext('falso', {
+        email: 'kleberkoch@gmail.com',
+        email_verified: true,
+        firebase: { sign_in_provider: 'google.com' },
+      })
+      .firestore(),
   // Identificador certo, mas entrando por e-mail e senha: não entra (o portal só aceita Google).
-  portalSenha: () => env.authenticatedContext('kleber', { email: 'kleberkoch@gmail.com', firebase: { sign_in_provider: 'password' } }).firestore(),
+  portalSenha: () =>
+    env
+      .authenticatedContext('kleber', { email: 'kleberkoch@gmail.com', firebase: { sign_in_provider: 'password' } })
+      .firestore(),
 };
 
 before(async () => {
   // Nos testes, o administrador do portal é a conta 'kleber' (no ar, a lista tem só o identificador real do Kleber).
-  const regras = fs.readFileSync('firestore.rules', 'utf8').replace(/\/\*ADMINS_PORTAL\*\/\[[^\]]*\]/, "/*ADMINS_PORTAL*/['kleber']");
+  const regras = fs
+    .readFileSync('firestore.rules', 'utf8')
+    .replace(/\/\*ADMINS_PORTAL\*\/\[[^\]]*\]/, "/*ADMINS_PORTAL*/['kleber']");
   if (!regras.includes("['kleber']")) throw new Error('Marcador ADMINS_PORTAL não encontrado em firestore.rules');
   env = await initializeTestEnvironment({ projectId: 'demo-nosso-jogo', firestore: { rules: regras } });
 });
-after(async () => { await env.cleanup(); });
+after(async () => {
+  await env.cleanup();
+});
 beforeEach(async () => {
   await env.clearFirestore();
   await env.withSecurityRulesDisabled(async ctx => {
-    const f = ctx.firestore(), s = (p, o) => setDoc(doc(f, p), o);
+    const f = ctx.firestore(),
+      s = (p, o) => setDoc(doc(f, p), o);
     await s(G, { name: 'G1', owner: 'dono', ativo: true, createdAt: 1 });
     await s(G + '/membros/dono', { uid: 'dono', role: 'owner', email: 'dono@x.com' });
     await s(G + '/membros/adm', { uid: 'adm', role: 'admin', email: 'adm@x.com' });
@@ -77,7 +110,8 @@ describe('partidas (KAN-86)', () => {
     await assertFails(deleteDoc(doc(db.adm(), G + '/rodadas/r1/partidas/p1')));
   });
   test('lote com partida repetida é recusado inteiro (o resumo não muda)', async () => {
-    const f = db.adm(), b = writeBatch(f);
+    const f = db.adm(),
+      b = writeBatch(f);
     b.set(doc(f, G + '/rodadas/r1/partidas/p1'), { ga: 1 });
     b.set(doc(f, G + '/resumos/2026-10'), { mes: '2026-10', jog: { a: { j: increment(1) } } }, { merge: true });
     await assertFails(b.commit());
@@ -87,10 +121,20 @@ describe('partidas (KAN-86)', () => {
     });
   });
   test('lote de partida nova + contagem + resumo é aceito', async () => {
-    const f = db.adm(), b = writeBatch(f);
+    const f = db.adm(),
+      b = writeBatch(f);
     b.set(doc(f, G + '/rodadas/r1/partidas/p3'), { ga: 3, gb: 1 });
     b.set(doc(f, G + '/rodadas/r1'), { np: increment(1) }, { merge: true });
-    b.set(doc(f, G + '/resumos/2026-10'), { mes: '2026-10', at: 1, jog: { a: { j: increment(1), v: increment(1) } }, jogos: { p3: { rid: 'r1', ga: 3, gb: 1 } } }, { merge: true });
+    b.set(
+      doc(f, G + '/resumos/2026-10'),
+      {
+        mes: '2026-10',
+        at: 1,
+        jog: { a: { j: increment(1), v: increment(1) } },
+        jogos: { p3: { rid: 'r1', ga: 3, gb: 1 } },
+      },
+      { merge: true }
+    );
     await assertSucceeds(b.commit());
   });
 });
@@ -107,7 +151,9 @@ describe('resumos por mês (KAN-87)', () => {
     await assertFails(setDoc(doc(db.outro(), G + '/resumos/2026-10'), { mes: '2026-10' }, { merge: true }));
   });
   test('administrador soma com incremento (gravação parcial)', async () => {
-    await assertSucceeds(setDoc(doc(db.adm(), G + '/resumos/2026-10'), { mes: '2026-10', cx: { ent: increment(8000) } }, { merge: true }));
+    await assertSucceeds(
+      setDoc(doc(db.adm(), G + '/resumos/2026-10'), { mes: '2026-10', cx: { ent: increment(8000) } }, { merge: true })
+    );
   });
   test('campo fora da lista, mês diferente do nome ou nome inválido são recusados', async () => {
     await assertFails(setDoc(doc(db.adm(), G + '/resumos/2026-10'), { mes: '2026-10', extra: 1 }, { merge: true }));
@@ -151,7 +197,11 @@ describe('presença pelo link', () => {
 
 describe('votos pelo link (KAN-76)', () => {
   const V = G + '/votacoes/v1';
-  beforeEach(async () => { await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), V), { open: true, cats: [{ id: 'mvp' }] }); }); });
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async ctx => {
+      await setDoc(doc(ctx.firestore(), V), { open: true, cats: [{ id: 'mvp' }] });
+    });
+  });
   test('voto com identificador válido é aceito', async () => {
     await assertSucceeds(setDoc(doc(db.anon(), V + '/votos/anon1'), { pid: 'j1', v: { mvp: 'j2' }, t: 1 }));
   });
@@ -159,23 +209,31 @@ describe('votos pelo link (KAN-76)', () => {
     await assertFails(setDoc(doc(db.anon(), V + '/votos/anon1'), { pid: '"><b>x', v: { mvp: 'j2' }, t: 1 }));
   });
   test('voto com mais de 30 categorias é recusado', async () => {
-    const v = {}; for (let i = 0; i < 31; i++) v['c' + i] = 'j1';
+    const v = {};
+    for (let i = 0; i < 31; i++) v['c' + i] = 'j1';
     await assertFails(setDoc(doc(db.anon(), V + '/votos/anon1'), { pid: 'j1', v, t: 1 }));
   });
 });
 
 describe('limites contra abuso (KAN-89)', () => {
-  const R = G + '/rodadas/r1', C = R + '/limites/avulsos';
+  const R = G + '/rodadas/r1',
+    C = R + '/limites/avulsos';
   const pres = { s: 'in', t: Date.now(), by: 'anon1', dev: 'anon1', nome: 'Avulso', avulso: true };
-  const novoAvulso = (f, pid, extra = {}) => { const b = writeBatch(f);
+  const novoAvulso = (f, pid, extra = {}) => {
+    const b = writeBatch(f);
     b.set(doc(f, R + '/presencas/' + pid), Object.assign({}, pres, extra));
-    b.set(doc(f, C), { n: increment(1), ult: pid }, { merge: true }); return b.commit(); };
+    b.set(doc(f, C), { n: increment(1), ult: pid }, { merge: true });
+    return b.commit();
+  };
   const semRegras = fn => env.withSecurityRulesDisabled(async ctx => fn(ctx.firestore()));
 
   test('avulso novo pelo link entra somando 1 no contador da rodada', async () => {
     await assertSucceeds(novoAvulso(db.anon(), 'av1'));
     await assertSucceeds(novoAvulso(db.anon(), 'av2'));
-    await semRegras(async f => { const d = (await getDoc(doc(f, C))).data(); if (d.n !== 2) throw new Error('contador ' + d.n); });
+    await semRegras(async f => {
+      const d = (await getDoc(doc(f, C))).data();
+      if (d.n !== 2) throw new Error('contador ' + d.n);
+    });
   });
   test('avulso novo sem somar no contador é recusado', async () => {
     await assertFails(setDoc(doc(db.anon(), R + '/presencas/av1'), pres));
@@ -185,14 +243,17 @@ describe('limites contra abuso (KAN-89)', () => {
     await assertFails(novoAvulso(db.anon(), 'av31'));
   });
   test('jogador cadastrado confirma, desmarca e confirma de novo sem contar (critério 2)', async () => {
-    const f = db.anon(), p = doc(f, R + '/presencas/j1');
+    const f = db.anon(),
+      p = doc(f, R + '/presencas/j1');
     await assertSucceeds(setDoc(p, { s: 'in', t: Date.now(), by: 'anon1', dev: 'anon1' }));
     await assertSucceeds(setDoc(p, { s: 'out', t: Date.now(), by: 'anon1', dev: 'anon1' }));
     await assertSucceeds(setDoc(p, { s: 'in', t: Date.now(), by: 'anon1', dev: 'anon1' }));
   });
   test('avulso muda a própria resposta sem contar de novo', async () => {
     await assertSucceeds(novoAvulso(db.anon(), 'av1'));
-    await assertSucceeds(setDoc(doc(db.anon(), R + '/presencas/av1'), Object.assign({}, pres, { s: 'out', t: Date.now() })));
+    await assertSucceeds(
+      setDoc(doc(db.anon(), R + '/presencas/av1'), Object.assign({}, pres, { s: 'out', t: Date.now() }))
+    );
   });
   test('contador não volta para trás nem pula, e não conta quem já estava na lista', async () => {
     await assertSucceeds(novoAvulso(db.anon(), 'av1'));
@@ -210,7 +271,9 @@ describe('limites contra abuso (KAN-89)', () => {
     await assertSucceeds(getDoc(doc(db.anon(), 'sistema/limites')));
   });
   test('administrador põe avulso direto, sem contador', async () => {
-    await assertSucceeds(setDoc(doc(db.adm(), R + '/presencas/av9'), { s: 'in', t: 1, by: 'adm', nome: 'Avulso', avulso: true }));
+    await assertSucceeds(
+      setDoc(doc(db.adm(), R + '/presencas/av9'), { s: 'in', t: 1, by: 'adm', nome: 'Avulso', avulso: true })
+    );
   });
   test('nome com mais de 40 letras é recusado (critério 4)', async () => {
     const longo = 'x'.repeat(41);
@@ -220,9 +283,12 @@ describe('limites contra abuso (KAN-89)', () => {
     await assertSucceeds(setDoc(doc(db.adm(), G + '/jogadores/j2'), { name: 'x'.repeat(40) }));
   });
 
-  const criarGrupo = (f, uid, gid, extra = {}) => { const b = writeBatch(f);
+  const criarGrupo = (f, uid, gid, extra = {}) => {
+    const b = writeBatch(f);
     b.set(doc(f, 'grupos/' + gid), Object.assign({ name: 'Novo', owner: uid, ativo: true, createdAt: 1 }, extra));
-    b.set(doc(f, 'contas/' + uid), { ng: increment(1), ult: gid }, { merge: true }); return b.commit(); };
+    b.set(doc(f, 'contas/' + uid), { ng: increment(1), ult: gid }, { merge: true });
+    return b.commit();
+  };
   test('conta cria grupo somando 1 no contador', async () => {
     await assertSucceeds(criarGrupo(db.adm(), 'adm', 'gn1'));
     await assertSucceeds(criarGrupo(db.adm(), 'adm', 'gn2'));
@@ -255,20 +321,26 @@ describe('segurança do link (KAN-77, KAN-78, KAN-79)', () => {
     await assertSucceeds(setDoc(doc(db.anon(), P + 'j1'), base()));
   });
   test('KAN-78: sem mudar a resposta, a hora não muda (não dá para furar a fila)', async () => {
-    const p = doc(db.anon(), P + 'j1'), b = base();
+    const p = doc(db.anon(), P + 'j1'),
+      b = base();
     await assertSucceeds(setDoc(p, b));
     await assertFails(setDoc(p, Object.assign({}, b, { t: b.t - 60000 })));
     await assertSucceeds(setDoc(p, b));
   });
   test('KAN-78: ao mudar a resposta, a hora não volta para trás', async () => {
-    const p = doc(db.anon(), P + 'j1'), b = base();
+    const p = doc(db.anon(), P + 'j1'),
+      b = base();
     await assertSucceeds(setDoc(p, b));
     await assertFails(setDoc(p, Object.assign({}, b, { s: 'out', t: b.t - 1000 })));
     await assertSucceeds(setDoc(p, Object.assign({}, b, { s: 'out', t: Date.now() })));
   });
   test('KAN-78: pelo link não dá para trocar o nome, a marca de avulso nem a posição', async () => {
-    const f = db.anon(), p = doc(f, P + 'av1'), b = Object.assign(base(), { nome: 'Fulano', avulso: true, pos: 'ATA' });
-    const lote = writeBatch(f); lote.set(p, b); lote.set(doc(f, G + '/rodadas/r1/limites/avulsos'), { n: increment(1), ult: 'av1' }, { merge: true });
+    const f = db.anon(),
+      p = doc(f, P + 'av1'),
+      b = Object.assign(base(), { nome: 'Fulano', avulso: true, pos: 'ATA' });
+    const lote = writeBatch(f);
+    lote.set(p, b);
+    lote.set(doc(f, G + '/rodadas/r1/limites/avulsos'), { n: increment(1), ult: 'av1' }, { merge: true });
     await assertSucceeds(lote.commit());
     await assertFails(setDoc(p, Object.assign({}, b, { nome: 'Outro nome' })));
     await assertFails(setDoc(p, Object.assign({}, b, { pos: 'GOL' })));
@@ -277,11 +349,16 @@ describe('segurança do link (KAN-77, KAN-78, KAN-79)', () => {
   });
   test('KAN-78: administrador continua podendo corrigir nome e hora', async () => {
     await assertSucceeds(setDoc(doc(db.adm(), P + 'av2'), { s: 'in', t: 1, by: 'adm', nome: 'Certo', avulso: true }));
-    await assertSucceeds(setDoc(doc(db.adm(), P + 'av2'), { s: 'in', t: 2, by: 'adm', nome: 'Corrigido', avulso: true }));
+    await assertSucceeds(
+      setDoc(doc(db.adm(), P + 'av2'), { s: 'in', t: 2, by: 'adm', nome: 'Corrigido', avulso: true })
+    );
   });
   test('KAN-77: jogo fixo sem documento só aceita datas próximas', async () => {
-    const d = new Date(), ymd = x => x.toISOString().slice(0, 10);
-    const hoje = 'f-' + ymd(d) + '-2000', longe = 'f-2099-01-01-2000', passado = 'f-2020-01-01-2000';
+    const d = new Date(),
+      ymd = x => x.toISOString().slice(0, 10);
+    const hoje = 'f-' + ymd(d) + '-2000',
+      longe = 'f-2099-01-01-2000',
+      passado = 'f-2020-01-01-2000';
     await assertSucceeds(setDoc(doc(db.anon(), G + '/rodadas/' + hoje + '/presencas/j1'), base()));
     await assertFails(setDoc(doc(db.anon(), G + '/rodadas/' + longe + '/presencas/j1'), base()));
     await assertFails(setDoc(doc(db.anon(), G + '/rodadas/' + passado + '/presencas/j1'), base()));
@@ -289,7 +366,9 @@ describe('segurança do link (KAN-77, KAN-78, KAN-79)', () => {
   test('KAN-79: mensalidade e diária novas no documento público do grupo são recusadas', async () => {
     await assertFails(updateDoc(doc(db.adm(), G), { cfg: { mensal: 90 } }));
     await assertFails(updateDoc(doc(db.adm(), G), { cfg: { diaria: 25 } }));
-    await assertFails(setDoc(doc(db.adm(), 'grupos/gx'), { name: 'X', owner: 'adm', ativo: true, createdAt: 1, cfg: { mensal: 80 } }));
+    await assertFails(
+      setDoc(doc(db.adm(), 'grupos/gx'), { name: 'X', owner: 'adm', ativo: true, createdAt: 1, cfg: { mensal: 80 } })
+    );
   });
   test('KAN-79: com valores de caixa ainda no documento público, só dá para gravar tirando-os', async () => {
     await assertFails(updateDoc(doc(db.adm(), 'grupos/g3'), { name: 'G3 novo' }));
@@ -304,20 +383,31 @@ describe('segurança do link (KAN-77, KAN-78, KAN-79)', () => {
 
 describe('planos e portal (KAN-115, KAN-116)', () => {
   test('a própria conta grava o último acesso, o e-mail dela e a data de registro', async () => {
-    await assertSucceeds(setDoc(doc(db.admEmail(), 'contas/adm'), { acesso: Date.now(), email: 'adm@x.com', criada: Date.now() }, { merge: true }));
+    await assertSucceeds(
+      setDoc(
+        doc(db.admEmail(), 'contas/adm'),
+        { acesso: Date.now(), email: 'adm@x.com', criada: Date.now() },
+        { merge: true }
+      )
+    );
   });
   test('último acesso de mais de 10 minutos atrás, de outra conta ou com e-mail de outra pessoa é recusado', async () => {
     await assertFails(setDoc(doc(db.admEmail(), 'contas/adm'), { acesso: Date.now() - 3600000 }, { merge: true }));
     await assertFails(setDoc(doc(db.admEmail(), 'contas/outro'), { acesso: Date.now() }, { merge: true }));
-    await assertFails(setDoc(doc(db.admEmail(), 'contas/adm'), { acesso: Date.now(), email: 'outro@x.com' }, { merge: true }));
+    await assertFails(
+      setDoc(doc(db.admEmail(), 'contas/adm'), { acesso: Date.now(), email: 'outro@x.com' }, { merge: true })
+    );
   });
   test('a conta não grava o próprio plano (KAN-115, critério 4)', async () => {
     await assertFails(setDoc(doc(db.admEmail(), 'contas/adm'), { plano: 'B' }, { merge: true }));
     await assertFails(setDoc(doc(db.admEmail(), 'contas/adm'), { acesso: Date.now(), plano: 'B' }, { merge: true }));
   });
   test('com o último acesso gravado, o contador de grupos continua funcionando', async () => {
-    await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), 'contas/adm'), { acesso: Date.now(), email: 'adm@x.com', criada: 1 }); });
-    const f = db.adm(), b = writeBatch(f);
+    await env.withSecurityRulesDisabled(async ctx => {
+      await setDoc(doc(ctx.firestore(), 'contas/adm'), { acesso: Date.now(), email: 'adm@x.com', criada: 1 });
+    });
+    const f = db.adm(),
+      b = writeBatch(f);
     b.set(doc(f, 'grupos/gnovo'), { name: 'Novo', owner: 'adm', ativo: true, createdAt: 1 });
     b.set(doc(f, 'contas/adm'), { ng: increment(1), ult: 'gnovo' }, { merge: true });
     await assertSucceeds(b.commit());
@@ -327,7 +417,9 @@ describe('planos e portal (KAN-115, KAN-116)', () => {
     await assertSucceeds(getDoc(doc(db.portal(), G + '/membros/dono')));
   });
   test('o administrador do portal dá um plano com validade, mas não mexe no último acesso nem no contador', async () => {
-    await assertSucceeds(setDoc(doc(db.portal(), 'contas/adm'), { plano: 'A', planoAte: Date.now() + 864e5 }, { merge: true }));
+    await assertSucceeds(
+      setDoc(doc(db.portal(), 'contas/adm'), { plano: 'A', planoAte: Date.now() + 864e5 }, { merge: true })
+    );
     await assertFails(setDoc(doc(db.portal(), 'contas/adm'), { acesso: 1 }, { merge: true }));
     await assertFails(setDoc(doc(db.portal(), 'contas/adm'), { ng: 0 }, { merge: true }));
   });

@@ -3,6 +3,6 @@
 import { acoes as conta } from './acoes/conta.js';
 import { acoes as publico } from './acoes/publico.js';
 
-const ACT=Object.assign({},conta, publico);
+const ACT = Object.assign({}, conta, publico);
 
 export { ACT };

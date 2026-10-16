@@ -10,7 +10,10 @@ const DIC = { 'pt-BR': ptBR };
 function tx(chave, vars) {
   const d = DIC[LOCAL] || ptBR;
   let s = d[chave] ?? ptBR[chave];
-  if (s == null) { console.warn('Texto sem tradução:', chave); s = chave; }
+  if (s == null) {
+    console.warn('Texto sem tradução:', chave);
+    s = chave;
+  }
   return vars ? s.replace(/\{(\w+)\}/g, (m, k) => (vars[k] != null ? vars[k] : m)) : s;
 }
 const tp = (chave, n, vars) => tx(chave + (n === 1 ? '.um' : '.outros'), Object.assign({ n }, vars));

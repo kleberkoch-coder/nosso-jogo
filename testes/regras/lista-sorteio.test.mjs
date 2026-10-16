@@ -3,7 +3,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { divergencia, foraDosTimes, fotoDoSorteio } from '../../src/dominio/divergencia.ts';
 
-const rod = (extra = {}) => ({ times: [{ c: 0, players: ['a', 'b'] }, { c: 1, players: ['c', 'd'] }], base: ['a', 'b', 'c', 'd', 'e'], ...extra });
+const rod = (extra = {}) => ({
+  times: [
+    { c: 0, players: ['a', 'b'] },
+    { c: 1, players: ['c', 'd'] },
+  ],
+  base: ['a', 'b', 'c', 'd', 'e'],
+  ...extra,
+});
 const vao = (...ids) => Object.fromEntries(ids.map((id, i) => [id, { s: 'in', t: i }]));
 
 test('sem sorteio não há divergência', () => {
@@ -21,7 +28,8 @@ test('quem foi desmarcado de propósito no sorteio não gera aviso', () => {
 });
 
 test('quem está num time e desmarcou aparece em "saiu"', () => {
-  const p = vao('a', 'c', 'd'); p.b = { s: 'out', t: 9 };
+  const p = vao('a', 'c', 'd');
+  p.b = { s: 'out', t: 9 };
   assert.deepEqual(divergencia(rod(), p).saiu, ['b']);
 });
 
@@ -36,7 +44,9 @@ test('"Manter os times assim" (nova foto) apaga o aviso', () => {
 });
 
 test('quem foi posto direto num time não gera aviso', () => {
-  const r = rod(); r.times[0].players.push('f'); r.base.push('f');
+  const r = rod();
+  r.times[0].players.push('f');
+  r.base.push('f');
   assert.deepEqual(divergencia(r, vao('a', 'b', 'c', 'd', 'f')), { saiu: [], entrou: [] });
 });
 

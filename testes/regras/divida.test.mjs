@@ -5,7 +5,8 @@ import fs from 'node:fs';
 
 test('docs/divida.json tem os tetos de todas as medidas', () => {
   const teto = JSON.parse(fs.readFileSync('docs/divida.json', 'utf8'));
-  for (const k of ['innerHTML', 'textosFixos', 'arquivosSemTipos', 'telasComponente', 'testesRegra']) assert.equal(typeof teto[k], 'number', k);
+  for (const k of ['innerHTML', 'textosFixos', 'arquivosSemTipos', 'telasComponente', 'testesRegra'])
+    assert.equal(typeof teto[k], 'number', k);
 });
 
 test('a montagem compara cada medida com o teto e falha se piorar', () => {

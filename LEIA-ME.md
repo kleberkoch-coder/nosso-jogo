@@ -144,7 +144,7 @@ O site funciona como app. Ao abrir o endereço no celular aparece o botão **�
 Como o app se comporta:
 
 - Ele abre em tela cheia, com ícone próprio, como um aplicativo comum.
-- Quem instalou a partir do link da rodada abre direto na próxima rodada. O organizador entra pelo endereço principal do site e vê **Meus grupos**.
+- O jogador (quem nunca entrou com conta naquele celular) abre direto na rodada do último link que abriu. No celular em que alguém já entrou com conta, o app abre **Meus grupos** ou, depois de **Sair**, a tela de login; nunca o link do jogador (pelada-v51).
 - Funciona com sinal fraco ou sem internet na quadra. O cronômetro e o placar rodam normalmente, e o que for salvo sem conexão é enviado quando a internet voltar. Uma faixa avisa quando você está offline.
 - Com sinal fraco, o app espera no máximo 3 segundos pela internet. Se ela não responder, abre a cópia guardada no celular e se atualiza sozinho depois.
 - Se o jogador tocar em **Vou** sem sinal, ele vê o aviso de que a resposta ficou salva no celular e será enviada quando a conexão voltar. O ideal é ele abrir o link de novo antes do jogo para conferir. Para o administrador vale o mesmo: o que não chegou ao servidor fica salvo no aparelho e é enviado depois.

@@ -121,3 +121,55 @@ jobs:
           path: |
             testes/fotos
             testes/resultado.json
+
+  # Roteiro de gravação contra o EMULADOR do Firebase (KAN-170): o app grava no Firestore de verdade (com as regras),
+  # recarrega e confere. Pega o que o modo demonstração não pega (ex.: o defeito do KAN-167).
+  persistencia:
+    needs: montar
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: site-montado
+          path: /tmp/emu
+      - name: Instalar o emulador e o navegador de testes
+        run: |
+          npm install --no-save --no-audit --no-fund firebase-tools@13
+          pip install playwright==1.47.0
+          python -m playwright install --with-deps chromium
+      - name: Ligar o app ao emulador (sem dados reais e sem App Check)
+        run: |
+          python - <<'PY'
+          import re, pathlib
+          p = pathlib.Path('/tmp/emu/index.html'); s = p.read_text(encoding='utf-8')
+          cfg = ('window.FIREBASE_CONFIG = {apiKey:"teste-emulador",authDomain:"localhost",projectId:"demo-nosso-jogo"};'
+                 'window.FIREBASE_EMULADOR = {firestore:"127.0.0.1:8080",auth:"http://127.0.0.1:9099"};')
+          s, n = re.subn(r'window\.FIREBASE_CONFIG\s*=\s*\{.*?\};', lambda m: cfg, s, count=1, flags=re.S)
+          assert n == 1, 'Não achei window.FIREBASE_CONFIG'
+          s = re.sub(r'window\.APP_CHECK_KEY\s*=\s*"[^"]*";?', 'window.APP_CHECK_KEY = "";', s)
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Rodar o roteiro de gravação no emulador
+        shell: bash
+        run: |
+          (cd /tmp/emu && python -m http.server 8765 >/dev/null 2>&1 &)
+          sleep 2
+          npx firebase emulators:exec --only firestore,auth --project demo-nosso-jogo "python testes/persistencia_app.py http://127.0.0.1:8765/index.html"
+      - name: Guardar o resultado
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultado-da-gravacao
+          path: testes/resultado-persistencia.json

@@ -13,6 +13,14 @@ function FirebaseBackend(cfg, appCheckKey) {
   }
   const auth = firebase.auth(),
     fs = firebase.firestore();
+  /* Testes contra o emulador do Firebase (KAN-170): a montagem de teste define window.FIREBASE_EMULADOR.
+     Assim o roteiro de gravação passa pelo Firestore de verdade (com as regras), sem tocar nos dados reais. */
+  const em = window.FIREBASE_EMULADOR;
+  if (em) {
+    auth.useEmulator(em.auth, { disableWarnings: true });
+    const [h, p] = String(em.firestore).split(':');
+    fs.useEmulator(h, +p);
+  }
   try {
     fs.enablePersistence({ synchronizeTabs: true }).catch(() => {});
   } catch (e) {}
@@ -213,6 +221,8 @@ const op = {
 const igual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 /* Modo demonstração: recusa o que o Firestore recusaria (lista dentro de lista, KAN-167), para os testes pegarem. */
 function recusarComoFirestore(o) {
+  // Nos testes, window.__falharGravacao simula o banco recusando uma gravação (KAN-170).
+  if (window.__falharGravacao) throw new Error('teste: gravação recusada');
   if (o && temListaDentroDeLista(o)) throw new Error('firestore: nested-arrays');
 }
 function LocalBackend() {
@@ -404,12 +414,23 @@ function wrapBackend(b) {
   const set = b.set,
     patch = b.patch,
     lote = b.lote;
-  b.set = (p, o) => set.call(b, p, paraBanco(o));
-  b.patch = (p, c) => patch.call(b, p, paraBanco(c));
+  /* Erro na hora de montar a gravação (ex.: dado que o banco não aceita) vira promessa recusada, para o aviso
+     "Não foi possível salvar" aparecer (w, em nucleo/estado.js) em vez de a gravação sumir em silêncio (KAN-170). */
+  const seguro = f => {
+    try {
+      return Promise.resolve(f());
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  };
+  b.set = (p, o) => seguro(() => set.call(b, p, paraBanco(o)));
+  b.patch = (p, c) => seguro(() => patch.call(b, p, paraBanco(c)));
   b.lote = ops =>
-    lote.call(
-      b,
-      ops.map(x => (x.o ? Object.assign({}, x, { o: paraBanco(x.o) }) : x))
+    seguro(() =>
+      lote.call(
+        b,
+        ops.map(x => (x.o ? Object.assign({}, x, { o: paraBanco(x.o) }) : x))
+      )
     );
   ['set', 'patch', 'lote', 'del', 'login', 'signup', 'reset', 'logout', 'google'].forEach(k => {
     const f = b[k];

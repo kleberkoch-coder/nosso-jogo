@@ -44,6 +44,11 @@ const acoes = {
     }
     abrirMenuConta(el);
   },
+  /* Tema pelo menu da conta (KAN-169): abre as três opções no mesmo lugar do menu da conta. */
+  temaConta: () => {
+    const b = $('#topright [data-a=contaMenu]');
+    if (b) openThemeMenu(b);
+  },
   themeMenu: el => {
     if (themeMenuEl && themeAnchor === el) {
       closeThemeMenu(true);

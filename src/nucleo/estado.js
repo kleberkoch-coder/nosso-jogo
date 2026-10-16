@@ -97,12 +97,15 @@ function drop(k) {
 function dropAll() {
   Object.keys(SUBS).forEach(drop);
 }
+/* Gravação com aviso. Se o banco recusar, avisa e pede para a tela voltar ao que está gravado (KAN-170):
+   rotas.js ouve "nj-gravacao-falhou" e recarrega os dados, desfazendo o que a tela mostrou antes da hora. */
 function w(p) {
   return Promise.resolve(p).catch(e => {
     console.error(e);
     toast(
       e && e.code === 'permission-denied' ? 'Sem permissão para isso.' : 'Não foi possível salvar. Verifique a conexão.'
     );
+    document.dispatchEvent(new Event('nj-gravacao-falhou'));
     throw e;
   });
 }

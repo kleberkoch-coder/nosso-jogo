@@ -399,6 +399,20 @@ with sync_playwright() as pw:
     ok(t1.startswith('Excluir ') and pg.locator('#pnm').is_visible() and pg.input_value('#pnm') == 'Nome Em Edição', f'CT-KAN-128: confirmação por cima do jogador; Cancelar volta ao formulário com o que foi digitado ({t1})')
     pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(300)
     if pg.locator('#dlg .conf').count(): confirmar_app(pg, True)
+    # ---------- v50 (KAN-168): ordenar a lista de jogadores
+    pg.click('#dlg [data-a=close]') if pg.evaluate("document.getElementById('dlg').open") else None
+    pg.click('[data-a=tab][data-v=jogadores]'); pg.wait_for_timeout(400)
+    ok(pg.locator('#jogadoresRaiz select[data-c=ordemJog]').count() == 1 and pg.input_value('#jogadoresRaiz select[data-c=ordemJog]') == 'nome', 'CT-KAN-168-01: a aba Jogadores tem "Ordenar por", começando em Nome')
+    pg.select_option('#jogadoresRaiz select[data-c=ordemJog]', 'nota'); pg.wait_for_timeout(400)
+    notas168 = [float(x.replace(',', '.')) for x in pg.locator('#jogadoresRaiz .panel').first.locator('.lvl-tag').all_inner_texts()]
+    ok(len(notas168) > 2 and notas168 == sorted(notas168, reverse=True), f'CT-KAN-168-01: em Nota, a maior nota vem primeiro ({notas168[:6]})')
+    pg.select_option('#jogadoresRaiz select[data-c=ordemJog]', 'posicao'); pg.wait_for_timeout(400)
+    pos168 = pg.locator('#jogadoresRaiz .panel').first.locator('li .pos').all_inner_texts()
+    ordem_esp = pg.evaluate("(()=>{const k=[...new Set(Object.values(S.jog).map(p=>p.pos).filter(Boolean))];return k})()")
+    ok(len(pos168) > 2 and pos168[0] == 'GOL', f'CT-KAN-168-02: em Posição, os jogadores vêm agrupados na ordem do esporte, goleiros primeiro ({pos168[:6]})')
+    pg.reload(); pg.wait_for_timeout(1500); pg.click('[data-a=tab][data-v=jogadores]'); pg.wait_for_timeout(500)
+    ok(pg.input_value('#jogadoresRaiz select[data-c=ordemJog]') == 'posicao', 'CT-KAN-168-03: depois de recarregar, a ordem escolhida continua')
+    pg.select_option('#jogadoresRaiz select[data-c=ordemJog]', 'nome'); pg.wait_for_timeout(300)
     # ---------- v44 (KAN-156): telefone nacional e internacional, e e-mail com formato mínimo
     pid156 = pg.locator('[data-a=editPlayer]').first.get_attribute('data-p')
     pg.locator('[data-a=editPlayer]').first.click(); pg.wait_for_timeout(300)
@@ -1078,6 +1092,21 @@ with sync_playwright() as pw:
     ok(pg.locator('.theme-menu').count() == 0 and pg.evaluate("document.activeElement.dataset.a") == 'contaMenu', 'CT-KAN-166-01: Esc fecha o menu e o foco volta ao botão da conta')
     abrir_pais_conta(pg)
     ok(pg.locator('.theme-menu').count() == 0, 'CT-KAN-166-02: escolher um item fecha o menu')
+    pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(300)
+    # v50 (KAN-169): com conta, o tema fica no menu da conta
+    ok(not pg.locator('#themeBtn').is_visible(), 'CT-KAN-169-01: com conta, o cabeçalho não mostra o botão do tema')
+    pg.click('#topright [data-a=contaMenu]'); pg.wait_for_timeout(300)
+    tema169 = {'auto': 'Automático', 'light': 'Claro', 'dark': 'Escuro'}[pg.evaluate("localStorage.getItem('nj-tema')") or 'auto']
+    ok('Tema' in pg.inner_text('.theme-menu') and tema169 in pg.inner_text('.theme-menu'), f'CT-KAN-169-01: o menu da conta tem "Tema" com o tema atual ({tema169})')
+    pg.click('.theme-menu [data-a=temaConta]'); pg.wait_for_timeout(300)
+    ok(pg.locator('.theme-menu [data-v=dark]').count() == 1 and pg.get_attribute('#topright [data-a=contaMenu]', 'aria-expanded') == 'true', 'CT-KAN-169-02: "Tema" abre as opções Automático, Claro e Escuro')
+    pg.click('.theme-menu [data-v=dark]'); pg.wait_for_timeout(300)
+    ok(pg.evaluate("document.documentElement.dataset.theme") == 'dark', 'CT-KAN-169-02: escolher Escuro deixa o app escuro')
+    contraste(pg, 'gestão no escuro pelo menu da conta (CT-KAN-169-04)')
+    pg.click('#topright [data-a=contaMenu]'); pg.wait_for_timeout(300)
+    ok('Escuro' in pg.inner_text('.theme-menu'), 'CT-KAN-169-02: o menu da conta mostra "Tema: Escuro"')
+    pg.click('.theme-menu [data-a=temaConta]'); pg.wait_for_timeout(200); pg.click('.theme-menu [data-v=auto]'); pg.wait_for_timeout(300)
+    abrir_pais_conta(pg)
     ok(pg.evaluate("document.activeElement.id") == 'cpais', 'CT-KAN-162-02: a janela do país abre com o cursor no combo')
     pg.select_option('#cpais', 'US'); pg.click('#dlg [data-a=salvarPaisConta]'); pg.wait_for_timeout(600)
     pg.click('#topright [data-a=contaMenu]'); pg.wait_for_timeout(300)

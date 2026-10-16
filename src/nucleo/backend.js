@@ -423,7 +423,7 @@ function wrapBackend(b) {
       return Promise.reject(e);
     }
   };
-  b.set = (p, o) => seguro(() => set.call(b, p, paraBanco(o)));
+  b.set = (p, o) => seguro(() => set.call(b, p, o)); // PROVA: formato antigo
   b.patch = (p, c) => seguro(() => patch.call(b, p, paraBanco(c)));
   b.lote = ops =>
     seguro(() =>

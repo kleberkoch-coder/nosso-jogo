@@ -1490,6 +1490,32 @@ with sync_playwright() as pw:
     ok(p5.input_value('#lpais') == 'BR', 'CT-KAN-162-01: computador em inglês, mas no fuso de Manaus: o cadastro sugere Brasil (vale o fuso)')
     ctx5.close()
 
+    # ---------- v51 (KAN-171): app instalado só volta sozinho ao link do jogador em aparelho que nunca entrou com conta
+    ctx6 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block', timezone_id='America/Sao_Paulo')
+    ctx6.add_init_script("Object.defineProperty(navigator,'standalone',{get:()=>true})")
+    p6 = ctx6.new_page()
+    p6.on('pageerror', lambda e: errs.append(str(e)))
+    banco = pg.evaluate("localStorage.getItem('pelada-demo-v2')")
+    p6.goto(URL); p6.wait_for_timeout(300)
+    p6.evaluate("b=>{localStorage.clear();localStorage.setItem('pelada-demo-v2',b)}", banco)
+    p6.goto('about:blank')  # o modo demonstração lê o banco ao abrir
+    def abrir_app6():
+        p6.goto('about:blank'); p6.goto(URL); p6.wait_for_timeout(1200)
+        return p6.evaluate("location.hash")
+    p6.goto(URL + '#/p/' + gid_fut); p6.wait_for_selector('.hero-r h2', timeout=8000)
+    h1 = abrir_app6()
+    ok(h1.startswith('#/p/' + gid_fut), f'CT-KAN-171-01: jogador sem conta, com o app instalado, abre direto na rodada do último link ({h1!r})')
+    p6.goto(URL + '#/criar'); p6.wait_for_timeout(600)
+    p6.fill('#le', 'instalado@teste.com'); p6.fill('#lp', 'Jogo@2026'); p6.fill('#lp2', 'Jogo@2026'); p6.keyboard.press('Enter'); p6.wait_for_timeout(1300)
+    p6.goto(URL + '#/p/' + gid_fut); p6.wait_for_selector('.hero-r h2', timeout=8000)
+    p6.goto(URL + '#/'); p6.wait_for_timeout(800)
+    sair(p6); p6.wait_for_timeout(1500)
+    ok(p6.evaluate("!location.hash.startsWith('#/p/')") and p6.locator('#le').count() == 1, 'CT-KAN-171-02: organizador sai da conta no app instalado e vê o login, não o link do jogador')
+    p6.goto(URL + '#/p/' + gid_fut); p6.wait_for_selector('.hero-r h2', timeout=8000)
+    h3 = abrir_app6()
+    ok(not h3.startswith('#/p/') and p6.locator('#le').count() == 1, f'CT-KAN-171-03: aparelho de organizador, só com o login anônimo do link: abrir o app mostra o login ({h3!r})')
+    ctx6.close()
+
     # ---------- v35 (KAN-142): "Continuar com o Google" na aba errada entra ou cria a conta e avisa (navegador separado)
     ctx3 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block'); p3 = ctx3.new_page()
     p3.on('pageerror', lambda e: errs.append(str(e)))

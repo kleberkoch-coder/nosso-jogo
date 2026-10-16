@@ -9,6 +9,7 @@ import { applyTheme } from './ui/tema.js';
 import { tx } from './i18n/index.js';
 
 /* =================== boot =================== */
+const ORG_K = 'nj-organizador';
 function loadScript(src) {
   return new Promise((res, rej) => {
     const s = document.createElement('script');
@@ -72,7 +73,14 @@ async function boot() {
   B.onAuth(u => {
     const prev = S.user;
     S.user = u;
-    if (first && isStandalone() && (!location.hash || location.hash === '#/') && (!u || u.anon)) {
+    /* KAN-171: aparelho em que alguém já entrou com conta é de organizador. A marca fica mesmo depois de Sair,
+       e esse aparelho nunca é levado sozinho para o último link de jogador. */
+    let organizador = false;
+    try {
+      if (u && !u.anon) localStorage.setItem(ORG_K, '1');
+      organizador = localStorage.getItem(ORG_K) === '1';
+    } catch (e) {}
+    if (first && !organizador && isStandalone() && (!location.hash || location.hash === '#/') && (!u || u.anon)) {
       let last = null;
       try {
         last = localStorage.getItem('pelada-last');

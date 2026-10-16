@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v50 (16/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v51 (16/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -11,6 +11,7 @@ Atualizado na pelada-v50 (16/10/2026). Toda entrega que mudar uma regra atualiza
 - Cada grupo é independente: elenco, rodadas, caixa, votações e administradores.
 - Nada específico de esporte no código: posições, pontuação, duplas e textos vêm do catálogo `SPORTS`. Emoji do convite, exemplos da votação (posição-chave só se o esporte tiver) e o nome do ponto ("+2 pontos", "Gol", "TD (+6)") também (KAN-75).
 - Celular primeiro, funciona com sinal fraco (grava no aparelho e envia depois).
+- App instalado: quem nunca entrou com conta naquele aparelho (jogador) abre direto no último link de rodada aberto. Aparelho em que alguém já entrou com conta é de organizador: abre Meus grupos ou, sem conta entrada (por exemplo, depois de Sair), o login; nunca o link do jogador (KAN-171).
 - Vários idiomas: nenhum texto de tela fica no código; tudo vai para o dicionário (`i18n/pt-BR.js`, chamado por `tx`). Tela mexida migra seus textos na mesma entrega (D3).
 
 ## Privacidade e segurança (valem nas regras do Firebase, não só na tela)
@@ -142,4 +143,5 @@ Atualizado na pelada-v50 (16/10/2026). Toda entrega que mudar uma regra atualiza
 | Janelas e avisos | `ui/dialogos.js`, `nucleo/util.js` (toast) | `acoes/conta.js` (confSim) | — | — | `testes_app.py` (CT-KAN-128) |
 | Tamanho e carga | `ui/render.js` (espera a gestão) | `acoes.js` (só públicas) | `admin.js`, `nucleo/carga-admin.js`, `build.mjs` | — | `testes_app.py` (CT-KAN-149) |
 | Esportes | catálogo em `dominio/esportes.js` | — | — | `grupos/{gid}` (sport, posx) | `testes_app.py` (outros esportes, CT-KAN-75) |
+| Abertura do app instalado | `ui/render.js` (home) | `acoes/conta.js` (Sair) | `inicio.js` (marca `nj-organizador`, último link `pelada-last`) | nenhum (só o aparelho) | `testes_app.py` (CT-KAN-171) |
 Qualquer mudança em `firestore.rules` afeta todas as linhas: rodar o emulador (`testes/regras-firebase`) e avisar o Kleber.

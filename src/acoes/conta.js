@@ -9,6 +9,7 @@ import { avisar, closeDlg, confirmou, dlg, naoConfirmar, openDlg, responder, val
 import { render } from '../ui/render.js';
 import { TEMA_K, applyTheme, closeThemeMenu, openThemeMenu, themeAnchor, themeMenuEl } from '../ui/tema.js';
 import { ACT } from '../acoes.js';
+import { abrirMenuConta } from '../ui/menu-conta.ts';
 
 async function sairDaConta(destino, el) {
   if (!(el && el._conf === 'sim') && !(await B.semPendencias(3000))) {
@@ -34,6 +35,14 @@ const acoes = {
     S.tab = el.dataset.v;
     render();
     window.scrollTo(0, 0);
+  },
+  /* Menu da conta (KAN-166): abre e fecha como o do tema. */
+  contaMenu: el => {
+    if (themeMenuEl && themeAnchor === el) {
+      closeThemeMenu(true);
+      return;
+    }
+    abrirMenuConta(el);
   },
   themeMenu: el => {
     if (themeMenuEl && themeAnchor === el) {

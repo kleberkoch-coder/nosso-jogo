@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v47 (16/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v48 (16/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -26,7 +26,7 @@ Atualizado na pelada-v47 (16/10/2026). Toda entrega que mudar uma regra atualiza
 - Mudança no `firestore.rules`: testes no emulador e aviso destacado ao Kleber; é publicada no Merge.
 
 ## País, moeda e fuso (KAN-162)
-- **Conta:** o país é pedido no cadastro, já sugerido pelo fuso do aparelho (celular ou computador). Conta sem país recebe o do aparelho uma vez. A pessoa troca em Meus grupos → País da conta → Trocar. Vale só para os grupos novos.
+- **Conta:** o país é pedido no cadastro, já sugerido pelo fuso do aparelho (celular ou computador). Conta sem país recebe o do aparelho uma vez. A pessoa troca no menu da conta (botão com a inicial, no cabeçalho) → País e formatos. Vale só para os grupos novos (KAN-166).
 - **Grupo novo:** nasce com o país, a moeda e o fuso do organizador. O fuso é o do aparelho, se for do país; senão, o principal do país. Tudo pode ser trocado em Editar grupo, e trocar o país troca a moeda e o fuso.
 - **O grupo guarda uma cópia** (`cfg.pais`, `moeda`, `fuso` e `formato`), então mudar o país da conta não mexe nos grupos que já existem.
 - **Formato pelo país do grupo:** data, separadores de número e símbolo da moeda (R$ 1.234,50; $1,234.50). Não há opções soltas de ponto, vírgula ou cifrão. Os nomes dos dias continuam no idioma do app (hoje, português).
@@ -105,6 +105,8 @@ Atualizado na pelada-v47 (16/10/2026). Toda entrega que mudar uma regra atualiza
 - Confirmações na janela do app (nunca `confirm` ou `alert`): pergunta curta, consequência, botão com o verbo; coral quando apaga (KAN-128).
 - Local e outros textos longos: numa linha só com "…" (sublinhado pontilhado quando corta); passar o mouse mostra o texto inteiro e tocar abre ou fecha. O seletor de rodadas e o cabeçalho não mostram o local. Nada pode criar rolagem lateral (KAN-144, KAN-146).
 - Horário (início e término): campo do app com hora (00–23) e minutos (00–59), setas ▲▼ e digitação; qualquer minuto vale (ex.: 10:03); nunca o relógio do celular, que corta botões no Android com letra grande (KAN-151).
+- Menu da conta (KAN-166): quem tem conta vê, no canto do cabeçalho de todas as telas, um botão redondo com a inicial do e-mail. Ele abre o e-mail, "País e formatos" e "Sair" (o Sair não fica mais solto no cabeçalho). Funciona como o menu do tema: setas, Esc e tocar fora.
+- Dias fixos do grupo: cada horário tem o rótulo em cima, "Início" e "Término (opcional)" (KAN-166).
 - Alvos de toque: 44px nos principais, 36px nos pequenos. Contraste WCAG AA nos temas claro e escuro.
 
 ## Entrega (como toda mudança vai ao ar)
@@ -127,7 +129,7 @@ Atualizado na pelada-v47 (16/10/2026). Toda entrega que mudar uma regra atualiza
 | Sorteio e times | `telas/Rodada.tsx` | `acoes/rodada.js` | `dominio/sorteio.js`, `times.ts`, `divergencia.ts` | `rodadas/{rid}` (times, cores, base) | `regras/times`, `lista-sorteio` |
 | Partida e ranking | `telas/Partida.tsx` (placar em `ui/placar.js`), `ranking.js` | `acoes/partida.js` | `nucleo/partidas.js`, `dominio/resumos.ts` | `rodadas/{rid}/partidas`, `resumos/{mês}` | `regras/ranking` |
 | Importar elenco | `ui/ImportarJogadores.tsx`, `telas/Jogadores.tsx` | `acoes/jogadores.js` (importarJogadores) | `dominio/planilha.ts`, `ui/arquivo-planilha.ts` | `jogadores/{id}`, `privado/caixa`, `privado/ratings`, `privado/contatos` | `regras/planilha`, `testes_app.py` (CT-KAN-159) |
-| País, moeda e fuso | `telas/Grupos.tsx` (país da conta), `grupo-form.js`, `login.js` (cadastro), `ui/regiao.ts` (combos), `ui/contato-form.ts` (telefone) | `acoes/grupo.js` (contaPais, createGroup, saveGroup) | `dominio/paises.ts`, `regiao.ts`, `telefone.ts`, `i18n/formatos.js` (formato, moeda, `agora()`) | `usuarios/{uid}` (pais, formato), `grupos/{gid}` (cfg.pais, moeda, fuso, formato) | `regras/paises`, `regras/contato`, `testes_app.py` (CT-KAN-162) |
+| País, moeda e fuso | `ui/menu-conta.ts` (menu da conta, KAN-166), `grupo-form.js`, `login.js` (cadastro), `ui/regiao.ts` (combos), `ui/contato-form.ts` (telefone) | `acoes/grupo.js` (contaPais, createGroup, saveGroup) | `dominio/paises.ts`, `regiao.ts`, `telefone.ts`, `i18n/formatos.js` (formato, moeda, `agora()`) | `usuarios/{uid}` (pais, formato), `grupos/{gid}` (cfg.pais, moeda, fuso, formato) | `regras/paises`, `regras/contato`, `testes_app.py` (CT-KAN-162) |
 | Votação | `telas/votacao.js`, `publico-voto.js` | `acoes/votacao.js` | `telas/votacao.js` (tally) | `votacoes/{vid}`, `votos` | `testes_app.py` (votação) |
 | Caixa | `telas/Caixa.tsx` | `acoes/caixa.js` | `dominio/caixa-regras.ts`, `caixa.js` | `caixa/{id}`, `privado/caixa`, `resumos` | `regras/caixa` |
 | Grupo e convite | `telas/grupo.js`, `grupo-form.js`, `convite.js` | `acoes/grupo.js` | `dominio/limites.ts` | `grupos/{gid}`, `membros`, `privado/convite`, `contas/{uid}` | `regras/limites`, `regras-firebase` |

@@ -192,6 +192,11 @@ export default {
     'Esta conta chegou ao limite de {n} grupos. Use um dos seus grupos ou fale com o suporte do Nosso Jogo para liberar mais.',
   'comum.cancelar': 'Cancelar',
   'comum.salvar': 'Salvar',
+  /* menu da conta, no cabeçalho (KAN-166) */
+  'conta.menu': 'Minha conta ({email})',
+  'conta.titulo': 'Minha conta',
+  'conta.pais': 'País e formatos',
+  'conta.sair': 'Sair',
   /* país da conta, no cadastro (KAN-162); o resto do país, moeda e fuso fica nos textos da gestão */
   'login.pais': 'Seu país',
   'login.paisDica':

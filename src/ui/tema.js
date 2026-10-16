@@ -57,15 +57,17 @@ function closeThemeMenu(back) {
   }
   themeAnchor = null;
 }
-function openThemeMenu(anchor) {
+/* Menu que abre embaixo de um botão do cabeçalho: o do tema e, desde a v48, o da conta (KAN-166).
+   Setas, Esc e tocar fora funcionam igual nos dois (eventos.js). */
+function abrirMenu(anchor, rotulo, montar) {
   closeThemeMenu();
   themeAnchor = anchor;
   anchor.setAttribute('aria-expanded', 'true');
   const m = document.createElement('div');
   m.className = 'theme-menu';
   m.setAttribute('role', 'menu');
-  m.setAttribute('aria-label', 'Tema');
-  m.innerHTML = '<p class="tm-t" aria-hidden="true">Tema</p>' + themeOpts();
+  m.setAttribute('aria-label', rotulo);
+  montar(m);
   document.body.appendChild(m);
   themeMenuEl = m;
   const r = anchor.getBoundingClientRect(),
@@ -73,6 +75,11 @@ function openThemeMenu(anchor) {
   m.style.top = Math.round(r.bottom + scrollY + 8) + 'px';
   m.style.left = Math.round(scrollX + Math.max(8, Math.min(innerWidth - w - 8, r.right - w))) + 'px';
   (m.querySelector('[aria-checked=true]') || m.querySelector('button')).focus({ preventScroll: true });
+}
+function openThemeMenu(anchor) {
+  abrirMenu(anchor, 'Tema', m => {
+    m.innerHTML = '<p class="tm-t" aria-hidden="true">Tema</p>' + themeOpts();
+  });
 }
 function vTemaPanel() {
   const t = getTheme();
@@ -87,6 +94,7 @@ darkMQ.addEventListener('change', () => {
 
 export {
   TEMA_K,
+  abrirMenu,
   applyTheme,
   closeThemeMenu,
   openThemeMenu,

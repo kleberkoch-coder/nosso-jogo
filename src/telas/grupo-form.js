@@ -11,7 +11,8 @@ import { fusoAparelho, listaFuso, listaMoeda, opcoesFuso, opcoesMoeda, opcoesPai
 function schedRow(x) {
   x = x || { dow: 1, ini: '20:00', fim: '22:00', place: '' };
   return `<div class="srow" data-id="${esc(x.id || '')}"><select class="sel sd" aria-label="${tx('grupo.diaSemana')}">${DIAS.map((d, i) => `<option value="${i}" ${i === +x.dow ? 'selected' : ''}>${d}</option>`).join('')}</select>
-  ${horaCampo('', 'si', x.ini || '', false, tx('grupo.inicio'))}${horaCampo('', 'sf', x.fim || '', true, tx('grupo.termino'))}
+  <span class="hrot"><span class="hrot-t" aria-hidden="true">${tx('grupo.inicio')}</span>${horaCampo('', 'si', x.ini || '', false, tx('grupo.inicio'))}</span>
+  <span class="hrot"><span class="hrot-t" aria-hidden="true">${tx('grupo.terminoOpcional')}</span>${horaCampo('', 'sf', x.fim || '', true, tx('grupo.termino'))}</span>
   <button class="btn sm ghost danger" data-a="rmSched" aria-label="${tx('grupo.removerDia')}">✕</button><input class="inp sl" value="${esc(x.place || '')}" maxlength="200" placeholder="${tx('grupo.localOpcional')}"></div>`;
 }
 function groupForm(g, editing) {

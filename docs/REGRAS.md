@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v48 (16/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v49 (16/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -24,6 +24,7 @@ Atualizado na pelada-v48 (16/10/2026). Toda entrega que mudar uma regra atualiza
 - Sair apaga a cópia local dos dados; com algo sem enviar, pergunta antes (KAN-80).
 - App Check em observação, com a chave "Nosso Jogo web 2" desde a v42. Só ligar o bloqueio (Aplicar) com mais de 99% de chamadas verificadas por 7 dias; ligado antes, ele derrubou o login em 15/10 (KAN-88, lembrete em 20/10).
 - Mudança no `firestore.rules`: testes no emulador e aviso destacado ao Kleber; é publicada no Merge.
+- Lista dentro de lista (posições criadas `posx` e pares separados `sep`) é gravada como `{ __lista: [...] }` e volta a ser lista na leitura, porque o Firestore não aceita o formato direto. O modo demonstração recusa o que o Firestore recusa (KAN-167; `nucleo/dados-banco.ts`, com teste).
 
 ## País, moeda e fuso (KAN-162)
 - **Conta:** o país é pedido no cadastro, já sugerido pelo fuso do aparelho (celular ou computador). Conta sem país recebe o do aparelho uma vez. A pessoa troca no menu da conta (botão com a inicial, no cabeçalho) → País e formatos. Vale só para os grupos novos (KAN-166).

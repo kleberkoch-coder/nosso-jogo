@@ -105,6 +105,10 @@ Medido a cada versão, no celular de 390px:
 - **Regra:** cada dado tem um único banco dono; os outros recebem cópias.
 - **Proteção contra dependência:** toda a conversa com o banco fica em `nucleo/backend.js`. Trocar de banco mexeria principalmente nesse módulo.
 
+- **Lista dentro de lista (pelada-v49, KAN-167):** o Firestore não grava uma lista que tem outra lista dentro, e o modo demonstração aceitava. Por isso, as posições criadas e os pares separados se perdiam sem que os testes percebessem.
+  - Agora `nucleo/dados-banco.ts` converte nos dois bancos, na entrada e na saída de `backend.js`: na gravação, `[[a, b]]` vira `[{ __lista: [a, b] }]`; na leitura, volta.
+  - O modo demonstração recusa o que o Firestore recusa. **Regra para o futuro:** toda diferença conhecida entre o Firestore e o modo demonstração vira uma recusa no modo demonstração.
+
 ### D10. Carregar só o que está na tela (8 out. 2026; link do jogador, aba Rodada e Histórico feitos na pelada-v14; partidas em subpasta na pelada-v18)
 - **Contexto:** o link do jogador e a gestão do grupo baixavam todas as rodadas da história do grupo. Isso deixa o app mais lento a cada mês, principalmente com sinal fraco, e aumenta as leituras cobradas pelo Firebase.
 - **Decisão:**

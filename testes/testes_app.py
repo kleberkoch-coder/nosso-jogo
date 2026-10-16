@@ -1044,6 +1044,25 @@ with sync_playwright() as pw:
            f'CT-KAN-76-12: {nome_g}: sorteio com a carga gravada funciona, só com identificadores válidos e nada injetado')
         pg.evaluate(DEL, [pres_k(g, rg, XSS)]); pg.reload(); pg.wait_for_timeout(800)
 
+    # ---------- v49 (KAN-167, defeito do Kleber 16/10): posição criada e par separado continuam depois de recarregar
+    pg.goto(URL + '#/g/' + gid_fut); pg.wait_for_timeout(1200)
+    pg.click('[data-a=tab][data-v=grupo]'); pg.wait_for_timeout(400); pg.click('[data-a=addPos]'); pg.wait_for_timeout(300)
+    pg.fill('#psg', 'vol'); pg.fill('#pnmx', 'Volante'); pg.click('#dlg [data-a=savePos]'); pg.wait_for_timeout(700)
+    bruto167 = pg.evaluate("(g)=>JSON.stringify(JSON.parse(localStorage.getItem('pelada-demo-v2'))['grupos/'+g].posx)", gid_fut)
+    ok('__lista' in bruto167 and 'Volante' in bruto167, f'CT-KAN-167-01: a posição criada é gravada num formato que o Firestore aceita ({bruto167})')
+    pg.reload(); pg.wait_for_timeout(1500); pg.click('[data-a=tab][data-v=grupo]'); pg.wait_for_timeout(400)
+    ok('Volante' in pg.inner_text('main') and pg.evaluate("(S.app.posx||[]).some(p=>Array.isArray(p)&&p[0]==='VOL'&&p[1]==='Volante')"), 'CT-KAN-167-01: depois de recarregar (F5), a posição criada continua lá')
+    pg.click('[data-a=tab][data-v=jogadores]'); pg.wait_for_timeout(400); pg.click('[data-a=addSep]'); pg.wait_for_timeout(300)
+    ops167 = pg.eval_on_selector_all('#sa option', 'os=>os.map(o=>o.value)')
+    pg.select_option('#sa', ops167[0]); pg.select_option('#sb', ops167[1]); pg.click('#dlg [data-a=saveSep]'); pg.wait_for_timeout(700)
+    pg.reload(); pg.wait_for_timeout(1500); pg.click('[data-a=tab][data-v=jogadores]'); pg.wait_for_timeout(500)
+    ok(pg.locator('[data-a=delSep]').count() >= 1 and pg.evaluate("(S.rat.sep||[]).some(p=>Array.isArray(p)&&p.length===2)"), 'CT-KAN-167-02: o par "não colocar no mesmo time" continua depois de recarregar')
+    pg.locator('[data-a=delSep]').last.click(); pg.wait_for_timeout(500)
+    pg.click('[data-a=tab][data-v=grupo]'); pg.wait_for_timeout(400)
+    pg.locator('[data-a=rmPos]').last.click(); pg.wait_for_timeout(300)
+    if pg.locator('#dlg .conf').count(): confirmar_app(pg, True)
+    pg.wait_for_timeout(500)
+
     # ---------- v47 (KAN-162): país da conta e do grupo (moeda, formato, fuso) e telefone com o país ao lado
     pg.goto(URL + '#/'); pg.wait_for_timeout(900)
     ok(pg.evaluate("S.me && S.me.pais") == 'BR' and pg.evaluate("S.me.formato") == 'pt-BR', 'CT-KAN-162-01: conta criada num aparelho no fuso de São Paulo fica com o país Brasil')

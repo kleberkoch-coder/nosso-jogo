@@ -68,6 +68,16 @@ pres_k = lambda g, r, p: f'grupos/{g}/rodadas/{r}/presencas/{p}'
 lim_k = lambda g, r: f'grupos/{g}/rodadas/{r}/limites/avulsos'
 
 # Janela de confirmação do app (KAN-128): responde Sim (botão da ação) ou Cancelar.
+def sair(pg):
+    """Sair da conta pelo menu da conta, no cabeçalho (KAN-166)."""
+    pg.click('#topright [data-a=contaMenu]'); pg.wait_for_timeout(200)
+    pg.click('.theme-menu [data-a=logout]')
+
+def abrir_pais_conta(pg):
+    """Abre a janela do país da conta pelo menu da conta (KAN-166)."""
+    pg.click('#topright [data-a=contaMenu]'); pg.wait_for_timeout(200)
+    pg.click('.theme-menu [data-a=contaPais]'); pg.wait_for_timeout(400)
+
 def confirmar_app(pg, sim=True):
     try:
         pg.wait_for_selector('#dlg .conf [data-a=confSim]', timeout=3000)
@@ -1038,13 +1048,27 @@ with sync_playwright() as pw:
     pg.goto(URL + '#/'); pg.wait_for_timeout(900)
     ok(pg.evaluate("S.me && S.me.pais") == 'BR' and pg.evaluate("S.me.formato") == 'pt-BR', 'CT-KAN-162-01: conta criada num aparelho no fuso de São Paulo fica com o país Brasil')
     home162 = pg.inner_text('main')
-    ok('País da conta:' in home162 and 'Brasil' in home162 and pg.locator('[data-a=contaPais]').count() == 1, 'CT-KAN-162-01: Meus grupos mostra o país da conta, com Trocar')
-    pg.click('[data-a=contaPais]'); pg.wait_for_timeout(300)
+    # v48 (KAN-166): o país da conta fica no menu da conta, no cabeçalho
+    ok(pg.inner_text('#topright [data-a=contaMenu]') == 'O' and 'País da conta' not in home162, 'CT-KAN-166-01: cabeçalho mostra o botão da conta com a inicial do e-mail; a página inicial não repete o país')
+    pg.click('#topright [data-a=contaMenu]'); pg.wait_for_timeout(300)
+    menu166 = pg.inner_text('.theme-menu') if pg.locator('.theme-menu').count() else ''
+    ok('org@teste.com' in menu166 and 'País e formatos' in menu166 and 'Brasil' in menu166 and 'Sair' in menu166
+       and pg.get_attribute('#topright [data-a=contaMenu]', 'aria-expanded') == 'true' and pg.evaluate("document.activeElement.dataset.a") == 'contaPais',
+       f'CT-KAN-166-01: o menu da conta mostra o e-mail, País e formatos (com o país) e Sair ({menu166!r})')
+    pg.keyboard.press('Escape'); pg.wait_for_timeout(200)
+    ok(pg.locator('.theme-menu').count() == 0 and pg.evaluate("document.activeElement.dataset.a") == 'contaMenu', 'CT-KAN-166-01: Esc fecha o menu e o foco volta ao botão da conta')
+    abrir_pais_conta(pg)
+    ok(pg.locator('.theme-menu').count() == 0, 'CT-KAN-166-02: escolher um item fecha o menu')
     ok(pg.evaluate("document.activeElement.id") == 'cpais', 'CT-KAN-162-02: a janela do país abre com o cursor no combo')
     pg.select_option('#cpais', 'US'); pg.click('#dlg [data-a=salvarPaisConta]'); pg.wait_for_timeout(600)
-    ok(pg.evaluate("S.me.pais") == 'US' and 'Estados Unidos' in pg.inner_text('main') and (pg.evaluate(LER, 'usuarios/u-orgtestecom') or {}).get('pais') == 'US',
+    pg.click('#topright [data-a=contaMenu]'); pg.wait_for_timeout(300)
+    menu166b = pg.inner_text('.theme-menu') if pg.locator('.theme-menu').count() else ''
+    pg.keyboard.press('Escape'); pg.wait_for_timeout(200)
+    ok(pg.evaluate("S.me.pais") == 'US' and 'Estados Unidos' in menu166b and (pg.evaluate(LER, 'usuarios/u-orgtestecom') or {}).get('pais') == 'US',
        'CT-KAN-162-02: trocar o país da conta grava e mostra o país novo')
     pg.click('main [data-a=newGroup]'); pg.wait_for_timeout(400)
+    rot166 = pg.inner_text('#sched .srow')
+    ok('Início' in rot166 and 'Término (opcional)' in rot166 and rot166.index('Início') < rot166.index('Término'), f'CT-KAN-166-03: os horários do dia fixo têm os rótulos Início e Término (opcional) ({rot166!r})')
     ok(pg.input_value('#ngp') == 'US' and pg.input_value('#ngm') == 'USD' and pg.locator('#ngzW').is_visible() and pg.input_value('#ngz') == 'America/New_York',
        'CT-KAN-162-02: grupo novo já vem com o país, a moeda e o fuso do organizador (EUA, dólar, Nova York)')
     pg.select_option('#ngp', 'PT'); pg.wait_for_timeout(100)
@@ -1085,7 +1109,7 @@ with sync_playwright() as pw:
     ok(pg.input_value('#ppais') == 'BR' and pg.get_attribute('#ptel', 'placeholder') == '(11) 98765-4321', 'CT-KAN-162-05: grupo antigo, sem país, continua com o telefone do Brasil')
     pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(300)
     pg.goto(URL + '#/'); pg.wait_for_timeout(800)
-    pg.click('[data-a=contaPais]'); pg.wait_for_timeout(300); pg.select_option('#cpais', 'BR'); pg.click('#dlg [data-a=salvarPaisConta]'); pg.wait_for_timeout(600)
+    abrir_pais_conta(pg); pg.select_option('#cpais', 'BR'); pg.click('#dlg [data-a=salvarPaisConta]'); pg.wait_for_timeout(600)
 
     # ---------- Sugestões da Qualidade (09/10): versão em todas as telas, convite e tema escuro
     pg.goto(URL + '#/'); pg.wait_for_timeout(900)
@@ -1094,13 +1118,13 @@ with sync_playwright() as pw:
     pg.click('[data-a=inviteLink]'); pg.wait_for_timeout(500); token = pg.evaluate("S.convite&&S.convite.token"); pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(200)
     # Sair (KAN-80): com algo ainda sem enviar, pergunta antes; Cancelar mantém a pessoa conectada
     pg.evaluate("window.__demoPendente=true")
-    pg.click('#topright [data-a=logout]'); pg.wait_for_timeout(800)
+    sair(pg); pg.wait_for_timeout(800)
     sj = pg.inner_text('#dlg .conf') if pg.locator('#dlg .conf').count() else ''
     ok('Sair sem enviar' in sj and 'Sair mesmo assim' in sj, 'CT-KAN-128: Sair com alterações sem enviar pergunta na janela do app ("Sair mesmo assim")')
     confirmar_app(pg, False)
     ok(pg.evaluate("!!(S.user&&!S.user.anon)"), 'CT-KAN-80-03: com alterações sem enviar, Sair pergunta antes e Cancelar mantém conectado')
     pg.evaluate("window.__demoPendente=false")
-    pg.click('#topright [data-a=logout]'); pg.wait_for_timeout(1500)
+    sair(pg); pg.wait_for_timeout(1500)
     ok(pg.locator('.ld-nav').count() == 1 and pg.evaluate("!S.user||S.user.anon") and pg.evaluate("Object.keys(S.caixa||{}).length==0&&!S.rat"), 'CT-KAN-80-01: Sair desconecta, recarrega na apresentação e não deixa dados do grupo na tela')
     pg.goto(URL + '#/entrar'); pg.wait_for_timeout(900)
     ok(f'Nosso Jogo · versão {VER}' in pg.inner_text('main'), 'CT-KAN-107-02: tela Entrar mostra a versão do app')
@@ -1142,10 +1166,10 @@ with sync_playwright() as pw:
     pg.goto(URL + '#/g/' + gid_fut); pg.wait_for_timeout(1500)
     ok(pg.evaluate("!!(S.user&&!S.user.anon)") and pg.locator('[data-a=tab]').count() >= 8 and pg.inner_text('#gname') == 'Futebol de Segunda' and pg.locator('.hero-r').count() == 1,
        'CT-KAN-80-06: entrar de novo com a mesma conta traz o grupo de volta')
-    ok(pg.evaluate("document.documentElement.dataset.theme") == 'dark' and pg.evaluate("(()=>{const r=document.querySelector('#topright [data-a=logout]').getBoundingClientRect();return r.width>0&&r.left>=0&&r.right<=innerWidth&&document.documentElement.scrollWidth<=innerWidth})()"),
-       'CT-KAN-80-06: no tema escuro, o botão Sair cabe na tela de 390px')
+    ok(pg.evaluate("document.documentElement.dataset.theme") == 'dark' and pg.evaluate("(()=>{const r=document.querySelector('#topright [data-a=contaMenu]').getBoundingClientRect();return r.width>0&&r.left>=0&&r.right<=innerWidth&&document.documentElement.scrollWidth<=innerWidth})()"),
+       'CT-KAN-80-06: no tema escuro, o botão da conta (com o Sair) cabe na tela de 390px')
     contraste(pg, 'gestão com Sair (escuro, CT-KAN-80-06)')
-    pg.click('#topright [data-a=logout]')
+    sair(pg)
     try: pg.wait_for_selector('.ld-nav', timeout=8000); pg.wait_for_timeout(300)
     except Exception: pass
     ok(pg.locator('.ld-nav').count() == 1 and pg.evaluate("!S.user||S.user.anon"), 'CT-KAN-80-06: Sair no tema escuro leva à apresentação, sem conta conectada')
@@ -1175,7 +1199,7 @@ with sync_playwright() as pw:
     cfg2 = (pg.evaluate(LER, GK) or {}).get('cfg') or {}; pc2 = pg.evaluate(LER, PCK) or {}
     ok(not any(k in cfg2 for k in ('mensal', 'diaria', 'pix')) and pc2.get('mensal') == 120 and pc2.get('pix') == PIX79,
        f'CT-KAN-79-05: grupo antigo com mensalidade, diária e Pix no documento público: ao abrir, os 3 campos saem de lá (cfg público: {sorted(cfg2)})')
-    pg.click('#topright [data-a=logout]')
+    sair(pg)
     try: pg.wait_for_selector('.ld-nav', timeout=8000); pg.wait_for_timeout(300)
     except Exception: pass
     # Visitante sem conta no link permanente, com a lista aberta
@@ -1246,7 +1270,7 @@ with sync_playwright() as pw:
     pg.goto(URL + '#/portal'); pg.wait_for_timeout(900)
     ok(pg.locator('a[href*="portal"]').count() == 0 and 'Portal do Nosso Jogo' not in pg.inner_text('main') and pg.locator('li.cli').count() == 0,
        'CT-KAN-116-02: o app dos clientes não tem portal (nenhum botão, nem para o e-mail da administração; #/portal não abre nada)')
-    pg.click('#topright [data-a=logout]')
+    sair(pg)
     try: pg.wait_for_selector('.ld-nav', timeout=8000)
     except Exception: pass
 
@@ -1362,7 +1386,7 @@ with sync_playwright() as pw:
     p2.goto(URL + '#/criar'); p2.wait_for_timeout(800)
     p2.fill('#le', 'relogio@teste.com'); p2.fill('#lp', 'Jogo@2026'); p2.fill('#lp2', 'Jogo@2026'); p2.keyboard.press('Enter'); p2.wait_for_timeout(1200)
     p2.fill('#ngn', 'Sexta Noite')
-    p2.select_option('#sched .sd', '5'); p2.fill('#sched .srow [data-hora]:nth-of-type(1) .hh', '23'); p2.fill('#sched .srow [data-hora]:nth-of-type(1) .hm', '00'); p2.fill('#sched .srow [data-hora]:nth-of-type(2) .hh', '01'); p2.fill('#sched .srow [data-hora]:nth-of-type(2) .hm', '00')
+    p2.select_option('#sched .sd', '5'); p2.fill('#sched .srow .hrot:nth-of-type(1) [data-hora] .hh', '23'); p2.fill('#sched .srow .hrot:nth-of-type(1) [data-hora] .hm', '00'); p2.fill('#sched .srow .hrot:nth-of-type(2) [data-hora] .hh', '01'); p2.fill('#sched .srow .hrot:nth-of-type(2) [data-hora] .hm', '00')
     p2.click('[data-a=createGroup]'); p2.wait_for_timeout(1500)
     gid_nt = p2.url.split('#/g/')[1]
     elenco_e_presenca(p2, 5)

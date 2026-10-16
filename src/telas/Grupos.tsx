@@ -1,5 +1,5 @@
 /* Página inicial de quem tem conta, "Meus grupos" (KAN-162: virou componente em TypeScript + Preact).
-   Lista os grupos ativos e inativos e mostra o país da conta, que define país, moeda e fuso dos grupos novos.
+   Lista os grupos ativos e inativos. O país da conta fica no menu da conta, no cabeçalho (KAN-166).
    Os botões usam data-a (ações em acoes/grupo.js). */
 import { render } from 'preact';
 import { SPORTS } from '../dominio/esportes.js';
@@ -8,7 +8,6 @@ import { LOCAL } from '../i18n/formatos.js';
 import { tx } from '../i18n/index.js';
 import { S as estado } from '../nucleo/estado.js';
 import { numeroVersao } from '../nucleo/versao.js';
-import { bandeira, nomePais } from '../ui/regiao.ts';
 
 type MeuGrupo = { name?: string; sport?: string; sportName?: string; role?: string; ativo?: boolean; criado?: number };
 const st = (): any => estado;
@@ -30,19 +29,6 @@ function LinhaGrupo({ gid, g }: { gid: string; g: MeuGrupo }) {
         {tx('inicio.abrir')}
       </a>
     </li>
-  );
-}
-
-/* País da conta: vale para os grupos novos; "Trocar" abre a janela do país (acoes/grupo.js, contaPais). */
-function PaisConta() {
-  const p = (st().me && st().me.pais) || 'BR';
-  return (
-    <p class="small muted row conta-pais">
-      {tx('regiao.contaPais', { pais: bandeira(p) + ' ' + nomePais(p) })}
-      <button class="btn sm ghost" data-a="contaPais">
-        {tx('regiao.trocar')}
-      </button>
-    </p>
   );
 }
 
@@ -96,7 +82,6 @@ function GruposTela() {
         </details>
       ) : null}
       <p class="small muted">{tx('inicio.conectado', { email: (S.user && S.user.email) || '' })}</p>
-      <PaisConta />
       <p class="versao small muted">{tx('comum.versao', { n: numeroVersao() })}</p>
     </div>
   );

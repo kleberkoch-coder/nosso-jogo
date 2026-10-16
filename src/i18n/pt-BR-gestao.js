@@ -118,6 +118,7 @@ export default {
   'grupo.diaSemana': 'Dia da semana',
   'grupo.inicio': 'Início',
   'grupo.termino': 'Término',
+  'grupo.terminoOpcional': 'Término (opcional)',
   'grupo.removerDia': 'Remover dia',
   'grupo.localOpcional': 'Local (opcional)',
   'grupo.nome': 'Nome do grupo',

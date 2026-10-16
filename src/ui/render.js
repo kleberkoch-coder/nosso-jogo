@@ -9,6 +9,7 @@ import { ensureExtras, ensurePres, ensureVotos } from '../rotas.js';
 import { adm, carregarAdmin } from '../nucleo/carga-admin.js';
 import { tx } from '../i18n/index.js';
 import { desmontarPublico } from '../telas/PublicoRodada.tsx';
+import { botaoConta } from './menu-conta.ts';
 import { vAuth } from '../telas/login.js';
 import { renderPublicRodada } from '../telas/publico-rodada.js';
 import { renderPublicVoto } from '../telas/publico-voto.js';
@@ -78,11 +79,15 @@ function renderCore() {
   if (R.n === 'v') return renderPublicVoto();
   $('#tabsnav').hidden = true;
   $('#gsub').textContent = 'Presença, sorteio de times, placar, ranking e caixa dos seus jogos';
+  // Com conta: "⇄ Grupos" (fora da página inicial) e o botão da conta, que abre o menu com país e Sair (KAN-166).
   $('#topright').innerHTML = logged
-    ? `${R.n !== 'home' ? '<button class="chip" data-a="groupsDlg">⇄ Grupos</button>' : ''}<button class="chip" data-a="logout">Sair</button>`
+    ? R.n !== 'home'
+      ? '<button class="chip" data-a="groupsDlg">⇄ Grupos</button>'
+      : ''
     : R.n === 'auth'
       ? '<a class="chip" href="#/">← Início</a>'
       : '';
+  if (logged) $('#topright').append(botaoConta());
   document.body.classList.remove('is-landing');
   /* KAN-149: página inicial, convite e gestão vêm da parte de gestão, que carrega na primeira vez. */
   const A = adm();

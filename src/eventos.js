@@ -103,7 +103,7 @@ let swallowClick = false;
 document.addEventListener(
   'pointerdown',
   e => {
-    if (themeMenuEl && !themeMenuEl.contains(e.target) && !e.target.closest('[data-a=themeMenu]')) {
+    if (themeMenuEl && !themeMenuEl.contains(e.target) && !e.target.closest('[data-a=themeMenu],[data-a=contaMenu]')) {
       closeThemeMenu();
       swallowClick = true;
       setTimeout(() => {

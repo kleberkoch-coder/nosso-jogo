@@ -18,7 +18,7 @@ Atualizado a cada entrega (quando a proposta é aberta) e de novo depois do Merg
 
 | Versão | Proposta | Testes do app | Regras de negócio | Regras do Firebase (emulador) | Tamanho | Mapa de origem | Regras publicadas | No ar |
 |---|---|---|---|---|---|---|---|---|
-| pelada-v49 | [#57](https://github.com/kleberkoch-coder/nosso-jogo/pull/57) | ✅ 382 de 382 (site e portal compactados) | ✅ 83 de 83 | ✅ 59 de 59 | link do jogador 46,1 KB; app inteiro 92,3 KB | ✅ | não mudaram | aguardando Merge |
+| pelada-v49 | [#57](https://github.com/kleberkoch-coder/nosso-jogo/pull/57) | ✅ 382 de 382 (site e portal compactados) | ✅ 83 de 83 | ✅ 59 de 59 | link do jogador 46,1 KB; app inteiro 92,3 KB | ✅ | não mudaram | ✅ Merge 16/10 16h20; **conferido no ar** (pelada-v49) |
 | pelada-v48 | [#56](https://github.com/kleberkoch-coder/nosso-jogo/pull/56) | ✅ 379 de 379 (site e portal compactados) | ✅ 80 de 80 | ✅ 59 de 59 | link do jogador 45,7 KB; app inteiro 92,0 KB | ✅ | não mudaram | ✅ Merge 16/10 13h58; **conferido no ar** (pelada-v48) |
 | pelada-v47 | [#55](https://github.com/kleberkoch-coder/nosso-jogo/pull/55) | ✅ 375 de 375 (site e portal compactados) | ✅ 80 de 80 | ✅ 59 de 59 | link do jogador 45,1 KB; app inteiro 91,5 KB (limite novo 95 KB, D7: tabela de países) | ✅ | não mudaram | ✅ Merge 16/10 11h48; **conferido no ar** (pelada-v47) |
 | pelada-v46 | [#54](https://github.com/kleberkoch-coder/nosso-jogo/pull/54) | ✅ 353 de 353 (site e portal compactados) | ✅ 72 de 72 | ✅ 59 de 59 | link do jogador 44,5 KB; app inteiro 86,1 KB (limite novo 90 KB, D7) | ✅ | não mudaram | ✅ Merge 15/10 22h11; **conferido no ar** (pelada-v46) |

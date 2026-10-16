@@ -4,7 +4,9 @@
    Os botões continuam com data-a: as ações, o carregando e o aviso de sem sinal são os mesmos do resto do app. */
 import type { ComponentChildren } from 'preact';
 import { hasPos, posLabel, sport } from '../dominio/esportes.js';
-import { fmtL, lvl, ppos } from '../dominio/grupo.js';
+import { fmtL, lvl, ppos, rodadasJanela } from '../dominio/grupo.js';
+import { hora } from '../dominio/rodadas.js';
+import { fdate } from '../nucleo/util.js';
 import { tx } from '../i18n/index.js';
 import { linkMaps, linkWaze } from '../nucleo/links.js';
 
@@ -99,5 +101,36 @@ export function Tag({
     <span class={'tag' + (classe ? ' ' + classe : '')} style={cor ? { color: cor } : undefined} title={titulo}>
       {children}
     </span>
+  );
+}
+
+/* Seletor da rodada (D10): as próximas e as últimas 4; as antigas ficam na aba Histórico.
+   Na aba Rodada vem com "Nova rodada" e "Histórico" (acoes); na aba Partida, só a lista (KAN-160). */
+type RodadaOpcao = { id: string; date: string; time?: string; fim?: string; cancelada?: boolean; fixo?: boolean };
+export function SeletorRodada({ r, acoes }: { r: RodadaOpcao; acoes?: boolean }) {
+  const rs = rodadasJanela() as RodadaOpcao[];
+  if (!rs.some(x => x.id === r.id)) rs.push(r);
+  return (
+    <div class="rsel">
+      <select class="sel" data-c="rid" aria-label={tx('rodada.seletor')} value={r.id}>
+        {rs.map(x => (
+          <option key={x.id} value={x.id} selected={x.id === r.id}>
+            {fdate(x.date)}
+            {x.time ? ' · ' + hora(x) : ''}
+            {x.cancelada ? ' ' + tx('rodada.canceladaOpcao') : x.fixo ? ' · ' + tx('rodada.fixoOpcao') : ''}
+          </option>
+        ))}
+      </select>
+      {acoes ? (
+        <>
+          <button class="btn" data-a="newRod">
+            {tx('rodada.nova')}
+          </button>
+          <button class="btn ghost" data-a="tab" data-v="historico">
+            {tx('hist.atalho')}
+          </button>
+        </>
+      ) : null}
+    </div>
   );
 }

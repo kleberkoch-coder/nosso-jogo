@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v45 (15/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v46 (15/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -36,6 +36,7 @@ Atualizado na pelada-v45 (15/10/2026). Toda entrega que mudar uma regra atualiza
 ## Jogadores
 - Ficha: nome, posição, nota de 1 a 10 (meio ponto), tipo mensalista ou diarista, contato. Inativar é diferente de excluir.
 - Telefone: sem "+", é brasileiro (DDD + número, 10 ou 11 dígitos); com "+" (ou "00") e o código do país, vale qualquer país (8 a 15 dígitos). Fica gravado no formato internacional (+55…); os antigos, sem "+", continuam brasileiros. E-mail precisa de nome@domínio.terminação. Inválido não salva (KAN-156; regra em `dominio/contato.ts`, com teste).
+- Importar da planilha (KAN-159): colar do Excel/Google Planilhas ou enviar .xlsx/.csv (só a primeira aba). Colunas reconhecidas pelo título: Nome (obrigatório), Posição, Nota, Tipo, Telefone e E-mail; sem título, nessa ordem. Nome que já está no elenco ou repetido na lista fica de fora; dado inválido vira aviso e o jogador entra sem ele. Até 100 por vez, gravados de uma vez (regra em `dominio/planilha.ts`, com teste).
 - Avulso do link só vira cadastro depois de entrar num sorteio (ou se o administrador o adicionar); pode ser promovido ao elenco.
 - Pares "não colocar no mesmo time" são respeitados no sorteio.
 
@@ -60,6 +61,7 @@ Atualizado na pelada-v45 (15/10/2026). Toda entrega que mudar uma regra atualiza
 - Cor do colete é gravada à parte dos times (KAN-108).
 
 ## Partida, ranking e votação
+- A aba Partida tem o seletor de rodada no topo, mesmo quando a rodada escolhida não tem times (KAN-160).
 - Placar com a pontuação do esporte e o autor; cronômetro com alarme; com 3+ times, quem ganha fica.
 - Cada partida guarda quem jogou: re-sorteio não altera o ranking.
 - Ranking: 3 por vitória, 1 por empate; filtro de ano e mês; vem de totais por mês (`resumos/{AAAA-MM}`), com botão Recalcular.
@@ -92,7 +94,8 @@ Atualizado na pelada-v45 (15/10/2026). Toda entrega que mudar uma regra atualiza
 - Proposta (PR) com testes verdes e prévia; `VERSION` do `site/sw.js` sobe; o Kleber aprova com Merge.
 - O Merge publica o site e, se mudaram, as regras do Firebase; a automação confere a versão no ar.
 - Na mesma entrega: atualizar este arquivo, os docs afetados, a pasta `app/` do projeto e os cartões do Jira ([Entrega], Em análise).
-- Limite de tamanho (D7): o link do jogador até 50 KB comprimido; o app inteiro, com a gestão, até 85 KB.
+- Limite de tamanho (D7): o link do jogador até 50 KB comprimido; o app inteiro, com a gestão, até 90 KB.
+- Textos da gestão ficam em `src/i18n/pt-BR-gestao.js` e chegam com a parte de gestão; os do link público e do login, em `src/i18n/pt-BR.js`. A montagem barra o link público usando texto da gestão.
 - Dívida técnica não piora (D12, KAN-154): a montagem falha se aumentar innerHTML, textos fora do dicionário ou arquivos sem tipos, ou se diminuírem as telas como componente (tetos em `docs/divida.json`).
 - O GitHub confere toda proposta (KAN-157, `testes/conferir-entrega.mjs`): app mudou → VERSION sobe; componente `.tsx` novo em `src/ui/` ou classe nova no CSS → `docs/DESIGN-SYSTEM.md` muda; tela ou ação mudou → `docs/REGRAS.md` muda (ou "sem mudança de regra" na proposta); `firestore.rules` mudou → a proposta avisa; checklist da proposta sem item em branco.
 - Código num formato único (Prettier, `.prettierrc.json`); o GitHub recusa código fora do formato (KAN-155).
@@ -105,7 +108,8 @@ Atualizado na pelada-v45 (15/10/2026). Toda entrega que mudar uma regra atualiza
 | Presença pelo link | `telas/PublicoRodada.tsx` | `acoes/publico.js` | `nucleo/edicoes.js` (setPres) | `rodadas/{rid}/presencas`, `limites/avulsos` | `testes_app.py` (link), `regras-firebase` (presença) |
 | Presença na gestão | `telas/Rodada.tsx` | `acoes/rodada.js` | `dominio/grupo.js` (attendance, curRodada) | idem | `testes_app.py` (Rodada) |
 | Sorteio e times | `telas/Rodada.tsx` | `acoes/rodada.js` | `dominio/sorteio.js`, `times.ts`, `divergencia.ts` | `rodadas/{rid}` (times, cores, base) | `regras/times`, `lista-sorteio` |
-| Partida e ranking | `telas/partida.js`, `ranking.js` | `acoes/partida.js` | `nucleo/partidas.js`, `dominio/resumos.ts` | `rodadas/{rid}/partidas`, `resumos/{mês}` | `regras/ranking` |
+| Partida e ranking | `telas/Partida.tsx` (placar em `ui/placar.js`), `ranking.js` | `acoes/partida.js` | `nucleo/partidas.js`, `dominio/resumos.ts` | `rodadas/{rid}/partidas`, `resumos/{mês}` | `regras/ranking` |
+| Importar elenco | `ui/ImportarJogadores.tsx`, `telas/Jogadores.tsx` | `acoes/jogadores.js` (importarJogadores) | `dominio/planilha.ts`, `ui/arquivo-planilha.ts` | `jogadores/{id}`, `privado/caixa`, `privado/ratings`, `privado/contatos` | `regras/planilha`, `testes_app.py` (CT-KAN-159) |
 | Votação | `telas/votacao.js`, `publico-voto.js` | `acoes/votacao.js` | `telas/votacao.js` (tally) | `votacoes/{vid}`, `votos` | `testes_app.py` (votação) |
 | Caixa | `telas/Caixa.tsx` | `acoes/caixa.js` | `dominio/caixa-regras.ts`, `caixa.js` | `caixa/{id}`, `privado/caixa`, `resumos` | `regras/caixa` |
 | Grupo e convite | `telas/grupo.js`, `grupo-form.js`, `convite.js` | `acoes/grupo.js` | `dominio/limites.ts` | `grupos/{gid}`, `membros`, `privado/convite`, `contas/{uid}` | `regras/limites`, `regras-firebase` |

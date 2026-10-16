@@ -16,6 +16,10 @@ function tx(chave, vars) {
   }
   return vars ? s.replace(/\{(\w+)\}/g, (m, k) => (vars[k] != null ? vars[k] : m)) : s;
 }
+/* Textos que chegam depois (ex.: os da gestão, com src/admin.js). Sem trocar os que já existem. */
+function juntarTextos(textos) {
+  for (const [k, v] of Object.entries(textos)) if (!(k in ptBR)) ptBR[k] = v;
+}
 const tp = (chave, n, vars) => tx(chave + (n === 1 ? '.um' : '.outros'), Object.assign({ n }, vars));
 
-export { tx, tp };
+export { juntarTextos, tx, tp };

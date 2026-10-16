@@ -2083,3 +2083,35 @@ label.f > span.dica {
   margin: 4px 0 0;
   font-weight: 400;
 }
+
+/* KAN-159: importar jogadores da planilha (prévia) */
+.imp-arquivo {
+  margin: -4px 0 12px;
+}
+.imp-previa {
+  margin-top: 4px;
+  max-height: 45vh;
+  overflow: auto;
+  border-top: 1px solid var(--line);
+}
+.imp-previa .plist li {
+  align-items: flex-start;
+}
+.imp-ic {
+  width: 20px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--in);
+}
+.imp-ic.imp-alerta {
+  color: var(--out);
+}
+.imp-fora {
+  opacity: 0.6;
+}
+.imp-fora .imp-ic {
+  color: var(--muted);
+}
+.imp-aviso {
+  color: var(--out);
+}

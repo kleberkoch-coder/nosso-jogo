@@ -5,7 +5,7 @@ import { tx } from '../i18n/index.js';
 import { addMatch, delMatch as apagarPartida, recalcular } from '../nucleo/partidas.js';
 import { S } from '../nucleo/estado.js';
 import { $, esc, toast, uid } from '../nucleo/util.js';
-import { actx, elapsed, setActx, sumPts } from '../telas/partida.js';
+import { actx, elapsed, setActx, sumPts } from '../ui/placar.js';
 import { closeDlg, confirmou, dlg, openDlg } from '../ui/dialogos.js';
 import { render } from '../ui/render.js';
 import { ACT } from '../acoes.js';
@@ -54,7 +54,7 @@ const acoes = {
       L.st = Date.now();
       L.run = true;
     }
-    $('#clockBtn').textContent = L.run ? 'Pausar' : 'Iniciar';
+    $('#clockBtn').textContent = tx(L.run ? 'partida.pausar' : 'partida.iniciar');
   },
   clockReset: () => {
     Object.assign(S.live, { el: 0, run: false, beeped: false });

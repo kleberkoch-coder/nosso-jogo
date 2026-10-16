@@ -72,8 +72,8 @@ Times em pastel, sempre com o nome da cor: laranja #F4B183, azul #9DBBF0, amarel
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo; **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
-## Componentes (pelada-v31 a v43)
-Registrados na pelada-v43 (KAN-152). Desde a v43, os componentes reaproveitáveis ficam em `src/ui/componentes.tsx` (TypeScript + Preact); tela nova ou migrada usa estes, não HTML montado à mão.
+## Componentes (pelada-v31 a v47)
+Registrados na pelada-v43 (KAN-152); os da v44 a v47 entraram na versão de cada um. Desde a v43, os componentes reaproveitáveis ficam em `src/ui/componentes.tsx` (TypeScript + Preact); tela nova ou migrada usa estes, não HTML montado à mão.
 
 - **Botão** (`Botao`): classes `btn`, `primary`, `bib`, `ghost`, `perigo`, `sm`. Todo botão que grava mostra carregando (`busy`: texto some, girador no centro, largura mantida) e não aceita segundo toque. Desabilitado com motivo: o texto diz o que falta ("Faltam 2 para sortear"), nunca só cinza.
 - **Pergunta de descarte** (KAN-140): janela de formulário com algo preenchido não fecha ao tocar fora nem com Esc; pergunta "Descartar o que você preencheu?" com "Continuar editando" (`btn`, com foco) e "Descartar" (`btn perigo`). Formulário vazio ou sem mudança fecha direto.
@@ -86,7 +86,21 @@ Registrados na pelada-v43 (KAN-152). Desde a v43, os componentes reaproveitávei
 - **Painel do link permanente** (KAN-150): título "Link permanente", uma linha de ajuda em `muted` e os botões "Mandar no WhatsApp" (`primary sm`) e "Copiar link" (`sm`). Não repete dia, hora nem local, que ficam no cartão da rodada.
 - **Login com Google** (KAN-142): botão "Continuar com o Google" em `btn` na largura toda, com o "G" colorido oficial, acima do divisor "ou com e-mail e senha". Se a aba não bater (criar conta com Google que já existe, ou o contrário), entra mesmo assim e avisa num aviso flutuante.
 - **Regras da senha** (KAN-10, classe `pwr`): lista em duas colunas, 13px, em `muted`, com "○" para o que falta e "✓" em `in` para o que já foi cumprido: 8 caracteres, maiúscula, minúscula, número e caractere especial.
-- **Campo de telefone** (KAN-156): rótulo "Telefone / WhatsApp", campo `tel` com exemplo "(11) 98765-4321" e uma dica embaixo, em `muted` e peso normal (classe `dica`): "De outro país? Comece com + e o código do país". Número brasileiro aparece como (11) 98765-4321; o de outro país, como foi gravado (+351…). Erro: aviso flutuante com o motivo (incompleto, números demais, inválido), e o cursor volta ao campo. O e-mail segue a mesma regra, com o exemplo "nome@exemplo.com".
+- **Campo de telefone** (KAN-156; com país desde a KAN-162, classes `campo-tel` e `tel-linha`):
+  - O rótulo é "Telefone / WhatsApp". Na mesma linha ficam o combo do país, com 118px e 44px de altura, e o campo do número, que ocupa o resto.
+  - O combo mostra a bandeira e o código primeiro ("🇧🇷 +55 Brasil"), porque o nome do país corta em telas estreitas. No Windows, a bandeira aparece como as duas letras (BR).
+  - A última opção é "Outro país (digite + e o código)". O combo já vem com o país do grupo; ao editar, volta com o país do número.
+  - Exemplo dentro do campo: "(11) 98765-4321" no Brasil; nos outros países, quantos dígitos tem o número ("10 dígitos").
+  - Dica embaixo, em `muted` e peso normal (classe `dica`): "Número de outro país? Troque o país ao lado."
+  - O número brasileiro aparece como (11) 98765-4321. Nos outros países, o campo mostra só o número e as listas mostram "+351 912345678".
+  - Erro: aviso flutuante com o motivo. Fora do Brasil, ele diz quantos dígitos tem o número no país escolhido. O cursor volta ao campo. O e-mail segue a mesma regra, com o exemplo "nome@exemplo.com".
+- **País, moeda e fuso do grupo** (KAN-162, classe `reg-campos`): no Novo grupo e no Editar grupo, depois do esporte, vem o título "País, moeda e fuso horário" com três combos em grade. A grade tem uma coluna no celular e até três no computador.
+  - O combo "País" mostra "🇧🇷 Brasil", com os nomes vindos do navegador. "Moeda" mostra "Real brasileiro (BRL)". "Fuso horário" mostra a cidade e a diferença ("Manaus (GMT-4)") e só aparece quando o país tem mais de um fuso.
+  - Trocar o país troca a moeda e o fuso. Embaixo, uma linha de ajuda em `muted`.
+  - Trocar a moeda de um grupo existente abre a confirmação do app: "Trocar a moeda do grupo?".
+- **País da conta** (KAN-162):
+  - **No cadastro:** campo "Seu país", logo depois da explicação e antes do botão do Google, já preenchido pelo fuso do aparelho. Embaixo, uma dica em `muted`. O cursor continua no e-mail.
+  - **Em Meus grupos:** linha "País da conta: 🇧🇷 Brasil" em `muted` (classe `conta-pais`) com o botão "Trocar" (`btn sm ghost`), que abre uma janela com o combo (cursor nele) e "Salvar".
 - **Seletor de rodada** (`SeletorRodada`, classe `rsel`; KAN-160): lista das próximas rodadas e das últimas 4 (data, hora, "fixo" ou "(cancelada)"). Na aba Rodada vem com "Nova rodada" e "Histórico"; na aba Partida, só a lista, e aparece também quando a rodada escolhida ainda não tem times.
 - **Importar jogadores** (`ImportarJogadores`, classes `imp-*`; KAN-159): janela com o campo "Colar da planilha" (cursor nele ao abrir), o botão "Escolher arquivo" (Excel .xlsx ou .csv) e a prévia.
   - **Prévia:** primeiro um resumo ("12 jogadores novos · 1 já está no elenco ou repetido · 2 com aviso"), depois uma linha por jogador. A linha começa com um sinal: "✓" em `in` (entra), "⚠" em `out` (entra, com aviso) ou "↺" em `muted` (fica de fora, com 60% de opacidade). Embaixo vêm os dados reconhecidos (posição · nota · tipo · telefone · e-mail) e o motivo de cada aviso em `out`.

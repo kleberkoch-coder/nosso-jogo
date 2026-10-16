@@ -2115,3 +2115,38 @@ label.f > span.dica {
 .imp-aviso {
   color: var(--out);
 }
+
+/* KAN-162: telefone com o país ao lado (bandeira e código) e país, moeda e fuso do grupo */
+.campo-tel {
+  margin-bottom: 12px;
+}
+.campo-tel > span.dica {
+  display: block;
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.tel-linha {
+  display: flex;
+  gap: 8px;
+}
+.tel-linha .sel {
+  flex: 0 0 118px;
+  width: 118px;
+  min-height: 44px;
+}
+.tel-linha .inp {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+}
+.conta-pais {
+  gap: 8px;
+  margin-top: -6px;
+}
+.reg-campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0 10px;
+}

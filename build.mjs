@@ -254,7 +254,8 @@ console.log(
 /* Orçamento de desempenho (docs/ARQUITETURA.md, D7): até 80 KB comprimido, sem contar a biblioteca do Firebase. */
 // KAN-149: o link do jogador (página + pedaços que ela carrega logo) tem limite próprio.
 // Desde a v46 o total vai até 90 KB (era 85 desde a v43): funcionalidades de gestão (importar planilha, componentes), que só quem administra baixa (D7).
-const LIMITE = 90 * 1024,
+// Desde a v47, 95 KB: a tabela de países (telefone, moeda, formato e fusos de 44 países, KAN-162), que vem só com a gestão (D7).
+const LIMITE = 95 * 1024,
   LIMITE_LINK = 50 * 1024;
 if (gz > LIMITE) {
   console.error(`Passou do orçamento de desempenho: ${kb(gz)} comprimido (limite ${kb(LIMITE)}).`);

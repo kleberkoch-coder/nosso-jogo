@@ -1,7 +1,8 @@
 /* Importar o elenco de uma planilha (KAN-159): transforma as linhas coladas do Excel/Google Planilhas
    ou lidas de um .csv/.xlsx em jogadores, com o que entra, o que já existe e o que tem erro.
    Regra pura, sem tela: testada em testes/regras/planilha.test.mjs. */
-import { emailValido, normalizarTelefone } from './contato.ts';
+import { emailValido } from './contato.ts';
+import { normalizarTelefone } from './telefone.ts';
 
 export type Campo = 'nome' | 'pos' | 'nota' | 'tipo' | 'tel' | 'email';
 export type Aviso = 'nomeLongo' | 'posicao' | 'nota' | 'tipo' | 'tel' | 'email';
@@ -20,6 +21,7 @@ export type Contexto = {
   posicoes: [string, string][]; // [sigla, nome] do esporte do grupo; vazio = esporte sem posição
   existentes: Set<string>; // nomes já no elenco, normalizados
   normalizar: (nome: string) => string;
+  pais?: string; // país do grupo: telefone sem "+" segue a regra dele (KAN-162); sem país, Brasil
 };
 
 export const LIMITE_IMPORTACAO = 100;
@@ -141,7 +143,7 @@ export function interpretar(linhas: string[][], ctx: Contexto): { itens: Item[];
     const tp = tipo(val('tipo'));
     if (tp === null) avisos.push('tipo');
     else it.tipo = tp;
-    const tel = normalizarTelefone(val('tel'));
+    const tel = normalizarTelefone(val('tel'), ctx.pais || 'BR');
     if (!tel.ok) avisos.push('tel');
     else if (tel.valor) it.tel = tel.valor;
     const email = val('email');

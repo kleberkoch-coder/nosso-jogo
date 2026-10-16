@@ -111,6 +111,7 @@ function renderCore() {
   }
   if (R.n === 'home') {
     main.innerHTML = A.vHome();
+    A.montarHome();
     return;
   }
   if (!S.loaded.mem || !S.loaded.app) {

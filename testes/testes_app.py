@@ -82,7 +82,8 @@ def adicionar_pelo_link(pg, nome):
 
 with sync_playwright() as pw:
     b = pw.chromium.launch()
-    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2, has_touch=True, color_scheme='light', service_workers='block')
+    # Fuso de São Paulo (KAN-162): o país da conta nova é sugerido pelo fuso do aparelho; assim o roteiro dá o mesmo resultado em qualquer máquina.
+    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
     pg = ctx.new_page()
     pg.on('pageerror', lambda e: errs.append(str(e)))
     # KAN-128: o app não usa mais as caixas do navegador (confirm e alert). Se alguma aparecer, é anotada e recusada,
@@ -134,6 +135,9 @@ with sync_playwright() as pw:
     # ---------- Cadastro e grupo de futebol
     pg.goto(URL + '#/criar'); pg.wait_for_timeout(500)
     ok(pg.evaluate("document.activeElement.id") == 'le', 'cursor no e-mail no cadastro')
+    pg.wait_for_function("document.querySelector('#lpais') && document.querySelector('#lpais').options.length > 10", timeout=8000)
+    ok(pg.input_value('#lpais') == 'BR' and 'Seu país' in pg.inner_text('main') and pg.evaluate("document.activeElement.id") == 'le',
+       'CT-KAN-162-01: cadastro já vem com o país sugerido pelo fuso do aparelho (São Paulo → Brasil) e o cursor continua no e-mail')
     ok(f'Nosso Jogo · versão {VER}' in pg.inner_text('main'), 'CT-KAN-107-01: tela de login e cadastro mostra a versão do app')
     ok(pg.locator('#themeBtn').is_visible(), 'chip de tema no cabeçalho do cadastro')
     # v17: botão do Google no padrão e Mostrar senha
@@ -403,7 +407,13 @@ with sync_playwright() as pw:
        f'CT-KAN-156-02: número dos EUA gravado no formato internacional ({ct156})')
     ok(pg.locator(f'a[href="https://wa.me/14155550100"]').count() >= 1, 'CT-KAN-156-02: link do WhatsApp abre o número dos EUA, sem o 55 na frente')
     pg.locator(f'[data-a=editPlayer][data-p="{pid156}"]').click(); pg.wait_for_timeout(300)
-    pg.fill('#ptel', '(11) 98765-4321'); pg.click('#dlg [data-a=savePlayer]'); pg.wait_for_timeout(600)
+    # KAN-162: o combo do telefone voltou com os EUA (o número salvo); número brasileiro sem trocar o combo não salva errado
+    ok(pg.input_value('#ppais') == 'US' and pg.input_value('#ptel') == '4155550100', 'CT-KAN-162-03: ao editar, o combo mostra o país do número salvo (+1) e o campo só o número')
+    pg.fill('#ptel', '(11) 98765-4321'); pg.click('#dlg [data-a=savePlayer]'); pg.wait_for_timeout(400)
+    ok(pg.evaluate("document.getElementById('dlg').open") and 'Telefone inválido' in pg.inner_text('#toast'), 'CT-KAN-162-03: número brasileiro com o combo nos EUA não vira um número americano errado')
+    pg.select_option('#ppais', 'BR'); pg.wait_for_timeout(100)
+    ok(pg.get_attribute('#ptel', 'placeholder') == '(11) 98765-4321', 'CT-KAN-162-03: trocar o país do combo troca o exemplo do campo')
+    pg.click('#dlg [data-a=savePlayer]'); pg.wait_for_timeout(600)
     ok(pg.evaluate("(id)=>S.cont[id].tel", pid156) == '+5511987654321' and pg.locator('a[href="https://wa.me/5511987654321"]').count() >= 1,
        'CT-KAN-156-01: número brasileiro com DDD vira +55 e o link do WhatsApp abre certo')
     pg.locator(f'[data-a=editPlayer][data-p="{pid156}"]').click(); pg.wait_for_timeout(300)
@@ -455,7 +465,7 @@ with sync_playwright() as pw:
     pg.click('#dlg [data-a=importarJogadores]'); pg.wait_for_timeout(800)
     pg.click('[data-a=importarDlg]'); pg.wait_for_timeout(400)
     pg.set_input_files('#impArq', csv); pg.wait_for_timeout(600)
-    ok('1 jogador novo' in pg.inner_text('#impResumo') and '+351912345678' in pg.inner_text('#impLista'), 'CT-KAN-159-02: arquivo .csv com ";" e telefone de outro país')
+    ok('1 jogador novo' in pg.inner_text('#impResumo') and '+351 912345678' in pg.inner_text('#impLista'), 'CT-KAN-159-02: arquivo .csv com ";" e telefone de outro país')
     pg.click('#dlg [data-a=importarJogadores]'); pg.wait_for_timeout(800)
     ok(pg.evaluate("['Planilha Três','Planilha Quatro','Csv Cinco'].every(n=>Object.values(S.jog).some(p=>p.name===n))"), 'CT-KAN-159-02: jogadores do .xlsx e do .csv importados')
     pg.click('[data-a=importarDlg]'); pg.wait_for_timeout(400)
@@ -1024,6 +1034,59 @@ with sync_playwright() as pw:
            f'CT-KAN-76-12: {nome_g}: sorteio com a carga gravada funciona, só com identificadores válidos e nada injetado')
         pg.evaluate(DEL, [pres_k(g, rg, XSS)]); pg.reload(); pg.wait_for_timeout(800)
 
+    # ---------- v47 (KAN-162): país da conta e do grupo (moeda, formato, fuso) e telefone com o país ao lado
+    pg.goto(URL + '#/'); pg.wait_for_timeout(900)
+    ok(pg.evaluate("S.me && S.me.pais") == 'BR' and pg.evaluate("S.me.formato") == 'pt-BR', 'CT-KAN-162-01: conta criada num aparelho no fuso de São Paulo fica com o país Brasil')
+    home162 = pg.inner_text('main')
+    ok('País da conta:' in home162 and 'Brasil' in home162 and pg.locator('[data-a=contaPais]').count() == 1, 'CT-KAN-162-01: Meus grupos mostra o país da conta, com Trocar')
+    pg.click('[data-a=contaPais]'); pg.wait_for_timeout(300)
+    ok(pg.evaluate("document.activeElement.id") == 'cpais', 'CT-KAN-162-02: a janela do país abre com o cursor no combo')
+    pg.select_option('#cpais', 'US'); pg.click('#dlg [data-a=salvarPaisConta]'); pg.wait_for_timeout(600)
+    ok(pg.evaluate("S.me.pais") == 'US' and 'Estados Unidos' in pg.inner_text('main') and (pg.evaluate(LER, 'usuarios/u-orgtestecom') or {}).get('pais') == 'US',
+       'CT-KAN-162-02: trocar o país da conta grava e mostra o país novo')
+    pg.click('main [data-a=newGroup]'); pg.wait_for_timeout(400)
+    ok(pg.input_value('#ngp') == 'US' and pg.input_value('#ngm') == 'USD' and pg.locator('#ngzW').is_visible() and pg.input_value('#ngz') == 'America/New_York',
+       'CT-KAN-162-02: grupo novo já vem com o país, a moeda e o fuso do organizador (EUA, dólar, Nova York)')
+    pg.select_option('#ngp', 'PT'); pg.wait_for_timeout(100)
+    ok(pg.input_value('#ngm') == 'EUR' and pg.input_value('#ngz') == 'Europe/Lisbon', 'CT-KAN-162-02: trocar o país do grupo troca a moeda e o fuso')
+    pg.select_option('#ngp', 'US'); pg.wait_for_timeout(100)
+    pg.fill('#ngn', 'Pickup Soccer NYC'); pg.click('[data-a=createGroup]'); pg.wait_for_timeout(1500)
+    gid_us = pg.url.split('#/g/')[1]
+    cfg_us = (pg.evaluate(LER, 'grupos/' + gid_us) or {}).get('cfg') or {}
+    ok(cfg_us.get('pais') == 'US' and cfg_us.get('moeda') == 'USD' and cfg_us.get('formato') == 'en-US' and cfg_us.get('fuso') == 'America/New_York',
+       'CT-KAN-162-02: o grupo guarda país, moeda, formato e fuso')
+    pg.click('[data-a=tab][data-v=grupo]'); pg.wait_for_timeout(400)
+    pg.click('[data-a=settings]'); pg.wait_for_timeout(300)
+    rot162 = pg.inner_text('#dlg')
+    ok('Mensalidade ($)' in rot162 and 'Diária ($)' in rot162, f'CT-KAN-162-02: valores do caixa com o símbolo da moeda do grupo ({rot162[:80]!r})')
+    pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(300)
+    ok('$' in pg.inner_text('main') and 'R$' not in pg.inner_text('main'), 'CT-KAN-162-02: a aba Grupo mostra os valores em dólar, sem R$')
+    pg.click('[data-a=tab][data-v=jogadores]'); pg.wait_for_timeout(300); pg.click('[data-a=addPlayer]'); pg.wait_for_timeout(300)
+    ok(pg.input_value('#ppais') == 'US' and '10 dígitos' in (pg.get_attribute('#ptel', 'placeholder') or ''), 'CT-KAN-162-03: telefone de jogador novo já vem com o combo nos EUA')
+    pg.fill('#pnm', 'Mike Jones'); pg.fill('#ptel', '(212) 555-0142'); pg.click('#dlg [data-a=savePlayer]'); pg.wait_for_timeout(700)
+    tel162 = pg.evaluate("()=>{const p=Object.entries(S.jog).find(([,x])=>x.name==='Mike Jones');return p&&S.cont[p[0]]&&S.cont[p[0]].tel}")
+    ok(tel162 == '+12125550142' and pg.locator('a[href="https://wa.me/12125550142"]').count() == 1, f'CT-KAN-162-03: número americano sem "+" vira +1 e o WhatsApp abre certo ({tel162})')
+    pg.click('[data-a=addPlayer]'); pg.wait_for_timeout(300)
+    pg.fill('#pnm', 'Mike Curto'); pg.fill('#ptel', '212 555 01'); pg.click('#dlg [data-a=savePlayer]'); pg.wait_for_timeout(400)
+    ok('Estados Unidos' in pg.inner_text('#toast') and '10 dígitos' in pg.inner_text('#toast'), 'CT-KAN-162-03: número incompleto avisa quantos dígitos tem o número no país')
+    pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(300)
+    if pg.locator('#dlg .conf').count(): confirmar_app(pg, True)
+    # Trocar a moeda avisa que os valores lançados não são convertidos
+    pg.click('[data-a=tab][data-v=grupo]'); pg.wait_for_timeout(400); pg.click('[data-a=editGroup]'); pg.wait_for_timeout(400)
+    ok(pg.input_value('#ngp') == 'US' and pg.input_value('#ngm') == 'USD', 'CT-KAN-162-04: Editar grupo mostra o país e a moeda do grupo')
+    pg.select_option('#ngm', 'BRL'); pg.click('#dlg [data-a=saveGroup]'); pg.wait_for_timeout(300)
+    conf162 = pg.inner_text('#dlg .conf') if pg.locator('#dlg .conf').count() else ''
+    ok('Trocar a moeda' in conf162 and 'não são convertidos' in conf162, f'CT-KAN-162-04: trocar a moeda pede confirmação ({conf162[:90]!r})')
+    confirmar_app(pg, True); pg.wait_for_timeout(800)
+    ok(((pg.evaluate(LER, 'grupos/' + gid_us) or {}).get('cfg') or {}).get('moeda') == 'BRL', 'CT-KAN-162-04: confirmando, a moeda nova é gravada')
+    # O grupo de antes (sem país) continua Brasil e Real; a conta volta para o Brasil
+    pg.goto(URL + '#/g/' + gid_fut); pg.wait_for_timeout(1200)
+    pg.click('[data-a=tab][data-v=jogadores]'); pg.wait_for_timeout(300); pg.click('[data-a=addPlayer]'); pg.wait_for_timeout(300)
+    ok(pg.input_value('#ppais') == 'BR' and pg.get_attribute('#ptel', 'placeholder') == '(11) 98765-4321', 'CT-KAN-162-05: grupo antigo, sem país, continua com o telefone do Brasil')
+    pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(300)
+    pg.goto(URL + '#/'); pg.wait_for_timeout(800)
+    pg.click('[data-a=contaPais]'); pg.wait_for_timeout(300); pg.select_option('#cpais', 'BR'); pg.click('#dlg [data-a=salvarPaisConta]'); pg.wait_for_timeout(600)
+
     # ---------- Sugestões da Qualidade (09/10): versão em todas as telas, convite e tema escuro
     pg.goto(URL + '#/'); pg.wait_for_timeout(900)
     ok(f'versão {VER}' in (pg.inner_text('main .versao') if pg.locator('main .versao').count() else ''), 'CT-KAN-107-03: Meus grupos mostra a versão do app')
@@ -1344,6 +1407,17 @@ with sync_playwright() as pw:
     a5 = ver111(gid_nt)
     ok(all('21/10' in x[0] and 'Quadra gravada' in x[1] for x in a5), f'CT-KAN-111-04: rodada já gravada é a que aparece ({a5[0][0]} · {a5[0][1][:30]})')
     ctx2.close()
+    # ---------- v47 (KAN-162): computador em Chicago, com o navegador em inglês: o cadastro sugere Estados Unidos
+    ctx4 = b.new_context(viewport={'width': 1280, 'height': 800}, service_workers='block', timezone_id='America/Chicago', locale='en-US'); p4 = ctx4.new_page()
+    p4.on('pageerror', lambda e: errs.append(str(e)))
+    p4.goto(URL + '#/criar'); p4.wait_for_function("document.querySelector('#lpais') && document.querySelector('#lpais').options.length > 10", timeout=8000)
+    ok(p4.input_value('#lpais') == 'US', 'CT-KAN-162-01: no computador em Chicago, o cadastro sugere Estados Unidos')
+    ctx4.close()
+    ctx5 = b.new_context(viewport={'width': 1280, 'height': 800}, service_workers='block', timezone_id='America/Manaus', locale='en-US'); p5 = ctx5.new_page()
+    p5.goto(URL + '#/criar'); p5.wait_for_function("document.querySelector('#lpais') && document.querySelector('#lpais').options.length > 10", timeout=8000)
+    ok(p5.input_value('#lpais') == 'BR', 'CT-KAN-162-01: computador em inglês, mas no fuso de Manaus: o cadastro sugere Brasil (vale o fuso)')
+    ctx5.close()
+
     # ---------- v35 (KAN-142): "Continuar com o Google" na aba errada entra ou cria a conta e avisa (navegador separado)
     ctx3 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block'); p3 = ctx3.new_page()
     p3.on('pageerror', lambda e: errs.append(str(e)))

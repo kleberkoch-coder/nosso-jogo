@@ -2,7 +2,7 @@
 import { CAIXA_K, cfg, ptipo } from '../dominio/caixa.js';
 import { APP, SPORTS, porTime, porTimePadrao, sport } from '../dominio/esportes.js';
 import { dupName, fdia, fixos, freq, gname, grpAtivo, lvl, normName, players } from '../dominio/grupo.js';
-import { tp } from '../i18n/index.js';
+import { tp, tx } from '../i18n/index.js';
 import { shareDlg } from '../dominio/whatsapp.js';
 import { B, op } from '../nucleo/backend.js';
 import { gruposEsgotados, limite } from '../dominio/limites.ts';
@@ -16,6 +16,9 @@ import { closeDlg, confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
 import { changed } from '../ui/render.js';
 import { LOCAL } from '../i18n/formatos.js';
 import { ACT } from '../acoes.js';
+import { contaRegiao, opcoesPais } from '../ui/regiao.ts';
+import { definirRegiao } from '../i18n/formatos.js';
+import { regiaoDe } from '../dominio/regiao.ts';
 
 /* Limite de grupos por conta (KAN-89): confere antes de criar. Sem sinal, deixa a decisão para o Firebase. */
 async function limiteGrupos() {
@@ -42,6 +45,25 @@ const gravarGrupo = (gid, o) =>
     { tipo: 'patch', p: 'contas/' + S.user.uid, o: { ng: op.somar(1), ult: gid } },
   ]);
 const acoes = {
+  /* País da conta (KAN-162): vale para os grupos novos; cada grupo tem o seu em Editar grupo. */
+  contaPais: () => {
+    openDlg(`<h3>${tx('regiao.contaTitulo')}</h3><p class="small muted" style="margin-top:-6px">${tx('regiao.contaAjuda')}</p>
+    <label class="f"><span>${tx('regiao.pais')}</span><select class="sel" id="cpais">${opcoesPais((S.me && S.me.pais) || 'BR')}</select></label>
+    <div class="dlg-f"><button class="btn" data-a="close">${tx('comum.cancelar')}</button><button class="btn primary" data-a="salvarPaisConta">${tx('comum.salvar')}</button></div>`);
+    setTimeout(() => $('#cpais')?.focus(), 50);
+  },
+  salvarPaisConta: () => {
+    const pais = val('cpais');
+    if (!pais || !S.user) return;
+    const o = contaRegiao(pais),
+      p = w(B.patch('usuarios/' + S.user.uid, o));
+    if (S.me) Object.assign(S.me, o);
+    if (!S.gid) definirRegiao(regiaoDe(o));
+    closeDlg();
+    toast(tx('regiao.contaSalvo'));
+    changed();
+    return p;
+  },
   newGroup: () => {
     openDlg(
       `<h3>Novo grupo</h3>${groupForm({}, false)}<div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="createGroup">Criar grupo</button></div>`
@@ -58,10 +80,7 @@ const acoes = {
     box.dataset.freq = el.dataset.v;
     box.querySelectorAll('[data-a=pickFreq]').forEach(b => b.setAttribute('aria-pressed', b === el));
     $('#schedW').hidden = el.dataset.v !== 'fixo';
-    $('#fqHelp').textContent =
-      el.dataset.v === 'fixo'
-        ? 'Dias e horários fixos toda semana. A próxima rodada se cria sozinha e o link de confirmação é sempre o mesmo.'
-        : 'Só rola de vez em quando. Você cria cada rodada quando marcar o jogo.';
+    $('#fqHelp').textContent = tx(el.dataset.v === 'fixo' ? 'grupo.frequenteAjuda' : 'grupo.esporadicoAjuda');
   },
   addSched: () => {
     const rows = [...document.querySelectorAll('#sched .srow')],
@@ -93,13 +112,24 @@ const acoes = {
         .map(x => x.dow + '|' + x.ini)
         .join(),
       willFix = g.fixos.map(x => x.dow + '|' + x.ini).join();
+    // Moeda trocada (KAN-162): os valores já lançados não são convertidos. Dias fixos trocados: a confirmação recomeça.
+    // As duas perguntas viram uma só (a confirmação roda a ação de novo e só guarda uma resposta).
+    const moedaAntes = (S.app.cfg && S.app.cfg.moeda) || 'BRL',
+      trocaMoeda = g.regiao.moeda !== moedaAntes,
+      trocaDias = !!wasFix && wasFix !== willFix;
     if (
-      wasFix &&
-      wasFix !== willFix &&
+      (trocaMoeda || trocaDias) &&
       confirmou(el, {
-        titulo: 'Mudar os dias fixos?',
-        texto: 'A confirmação da próxima rodada fixa começa do zero.',
-        acao: 'Mudar dias',
+        titulo: tx(
+          trocaMoeda && trocaDias ? 'grupo.mudancasTitulo' : trocaMoeda ? 'regiao.moedaTitulo' : 'grupo.diasTitulo'
+        ),
+        texto: [
+          trocaMoeda ? tx('regiao.moedaTexto', { antes: moedaAntes, depois: g.regiao.moeda }) : '',
+          trocaDias ? tx('grupo.diasTexto') : '',
+        ]
+          .filter(Boolean)
+          .join(' '),
+        acao: tx(trocaMoeda && trocaDias ? 'comum.salvar' : trocaMoeda ? 'regiao.moedaAcao' : 'grupo.diasAcao'),
       }) !== 'sim'
     )
       return;
@@ -110,6 +140,7 @@ const acoes = {
       a.freq = g.freq;
       a.cfg.fixos = g.fixos;
       a.cfg.porTime = g.porTime;
+      Object.assign(a.cfg, g.regiao);
       if (g.fixos[0] && g.fixos[0].place) a.cfg.place = g.fixos[0].place;
     });
     upMyGroup(S.gid, { name: g.name, sport: g.sport, sportName: g.sportName });
@@ -333,6 +364,7 @@ const acoes = {
           minutes: SPORTS[g.sport].min,
           porTime: g.porTime,
           fixos: g.fixos,
+          ...g.regiao,
           place: (g.fixos[0] && g.fixos[0].place) || '',
         },
         owner: uid,

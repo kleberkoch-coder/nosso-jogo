@@ -191,6 +191,11 @@ export default {
   'limite.grupos.outros':
     'Esta conta chegou ao limite de {n} grupos. Use um dos seus grupos ou fale com o suporte do Nosso Jogo para liberar mais.',
   'comum.cancelar': 'Cancelar',
+  'comum.salvar': 'Salvar',
+  /* país da conta, no cadastro (KAN-162); o resto do país, moeda e fuso fica nos textos da gestão */
+  'login.pais': 'Seu país',
+  'login.paisDica':
+    'Define a moeda, o formato das datas e o código do telefone dos seus grupos. Dá para trocar depois.',
   'comum.naoCarregouTitulo': 'Não foi possível carregar',
   'comum.naoCarregou': 'Verifique sua conexão e recarregue a página.',
   'nota.titulo': 'Nota de 1 a 10',

@@ -2,7 +2,8 @@
 import { CAIXA_K, cfg, editPc, ptipo } from '../dominio/caixa.js';
 import { posKeys } from '../dominio/esportes.js';
 import { normName, players, pname, ppos, setLvl } from '../dominio/grupo.js';
-import { tp } from '../i18n/index.js';
+import { tp, tx } from '../i18n/index.js';
+import { simboloMoeda } from '../i18n/formatos.js';
 import { B } from '../nucleo/backend.js';
 import { lerContato } from '../ui/contato-form';
 import { editApp, editRat, saveContato } from '../nucleo/edicoes.js';
@@ -136,7 +137,7 @@ const acoes = {
   settings: () => {
     const c = cfg();
     openDlg(`<h3>Partidas e caixa</h3>
-    <div class="row"><label class="f" style="flex:1"><span>Mensalidade (R$)</span><input class="inp" type="number" min="0" id="cm" value="${c.mensal}"></label><label class="f" style="flex:1"><span>Diária (R$)</span><input class="inp" type="number" min="0" id="cd" value="${c.diaria}"></label></div>
+    <div class="row"><label class="f" style="flex:1"><span>${tx('caixa.mensalidadeMoeda', { moeda: simboloMoeda() })}</span><input class="inp" type="number" min="0" id="cm" value="${c.mensal}"></label><label class="f" style="flex:1"><span>${tx('caixa.diariaMoeda', { moeda: simboloMoeda() })}</span><input class="inp" type="number" min="0" id="cd" value="${c.diaria}"></label></div>
     <div class="row"><label class="f" style="flex:1"><span>Minutos por partida</span><input class="inp" type="number" min="1" id="cmin" value="${c.minutes}"></label><label class="f" style="flex:1"><span>Chave Pix</span><input class="inp" id="cpx" value="${esc(c.pix)}"></label></div>
     <p class="small muted" style="margin-top:-4px">Valores e chave Pix só aparecem para administradores.</p>
     <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveSettings">Salvar</button></div>`);

@@ -5,9 +5,10 @@ import { useState } from 'preact/hooks';
 import { posLabel, sport } from '../dominio/esportes.js';
 import { fmtL, normName } from '../dominio/grupo.js';
 import { excedentes, interpretar, LIMITE_IMPORTACAO, type Item } from '../dominio/planilha.ts';
-import { telefoneParaLer } from '../dominio/contato.ts';
+import { telefoneParaLer } from '../dominio/telefone.ts';
 import { tp, tx } from '../i18n/index.js';
 import { S as estado } from '../nucleo/estado.js';
+import { PAIS } from '../i18n/formatos.js';
 import { ErroPlanilha, lerArquivo } from './arquivo-planilha.ts';
 import { lerTexto } from '../dominio/planilha.ts';
 
@@ -60,6 +61,7 @@ function Importar() {
     posicoes: (sport() as unknown as { pos: [string, string][] }).pos,
     existentes: new Set(Object.values(S.jog || {}).map((p: any) => normName(p.name) as string)),
     normalizar: (n: string) => normName(n) as string,
+    pais: PAIS,
   };
   const { itens, semNome } = interpretar(linhas, ctx);
   previa = itens;

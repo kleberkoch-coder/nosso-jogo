@@ -2,6 +2,7 @@
 import { cfg } from '../dominio/caixa.js';
 import { gname, players, pname, rodadas } from '../dominio/grupo.js';
 import { tx } from '../i18n/index.js';
+import { simboloMoeda } from '../i18n/formatos.js';
 import { shareDlg } from '../dominio/whatsapp.js';
 import { B } from '../nucleo/backend.js';
 import { apagarLanc, salvarLanc } from '../nucleo/partidas.js';
@@ -19,7 +20,7 @@ const acoes = {
     openDlg(`<h3>Novo lançamento</h3>
     <label class="f"><span>Tipo</span><select class="sel" id="lk"><option value="mensal">Mensalidade</option><option value="diaria">Diária</option><option value="entrada">Outra entrada</option><option value="despesa">Despesa (quadra, bola, coletes…)</option></select></label>
     <label class="f"><span>Jogador (opcional para despesa)</span><select class="sel" id="lp2"><option value="">—</option>${o}</select></label>
-    <div class="row"><label class="f" style="flex:1"><span>Valor (R$)</span><input class="inp" type="number" min="0" step="0.01" id="lv" value="${cfg().mensal}"></label><label class="f" style="flex:1"><span>Data</span><input class="inp" type="date" id="ld" value="${today()}"></label></div>
+    <div class="row"><label class="f" style="flex:1"><span>${tx('caixa.valorMoeda', { moeda: simboloMoeda() })}</span><input class="inp" type="number" min="0" step="0.01" id="lv" value="${cfg().mensal}"></label><label class="f" style="flex:1"><span>Data</span><input class="inp" type="date" id="ld" value="${today()}"></label></div>
     <label class="f"><span>Descrição</span><input class="inp" id="ln" maxlength="60"></label>
     <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveLan">Lançar</button></div>`);
   },

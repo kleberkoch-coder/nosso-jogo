@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v46 (15/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v47 (16/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -25,8 +25,18 @@ Atualizado na pelada-v46 (15/10/2026). Toda entrega que mudar uma regra atualiza
 - App Check em observação, com a chave "Nosso Jogo web 2" desde a v42. Só ligar o bloqueio (Aplicar) com mais de 99% de chamadas verificadas por 7 dias; ligado antes, ele derrubou o login em 15/10 (KAN-88, lembrete em 20/10).
 - Mudança no `firestore.rules`: testes no emulador e aviso destacado ao Kleber; é publicada no Merge.
 
+## País, moeda e fuso (KAN-162)
+- **Conta:** o país é pedido no cadastro, já sugerido pelo fuso do aparelho (celular ou computador). Conta sem país recebe o do aparelho uma vez. A pessoa troca em Meus grupos → País da conta → Trocar. Vale só para os grupos novos.
+- **Grupo novo:** nasce com o país, a moeda e o fuso do organizador. O fuso é o do aparelho, se for do país; senão, o principal do país. Tudo pode ser trocado em Editar grupo, e trocar o país troca a moeda e o fuso.
+- **O grupo guarda uma cópia** (`cfg.pais`, `moeda`, `fuso` e `formato`), então mudar o país da conta não mexe nos grupos que já existem.
+- **Formato pelo país do grupo:** data, separadores de número e símbolo da moeda (R$ 1.234,50; $1,234.50). Não há opções soltas de ponto, vírgula ou cifrão. Os nomes dos dias continuam no idioma do app (hoje, português).
+- **Trocar a moeda** pede confirmação. Os valores já lançados não são convertidos: o número fica igual, só o símbolo muda.
+- **O fuso do grupo decide a hora do jogo:** quando a rodada termina e vira para a próxima, e o "hoje", para quem abre de qualquer fuso.
+- **Grupo antigo, sem país:** Brasil, Real e o relógio do aparelho, sem mudança.
+- **Ainda não fazem parte:** relógio de 12h/24h e primeiro dia da semana (KAN-163), e o app em inglês (KAN-164).
+
 ## Grupos e papéis
-- Ao criar: nome, frequência (Frequente com dias fixos ou Esporádico), dias e horários (só Frequente), esporte.
+- Ao criar: nome, frequência (Frequente com dias fixos ou Esporádico), dias e horários (só Frequente), esporte, país, moeda e fuso (KAN-162).
 - Nome não repete dentro da conta (ignora maiúsculas, acentos e espaços).
 - Jogadores por time é do grupo (o esporte só dá o padrão); 2 = duplas.
 - Inativar só o organizador: some da lista, não aceita presença nem voto, não gera rodada fixa, mantém histórico.
@@ -35,8 +45,15 @@ Atualizado na pelada-v46 (15/10/2026). Toda entrega que mudar uma regra atualiza
 
 ## Jogadores
 - Ficha: nome, posição, nota de 1 a 10 (meio ponto), tipo mensalista ou diarista, contato. Inativar é diferente de excluir.
-- Telefone: sem "+", é brasileiro (DDD + número, 10 ou 11 dígitos); com "+" (ou "00") e o código do país, vale qualquer país (8 a 15 dígitos). Fica gravado no formato internacional (+55…); os antigos, sem "+", continuam brasileiros. E-mail precisa de nome@domínio.terminação. Inválido não salva (KAN-156; regra em `dominio/contato.ts`, com teste).
-- Importar da planilha (KAN-159): colar do Excel/Google Planilhas ou enviar .xlsx/.csv (só a primeira aba). Colunas reconhecidas pelo título: Nome (obrigatório), Posição, Nota, Tipo, Telefone e E-mail; sem título, nessa ordem. Nome que já está no elenco ou repetido na lista fica de fora; dado inválido vira aviso e o jogador entra sem ele. Até 100 por vez, gravados de uma vez (regra em `dominio/planilha.ts`, com teste).
+- Telefone (KAN-156, KAN-162; regra em `dominio/telefone.ts` e `dominio/paises.ts`, com teste):
+  - O país fica num combo ao lado do número (bandeira e código), que já vem com o país do grupo.
+  - Sem "+", vale a regra do país do combo: quantidade de dígitos e o "0" na frente que sai. No Brasil, DDD + número, com 10 ou 11 dígitos. No +1, o código de área não começa com 1, o que pega um número brasileiro com o combo nos EUA.
+  - Com "+" (ou "00"), vale o código digitado, de 8 a 15 dígitos.
+  - "Outro país" no combo exige o "+".
+  - Fica gravado no formato internacional (+55…). Os números antigos, sem "+", continuam brasileiros.
+  - Ao editar, o combo volta com o país do número; no +1, fica com o país do grupo quando ele também usa +1.
+- E-mail precisa de nome@domínio.terminação. Telefone ou e-mail inválido não salva.
+- Importar da planilha (KAN-159): telefone sem "+" segue o país do grupo (KAN-162). Colar do Excel/Google Planilhas ou enviar .xlsx/.csv (só a primeira aba). Colunas reconhecidas pelo título: Nome (obrigatório), Posição, Nota, Tipo, Telefone e E-mail; sem título, nessa ordem. Nome que já está no elenco ou repetido na lista fica de fora; dado inválido vira aviso e o jogador entra sem ele. Até 100 por vez, gravados de uma vez (regra em `dominio/planilha.ts`, com teste).
 - Avulso do link só vira cadastro depois de entrar num sorteio (ou se o administrador o adicionar); pode ser promovido ao elenco.
 - Pares "não colocar no mesmo time" são respeitados no sorteio.
 
@@ -94,7 +111,7 @@ Atualizado na pelada-v46 (15/10/2026). Toda entrega que mudar uma regra atualiza
 - Proposta (PR) com testes verdes e prévia; `VERSION` do `site/sw.js` sobe; o Kleber aprova com Merge.
 - O Merge publica o site e, se mudaram, as regras do Firebase; a automação confere a versão no ar.
 - Na mesma entrega: atualizar este arquivo, os docs afetados, a pasta `app/` do projeto e os cartões do Jira ([Entrega], Em análise).
-- Limite de tamanho (D7): o link do jogador até 50 KB comprimido; o app inteiro, com a gestão, até 90 KB.
+- Limite de tamanho (D7): o link do jogador até 50 KB comprimido; o app inteiro, com a gestão, até 95 KB (desde a v47, por causa da tabela de países, que só a gestão baixa).
 - Textos da gestão ficam em `src/i18n/pt-BR-gestao.js` e chegam com a parte de gestão; os do link público e do login, em `src/i18n/pt-BR.js`. A montagem barra o link público usando texto da gestão.
 - Dívida técnica não piora (D12, KAN-154): a montagem falha se aumentar innerHTML, textos fora do dicionário ou arquivos sem tipos, ou se diminuírem as telas como componente (tetos em `docs/divida.json`).
 - O GitHub confere toda proposta (KAN-157, `testes/conferir-entrega.mjs`): app mudou → VERSION sobe; componente `.tsx` novo em `src/ui/` ou classe nova no CSS → `docs/DESIGN-SYSTEM.md` muda; tela ou ação mudou → `docs/REGRAS.md` muda (ou "sem mudança de regra" na proposta); `firestore.rules` mudou → a proposta avisa; checklist da proposta sem item em branco.
@@ -110,6 +127,7 @@ Atualizado na pelada-v46 (15/10/2026). Toda entrega que mudar uma regra atualiza
 | Sorteio e times | `telas/Rodada.tsx` | `acoes/rodada.js` | `dominio/sorteio.js`, `times.ts`, `divergencia.ts` | `rodadas/{rid}` (times, cores, base) | `regras/times`, `lista-sorteio` |
 | Partida e ranking | `telas/Partida.tsx` (placar em `ui/placar.js`), `ranking.js` | `acoes/partida.js` | `nucleo/partidas.js`, `dominio/resumos.ts` | `rodadas/{rid}/partidas`, `resumos/{mês}` | `regras/ranking` |
 | Importar elenco | `ui/ImportarJogadores.tsx`, `telas/Jogadores.tsx` | `acoes/jogadores.js` (importarJogadores) | `dominio/planilha.ts`, `ui/arquivo-planilha.ts` | `jogadores/{id}`, `privado/caixa`, `privado/ratings`, `privado/contatos` | `regras/planilha`, `testes_app.py` (CT-KAN-159) |
+| País, moeda e fuso | `telas/Grupos.tsx` (país da conta), `grupo-form.js`, `login.js` (cadastro), `ui/regiao.ts` (combos), `ui/contato-form.ts` (telefone) | `acoes/grupo.js` (contaPais, createGroup, saveGroup) | `dominio/paises.ts`, `regiao.ts`, `telefone.ts`, `i18n/formatos.js` (formato, moeda, `agora()`) | `usuarios/{uid}` (pais, formato), `grupos/{gid}` (cfg.pais, moeda, fuso, formato) | `regras/paises`, `regras/contato`, `testes_app.py` (CT-KAN-162) |
 | Votação | `telas/votacao.js`, `publico-voto.js` | `acoes/votacao.js` | `telas/votacao.js` (tally) | `votacoes/{vid}`, `votos` | `testes_app.py` (votação) |
 | Caixa | `telas/Caixa.tsx` | `acoes/caixa.js` | `dominio/caixa-regras.ts`, `caixa.js` | `caixa/{id}`, `privado/caixa`, `resumos` | `regras/caixa` |
 | Grupo e convite | `telas/grupo.js`, `grupo-form.js`, `convite.js` | `acoes/grupo.js` | `dominio/limites.ts` | `grupos/{gid}`, `membros`, `privado/convite`, `contas/{uid}` | `regras/limites`, `regras-firebase` |

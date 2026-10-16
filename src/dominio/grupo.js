@@ -2,7 +2,7 @@ import { cfg } from './caixa.js';
 import { hasPos, posKeys, sport } from './esportes.js';
 import { S } from '../nucleo/estado.js';
 import { DIAS, esc } from '../nucleo/util.js';
-import { LOCAL } from '../i18n/formatos.js';
+import { FORMATO, LOCAL, agora } from '../i18n/formatos.js';
 import { endTs, proximasFixas, virtualOf, ymd } from './rodadas-fixas.ts';
 
 function gname() {
@@ -18,7 +18,7 @@ function lvl(id) {
   const st = R.stars && R.stars[id];
   return st != null ? st * 2 : 5;
 }
-const fmtL = v => (+v).toLocaleString(LOCAL, { minimumFractionDigits: +v % 1 ? 1 : 0, maximumFractionDigits: 1 });
+const fmtL = v => (+v).toLocaleString(FORMATO, { minimumFractionDigits: +v % 1 ? 1 : 0, maximumFractionDigits: 1 });
 function lvlTag(id) {
   return `<span class="lvl-tag" title="Nota de 1 a 10">${fmtL(lvl(id))}</span>`;
 }
@@ -47,7 +47,7 @@ function grpAtivo(a) {
   return !a || a.ativo !== false;
 }
 const fdia = ts =>
-  ts ? new Date(ts).toLocaleDateString(LOCAL, { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+  ts ? new Date(ts).toLocaleDateString(FORMATO, { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
 const normName = x =>
   String(x || '')
     .normalize('NFD')
@@ -65,7 +65,7 @@ const schedTxt = x =>
 /* Próxima data dos jogos fixos: regra em rodadas-fixas.ts, com teste próprio (D12). */
 function virtualFixos() {
   if (!grpAtivo()) return [];
-  return proximasFixas(fixos(), S.rod, new Date());
+  return proximasFixas(fixos(), S.rod, agora());
 }
 function virtualFromId(id) {
   const m = /^f-(\d{4}-\d{2}-\d{2})-(\d{4})$/.exec(id || '');
@@ -98,8 +98,9 @@ function rodadas() {
         (b.createdAt || 0) - (a.createdAt || 0)
     );
 }
+/* "Agora" é o do fuso do grupo (KAN-162): o jogo termina na hora do lugar, para quem abre de qualquer fuso. */
 function upcoming() {
-  const now = Date.now();
+  const now = agora().getTime();
   return rodadas()
     .filter(r => !r.cancelada && endTs(r) > now)
     .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
@@ -107,7 +108,7 @@ function upcoming() {
 /* Rodadas mostradas na aba Rodada (D10): as próximas e as últimas 4. */
 const ULTIMAS = 4;
 function rodadasJanela() {
-  const now = Date.now(),
+  const now = agora().getTime(),
     rs = rodadas(),
     fut = rs.filter(r => endTs(r) > now),
     pas = rs.filter(r => endTs(r) <= now).slice(0, ULTIMAS);

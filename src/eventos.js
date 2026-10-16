@@ -144,6 +144,18 @@ document.addEventListener('change', e => {
     $('#lv').value = t.value === 'mensal' ? c.mensal : t.value === 'diaria' ? c.diaria : '';
     return;
   }
+  if (t.id === 'ngp') {
+    adm()?.trocarPaisGrupo();
+    return;
+  }
+  if (t.id === 'ppais') {
+    adm()?.trocarPaisTelefone();
+    return;
+  }
+  if (t.id === 'lpais') {
+    S.paisNovo = t.value;
+    return;
+  }
   if (t.classList.contains('dp')) {
     adm()?.drawPreview();
     return;

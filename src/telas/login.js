@@ -3,6 +3,7 @@ import { tx } from '../i18n/index.js';
 import { S } from '../nucleo/estado.js';
 import { $ } from '../nucleo/util.js';
 import { val } from '../ui/dialogos.js';
+import { carregarAdmin } from '../nucleo/carga-admin.js';
 
 /* Regras da senha (KAN-10, pelada-v34): iguais à política de senha do Firebase (Authentication > Configurações).
    "Especial" vale só para os símbolos que o Firebase aceita; mudar uma regra aqui exige mudar lá também (docs/REGRAS.md). */
@@ -63,6 +64,7 @@ function vAuth(msg) {
     m === 'signup'
       ? `<h2>${tx('login.criarTitulo')}</h2>
     <p class="muted small">${tx('login.criarAjuda')}</p>
+    ${campoPaisConta()}
     <button class="btn gbtn" data-a="google">${GICON}${tx('login.google')}</button><div class="ou"><span>${tx('login.ouEmail')}</span></div>
     <label class="f"><span>${tx('login.email')}</span><input class="inp" id="le" type="email" autocomplete="email"></label>
     <label class="f"><span>${tx('login.senha')}</span>${pwBox('lp', 'new-password')}</label>
@@ -82,6 +84,20 @@ function vAuth(msg) {
     <p class="small muted" style="text-align:center;margin:10px 0 0">${tx('login.primeiraVez')} <button class="linkbtn" data-a="authMode" data-v="signup">${tx('login.criarGratis')}</button></p>`;
   return `<div class="auth">${msg ? `<div class="panel" style="margin-bottom:12px">${msg}</div>` : ''}
   <div class="panel"><div class="seg" style="display:flex;margin-bottom:16px"><button style="flex:1" aria-pressed="${m === 'signup'}" data-a="authMode" data-v="signup">${tx('login.criarConta')}</button><button style="flex:1" aria-pressed="${m === 'login'}" data-a="authMode" data-v="login">${tx('login.entrar')}</button></div>${form}</div>${linhaVersao()}</div>`;
+}
+/* País da conta (KAN-162): já vem sugerido pelo fuso do aparelho; vale para o Google e para e-mail e senha.
+   A lista de países vem com a parte de gestão (que a conta nova vai usar logo depois), para não pesar no link do jogador,
+   que usa o mesmo código inicial. */
+function campoPaisConta() {
+  carregarAdmin()
+    .then(m => {
+      const s = $('#lpais');
+      if (!s) return;
+      S.paisNovo = S.paisNovo || m.paisAparelho();
+      m.preencher(s, m.listaPais(), S.paisNovo);
+    })
+    .catch(() => {});
+  return `<label class="f"><span>${tx('login.pais')}</span><select class="sel" id="lpais" autocomplete="country"></select><span class="small muted dica">${tx('login.paisDica')}</span></label>`;
 }
 /* Ícone neutro (não é a marca do Google): uma letra G no estilo do app. */
 /* Campo de senha com o botão Mostrar/Ocultar (pelada-v17). */

@@ -1,7 +1,8 @@
 /* KAN-156: telefone (WhatsApp) nacional e internacional, e e-mail com formato mínimo. Roda com: npm run regras */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { emailValido, linkWhatsApp, normalizarTelefone, telefoneParaLer } from '../../src/dominio/contato.ts';
+import { emailValido, linkWhatsApp } from '../../src/dominio/contato.ts';
+import { normalizarTelefone, telefoneParaLer } from '../../src/dominio/telefone.ts';
 
 test('telefone brasileiro: DDD + número, com ou sem máscara, vira +55', () => {
   assert.deepEqual(normalizarTelefone('(11) 98765-4321'), { ok: true, valor: '+5511987654321' });
@@ -30,7 +31,8 @@ test('link do WhatsApp: internacional certo e números antigos (sem +) continuam
 
 test('telefone para ler', () => {
   assert.equal(telefoneParaLer('+5511987654321'), '(11) 98765-4321');
-  assert.equal(telefoneParaLer('+351912345678'), '+351912345678');
+  assert.equal(telefoneParaLer('+351912345678'), '+351 912345678');
+  assert.equal(telefoneParaLer('+14155550100'), '+1 4155550100');
 });
 
 test('e-mail precisa de nome, @, domínio e terminação', () => {

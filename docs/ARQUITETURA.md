@@ -37,6 +37,19 @@ O produto vai ganhar muitas funcionalidades e passará a **cobrar por partes do 
 - **Como usar no código:** `tx('publico.vou')` devolve o texto; `tx('publico.cancelado', {data})` troca `{data}`; `tp('voto.votos', n)` escolhe singular ou plural. Texto sem tradução gera aviso, e os testes falham.
 - **Como migra:** na etapa 1 entraram a base, os formatos, os avisos de conexão e as duas telas públicas (link da rodada e da votação), que são o que o jogador vê. As demais telas migram junto com a componentização de cada uma. Texto novo já nasce no dicionário.
 - **Por quê:** a visão é "qualquer pessoa no mundo". Fazer agora custa pouco; depois custaria refazer telas inteiras.
+- **Desde a pelada-v47 (KAN-162), país, moeda e fuso:** decidido com o Kleber em 16/10.
+  - **Idioma, formato, moeda e fuso são coisas separadas** em `src/i18n/formatos.js`:
+    - `LOCAL`: idioma dos textos, hoje só pt-BR;
+    - `FORMATO`: ordem da data e separadores, do país do grupo;
+    - `MOEDA` e `FUSO`: do grupo.
+    `definirRegiao()` troca tudo quando o grupo carrega (`rotas.js`). Fora de um grupo, valem os da conta.
+  - **O país da conta** é pedido no cadastro, já sugerido pelo **fuso** do aparelho, no celular e no computador. O fuso vem antes do idioma porque muito computador no Brasil está em inglês. Fica em `usuarios/{uid}` (`pais` e `formato`).
+  - **O grupo nasce com país, moeda, fuso e formato do organizador** e guarda uma cópia em `cfg`. Assim, mudar o país da conta não troca o símbolo do caixa antigo. Trocar a moeda do grupo avisa que os valores não são convertidos.
+  - **Grupo antigo, sem país:** Brasil, Real e o relógio do aparelho, como antes.
+  - **"Agora" segue o fuso do grupo** (`agora()`): o jogo termina na hora do lugar, para quem abre de qualquer fuso.
+  - **A tabela de países** (`dominio/paises.ts`, 44 países) traz código do telefone, quantidade de dígitos, moeda, formato e fusos. Os nomes de países e moedas vêm do navegador (`Intl.DisplayNames`), no idioma do app, e não ocupam o dicionário.
+  - **Peso:** a tabela vem só com a gestão. O link do jogador lê o formato já gravado no grupo (`dominio/regiao.ts`, sem a tabela) e o telefone com a regra de cada país fica em `dominio/telefone.ts`, fora do link.
+  - **Por que não uma biblioteca de telefones** (libphonenumber): ela pesa mais que o app inteiro. A tabela leve, com código e quantidade de dígitos, pega a maioria dos erros.
 
 ### D4. Rodada gravada só no que mudou (8 out. 2026, feito na pelada-v14)
 - **Contexto:** sorteio, placar e lista ficam no mesmo registro da rodada. Antes, cada gravação reescrevia o registro inteiro: se dois administradores mexiam ao mesmo tempo, a última gravação apagava a outra.
@@ -75,6 +88,7 @@ Medido a cada versão, no celular de 390px:
 - **Primeira tela desenhada** em modo demonstração: até **1,5 segundo** no ambiente de testes. É uma das verificações do roteiro. Na pelada-v13: cerca de 0,5 segundo.
 - **Desde a pelada-v41 (KAN-149)** o código é dividido em pedaços: o `index.html` traz o ponto de partida, o código comum vai em `chunks/chunk-*.js` (baixado junto, com `modulepreload`) e a gestão em `chunks/admin-*.js`, que só baixa para quem entra com conta (`src/admin.js`, carregado por `src/nucleo/carga-admin.js`). Os nomes levam um código do conteúdo, então versão nova nunca mistura com cópia antiga do celular. O service worker guarda os pedaços públicos na instalação e os da gestão só nos aparelhos que já usaram a gestão. Na v41: **link do jogador 44,8 KB** (era 77,1 KB) e app inteiro 79,6 KB.
 - Limites desde a v41: **link do jogador até 50 KB** e app inteiro até 80 KB. **Desde a v43 o total vai até 85 KB** (justificativa: a divisão em pedaços custa cerca de 2,5 KB, e os componentes em Preact são um pouco maiores que o HTML em texto; só quem administra baixa essa parte, e o link do jogador continua abaixo de 50 KB). Na v43: link do jogador 46,0 KB, total 80,9 KB. A montagem falha se qualquer um passar. Dividir custa cerca de 2,5 KB a mais no total (dois arquivos comprimem um pouco pior), mas só quem administra baixa essa parte. Próxima folga, se o total apertar: separar o dicionário da gestão e os estilos da página inicial.
+- **Desde a v46, o total vai até 90 KB** (importação da planilha). **Desde a v47, até 95 KB:** a tabela de países do KAN-162 (cerca de 3 KB), que vem só com a gestão. Na v47: link do jogador 45,1 KB e total 91,5 KB.
 - Passar desses limites exige justificativa registrada aqui.
 
 ### D8. Montagem com esbuild, sem framework por enquanto (8 out. 2026)
@@ -176,6 +190,11 @@ Medido a cada versão, no celular de 390px:
     - **O dicionário foi dividido:** `src/i18n/pt-BR-gestao.js` (caixa, jogadores, partida, sorteio, importar e outros grupos só da gestão) chega com `src/admin.js` e é juntado ao dicionário por `juntarTextos`. A montagem confere, pelos pedaços gerados, que nenhum arquivo do link público usa um grupo de textos da gestão. Com isso, o link do jogador caiu de 48,1 para 44,5 KB.
     - O total passou para **até 90 KB** (era 85): a importação da planilha, o leitor de .xlsx sem biblioteca (usa o `DecompressionStream` do navegador) e os componentes, tudo só para quem administra. Na v46: total 86,1 KB.
     - O `tsconfig.json` aceita importar `.ts` com a extensão (`allowImportingTsExtensions`), para as regras em TypeScript se importarem entre si também nos testes do Node.
+  3a5. **pelada-v47 (KAN-162):**
+    - "Meus grupos" virou componente (`telas/Grupos.tsx`, 6 de 16 telas).
+    - Os textos do formulário do grupo e da página inicial foram para o dicionário (302 textos fora dele, eram 327).
+    - O total passou para **até 95 KB** (era 90): a tabela de países, que só quem administra baixa. O link do jogador ficou em 45,1 KB.
+    - Ficou para depois (KAN-165): o formulário do grupo (`telas/grupo-form.js`) e o login (`telas/login.js`) ganharam campos de país, mas ainda não viraram componentes.
   3b. **Componentes reaproveitáveis** ficam em `src/ui/componentes.tsx` (texto cortado, Como chegar, seletor segmentado, posição, nota, etiqueta), registrados no Design System. A aba Rodada virou componente na v43 (`src/telas/Rodada.tsx`); as partes que Partida e Histórico ainda usam em texto ficam em `telas/rodada-partes.js` até essas telas migrarem.
   4. **Prioridade:** primeiro o caixa e o link de votação (dinheiro e dados de pessoas de fora), e testes próprios das regras do sorteio e do ranking (o coração do produto).
 - **Prazo estimado:** com 1 a 2 telas por entrega, todo o app em TypeScript em 8 a 10 pacotes.
@@ -221,7 +240,7 @@ As 5 regras de negócio com teste próprio previsto: sorteio, ranking, pendênci
 |---|---|
 | `main.js` | Ponto de partida: carrega os módulos na ordem certa e inicia o app |
 | `estilos/app.css` | CSS do app (tokens do Design System e componentes) |
-| `i18n/` | `pt-BR.js` (textos), `index.js` (`tx` e `tp`), `formatos.js` (local e moeda) |
+| `i18n/` | `pt-BR.js` (textos do link e do login), `pt-BR-gestao.js` (textos da gestão), `index.js` (`tx` e `tp`), `formatos.js` (idioma, formato, moeda, fuso e `agora()` do grupo, KAN-162), `cidades.ts` (nomes de cidades dos fusos) |
 | `nucleo/` | `util.js` (utilidades, sem dependências), `links.js`, `estado.js` (estado e assinaturas do banco), `backend.js` (Firebase ou demonstração, carregando dos botões), `edicoes.js` (gravações otimistas e presença) |
 | `dominio/` | Regras de negócio sem tela: `esportes.js` (catálogo), `grupo.js`, `rodadas.js`, `caixa.js` (configuração do caixa), `caixa-regras.ts` (pendências do mês e totais, com teste próprio desde a pelada-v30), `sorteio.js`, `whatsapp.js` (textos para compartilhar), `limites.ts` (limites contra abuso) |
 | `ui/` | `render.js` (desenho da tela e abas), `tema.js`, `dialogos.js` (janelas; desde a pelada-v30 também a janela de confirmação do app, `confirmou()`, no lugar do `confirm()` do navegador) |

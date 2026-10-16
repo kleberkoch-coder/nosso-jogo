@@ -1,7 +1,12 @@
-/* Lê telefone e e-mail das janelas de jogador e avulso (KAN-156). Com erro, avisa, põe o cursor no campo e devolve null. */
-import { emailValido, normalizarTelefone, telefoneParaLer } from '../dominio/contato';
+/* Lê telefone e e-mail das janelas de jogador e avulso (KAN-156). Com erro, avisa, põe o cursor no campo e devolve null.
+   Desde a KAN-162, o telefone tem um combo de país ao lado, que já vem com o país do grupo. */
+import { emailValido } from '../dominio/contato';
+import { normalizarTelefone, numeroParaCampo } from '../dominio/telefone.ts';
+import { paisPor, separarTelefone } from '../dominio/paises.ts';
+import { PAIS } from '../i18n/formatos.js';
 import { tx } from '../i18n/index.js';
 import { toast } from '../nucleo/util.js';
+import { nomePais, opcoesDdi } from './regiao.ts';
 
 const campo = (id: string) => document.getElementById(id) as HTMLInputElement | null;
 function erro(id: string, msg: string) {
@@ -13,21 +18,47 @@ function erro(id: string, msg: string) {
   }
   return null;
 }
+const digitos = (iso: string) => {
+  const p = paisPor(iso);
+  return !p ? '' : p.min === p.max ? String(p.min) : p.min + '–' + p.max;
+};
+function msgTelefone(e: string, iso: string) {
+  if (e === 'semPais') return tx('contato.telSemPais');
+  if (iso === 'BR' || !paisPor(iso) || e === 'invalido')
+    return tx(e === 'curto' ? 'contato.telCurto' : e === 'longo' ? 'contato.telLongo' : 'contato.telInvalido');
+  return tx(e === 'curto' ? 'contato.telCurtoPais' : 'contato.telLongoPais', {
+    pais: nomePais(iso),
+    n: digitos(iso),
+  });
+}
 
 export function lerContato(telId: string, mailId?: string): { tel: string; email: string } | null {
-  const t = normalizarTelefone(campo(telId)?.value || '');
-  if (!t.ok)
-    return erro(
-      telId,
-      tx(t.erro === 'curto' ? 'contato.telCurto' : t.erro === 'longo' ? 'contato.telLongo' : 'contato.telInvalido')
-    );
+  const pais = (document.getElementById('ppais') as HTMLSelectElement | null)?.value ?? PAIS;
+  const t = normalizarTelefone(campo(telId)?.value || '', pais);
+  if (!t.ok) return erro(telId, msgTelefone(t.erro, pais));
   const email = mailId ? (campo(mailId)?.value || '').trim() : '';
   if (mailId && !emailValido(email)) return erro(mailId, tx('contato.emailInvalido'));
   return { tel: t.valor, email };
 }
 
-/* Campo de telefone das janelas, com a dica para números de outro país. */
+/* Exemplo dentro do campo: o número brasileiro de sempre ou quantos dígitos tem o número no país escolhido. */
+const exemplo = (iso: string) =>
+  iso === 'BR'
+    ? tx('contato.telExemplo')
+    : paisPor(iso)
+      ? tx('contato.telExemploPais', { n: digitos(iso) })
+      : tx('contato.telExemploOutro');
+
+/* Campo de telefone das janelas: combo do país (bandeira e código) e o número. */
 export function campoTelefone(valor: string, rotulo: string): string {
-  const v = telefoneParaLer(valor).replace(/[&<>"']/g, c => '&#' + c.charCodeAt(0) + ';');
-  return `<label class="f"><span>${rotulo}</span><input class="inp" id="ptel" type="tel" inputmode="tel" autocomplete="tel" maxlength="22" value="${v}" placeholder="${tx('contato.telExemplo')}"><span class="small muted dica">${tx('contato.telDica')}</span></label>`;
+  const { pais, numero } = separarTelefone(valor, PAIS);
+  const v = numeroParaCampo(numero, pais).replace(/[&<>"']/g, c => '&#' + c.charCodeAt(0) + ';');
+  return `<div class="f campo-tel"><span class="lbl" id="ptelR">${rotulo}</span><div class="tel-linha"><select class="sel" id="ppais" aria-label="${tx('contato.telPais')}">${opcoesDdi(pais)}</select><input class="inp" id="ptel" type="tel" inputmode="tel" autocomplete="tel" maxlength="22" value="${v}" placeholder="${exemplo(pais)}" aria-labelledby="ptelR"></div><span class="small muted dica">${tx('contato.telDica')}</span></div>`;
+}
+
+/* Trocou o país do telefone: o exemplo do campo acompanha. */
+export function trocarPaisTelefone() {
+  const s = document.getElementById('ppais') as HTMLSelectElement | null,
+    c = campo('ptel');
+  if (s && c) c.placeholder = exemplo(s.value);
 }

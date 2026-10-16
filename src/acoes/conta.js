@@ -93,6 +93,7 @@ const acoes = {
     }
   },
   signup: async () => {
+    S.paisNovo = val('lpais') || S.paisNovo;
     const e = val('le'),
       p = $('#lp').value;
     if (!pwOk(p)) {
@@ -122,6 +123,7 @@ const acoes = {
       <div class="dlg-f"><button class="btn" data-a="close">Fechar</button><button class="btn primary" data-a="copyHere">Copiar link</button></div>`);
       return;
     }
+    if (S.authMode === 'signup') S.paisNovo = val('lpais') || S.paisNovo;
     try {
       const modo = S.authMode,
         r = await B.google(val('le')),

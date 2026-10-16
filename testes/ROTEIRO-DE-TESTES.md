@@ -116,6 +116,7 @@ Precisa do Playwright com o Chromium (`pip install playwright` e `python3 -m pla
 | pelada-v23 | 09/10/2026 | 155 de 155 passaram, 41 de 41 nas regras de negócio |
 | pelada-v24 | 13/10/2026 | 156 de 156 passaram, 41 de 41 nas regras de negócio (mudança para o Firebase Hosting; mensagem do limite de grupos no singular) |
 | pelada-v46 | 15/10/2026 | 353 de 353 passaram (KAN-159: importar da planilha, colando, .xlsx e .csv; KAN-160: seletor na Partida; 11 novas), 72 de 72 nas regras de negócio (9 novas, de dominio/planilha.ts) |
+| pelada-v47 | 16/10/2026 | 375 de 375 passaram (KAN-162: país no cadastro pelo fuso do aparelho em São Paulo, Chicago e Manaus; país da conta; grupo nos EUA com dólar e fuso; telefone com país ao lado; aviso ao trocar a moeda; grupo antigo continua Brasil; 22 novas), 80 de 80 nas regras de negócio (8 novas, de dominio/paises.ts, e o fuso do grupo em formatos.js) |
 | pelada-v45 | 15/10/2026 | 342 de 342 passaram, 63 de 63 nas regras de negócio (KAN-155: código formatado com o Prettier; a conferência da formatação comparou o código compactado de 76 arquivos, e só o build.mjs mudou, de propósito) |
 | pelada-v44 | 15/10/2026 | 342 de 342 passaram (KAN-156: telefone internacional e e-mail; 8 novas), 63 de 63 nas regras de negócio (6 novas, de dominio/contato.ts); conferência da entrega no GitHub (KAN-157) |
 | pelada-v43 | 15/10/2026 | 334 de 334 passaram (KAN-153: aba Rodada como componente), 57 de 57 nas regras de negócio (KAN-154: trava da dívida) |

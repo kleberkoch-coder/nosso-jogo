@@ -16,13 +16,16 @@ export { vLanding } from './telas/apresentacao.js';
 export { montarCaixa, vCaixa } from './telas/Caixa.tsx';
 export { renderInvite } from './telas/convite.js';
 export { vGrupo } from './telas/grupo.js';
-export { vHome } from './telas/grupos.js';
+export { montarHome, vHome } from './telas/Grupos';
 export { montarJogadores, vJogadores } from './telas/Jogadores';
 export { tick } from './ui/placar.js';
 export { montarPartida, vPartida } from './telas/Partida';
 export { montarRodada, vRodada } from './telas/Rodada';
 export { migrar, verificarRodadas } from './nucleo/partidas.js';
 export { drawPreview } from './ui/dialogos-gestao.js';
+export { trocarPaisGrupo } from './telas/grupo-form.js';
+export { contaRegiao, listaPais, paisAparelho, preencher } from './ui/regiao.ts';
+export { trocarPaisTelefone } from './ui/contato-form';
 export { vVotacao } from './telas/votacao-gestao.js';
 /* Os textos da gestão entram no dicionário assim que esta parte chega (KAN-159). */
 juntarTextos(textosGestao);

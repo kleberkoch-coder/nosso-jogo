@@ -1,4 +1,4 @@
-import { LOCAL, MOEDA } from '../i18n/formatos.js';
+import { FORMATO, LOCAL, MOEDA, agora } from '../i18n/formatos.js';
 /* =================== utilidades =================== */
 const $ = s => document.querySelector(s);
 const main = $('#main');
@@ -20,16 +20,22 @@ const shuffle = a => {
   }
   return a;
 };
-const brl = v => (+v || 0).toLocaleString(LOCAL, { style: 'currency', currency: MOEDA });
+/* Dinheiro na moeda e no formato do grupo (KAN-162): R$ 1.234,50 no Brasil, $1,234.50 nos EUA. */
+const brl = v => (+v || 0).toLocaleString(FORMATO, { style: 'currency', currency: MOEDA });
+/* Hoje no fuso do grupo (KAN-162). */
 const today = () => {
-  const d = new Date();
+  const d = agora();
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 };
 const fdate = s => {
   if (!s) return '';
-  return new Date(s + 'T12:00')
-    .toLocaleDateString(LOCAL, { weekday: 'short', day: '2-digit', month: '2-digit' })
-    .replace('.', '');
+  // Dia da semana no idioma do app; dia e mês na ordem do país do grupo (16/10 no Brasil, 10/16 nos EUA).
+  const d = new Date(s + 'T12:00');
+  return (
+    d.toLocaleDateString(LOCAL, { weekday: 'short' }).replace('.', '') +
+    ', ' +
+    d.toLocaleDateString(FORMATO, { day: '2-digit', month: '2-digit' })
+  );
 };
 const fmonth = m => {
   const t = new Date(m + '-15T12:00').toLocaleDateString(LOCAL, { month: 'long', year: 'numeric' });
@@ -94,7 +100,7 @@ if (tt) {
   });
 }
 function nextSat() {
-  const d = new Date();
+  const d = agora();
   d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7));
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }

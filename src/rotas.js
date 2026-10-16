@@ -7,6 +7,10 @@ import { GB, S, SUBS, drop, dropAll, sub, subQ, subRaw, w } from './nucleo/estad
 import { $, cl, toast } from './nucleo/util.js';
 import { closeDlgNow, dlg } from './ui/dialogos.js';
 import { render } from './ui/render.js';
+import { agora, definirRegiao } from './i18n/formatos.js';
+import { regiaoDe } from './dominio/regiao.ts';
+/* Datas, números, moeda e relógio do grupo aberto; fora de um grupo, os da conta (KAN-162). */
+const aplicarRegiao = c => definirRegiao(regiaoDe(c));
 
 /* =================== assinaturas por rota =================== */
 function ensurePres() {
@@ -65,7 +69,7 @@ function ensureVotos() {
 }
 /* Data relativa a hoje (AAAA-MM-DD). */
 const dia = n => {
-  const d = new Date();
+  const d = agora();
   d.setDate(d.getDate() + n);
   return ymd(d);
 };
@@ -188,6 +192,26 @@ function registrarAcesso() {
     })
     .catch(e => console.warn('acesso', e));
 }
+/* País da conta (KAN-162): o escolhido ao criar a conta; quem ainda não tem (conta antiga, ou entrou pelo Google na aba
+   Entrar) recebe o sugerido pelo aparelho. Grava uma vez só; depois a pessoa troca em "Meus grupos" → País. */
+function gravarPaisConta() {
+  const u = S.user,
+    n = S.route.n;
+  if (!u || u.anon || !S.me || S.me.pais || S.paisGravando || n === 'r' || n === 'v') return;
+  S.paisGravando = true;
+  // A tabela de países vem com a gestão (quem tem conta já baixa a gestão; o link do jogador não).
+  carregarAdmin()
+    .then(A => {
+      const o = A.contaRegiao(S.paisNovo);
+      Object.assign(S.me, o);
+      if (!S.gid) aplicarRegiao(o);
+      return B.patch('usuarios/' + u.uid, o);
+    })
+    .catch(e => console.warn('pais', e))
+    .finally(() => {
+      S.paisGravando = false;
+    });
+}
 function upMyGroup(gid, patch) {
   const me = cl(S.me) || { grupos: {} };
   me.grupos = me.grupos || {};
@@ -217,6 +241,8 @@ function setupRoute() {
   S.route = parseRoute();
   const R = S.route,
     logged = !!(S.user && !S.user.anon);
+  // Até o grupo carregar, vale o país da conta (ou Brasil); o grupo traz o dele (KAN-162).
+  aplicarRegiao(!R.gid ? S.me : null);
   /* KAN-149: fora do link público, a parte de gestão já começa a baixar enquanto o Firebase conecta. */
   if (R.n !== 'r' && R.n !== 'v' && !(R.n === 'auth')) carregarAdmin().catch(() => {});
   if (R.n === 'auth') {
@@ -276,6 +302,8 @@ function setupRoute() {
   if (logged)
     subRaw('me', 'usuarios/' + S.user.uid, d => {
       S.me = d || { grupos: {} };
+      gravarPaisConta();
+      if (!S.gid) aplicarRegiao(S.me);
       syncName();
       if (S.route.n === 'home' && !S.homeShown) {
         S.homeShown = true;
@@ -296,6 +324,7 @@ function setupRoute() {
   if (S.gid)
     sub('app', 'config/app', d => {
       S.app = d;
+      aplicarRegiao(d && d.cfg);
       if (R.next) resolveNext();
       syncName();
       migrarPrivado();

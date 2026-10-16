@@ -434,10 +434,19 @@ with sync_playwright() as pw:
        and imp['pb'] == 'ATA' and imp['notab'] is None and not imp['aberto'] and 'importados' in pg.inner_text('#toast'),
        f'CT-KAN-159-05: importar grava os 2 novos com posição, nota, tipo e contato, e fecha a janela ({imp})')
     ok(pg.locator('#jogadoresRaiz li', has_text='Importado Um').count() == 1, 'CT-KAN-159-05: a aba Jogadores mostra o elenco novo')
-    import openpyxl, tempfile, os
+    import tempfile, zipfile
     pasta = tempfile.mkdtemp()
-    wb = openpyxl.Workbook(); ws = wb.active; ws.append(['Nome', 'Nota', 'Tipo']); ws.append(['Planilha Três', 8, 'Mensalista']); ws.append(['Planilha Quatro', 6.5, 'D'])
-    xlsx = os.path.join(pasta, 'elenco.xlsx'); wb.save(xlsx)
+    xlsx = os.path.join(pasta, 'elenco.xlsx')
+    # Planilha do Excel mínima, montada à mão (sem biblioteca): textos compartilhados e números, como o Excel grava.
+    with zipfile.ZipFile(xlsx, 'w', zipfile.ZIP_DEFLATED) as z:
+        z.writestr('[Content_Types].xml', '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>')
+        z.writestr('xl/sharedStrings.xml', '<?xml version="1.0" encoding="UTF-8"?><sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+                   + ''.join(f'<si><t>{t}</t></si>' for t in ['Nome', 'Nota', 'Tipo', 'Planilha Três', 'Mensalista', 'Planilha Quatro', 'D']) + '</sst>')
+        z.writestr('xl/worksheets/sheet1.xml', '<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'
+                   '<row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c><c r="C1" t="s"><v>2</v></c></row>'
+                   '<row r="2"><c r="A2" t="s"><v>3</v></c><c r="B2"><v>8</v></c><c r="C2" t="s"><v>4</v></c></row>'
+                   '<row r="3"><c r="A3" t="s"><v>5</v></c><c r="B3"><v>6.5</v></c><c r="C3" t="s"><v>6</v></c></row>'
+                   '</sheetData></worksheet>')
     csv = os.path.join(pasta, 'elenco.csv'); open(csv, 'w', encoding='utf-8').write('Nome;Telefone\nCsv Cinco;+351 912 345 678\n')
     pg.click('[data-a=importarDlg]'); pg.wait_for_timeout(400)
     pg.set_input_files('#impArq', xlsx); pg.wait_for_timeout(800)

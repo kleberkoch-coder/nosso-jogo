@@ -21,22 +21,53 @@ const LAN = [
 
 /* Cálculo da tela até a pelada-v29 (src/telas/caixa.js), sem o texto do rótulo. A regra nova tem de dar o mesmo. */
 function antigo(month, lan, players, ptipo, isJog, rodadasDoMes, c) {
-  const mens = players.filter(p => ptipo(p) !== 'diarista' && !lan.some(l => l.k === 'mensal' && l.pid === p && l.ref === month)).map(p => ({ pid: p, k: 'mensal', ref: month, v: c.mensal }));
-  const dia = []; rodadasDoMes.filter(r => r.times).forEach(r => r.times.forEach(t => t.players.forEach(id => {
-    const tp = isJog(id) ? ptipo(id) : 'avulso'; if (tp !== 'mensalista' && !lan.some(l => l.k === 'diaria' && l.pid === id && l.ref === r.id)) dia.push({ pid: id, k: 'diaria', ref: r.id, v: c.diaria, data: r.date });
-  })));
+  const mens = players
+    .filter(p => ptipo(p) !== 'diarista' && !lan.some(l => l.k === 'mensal' && l.pid === p && l.ref === month))
+    .map(p => ({ pid: p, k: 'mensal', ref: month, v: c.mensal }));
+  const dia = [];
+  rodadasDoMes
+    .filter(r => r.times)
+    .forEach(r =>
+      r.times.forEach(t =>
+        t.players.forEach(id => {
+          const tp = isJog(id) ? ptipo(id) : 'avulso';
+          if (tp !== 'mensalista' && !lan.some(l => l.k === 'diaria' && l.pid === id && l.ref === r.id))
+            dia.push({ pid: id, k: 'diaria', ref: r.id, v: c.diaria, data: r.date });
+        })
+      )
+    );
   return mens.concat(dia);
 }
 
 test('mensalidade: deve quem é do elenco, não é diarista e não pagou o mês (pagamento de outro mês não vale)', () => {
-  const p = pendenciasDoMes({ mes: '2026-10', lancamentos: LAN, elenco: ['ana', 'beto', 'caio', 'duda'], tipo, rodadas: RODS, valores: VAL });
-  assert.deepEqual(p.filter(x => x.k === 'mensal').map(x => x.pid), ['caio', 'duda']);
+  const p = pendenciasDoMes({
+    mes: '2026-10',
+    lancamentos: LAN,
+    elenco: ['ana', 'beto', 'caio', 'duda'],
+    tipo,
+    rodadas: RODS,
+    valores: VAL,
+  });
+  assert.deepEqual(
+    p.filter(x => x.k === 'mensal').map(x => x.pid),
+    ['caio', 'duda']
+  );
   assert.ok(p.filter(x => x.k === 'mensal').every(x => x.v === 80 && x.ref === '2026-10'));
 });
 
 test('diária: só rodadas com times; diarista e avulso devem, mensalista não; diária paga daquela rodada some', () => {
-  const p = pendenciasDoMes({ mes: '2026-10', lancamentos: LAN, elenco: ['ana', 'beto', 'caio', 'duda'], tipo, rodadas: RODS, valores: VAL });
-  assert.deepEqual(p.filter(x => x.k === 'diaria').map(x => x.pid + '@' + x.ref), ['zeca@r1', 'beto@r3']);
+  const p = pendenciasDoMes({
+    mes: '2026-10',
+    lancamentos: LAN,
+    elenco: ['ana', 'beto', 'caio', 'duda'],
+    tipo,
+    rodadas: RODS,
+    valores: VAL,
+  });
+  assert.deepEqual(
+    p.filter(x => x.k === 'diaria').map(x => x.pid + '@' + x.ref),
+    ['zeca@r1', 'beto@r3']
+  );
   assert.equal(p.find(x => x.pid === 'zeca').data, '2026-10-05');
 });
 
@@ -45,14 +76,43 @@ test('dá o mesmo resultado do cálculo da versão anterior', () => {
   for (const mes of ['2026-09', '2026-10']) {
     const rods = RODS.filter(r => r.date.startsWith(mes));
     const novo = pendenciasDoMes({ mes, lancamentos: LAN, elenco, tipo, rodadas: rods, valores: VAL });
-    assert.deepEqual(novo, antigo(mes, LAN, elenco, id => TIPOS[id] || 'mensalista', id => id in TIPOS, rods, VAL));
+    assert.deepEqual(
+      novo,
+      antigo(
+        mes,
+        LAN,
+        elenco,
+        id => TIPOS[id] || 'mensalista',
+        id => id in TIPOS,
+        rods,
+        VAL
+      )
+    );
   }
 });
 
 test('sem elenco e sem rodadas, ninguém deve; todos pagos, ninguém deve', () => {
-  assert.deepEqual(pendenciasDoMes({ mes: '2026-10', lancamentos: [], elenco: [], tipo, rodadas: [], valores: VAL }), []);
-  const pagos = ['caio', 'duda'].map(pid => ({ k: 'mensal', pid, v: 80, d: '2026-10-03', ref: '2026-10' })).concat([{ k: 'diaria', pid: 'zeca', v: 20, d: '2026-10-05', ref: 'r1' }, { k: 'diaria', pid: 'beto', v: 20, d: '2026-10-19', ref: 'r3' }]);
-  assert.deepEqual(pendenciasDoMes({ mes: '2026-10', lancamentos: LAN.concat(pagos), elenco: ['ana', 'beto', 'caio', 'duda'], tipo, rodadas: RODS, valores: VAL }), []);
+  assert.deepEqual(
+    pendenciasDoMes({ mes: '2026-10', lancamentos: [], elenco: [], tipo, rodadas: [], valores: VAL }),
+    []
+  );
+  const pagos = ['caio', 'duda']
+    .map(pid => ({ k: 'mensal', pid, v: 80, d: '2026-10-03', ref: '2026-10' }))
+    .concat([
+      { k: 'diaria', pid: 'zeca', v: 20, d: '2026-10-05', ref: 'r1' },
+      { k: 'diaria', pid: 'beto', v: 20, d: '2026-10-19', ref: 'r3' },
+    ]);
+  assert.deepEqual(
+    pendenciasDoMes({
+      mes: '2026-10',
+      lancamentos: LAN.concat(pagos),
+      elenco: ['ana', 'beto', 'caio', 'duda'],
+      tipo,
+      rodadas: RODS,
+      valores: VAL,
+    }),
+    []
+  );
 });
 
 test('totais: saldo com tudo (despesa desconta, valor em texto vira número); entradas e saídas só do mês, lista do mais novo ao mais antigo', () => {
@@ -60,9 +120,19 @@ test('totais: saldo com tudo (despesa desconta, valor em texto vira número); en
   assert.equal(r.saldo, 80 + 80 + 20 - 150 + 35.5);
   assert.equal(r.entradas, 100);
   assert.equal(r.saidas, 150);
-  assert.deepEqual(r.doMes.map(l => l.d), ['2026-10-05', '2026-10-05', '2026-10-02']);
+  assert.deepEqual(
+    r.doMes.map(l => l.d),
+    ['2026-10-05', '2026-10-05', '2026-10-02']
+  );
 });
 
 test('meses do seletor: atual, com lançamento e com rodada, sem repetir, do mais novo ao mais antigo', () => {
-  assert.deepEqual(mesesDoCaixa('2026-11-03', LAN, RODS.map(r => r.date)), ['2026-11', '2026-10', '2026-09']);
+  assert.deepEqual(
+    mesesDoCaixa(
+      '2026-11-03',
+      LAN,
+      RODS.map(r => r.date)
+    ),
+    ['2026-11', '2026-10', '2026-09']
+  );
 });

@@ -35,5 +35,6 @@ test('telefone para ler', () => {
 
 test('e-mail precisa de nome, @, domínio e terminação', () => {
   for (const ok of ['ana@clube.com', 'ana.souza+fut@clube.com.br', '']) assert.equal(emailValido(ok), true, ok);
-  for (const ruim of ['ana', 'ana@', 'ana@clube', '@clube.com', 'ana @clube.com', 'ana@clube.c']) assert.equal(emailValido(ruim), false, ruim);
+  for (const ruim of ['ana', 'ana@', 'ana@clube', '@clube.com', 'ana @clube.com', 'ana@clube.c'])
+    assert.equal(emailValido(ruim), false, ruim);
 });

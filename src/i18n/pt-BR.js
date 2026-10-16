@@ -5,15 +5,18 @@ export default {
   'comum.carregando': 'Carregando…',
   'comum.versao': 'Nosso Jogo · versão {n}',
   'comum.versaoCurta': 'versão {n}',
-  'sair.outrasAbas': 'Você saiu da conta. Para apagar também os dados do grupo guardados neste aparelho, feche as outras abas do Nosso Jogo e toque em Sair de novo na próxima vez.',
-  'sair.pendentes': 'Ainda há alterações deste aparelho que não chegaram ao servidor (sem sinal?). Se sair agora, elas serão perdidas.',
+  'sair.outrasAbas':
+    'Você saiu da conta. Para apagar também os dados do grupo guardados neste aparelho, feche as outras abas do Nosso Jogo e toque em Sair de novo na próxima vez.',
+  'sair.pendentes':
+    'Ainda há alterações deste aparelho que não chegaram ao servidor (sem sinal?). Se sair agora, elas serão perdidas.',
   'sair.pendentesTitulo': 'Sair sem enviar as alterações?',
   'sair.mesmoAssim': 'Sair mesmo assim',
   'sair.outrasAbasTitulo': 'Você saiu da conta',
   'comum.copiado': 'Copiado.',
   'comum.copieLink': 'Copie o link:',
   'comum.semInternetBarra': 'Sem internet. O que você fizer agora é enviado quando a conexão voltar.',
-  'comum.pendentePublico': 'Sem sinal agora. Sua resposta ficou salva neste celular e será enviada quando a conexão voltar. Abra o link de novo antes do jogo para conferir.',
+  'comum.pendentePublico':
+    'Sem sinal agora. Sua resposta ficou salva neste celular e será enviada quando a conexão voltar. Abra o link de novo antes do jogo para conferir.',
   'comum.pendenteGestao': 'Sem sinal agora. Ficou salvo neste aparelho e será enviado quando a conexão voltar.',
   'comum.conectando': 'Conectando… tente de novo em instantes.',
   'comum.semInternet': 'Sem internet agora. Tente de novo quando o sinal voltar.',
@@ -28,7 +31,8 @@ export default {
   'publico.canceladoTexto': 'Não tem jogo nesta data.',
   'publico.verProxima': 'Ver a próxima rodada',
   'publico.rodadaNaoEncontrada': 'Rodada não encontrada',
-  'publico.rodadaNaoEncontradaTexto': 'O link pode estar incompleto ou a rodada foi excluída. Peça um novo link ao organizador.',
+  'publico.rodadaNaoEncontradaTexto':
+    'O link pode estar incompleto ou a rodada foi excluída. Peça um novo link ao organizador.',
   'publico.subtitulo': '{emoji} {esporte} · confirmação de presença',
   'publico.localADefinir': 'Local a definir',
   'publico.confirmados': 'confirmados',
@@ -72,12 +76,16 @@ export default {
   'caixa.pagamentoDesfeito': 'Pagamento desfeito.',
   'caixa.apagado': 'Lançamento apagado.',
   'caixa.apagadoVolta': 'Lançamento de volta.',
-  'sorteio.bloqueadoVotacao': 'Esta rodada já tem votação, então os times ficam como estão. Para sortear de novo, exclua a votação na aba Votação. Mover jogador e pôr no time continuam valendo.',
+  'sorteio.bloqueadoVotacao':
+    'Esta rodada já tem votação, então os times ficam como estão. Para sortear de novo, exclua a votação na aba Votação. Mover jogador e pôr no time continuam valendo.',
   'sorteio.comPartidasTitulo': 'Sortear de novo com partidas salvas?',
-  'sorteio.comPartidas.um': 'A partida já salva continua no ranking com os times de quando foi jogada. Os times novos valem para as próximas partidas.',
-  'sorteio.comPartidas.outros': 'As {n} partidas já salvas continuam no ranking com os times de quando foram jogadas. Os times novos valem para as próximas partidas.',
+  'sorteio.comPartidas.um':
+    'A partida já salva continua no ranking com os times de quando foi jogada. Os times novos valem para as próximas partidas.',
+  'sorteio.comPartidas.outros':
+    'As {n} partidas já salvas continuam no ranking com os times de quando foram jogadas. Os times novos valem para as próximas partidas.',
   'rodada.timesAjuda': 'O sorteio libera com pelo menos 4 confirmados. Quantidade de times é escolhida na hora.',
-  'rodada.timesPronto': 'Tudo pronto: toque no botão do rodapé para sortear. A quantidade de times é escolhida na hora.',
+  'rodada.timesPronto':
+    'Tudo pronto: toque no botão do rodapé para sortear. A quantidade de times é escolhida na hora.',
   'rodada.faltam.um': 'Falta 1 para sortear',
   'rodada.faltam.outros': 'Faltam {n} para sortear',
   'publico.buscar': 'Procure seu nome',
@@ -142,10 +150,13 @@ export default {
   'voto.registrado': 'Voto registrado. O resultado sai quando o organizador encerrar.',
 
   /* lista de presença × times sorteados (aba Rodada, pelada-v15) */
-  'lista.fechadaComTimesDuplas': 'Lista fechada pelo sorteio. Para mudar a presença, reabra a lista ou sorteie de novo.',
+  'lista.fechadaComTimesDuplas':
+    'Lista fechada pelo sorteio. Para mudar a presença, reabra a lista ou sorteie de novo.',
   'lista.fechadaAviso': 'Lista fechada. Para mudar a presença, toque em Reabrir lista.',
-  'lista.fechadaComTimes': 'Lista fechada pelo sorteio. Para incluir alguém, use "+ Pôr no time" no quadro Times. Para mudar outras presenças, reabra a lista.',
-  'lista.confirmaMudar': 'Os times já foram sorteados. A lista vai ficar diferente dos times, e o app avisa a diferença aqui na aba Rodada.',
+  'lista.fechadaComTimes':
+    'Lista fechada pelo sorteio. Para incluir alguém, use "+ Pôr no time" no quadro Times. Para mudar outras presenças, reabra a lista.',
+  'lista.confirmaMudar':
+    'Os times já foram sorteados. A lista vai ficar diferente dos times, e o app avisa a diferença aqui na aba Rodada.',
   'lista.mudarTitulo': 'Mudar a presença de {nome}?',
   'lista.mudarAcao': 'Mudar presença',
   'lista.confirmaReabrir': 'Os times já foram sorteados. Se a lista mudar, o app avisa a diferença aqui na aba Rodada.',
@@ -186,7 +197,8 @@ export default {
   'auth.googleCriou': 'Conta criada com o Google. Bem-vindo!',
   /* login e cadastro (pelada-v34: textos fora do código, KAN-10) */
   'login.criarTitulo': 'Crie sua conta grátis',
-  'login.criarAjuda': 'Primeiro acesso? Comece por aqui. Com a conta você cria um grupo para cada jogo que organiza (futebol, vôlei, basquete…) e convida outros administradores. Jogadores não precisam de conta: eles confirmam presença pelo link que você manda.',
+  'login.criarAjuda':
+    'Primeiro acesso? Comece por aqui. Com a conta você cria um grupo para cada jogo que organiza (futebol, vôlei, basquete…) e convida outros administradores. Jogadores não precisam de conta: eles confirmam presença pelo link que você manda.',
   'login.google': 'Continuar com o Google',
   'login.ouEmail': 'ou com e-mail e senha',
   'login.email': 'E-mail',
@@ -242,7 +254,8 @@ export default {
   'resumo.recalcular': 'Recalcular',
   'resumo.ajuda': 'Totais prontos por mês, atualizados a cada partida e votação.',
   'resumo.preparando': 'Preparando os totais do grupo pela primeira vez… isso leva alguns segundos.',
-  'resumo.confirmaRecalcular': 'Os totais deste período são refeitos a partir das partidas, dos lançamentos e das votações.',
+  'resumo.confirmaRecalcular':
+    'Os totais deste período são refeitos a partir das partidas, dos lançamentos e das votações.',
   'resumo.recalcularTitulo': 'Recalcular os totais?',
   'resumo.recalcularAcao': 'Recalcular',
   'posicao.removerAviso.um': '1 jogador com essa posição passa para uma posição padrão.',
@@ -254,14 +267,16 @@ export default {
   'sorteio.info': 'Times de {n} jogadores (definido no Grupo). Quem passar disso fica como reserva.',
   'sorteio.infoDuplas': 'Duplas (definido no Grupo). Se sobrar alguém, fica como reserva numa dupla.',
   'sorteio.foraPos': 'Fora do sorteio',
-  'sorteio.foraPosAjuda': 'Toque numa posição para deixar todos dela fora do sorteio (ex.: goleiros fixos). Fica salvo para os próximos sorteios.',
+  'sorteio.foraPosAjuda':
+    'Toque numa posição para deixar todos dela fora do sorteio (ex.: goleiros fixos). Fica salvo para os próximos sorteios.',
   'sorteio.prevCompletos': '{k} jogadores → {n} times de {t}',
   'sorteio.prevReservas': '{k} jogadores → {n} times de {t} + {r}',
   'sorteio.prevIncompletos': '{k} jogadores → {n} times de {tam} (time completo: {t})',
   'sorteio.reservas.um': '1 reserva',
   'sorteio.reservas.outros': '{n} reservas',
   'grupo.porTime': 'Jogadores por time',
-  'grupo.porTimeAjuda': 'Padrão de {esporte}: {n}. Use 2 para jogar em duplas. No sorteio, quem passar desse número fica como reserva.',
+  'grupo.porTimeAjuda':
+    'Padrão de {esporte}: {n}. Use 2 para jogar em duplas. No sorteio, quem passar desse número fica como reserva.',
   'grupo.porTimeInvalido': 'Informe de 1 a 30 jogadores por time.',
   'porTime.botao': '+ Pôr no time',
   'porTime.titulo': 'Pôr no time {time}',
@@ -275,12 +290,14 @@ export default {
   'porTime.jogadores.um': '{n} jogador',
   'porTime.jogadores.outros': '{n} jogadores',
 
-
   /* limites contra abuso (KAN-89) */
   'limite.avulsosPublico': 'A lista chegou ao limite de nomes novos pelo link. Fale com o organizador para entrar.',
-  'limite.avulsosAdmin': 'O link desta rodada chegou ao limite de avulsos novos ({n}). Quem mais precisar entrar, adicione por aqui em Adicionar avulso.',
-  'limite.grupos.um': 'Esta conta chegou ao limite de 1 grupo. Use o seu grupo ou fale com o suporte do Nosso Jogo para liberar mais.',
-  'limite.grupos.outros': 'Esta conta chegou ao limite de {n} grupos. Use um dos seus grupos ou fale com o suporte do Nosso Jogo para liberar mais.',
+  'limite.avulsosAdmin':
+    'O link desta rodada chegou ao limite de avulsos novos ({n}). Quem mais precisar entrar, adicione por aqui em Adicionar avulso.',
+  'limite.grupos.um':
+    'Esta conta chegou ao limite de 1 grupo. Use o seu grupo ou fale com o suporte do Nosso Jogo para liberar mais.',
+  'limite.grupos.outros':
+    'Esta conta chegou ao limite de {n} grupos. Use um dos seus grupos ou fale com o suporte do Nosso Jogo para liberar mais.',
   'comum.cancelar': 'Cancelar',
   'comum.naoCarregouTitulo': 'Não foi possível carregar',
   'comum.naoCarregou': 'Verifique sua conexão e recarregue a página.',
@@ -365,12 +382,14 @@ export default {
   'fixos.copiar': 'Copiar link',
   'fixos.editar': 'Editar dias',
   'fixos.comoFunciona': 'Como funciona',
-  'fixos.comoFuncionaTexto': 'A confirmação da semana seguinte abre sozinha assim que o jogo termina. Para pular uma data (feriado), use "Cancelar esta data" no cartão da rodada.',
+  'fixos.comoFuncionaTexto':
+    'A confirmação da semana seguinte abre sozinha assim que o jogo termina. Para pular uma data (feriado), use "Cancelar esta data" no cartão da rodada.',
   'contato.telRotulo': 'Telefone / WhatsApp',
   'contato.telOpcional': 'Telefone / WhatsApp (opcional)',
   'contato.telExemplo': '(11) 98765-4321',
   'contato.telDica': 'De outro país? Comece com + e o código do país (ex.: +351 912 345 678).',
-  'contato.telCurto': 'Telefone incompleto. Use DDD + número (ex.: 11 98765-4321) ou, se for de outro país, + e o código do país.',
+  'contato.telCurto':
+    'Telefone incompleto. Use DDD + número (ex.: 11 98765-4321) ou, se for de outro país, + e o código do país.',
   'contato.telLongo': 'Telefone com números demais. Confira o DDD e o número (ou o código do país).',
   'contato.telInvalido': 'Telefone inválido. Use só números, com DDD (ex.: 11 98765-4321) ou + e o código do país.',
   'contato.emailRotulo': 'E-mail (opcional)',

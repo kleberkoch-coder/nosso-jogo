@@ -10,13 +10,25 @@ import { linkMaps, linkWaze } from '../nucleo/links.js';
 
 /* Texto longo numa linha só, com "…" (KAN-146). Ao cortar, ui/render.js (subtituloCompleto) liga o título e o toque. */
 export function TextoCortado({ texto }: { texto: string }) {
-  return <span class="corta" data-corta>{texto}</span>;
+  return (
+    <span class="corta" data-corta>
+      {texto}
+    </span>
+  );
 }
 
 /* "Como chegar" com Google Maps e Waze, pela busca do texto do local (KAN-141). */
 export function ComoChegar({ local }: { local: string }) {
   const app = (href: string, nome: string) => (
-    <a class="chip-mapa" href={href} target="_blank" rel="noopener noreferrer" aria-label={tx('mapa.abrirEm', { local, app: nome })}>{nome}</a>
+    <a
+      class="chip-mapa"
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={tx('mapa.abrirEm', { local, app: nome })}
+    >
+      {nome}
+    </a>
   );
   return (
     <div class="mapa small">
@@ -29,7 +41,17 @@ export function ComoChegar({ local }: { local: string }) {
 
 /* Seletor segmentado com contagem embaixo de cada opção (KAN-71). */
 export type Opcao = { v: string; rotulo: string; n: number | string };
-export function Segmentado({ opcoes, atual, acao, rotulo }: { opcoes: Opcao[]; atual: string; acao: string; rotulo: string }) {
+export function Segmentado({
+  opcoes,
+  atual,
+  acao,
+  rotulo,
+}: {
+  opcoes: Opcao[];
+  atual: string;
+  acao: string;
+  rotulo: string;
+}) {
   return (
     <div class="seg seg-filtro" role="group" aria-label={rotulo}>
       {opcoes.map(o => (
@@ -45,15 +67,37 @@ export function Segmentado({ opcoes, atual, acao, rotulo }: { opcoes: Opcao[]; a
 export function Pos({ id }: { id: string }) {
   const k = ppos(id) as string;
   if (!hasPos() || !k) return null;
-  return <span class={'pos ' + (k === sport().key ? 'GOL' : '')} title={posLabel(k)}>{k}</span>;
+  return (
+    <span class={'pos ' + (k === sport().key ? 'GOL' : '')} title={posLabel(k)}>
+      {k}
+    </span>
+  );
 }
 
 /* Nota de 1 a 10 do jogador (só a gestão mostra). */
 export function Nota({ id }: { id: string }) {
-  return <span class="lvl-tag" title={tx('nota.titulo')}>{fmtL(lvl(id))}</span>;
+  return (
+    <span class="lvl-tag" title={tx('nota.titulo')}>
+      {fmtL(lvl(id))}
+    </span>
+  );
 }
 
 /* Etiqueta pequena de apoio (· avulso, · reserva…). */
-export function Tag({ children, cor, classe, titulo }: { children: ComponentChildren; cor?: string; classe?: string; titulo?: string }) {
-  return <span class={'tag' + (classe ? ' ' + classe : '')} style={cor ? { color: cor } : undefined} title={titulo}>{children}</span>;
+export function Tag({
+  children,
+  cor,
+  classe,
+  titulo,
+}: {
+  children: ComponentChildren;
+  cor?: string;
+  classe?: string;
+  titulo?: string;
+}) {
+  return (
+    <span class={'tag' + (classe ? ' ' + classe : '')} style={cor ? { color: cor } : undefined} title={titulo}>
+      {children}
+    </span>
+  );
 }

@@ -9,7 +9,9 @@ const em = s => new Date(s);
 
 test('antes do jogo, a próxima é a do mesmo dia', () => {
   const [r] = proximasFixas([SEG], {}, em('2026-10-05T10:00'));
-  assert.equal(r.date, '2026-10-05'); assert.equal(r.id, fixId('2026-10-05', '20:00')); assert.equal(r.virtual, true);
+  assert.equal(r.date, '2026-10-05');
+  assert.equal(r.id, fixId('2026-10-05', '20:00'));
+  assert.equal(r.virtual, true);
 });
 
 test('durante o jogo continua a mesma rodada', () => {
@@ -47,5 +49,8 @@ test('rodada já gravada não é repetida como virtual', () => {
 
 test('dois dias fixos geram uma próxima rodada cada', () => {
   const qua = { dow: 3, ini: '19:00' };
-  assert.deepEqual(proximasFixas([SEG, qua], {}, em('2026-10-05T10:00')).map(r => r.date), ['2026-10-05', '2026-10-07']);
+  assert.deepEqual(
+    proximasFixas([SEG, qua], {}, em('2026-10-05T10:00')).map(r => r.date),
+    ['2026-10-05', '2026-10-07']
+  );
 });

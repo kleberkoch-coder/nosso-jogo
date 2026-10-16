@@ -29,6 +29,7 @@ jobs:
       - name: Conferir tipos, testar as regras de negócio e montar o site (inclui o orçamento de tamanho)
         run: |
           npm install --no-audit --no-fund
+          npm run conferir-formato
           npm run checar
           npm run regras
           # Prévia (Firebase Hosting): tem de sair em modo demonstração, sem a configuração real do Firebase (KAN-88)

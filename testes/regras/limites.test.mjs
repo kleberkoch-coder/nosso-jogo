@@ -34,7 +34,11 @@ test('só conta como avulso novo quem não é administrador, não é jogador e a
   assert.equal(contaComoAvulso({ admin: false, jogador: false, jaNaLista: false }), true);
   assert.equal(contaComoAvulso({ admin: true, jogador: false, jaNaLista: false }), false);
   assert.equal(contaComoAvulso({ admin: false, jogador: true, jaNaLista: false }), false);
-  assert.equal(contaComoAvulso({ admin: false, jogador: false, jaNaLista: true }), false, 'mudar Vou/Não vou não conta (critério 2)');
+  assert.equal(
+    contaComoAvulso({ admin: false, jogador: false, jaNaLista: true }),
+    false,
+    'mudar Vou/Não vou não conta (critério 2)'
+  );
 });
 
 test('os padrões do app são os mesmos das regras do Firebase', () => {

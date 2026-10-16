@@ -24,9 +24,12 @@ export function fotoDoSorteio(r: RodadaSorteio): Set<string> {
 
 export function divergencia(r: RodadaSorteio | null | undefined, pres: Presencas): Divergencia {
   if (!r || !r.times || !r.times.length) return { saiu: [], entrou: [] };
-  const times = noTime(r), foto = fotoDoSorteio(r), vai = (id: string) => pres[id]?.s === 'in';
+  const times = noTime(r),
+    foto = fotoDoSorteio(r),
+    vai = (id: string) => pres[id]?.s === 'in';
   const saiu = [...times].filter(id => foto.has(id) && !vai(id));
-  const entrou = Object.keys(pres).filter(id => vai(id) && !foto.has(id) && !times.has(id))
+  const entrou = Object.keys(pres)
+    .filter(id => vai(id) && !foto.has(id) && !times.has(id))
     .sort((a, b) => (pres[a]?.t || 0) - (pres[b]?.t || 0));
   return { saiu, entrou };
 }

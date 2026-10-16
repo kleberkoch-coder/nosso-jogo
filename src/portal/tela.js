@@ -7,31 +7,80 @@ import { tx } from './textos.js';
 import { LOCAL } from '../i18n/formatos.js';
 import { esc, today } from '../nucleo/util.js';
 
-const P = { B: null, user: undefined, estado: 'inicio', filtro: 'todos', busca: '', clientes: [], cat: null, em: 0, erro: '' };
+const P = {
+  B: null,
+  user: undefined,
+  estado: 'inicio',
+  filtro: 'todos',
+  busca: '',
+  clientes: [],
+  cat: null,
+  em: 0,
+  erro: '',
+};
 const $ = s => document.querySelector(s);
-const dia = ts => ts ? new Date(ts).toLocaleDateString(LOCAL, { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
-const dataIso = s => s ? new Date(s + 'T12:00').toLocaleDateString(LOCAL, { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+const dia = ts =>
+  ts ? new Date(ts).toLocaleDateString(LOCAL, { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+const dataIso = s =>
+  s ? new Date(s + 'T12:00').toLocaleDateString(LOCAL, { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
 const norm = s => String(s || '').toLowerCase();
 
 async function carregar() {
   /* Ao atualizar, a lista continua na tela e só o botão mostra o carregando (padrão do app). */
-  const B = P.B; if (P.estado !== 'ok') { P.estado = 'carregando'; desenhar() }
+  const B = P.B;
+  if (P.estado !== 'ok') {
+    P.estado = 'carregando';
+    desenhar();
+  }
   try {
-    const [contas, grupos, cat] = await Promise.all([B.get('contas'), B.get('grupos'), B.get('sistema/planos').catch(() => null)]);
-    const donos = [...new Set(Object.values(grupos || {}).map(g => g && g.owner).filter(Boolean))];
-    const emails = {}, ultima = {};
-    await Promise.all(donos.filter(u => !(contas[u] && contas[u].email)).map(async u => {
-      const gid = Object.keys(grupos).find(k => grupos[k] && grupos[k].owner === u);
-      try { const m = await B.get('grupos/' + gid + '/membros/' + u); if (m && m.email) emails[u] = m.email } catch (e) { }
-    }));
-    await Promise.all(Object.keys(grupos || {}).map(async gid => {
-      try { const p = await B.pagina('grupos/' + gid + '/rodadas', { campo: 'date', ate: today(), ordem: 'desc', limite: 1 });
-        ultima[gid] = p.itens.length ? p.itens[0][1].date : null } catch (e) { ultima[gid] = null }
-    }));
+    const [contas, grupos, cat] = await Promise.all([
+      B.get('contas'),
+      B.get('grupos'),
+      B.get('sistema/planos').catch(() => null),
+    ]);
+    const donos = [
+      ...new Set(
+        Object.values(grupos || {})
+          .map(g => g && g.owner)
+          .filter(Boolean)
+      ),
+    ];
+    const emails = {},
+      ultima = {};
+    await Promise.all(
+      donos
+        .filter(u => !(contas[u] && contas[u].email))
+        .map(async u => {
+          const gid = Object.keys(grupos).find(k => grupos[k] && grupos[k].owner === u);
+          try {
+            const m = await B.get('grupos/' + gid + '/membros/' + u);
+            if (m && m.email) emails[u] = m.email;
+          } catch (e) {}
+        })
+    );
+    await Promise.all(
+      Object.keys(grupos || {}).map(async gid => {
+        try {
+          const p = await B.pagina('grupos/' + gid + '/rodadas', {
+            campo: 'date',
+            ate: today(),
+            ordem: 'desc',
+            limite: 1,
+          });
+          ultima[gid] = p.itens.length ? p.itens[0][1].date : null;
+        } catch (e) {
+          ultima[gid] = null;
+        }
+      })
+    );
     P.cat = catalogo(cat);
     P.clientes = montarClientes(contas || {}, grupos || {}, emails, ultima, P.cat, Date.now());
-    P.estado = 'ok'; P.em = Date.now();
-  } catch (e) { console.warn('portal', e); P.estado = e && e.code === 'permission-denied' ? 'negado' : 'erro' }
+    P.estado = 'ok';
+    P.em = Date.now();
+  } catch (e) {
+    console.warn('portal', e);
+    P.estado = e && e.code === 'permission-denied' ? 'negado' : 'erro';
+  }
   desenhar();
 }
 
@@ -46,12 +95,18 @@ function vNegado() {
     <div class="row" style="justify-content:center;gap:8px"><button class="btn" data-p="copiar">${tx('portal.copiarId')}</button><button class="btn" data-p="sair">${tx('portal.sair')}</button></div></div>`;
 }
 function vLista() {
-  const agora = Date.now(), lista = filtrarClientes(P.clientes, P.filtro, '', agora), res = resumoPorPlano(P.clientes), planos = Object.entries(P.cat);
+  const agora = Date.now(),
+    lista = filtrarClientes(P.clientes, P.filtro, '', agora),
+    res = resumoPorPlano(P.clientes),
+    planos = Object.entries(P.cat);
   const opt = (v, l) => `<option value="${v}"${P.filtro === v ? ' selected' : ''}>${esc(l)}</option>`;
   const q = norm(P.busca).trim();
   const card = c => {
     const busca = norm(c.email + ' ' + c.nomesGrupos.join(' '));
-    const plano = esc(c.planoNome) + (c.ate ? ` · ${tx('portal.ate', { d: dia(c.ate) })}` : '') + (c.vencido ? ` · <span class="tag">${tx('portal.vencido')}</span>` : '');
+    const plano =
+      esc(c.planoNome) +
+      (c.ate ? ` · ${tx('portal.ate', { d: dia(c.ate) })}` : '') +
+      (c.vencido ? ` · <span class="tag">${tx('portal.vencido')}</span>` : '');
     return `<li class="cli" data-busca="${esc(busca)}"${q && !busca.includes(q) ? ' hidden' : ''}><div class="pn"><b>${esc(c.email || tx('portal.semEmail'))}</b><br>
       <span class="tag">${plano}</span><br>
       <span class="small muted">${tx('portal.grupos', { a: c.gruposAtivos, i: c.gruposInativos })}${c.nomesGrupos.length ? ': ' + esc(c.nomesGrupos.join(', ')) : ''}</span><br>
@@ -70,35 +125,96 @@ function vLista() {
 }
 
 function desenhar() {
-  const m = $('#pmain'), u = P.user, logado = !!(u && !u.anon);
-  $('#ptopo').innerHTML = logado ? `<span class="small">${esc(u.email || '')}</span><button class="chip" data-p="sair">${tx('portal.sair')}</button>` : '';
-  m.innerHTML = P.user === undefined ? `<div class="empty muted">${tx('comum.carregando')}</div>`
-    : !logado ? vEntrar()
-    : P.estado === 'negado' ? vNegado()
-    : P.estado === 'erro' ? `<div class="panel empty"><p class="muted">${tx('portal.erro')}</p><button class="btn" data-p="atualizar">${tx('portal.atualizar')}</button></div>`
-    : P.estado === 'ok' ? vLista() : `<div class="empty muted">${tx('comum.carregando')}</div>`;
+  const m = $('#pmain'),
+    u = P.user,
+    logado = !!(u && !u.anon);
+  $('#ptopo').innerHTML = logado
+    ? `<span class="small">${esc(u.email || '')}</span><button class="chip" data-p="sair">${tx('portal.sair')}</button>`
+    : '';
+  m.innerHTML =
+    P.user === undefined
+      ? `<div class="empty muted">${tx('comum.carregando')}</div>`
+      : !logado
+        ? vEntrar()
+        : P.estado === 'negado'
+          ? vNegado()
+          : P.estado === 'erro'
+            ? `<div class="panel empty"><p class="muted">${tx('portal.erro')}</p><button class="btn" data-p="atualizar">${tx('portal.atualizar')}</button></div>`
+            : P.estado === 'ok'
+              ? vLista()
+              : `<div class="empty muted">${tx('comum.carregando')}</div>`;
 }
 
 /* Botões mostram "carregando" até terminar (padrão do app). */
-async function ocupado(el, fn) { el.disabled = true; el.classList.add('busy'); el.setAttribute('aria-busy', 'true');
-  try { await fn() } finally { if (el.isConnected) { el.disabled = false; el.classList.remove('busy'); el.setAttribute('aria-busy', 'false') } } }
+async function ocupado(el, fn) {
+  el.disabled = true;
+  el.classList.add('busy');
+  el.setAttribute('aria-busy', 'true');
+  try {
+    await fn();
+  } finally {
+    if (el.isConnected) {
+      el.disabled = false;
+      el.classList.remove('busy');
+      el.setAttribute('aria-busy', 'false');
+    }
+  }
+}
 
 function ligar(B) {
   P.B = B;
   document.addEventListener('click', e => {
-    const el = e.target.closest('[data-p]'); if (!el) return; const a = el.dataset.p;
-    if (a === 'google') ocupado(el, async () => { P.erro = ''; try { await B.google() } catch (x) { if (!['auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(x && x.code)) { P.erro = tx('portal.erroEntrar'); desenhar() } } });
-    else if (a === 'sair') ocupado(el, async () => { await B.logout(); location.reload() });
+    const el = e.target.closest('[data-p]');
+    if (!el) return;
+    const a = el.dataset.p;
+    if (a === 'google')
+      ocupado(el, async () => {
+        P.erro = '';
+        try {
+          await B.google();
+        } catch (x) {
+          if (!['auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(x && x.code)) {
+            P.erro = tx('portal.erroEntrar');
+            desenhar();
+          }
+        }
+      });
+    else if (a === 'sair')
+      ocupado(el, async () => {
+        await B.logout();
+        location.reload();
+      });
     else if (a === 'atualizar') ocupado(el, carregar);
-    else if (a === 'copiar') { const t = (P.user && P.user.uid) || ''; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => { el.textContent = tx('comum.copiado') }).catch(() => { }) }
+    else if (a === 'copiar') {
+      const t = (P.user && P.user.uid) || '';
+      (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject())
+        .then(() => {
+          el.textContent = tx('comum.copiado');
+        })
+        .catch(() => {});
+    }
   });
   document.addEventListener('input', e => {
-    if (e.target.id !== 'ptq') return; P.busca = e.target.value; const n = norm(P.busca).trim();
-    document.querySelectorAll('#ptlist li.cli').forEach(li => { li.hidden = !!n && !li.dataset.busca.includes(n) });
+    if (e.target.id !== 'ptq') return;
+    P.busca = e.target.value;
+    const n = norm(P.busca).trim();
+    document.querySelectorAll('#ptlist li.cli').forEach(li => {
+      li.hidden = !!n && !li.dataset.busca.includes(n);
+    });
   });
-  document.addEventListener('change', e => { if (e.target.id === 'ptf') { P.filtro = e.target.value; desenhar() } });
-  if (B.redirectResult) B.redirectResult().catch(() => { });
-  B.onAuth(u => { const antes = P.user && P.user.uid; P.user = u; if (u && !u.anon && u.uid !== antes) carregar(); else desenhar() });
+  document.addEventListener('change', e => {
+    if (e.target.id === 'ptf') {
+      P.filtro = e.target.value;
+      desenhar();
+    }
+  });
+  if (B.redirectResult) B.redirectResult().catch(() => {});
+  B.onAuth(u => {
+    const antes = P.user && P.user.uid;
+    P.user = u;
+    if (u && !u.anon && u.uid !== antes) carregar();
+    else desenhar();
+  });
 }
 
 export { ligar };

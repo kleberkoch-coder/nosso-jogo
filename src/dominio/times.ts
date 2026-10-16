@@ -24,7 +24,10 @@ export function sugerirTimes(total: number, porTime: number, max = 6): number {
 export function reservas(players: string[], porTime: number, confirmouEm: (id: string) => number): string[] {
   const extra = players.length - porTime;
   if (extra <= 0) return [];
-  return players.slice().sort((a, b) => confirmouEm(b) - confirmouEm(a)).slice(0, extra);
+  return players
+    .slice()
+    .sort((a, b) => confirmouEm(b) - confirmouEm(a))
+    .slice(0, extra);
 }
 
 /* Titulares (sem os reservas). */
@@ -34,7 +37,11 @@ export function titulares(t: TimeSorteado): string[] {
 }
 
 /* Texto da prévia do sorteio: "16 jogadores → 3 times (5 por time + 1 reserva)". */
-export function resumo(total: number, times: number, porTime: number): { completos: boolean; porTimeReal: number[]; reservas: number } {
+export function resumo(
+  total: number,
+  times: number,
+  porTime: number
+): { completos: boolean; porTimeReal: number[]; reservas: number } {
   const tz = tamanhos(total, times);
   const reservas = tz.reduce((s, x) => s + Math.max(0, x - porTime), 0);
   return { completos: tz.every(x => x >= porTime), porTimeReal: tz, reservas };

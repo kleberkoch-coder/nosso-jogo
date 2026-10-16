@@ -24,7 +24,7 @@ import { tp, tx } from '../i18n/index.js';
 import { presAlterada } from '../nucleo/edicoes.js';
 import { S as estado } from '../nucleo/estado.js';
 import { fdate } from '../nucleo/util.js';
-import { ComoChegar, Nota, Pos, Segmentado, Tag, TextoCortado } from '../ui/componentes';
+import { ComoChegar, Nota, Pos, Segmentado, SeletorRodada, Tag, TextoCortado } from '../ui/componentes';
 import { rodadasProntas, temVotacao } from './rodada-partes.js';
 
 type Time = { c: number; players: string[]; res?: string[] };
@@ -46,30 +46,6 @@ const st = (): any => estado;
 const statusDe = (id: string): 'in' | 'out' | undefined => st().pres[id]?.s;
 
 /* Seletor da rodada (D10): as próximas e as últimas 4; as antigas ficam na aba Histórico. */
-function Seletor({ r }: { r: Rodada }) {
-  const rs = rodadasJanela() as Rodada[];
-  if (!rs.some(x => x.id === r.id)) rs.push(r);
-  return (
-    <div class="rsel">
-      <select class="sel" data-c="rid" aria-label={tx('rodada.seletor')} value={r.id}>
-        {rs.map(x => (
-          <option key={x.id} value={x.id} selected={x.id === r.id}>
-            {fdate(x.date)}
-            {x.time ? ' · ' + hora(x) : ''}
-            {x.cancelada ? ' ' + tx('rodada.canceladaOpcao') : x.fixo ? ' · ' + tx('rodada.fixoOpcao') : ''}
-          </option>
-        ))}
-      </select>
-      <button class="btn" data-a="newRod">
-        {tx('rodada.nova')}
-      </button>
-      <button class="btn ghost" data-a="tab" data-v="historico">
-        {tx('hist.atalho')}
-      </button>
-    </div>
-  );
-}
-
 /* Painel do link permanente (KAN-150): só o link; dia, hora e local ficam no cartão da rodada. */
 function LinkPermanente() {
   if (!fixos().length) {
@@ -468,7 +444,7 @@ function RodadaTela() {
   if (r.cancelada) {
     return (
       <div class="stack">
-        <Seletor r={r} />
+        <SeletorRodada r={r} acoes />
         <LinkPermanente />
         <div class="panel empty">
           <h2>{tx('rodada.cancelada', { data: fdate(r.date) })}</h2>
@@ -487,7 +463,7 @@ function RodadaTela() {
     alt = pres.filter(presAlterada);
   return (
     <div class="stack">
-      <Seletor r={r} />
+      <SeletorRodada r={r} acoes />
       <LinkPermanente />
       <div class="panel">
         <div class="hero-r">

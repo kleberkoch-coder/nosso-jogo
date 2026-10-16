@@ -409,6 +409,61 @@ with sync_playwright() as pw:
     pg.locator(f'[data-a=editPlayer][data-p="{pid156}"]').click(); pg.wait_for_timeout(300)
     ok(pg.input_value('#ptel') == '(11) 98765-4321', 'CT-KAN-156-01: ao editar, o número brasileiro aparece fácil de ler')
     pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(300)
+    # ---------- v46 (KAN-159): importar o elenco da planilha (colar e arquivo)
+    n0 = pg.evaluate("Object.keys(S.jog).length")
+    existente = pg.evaluate("Object.values(S.jog)[0].name")
+    pg.click('[data-a=importarDlg]'); pg.wait_for_timeout(400)
+    ok(pg.evaluate("document.activeElement && document.activeElement.id") == 'impTexto' and pg.locator('#dlg [data-a=importarJogadores]').is_disabled(),
+       'CT-KAN-159: a janela abre com o cursor no campo de colar e o botão Importar desligado')
+    colado = ('Jogador\tPosição\tNota\tTipo\tTelefone\tE-mail\n'
+              'Importado Um\tGoleiro\t7,5\tDiarista\t(11) 91234-5678\tum@clube.com\n'
+              'Importado Dois\tATA\t12\tMensalista\t\t\n'
+              + existente.upper() + '\tDEF\t5\t\t\t\n'
+              'importado um\tMEI\t6\t\t\t')
+    pg.fill('#impTexto', colado); pg.wait_for_timeout(300)
+    resumo159 = pg.inner_text('#impResumo'); bt = pg.inner_text('#dlg [data-a=importarJogadores]')
+    ok('2 jogadores novos' in resumo159 and '2 já estão no elenco ou repetidos' in resumo159 and '1 com aviso' in resumo159 and bt == 'Importar 2 jogadores',
+       f'CT-KAN-159-01/03/04: prévia do colado: novos, já existentes, repetidos e avisos ({resumo159!r}, {bt!r})')
+    lista = pg.inner_text('#impLista')
+    ok('Goleiro' in lista and 'nota 7,5' in lista and 'Diarista' in lista and '(11) 91234-5678' in lista and 'Nota fora de 1 a 10' in lista and 'já está no elenco' in lista and 'repetido na lista' in lista,
+       'CT-KAN-159-01/04: prévia mostra posição, nota, tipo e contato reconhecidos, e o motivo de cada aviso')
+    pg.click('#dlg [data-a=importarJogadores]'); pg.wait_for_timeout(800)
+    imp = pg.evaluate("""(()=>{const id=n=>Object.keys(S.jog).find(k=>S.jog[k].name===n);const a=id('Importado Um'),b=id('Importado Dois');
+      return {n:Object.keys(S.jog).length,pa:a&&S.jog[a].pos,tipo:a&&S.pc.tipos[a],nota:a&&S.rat.nivel[a],tel:a&&S.cont[a]&&S.cont[a].tel,mail:a&&S.cont[a]&&S.cont[a].email,pb:b&&S.jog[b].pos,notab:b&&S.rat.nivel&&S.rat.nivel[b],aberto:document.getElementById('dlg').open}})()""")
+    ok(imp['n'] == n0 + 2 and imp['pa'] == 'GOL' and imp['tipo'] == 'diarista' and imp['nota'] == 7.5 and imp['tel'] == '+5511912345678' and imp['mail'] == 'um@clube.com'
+       and imp['pb'] == 'ATA' and imp['notab'] is None and not imp['aberto'] and 'importados' in pg.inner_text('#toast'),
+       f'CT-KAN-159-05: importar grava os 2 novos com posição, nota, tipo e contato, e fecha a janela ({imp})')
+    ok(pg.locator('#jogadoresRaiz li', has_text='Importado Um').count() == 1, 'CT-KAN-159-05: a aba Jogadores mostra o elenco novo')
+    import tempfile, zipfile
+    pasta = tempfile.mkdtemp()
+    xlsx = os.path.join(pasta, 'elenco.xlsx')
+    # Planilha do Excel mínima, montada à mão (sem biblioteca): textos compartilhados e números, como o Excel grava.
+    with zipfile.ZipFile(xlsx, 'w', zipfile.ZIP_DEFLATED) as z:
+        z.writestr('[Content_Types].xml', '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>')
+        z.writestr('xl/sharedStrings.xml', '<?xml version="1.0" encoding="UTF-8"?><sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+                   + ''.join(f'<si><t>{t}</t></si>' for t in ['Nome', 'Nota', 'Tipo', 'Planilha Três', 'Mensalista', 'Planilha Quatro', 'D']) + '</sst>')
+        z.writestr('xl/worksheets/sheet1.xml', '<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'
+                   '<row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c><c r="C1" t="s"><v>2</v></c></row>'
+                   '<row r="2"><c r="A2" t="s"><v>3</v></c><c r="B2"><v>8</v></c><c r="C2" t="s"><v>4</v></c></row>'
+                   '<row r="3"><c r="A3" t="s"><v>5</v></c><c r="B3"><v>6.5</v></c><c r="C3" t="s"><v>6</v></c></row>'
+                   '</sheetData></worksheet>')
+    csv = os.path.join(pasta, 'elenco.csv'); open(csv, 'w', encoding='utf-8').write('Nome;Telefone\nCsv Cinco;+351 912 345 678\n')
+    pg.click('[data-a=importarDlg]'); pg.wait_for_timeout(400)
+    pg.set_input_files('#impArq', xlsx); pg.wait_for_timeout(800)
+    rx = pg.inner_text('#impResumo') if pg.locator('#impResumo').count() else ''
+    ok('2 jogadores novos' in rx and 'elenco.xlsx' in pg.inner_text('#dlg') and 'nota 6,5' in pg.inner_text('#impLista'), f'CT-KAN-159-02: arquivo do Excel (.xlsx) mostra a mesma prévia ({rx!r})')
+    pg.click('#dlg [data-a=importarJogadores]'); pg.wait_for_timeout(800)
+    pg.click('[data-a=importarDlg]'); pg.wait_for_timeout(400)
+    pg.set_input_files('#impArq', csv); pg.wait_for_timeout(600)
+    ok('1 jogador novo' in pg.inner_text('#impResumo') and '+351912345678' in pg.inner_text('#impLista'), 'CT-KAN-159-02: arquivo .csv com ";" e telefone de outro país')
+    pg.click('#dlg [data-a=importarJogadores]'); pg.wait_for_timeout(800)
+    ok(pg.evaluate("['Planilha Três','Planilha Quatro','Csv Cinco'].every(n=>Object.values(S.jog).some(p=>p.name===n))"), 'CT-KAN-159-02: jogadores do .xlsx e do .csv importados')
+    pg.click('[data-a=importarDlg]'); pg.wait_for_timeout(400)
+    ruim = os.path.join(pasta, 'foto.png'); open(ruim, 'wb').write(b'\x89PNG\r\n')
+    pg.set_input_files('#impArq', ruim); pg.wait_for_timeout(400)
+    ok('Não foi possível ler este arquivo' in pg.inner_text('#dlg') and pg.locator('#dlg [data-a=importarJogadores]').is_disabled(), 'CT-KAN-159: arquivo que não é planilha mostra o erro e não importa nada')
+    pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(300)
+    if pg.locator('#dlg .conf').count(): confirmar_app(pg, True)
     pg.click('[data-a=tab][data-v=votacao]'); pg.wait_for_timeout(300); pg.click('[data-a=newVote]'); pg.wait_for_timeout(200)
     pg.click('[data-a=saveVote]'); pg.wait_for_timeout(800)
     ok(pg.locator('#shtxt').is_visible(), 'votação criada e link para o WhatsApp continua aberto')
@@ -890,6 +945,15 @@ with sync_playwright() as pw:
     txt = pg.inner_text('main')
     ok('Ninguém confirmou ainda. Mande o link no grupo.' in txt and 'Quadra vazia' in txt and 'Carregando' not in txt and pg.inner_text('.hero-r .count').startswith('0'),
        'CT-KAN-109-02: rodada sem nenhuma presença mostra "Ninguém confirmou ainda. Mande o link no grupo." depois de carregar')
+    # ---------- v46 (KAN-160): a aba Partida tem o seletor de rodada, mesmo sem times
+    pg.click('[data-a=tab][data-v=partida]'); pg.wait_for_timeout(500)
+    sem = pg.inner_text('main')
+    ok(pg.locator('#partidaRaiz select[data-c=rid]').count() == 1 and 'Sem times sorteados' in sem and pg.locator('#partidaRaiz [data-a=tab][data-v=rodada]').count() == 1,
+       'CT-KAN-160-01/03: rodada sem times na aba Partida mostra o seletor e o caminho para sortear')
+    pg.select_option('#partidaRaiz select[data-c=rid]', rid_main); pg.wait_for_timeout(600)
+    ok(pg.locator('.board').count() == 1 and pg.locator('#partidaRaiz select[data-c=rid]').count() == 1 and pg.evaluate("S.rid") == rid_main,
+       'CT-KAN-160-02: trocando no seletor da Partida para uma rodada com times, o placar aparece na hora')
+    pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(500)
     pg.select_option('select[data-c=rid]', rid_main); pg.wait_for_timeout(800)
     n_in = pg.evaluate("(a)=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2')),p='grupos/'+a[0]+'/rodadas/'+a[1]+'/presencas/';return Object.keys(s).filter(k=>k.startsWith(p)&&/^[A-Za-z0-9_-]{1,64}$/.test(k.slice(p.length))&&s[k].s==='in').length}", [gid_fut, rid_main])
     pg.click('[data-a=presFiltro][data-v=in]'); pg.wait_for_timeout(200)

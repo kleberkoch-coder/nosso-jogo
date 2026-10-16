@@ -22,6 +22,7 @@ const montar = minify =>
     bundle: true,
     format: minify ? 'esm' : 'iife',
     splitting: minify,
+    metafile: minify,
     entryNames: '[name]',
     chunkNames: 'chunks/[name]-[hash]',
     target: ['es2020'],
@@ -89,6 +90,27 @@ while (fila.length) {
   importsDiretos(t).forEach(x => fila.push('chunks/' + x));
 }
 const gestao = [...pedacos.keys()].filter(c => !nucleo.includes(c));
+/* KAN-159: os textos da gestão (src/i18n/pt-BR-gestao.js) só chegam com a parte de gestão. Nenhum arquivo do link
+   público pode usar um grupo de textos que mora lá, senão o jogador veria a chave no lugar do texto. */
+{
+  const grupos = new Set(
+    [...fs.readFileSync('src/i18n/pt-BR-gestao.js', 'utf8').matchAll(/^\s*'([a-zA-Z]+)\./gm)].map(m => m[1])
+  );
+  const doNucleo = new Set();
+  for (const [saida, o] of Object.entries(rMin.metafile.outputs))
+    if (saida.endsWith('.js') && !/admin-/.test(saida)) Object.keys(o.inputs).forEach(f => doNucleo.add(f));
+  const errados = [];
+  for (const f of doNucleo) {
+    if (!f.startsWith('src/') || f.includes('i18n')) continue;
+    for (const m of fs.readFileSync(f, 'utf8').matchAll(/'([a-zA-Z]+)\.[a-zA-Z]/g))
+      if (grupos.has(m[1])) errados.push(f + ' usa ' + m[1] + '.*');
+  }
+  if (errados.length)
+    throw new Error(
+      'Textos da gestão usados no link público (mova o grupo para src/i18n/pt-BR.js):\n' +
+        [...new Set(errados)].join('\n')
+    );
+}
 const html = pagina(rMin, nucleo),
   legivel = pagina(rLeg, null);
 const mapas = rMin.outputFiles.filter(f => f.path.endsWith('.map'));
@@ -231,8 +253,8 @@ console.log(
 
 /* Orçamento de desempenho (docs/ARQUITETURA.md, D7): até 80 KB comprimido, sem contar a biblioteca do Firebase. */
 // KAN-149: o link do jogador (página + pedaços que ela carrega logo) tem limite próprio.
-// Desde a v43 o total vai até 85 KB: a divisão em pedaços e os componentes custam um pouco no total, que só quem administra baixa (D7).
-const LIMITE = 85 * 1024,
+// Desde a v46 o total vai até 90 KB (era 85 desde a v43): funcionalidades de gestão (importar planilha, componentes), que só quem administra baixa (D7).
+const LIMITE = 90 * 1024,
   LIMITE_LINK = 50 * 1024;
 if (gz > LIMITE) {
   console.error(`Passou do orçamento de desempenho: ${kb(gz)} comprimido (limite ${kb(LIMITE)}).`);

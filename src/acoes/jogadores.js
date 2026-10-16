@@ -12,6 +12,7 @@ import { closeDlg, confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
 import { playerDlg } from '../ui/dialogos-gestao.js';
 import { changed } from '../ui/render.js';
 import { ACT } from '../acoes.js';
+import { montarImportar, paraImportar } from '../ui/ImportarJogadores';
 
 const acoes = {
   addPlayer: () => playerDlg(null),
@@ -159,6 +160,41 @@ const acoes = {
       );
     closeDlg();
     toast('Configurações salvas.');
+    return Promise.all(ps);
+  },
+  /* KAN-159: importar o elenco de uma planilha (colar ou arquivo), com prévia. */
+  importarDlg: () => {
+    openDlg('<div id="impRaiz"></div>');
+    const el = $('#impRaiz');
+    if (el) montarImportar(el);
+    setTimeout(() => $('#impTexto')?.focus(), 50);
+  },
+  importarJogadores: () => {
+    const novos = paraImportar();
+    if (!novos.length) return;
+    const agora = Date.now(),
+      ops = [],
+      ids = novos.map(() => B.newId());
+    novos.forEach((it, i) => {
+      const data = { criado: agora, name: it.nome, pos: it.pos || '', ativo: true };
+      S.jog[ids[i]] = data;
+      ops.push({ tipo: 'set', p: 'jogadores/' + ids[i], o: clean(data) });
+    });
+    /* Tudo de uma vez: os jogadores num lote só, e um registro só para tipos, notas e contatos. */
+    const contatos = Object.assign({}, S.cont || {});
+    novos.forEach((it, i) => {
+      if (it.tel || it.email) contatos[ids[i]] = { tel: it.tel || '', email: it.email || '' };
+    });
+    S.cont = contatos;
+    const ps = [
+      w(GB.lote(ops)),
+      editPc(a => novos.forEach((it, i) => (a.tipos[ids[i]] = it.tipo))),
+      editRat(a => novos.forEach((it, i) => it.nota != null && setLvl(a, ids[i], it.nota))),
+    ];
+    if (novos.some(it => it.tel || it.email)) ps.push(w(GB.set('privado/contatos', clean(contatos))));
+    changed();
+    closeDlg();
+    toast(tp('importar.feito', novos.length));
     return Promise.all(ps);
   },
   seed: () => {

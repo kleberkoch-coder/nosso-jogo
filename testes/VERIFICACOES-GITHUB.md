@@ -8,7 +8,9 @@ Atualizado a cada entrega (quando a proposta é aberta) e de novo depois do Merg
 - **Testes do app:** o roteiro `testes/testes_app.py` rodado pelo GitHub sobre o site **publicado** (compactado desde a v19).
 - **Regras do Firebase (emulador):** tarefa `regras-firebase`, desde a v19 (KAN-104). Casos em `testes/regras-firebase/regras.test.mjs`.
 - **Regras de negócio:** `npm run regras` (testes de `testes/regras/`), dentro da tarefa "montar".
-- **Tamanho:** app comprimido medido na montagem (limite 80 KB, decisão D7).
+- **Tamanho:** app comprimido medido na montagem (decisão D7). Desde a v41, também o link do jogador (limite de 50 KB); desde a v43, o total vai até 85 KB.
+- **Conferência da entrega (desde a v44):** passo da tarefa "montar" que barra proposta sem VERSION nova, sem registro no Design System ou no REGRAS, ou com checklist em branco.
+- **Formato do código (desde a v45):** passo da tarefa "montar" que recusa código fora do formato do Prettier.
 - **Prévia:** roda em modo demonstração (não usa dados reais nem o App Check); o GitHub confere isso na tarefa "montar". Desde a v24, a prévia sai no Firebase Hosting (automação "Prévia da proposta").
 - **No ar:** desde a v24, vem da automação "Publicar o site", que **confere a versão no endereço oficial** (`https://nosso-jogo-f4762.web.app`). Antes disso, era anotado com base no Merge, e isso escondeu que a v20 a v23 não chegaram ao ar (ver abaixo).
 
@@ -16,7 +18,13 @@ Atualizado a cada entrega (quando a proposta é aberta) e de novo depois do Merg
 
 | Versão | Proposta | Testes do app | Regras de negócio | Regras do Firebase (emulador) | Tamanho | Mapa de origem | Regras publicadas | No ar |
 |---|---|---|---|---|---|---|---|---|
-| pelada-v40 | [#48](https://github.com/kleberkoch-coder/nosso-jogo/pull/48) (substitui a #46 e a #47) | ✅ 327 de 327 (site e portal compactados) | ✅ 55 de 55 | ✅ 59 de 59 | 76,7 KB | ✅ | não mudaram | aguardando Merge |
+| pelada-v46 | [#54](https://github.com/kleberkoch-coder/nosso-jogo/pull/54) | ✅ 353 de 353 (site e portal compactados) | ✅ 72 de 72 | ✅ 59 de 59 | link do jogador 44,5 KB; app inteiro 86,1 KB (limite novo 90 KB, D7) | ✅ | não mudaram | aguardando Merge |
+| pelada-v45 | [#53](https://github.com/kleberkoch-coder/nosso-jogo/pull/53) | ✅ 342 de 342 (site e portal compactados) | ✅ 63 de 63 | ✅ 59 de 59 | link do jogador 46,5 KB; app inteiro 81,7 KB | ✅ | não mudaram | ✅ Merge 15/10 21h15; **conferido no ar** (pelada-v45). Só formatação (Prettier); código compactado igual em 76 arquivos (só o build.mjs mudou, de propósito) |
+| pelada-v44 | [#52](https://github.com/kleberkoch-coder/nosso-jogo/pull/52) | ✅ 342 de 342 (site e portal compactados) | ✅ 63 de 63 | ✅ 59 de 59 | link do jogador 46,6 KB; app inteiro 81,7 KB | ✅ | não mudaram | ✅ Merge 15/10 20h29; **conferido no ar** (pelada-v44). Primeira proposta com a conferência da entrega: passou |
+| pelada-v43 | [#51](https://github.com/kleberkoch-coder/nosso-jogo/pull/51) | ✅ 334 de 334 (site e portal compactados) | ✅ 57 de 57 | ✅ 59 de 59 | link do jogador 46,0 KB; app inteiro 80,9 KB (limite novo 85 KB, D7) | ✅ | não mudaram | ✅ Merge 15/10 19h41; **conferido no ar** (pelada-v43). Aba Rodada como componente; trava da dívida ativa (docs/divida.json) |
+| pelada-v42 | [#50](https://github.com/kleberkoch-coder/nosso-jogo/pull/50) | ✅ 333 de 333 (site e portal compactados) | ✅ 55 de 55 | ✅ 59 de 59 | link do jogador 44,8 KB; app inteiro 79,6 KB | ✅ | não mudaram | ✅ Merge 15/10 18h31; **conferido no ar** (pelada-v42). Chave nova do App Check em uso; o "ReCAPTCHA error" sumiu |
+| pelada-v41 | [#49](https://github.com/kleberkoch-coder/nosso-jogo/pull/49) | ✅ 333 de 333 (site e portal compactados) | ✅ 55 de 55 | ✅ 59 de 59 | **link do jogador 44,8 KB** (limite novo 50 KB); app inteiro 79,6 KB, em pedaços (KAN-149) | ✅ | não mudaram | ✅ Merge 15/10 17h09; **conferido no ar** (pelada-v41). Mesmo dia: o App Check em Aplicar derrubou o login por cerca de 10 min (chave antiga inválida); desligado às 17h32 |
+| pelada-v40 | [#48](https://github.com/kleberkoch-coder/nosso-jogo/pull/48) (substitui a #46 e a #47) | ✅ 327 de 327 (site e portal compactados) | ✅ 55 de 55 | ✅ 59 de 59 | 76,7 KB | ✅ | não mudaram | ✅ Merge 15/10; **conferido no ar** (pelada-v40, com o campo de horário). A #46 chegou a entrar com a mesma versão e foi substituída pela #48 (a conferência da v44 passou a barrar isso) |
 | pelada-v39 | [#45](https://github.com/kleberkoch-coder/nosso-jogo/pull/45) | ✅ 318 de 318 (site e portal compactados) | ✅ 55 de 55 | ✅ 59 de 59 | 75,5 KB | ✅ | não mudaram | ✅ Merge 15/10; **conferido no ar** (pelada-v39) |
 | pelada-v38 | [#44](https://github.com/kleberkoch-coder/nosso-jogo/pull/44) | ✅ 317 de 317 (site e portal compactados) | ✅ 55 de 55 | ✅ 59 de 59 | 75,3 KB | ✅ | não mudaram | ✅ Merge 15/10; **conferido no ar** (pelada-v38) |
 | pelada-v37 | [#43](https://github.com/kleberkoch-coder/nosso-jogo/pull/43) | ✅ 314 de 314 (site e portal compactados) | ✅ 55 de 55 | ✅ 59 de 59 | 75,1 KB | ✅ | não mudaram | substituída pela #44 (v38 inclui a v37) |

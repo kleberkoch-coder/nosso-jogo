@@ -155,7 +155,11 @@ function renderCore() {
     }[S.tab]();
   if (S.tab === 'caixa') A.montarCaixa();
   if (S.tab === 'rodada') A.montarRodada();
-  if (S.tab === 'partida') A.tick();
+  if (S.tab === 'jogadores') A.montarJogadores();
+  if (S.tab === 'partida') {
+    A.montarPartida();
+    A.tick();
+  }
 }
 
 /* KAN-72: a aba aberta fica no centro da barra (só quando muda de aba ou de grupo, para não brigar com quem está rolando)

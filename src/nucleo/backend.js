@@ -1,4 +1,5 @@
 import { cl, idOk, uid } from './util.js';
+import { doBanco, paraBanco, temListaDentroDeLista } from './dados-banco.ts';
 
 /* =================== backends =================== */
 function FirebaseBackend(cfg, appCheckKey) {
@@ -93,7 +94,7 @@ function FirebaseBackend(cfg, appCheckKey) {
         return fs.collection(path).onSnapshot(s => {
           const o = {};
           s.forEach(d => {
-            if (idOk(d.id)) o[d.id] = d.data();
+            if (idOk(d.id)) o[d.id] = doBanco(d.data());
           });
           cb(o);
         }, err);
@@ -101,7 +102,7 @@ function FirebaseBackend(cfg, appCheckKey) {
         { includeMetadataChanges: false },
         s => {
           if (!s.exists && s.metadata.fromCache && path.startsWith('usuarios/') && navigator.onLine) return;
-          cb(s.exists ? s.data() : null);
+          cb(s.exists ? doBanco(s.data()) : null);
         },
         err
       );
@@ -111,7 +112,7 @@ function FirebaseBackend(cfg, appCheckKey) {
       return fsQuery(fs, path, q).onSnapshot(s => {
         const o = {};
         s.forEach(d => {
-          if (idOk(d.id)) o[d.id] = d.data();
+          if (idOk(d.id)) o[d.id] = doBanco(d.data());
         });
         cb(o);
       }, err);
@@ -122,7 +123,7 @@ function FirebaseBackend(cfg, appCheckKey) {
       if (cursor) x = x.startAfter(cursor);
       const s = await x.get();
       return {
-        itens: s.docs.filter(d => idOk(d.id)).map(d => [d.id, d.data()]),
+        itens: s.docs.filter(d => idOk(d.id)).map(d => [d.id, doBanco(d.data())]),
         cursor: s.docs[s.docs.length - 1] || null,
         fim: s.docs.length < q.limite,
       };
@@ -132,19 +133,19 @@ function FirebaseBackend(cfg, appCheckKey) {
         const s = await fs.collection(path).get(),
           o = {};
         s.forEach(d => {
-          if (idOk(d.id)) o[d.id] = d.data();
+          if (idOk(d.id)) o[d.id] = doBanco(d.data());
         });
         return o;
       }
       const s = await fs.doc(path).get();
-      return s.exists ? s.data() : null;
+      return s.exists ? doBanco(s.data()) : null;
     },
     /* Leitura que exige o servidor (migração e Recalcular): sem internet falha, em vez de usar só o que está no aparelho. */
     async getServidor(path) {
       const s = await fs.collection(path).get({ source: 'server' }),
         o = {};
       s.forEach(d => {
-        if (idOk(d.id)) o[d.id] = d.data();
+        if (idOk(d.id)) o[d.id] = doBanco(d.data());
       });
       return o;
     },
@@ -210,6 +211,10 @@ const op = {
   somar: n => ({ $op: 'somar', n }),
 };
 const igual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+/* Modo demonstração: recusa o que o Firestore recusaria (lista dentro de lista, KAN-167), para os testes pegarem. */
+function recusarComoFirestore(o) {
+  if (o && temListaDentroDeLista(o)) throw new Error('firestore: nested-arrays');
+}
 function LocalBackend() {
   const K = 'pelada-demo-v2';
   let store = {},
@@ -231,11 +236,11 @@ function LocalBackend() {
       const o = {};
       for (const p in store) {
         const s = p.split('/');
-        if (s.length === n + 1 && p.startsWith(path + '/') && idOk(s[n])) o[s[n]] = store[p];
+        if (s.length === n + 1 && p.startsWith(path + '/') && idOk(s[n])) o[s[n]] = doBanco(store[p]);
       }
       return o;
     }
-    return store[path] ?? null;
+    return doBanco(store[path] ?? null);
   };
   const notify = () => subs.forEach(s => s.cb(cl(read(s.path))));
   const filtrar = (path, q) => {
@@ -355,18 +360,21 @@ function LocalBackend() {
       return cl(read(path));
     },
     set: async (p, o) => {
+      recusarComoFirestore(o);
       store[p] = cl(o);
       save();
       notify();
       await sleep(250);
     },
     patch: async (p, campos) => {
+      recusarComoFirestore(campos);
       aplicarLocal(p, campos);
       save();
       notify();
       await sleep(250);
     },
     lote: async ops => {
+      ops.forEach(x => recusarComoFirestore(x.o));
       ops.forEach(x => {
         if (x.tipo === 'del') delete store[x.p];
         else if (x.tipo === 'patch') aplicarLocal(x.p, x.o);
@@ -392,6 +400,17 @@ function track(pr) {
   return pr;
 }
 function wrapBackend(b) {
+  /* Lista dentro de lista vira { __lista } antes de gravar, nos dois bancos (KAN-167; nucleo/dados-banco.ts). */
+  const set = b.set,
+    patch = b.patch,
+    lote = b.lote;
+  b.set = (p, o) => set.call(b, p, paraBanco(o));
+  b.patch = (p, c) => patch.call(b, p, paraBanco(c));
+  b.lote = ops =>
+    lote.call(
+      b,
+      ops.map(x => (x.o ? Object.assign({}, x, { o: paraBanco(x.o) }) : x))
+    );
   ['set', 'patch', 'lote', 'del', 'login', 'signup', 'reset', 'logout', 'google'].forEach(k => {
     const f = b[k];
     b[k] = (...a) => track(f.apply(b, a));

@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v49 (16/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v50 (16/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -24,6 +24,7 @@ Atualizado na pelada-v49 (16/10/2026). Toda entrega que mudar uma regra atualiza
 - Sair apaga a cópia local dos dados; com algo sem enviar, pergunta antes (KAN-80).
 - App Check em observação, com a chave "Nosso Jogo web 2" desde a v42. Só ligar o bloqueio (Aplicar) com mais de 99% de chamadas verificadas por 7 dias; ligado antes, ele derrubou o login em 15/10 (KAN-88, lembrete em 20/10).
 - Mudança no `firestore.rules`: testes no emulador e aviso destacado ao Kleber; é publicada no Merge.
+- Gravação recusada pelo banco (KAN-170): o app avisa "Não foi possível salvar" e volta a mostrar o que está gravado, nunca o que não foi salvo.
 - Lista dentro de lista (posições criadas `posx` e pares separados `sep`) é gravada como `{ __lista: [...] }` e volta a ser lista na leitura, porque o Firestore não aceita o formato direto. O modo demonstração recusa o que o Firestore recusa (KAN-167; `nucleo/dados-banco.ts`, com teste).
 
 ## País, moeda e fuso (KAN-162)
@@ -54,6 +55,7 @@ Atualizado na pelada-v49 (16/10/2026). Toda entrega que mudar uma regra atualiza
   - Fica gravado no formato internacional (+55…). Os números antigos, sem "+", continuam brasileiros.
   - Ao editar, o combo volta com o país do número; no +1, fica com o país do grupo quando ele também usa +1.
 - E-mail precisa de nome@domínio.terminação. Telefone ou e-mail inválido não salva.
+- Ordem da aba Jogadores (KAN-168): "Ordenar por" Nome (A–Z, o padrão), Posição (na ordem do esporte; some em esporte sem posição), Nota (maior primeiro), Tipo (mensalistas primeiro) ou Mais recentes. Empate em ordem alfabética. Vale para ativos, inativos e avulsos, fica guardada no aparelho e não muda a lista de presença da Rodada (regra em `dominio/ordem-jogadores.ts`, com teste).
 - Importar da planilha (KAN-159): telefone sem "+" segue o país do grupo (KAN-162). Colar do Excel/Google Planilhas ou enviar .xlsx/.csv (só a primeira aba). Colunas reconhecidas pelo título: Nome (obrigatório), Posição, Nota, Tipo, Telefone e E-mail; sem título, nessa ordem. Nome que já está no elenco ou repetido na lista fica de fora; dado inválido vira aviso e o jogador entra sem ele. Até 100 por vez, gravados de uma vez (regra em `dominio/planilha.ts`, com teste).
 - Avulso do link só vira cadastro depois de entrar num sorteio (ou se o administrador o adicionar); pode ser promovido ao elenco.
 - Pares "não colocar no mesmo time" são respeitados no sorteio.
@@ -106,7 +108,8 @@ Atualizado na pelada-v49 (16/10/2026). Toda entrega que mudar uma regra atualiza
 - Confirmações na janela do app (nunca `confirm` ou `alert`): pergunta curta, consequência, botão com o verbo; coral quando apaga (KAN-128).
 - Local e outros textos longos: numa linha só com "…" (sublinhado pontilhado quando corta); passar o mouse mostra o texto inteiro e tocar abre ou fecha. O seletor de rodadas e o cabeçalho não mostram o local. Nada pode criar rolagem lateral (KAN-144, KAN-146).
 - Horário (início e término): campo do app com hora (00–23) e minutos (00–59), setas ▲▼ e digitação; qualquer minuto vale (ex.: 10:03); nunca o relógio do celular, que corta botões no Android com letra grande (KAN-151).
-- Menu da conta (KAN-166): quem tem conta vê, no canto do cabeçalho de todas as telas, um botão redondo com a inicial do e-mail. Ele abre o e-mail, "País e formatos" e "Sair" (o Sair não fica mais solto no cabeçalho). Funciona como o menu do tema: setas, Esc e tocar fora.
+- Menu da conta (KAN-166): quem tem conta vê, no canto do cabeçalho de todas as telas, um botão redondo com a inicial do e-mail. Ele abre o e-mail, "País e formatos", "Tema" e "Sair" (o Sair não fica mais solto no cabeçalho). Funciona como o menu do tema: setas, Esc e tocar fora.
+- Tema (KAN-169): com conta, fica no menu da conta ("Tema: Automático", que abre Automático, Claro e Escuro) e o botão 🌓 sai do cabeçalho. Sem conta (link do jogador, votação, login, apresentação), o botão 🌓 continua. A aba Grupo segue com o painel Aparência. Vale só para o aparelho.
 - Dias fixos do grupo: cada horário tem o rótulo em cima, "Início" e "Término (opcional)" (KAN-166).
 - Alvos de toque: 44px nos principais, 36px nos pequenos. Contraste WCAG AA nos temas claro e escuro.
 
@@ -118,6 +121,7 @@ Atualizado na pelada-v49 (16/10/2026). Toda entrega que mudar uma regra atualiza
 - Textos da gestão ficam em `src/i18n/pt-BR-gestao.js` e chegam com a parte de gestão; os do link público e do login, em `src/i18n/pt-BR.js`. A montagem barra o link público usando texto da gestão.
 - Dívida técnica não piora (D12, KAN-154): a montagem falha se aumentar innerHTML, textos fora do dicionário ou arquivos sem tipos, ou se diminuírem as telas como componente (tetos em `docs/divida.json`).
 - O GitHub confere toda proposta (KAN-157, `testes/conferir-entrega.mjs`): app mudou → VERSION sobe; componente `.tsx` novo em `src/ui/` ou classe nova no CSS → `docs/DESIGN-SYSTEM.md` muda; tela ou ação mudou → `docs/REGRAS.md` muda (ou "sem mudança de regra" na proposta); `firestore.rules` mudou → a proposta avisa; checklist da proposta sem item em branco.
+- Tudo que grava tem caso no roteiro de gravação (KAN-170, `testes/persistencia_app.py`): grava, recarrega (F5), confere e, no fim, entra de novo num navegador limpo e confere tudo. No GitHub, a tarefa "persistencia" roda esse roteiro contra o emulador do Firebase (Firestore e login de verdade, com as regras). A conferência da entrega barra tipo de dado gravado sem caso (`testes/persistencia-cobertura.json`).
 - Código num formato único (Prettier, `.prettierrc.json`); o GitHub recusa código fora do formato (KAN-155).
 - Tela mexida, tela migrada: tela tocada vira componente TypeScript + Preact na mesma entrega, usando `src/ui/componentes.tsx`; componente visual novo entra antes no Design System (KAN-152, KAN-153).
 - A gestão (telas e ações de quem tem conta, página inicial e convite) fica em `src/admin.js` e só baixa quando alguém entra com conta; o link público e a votação nunca a baixam (KAN-149). Tela ou ação nova de gestão entra por lá.

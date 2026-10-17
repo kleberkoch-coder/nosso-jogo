@@ -8,7 +8,8 @@ import { B } from '../nucleo/backend.js';
 import { lerContato } from '../ui/contato-form';
 import { editApp, editRat, saveContato } from '../nucleo/edicoes.js';
 import { GB, S, clean, w } from '../nucleo/estado.js';
-import { $, esc, key, toast, today } from '../nucleo/util.js';
+import { $, brl, esc, key, toast, today } from '../nucleo/util.js';
+import { foraDoPadrao, referenciaDoGrupo } from '../dominio/caixa-regras';
 import { closeDlg, confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
 import { playerDlg } from '../ui/dialogos-gestao.js';
 import { changed } from '../ui/render.js';
@@ -38,15 +39,44 @@ const acoes = {
     const nw = el.dataset.new,
       id = el.dataset.p || nw || B.newId(),
       v = +$('#plv').value;
-    if (
-      Object.entries(S.jog).some(([k, x]) => k !== id && normName(x.name) === normName(name)) &&
-      confirmou(el, {
-        titulo: 'Já existe um jogador chamado "' + name + '"',
-        texto: 'Cadastrar outro com o mesmo nome?',
-        acao: 'Cadastrar mesmo assim',
-      }) !== 'sim'
-    )
-      return;
+    /* Uma pergunta só (KAN-161): nome repetido e/ou valor por jogo muito acima do padrão do grupo. */
+    const dup = Object.entries(S.jog).some(([k, x]) => k !== id && normName(x.name) === normName(name)),
+      c = cfg(),
+      fora =
+        recebe &&
+        foraDoPadrao(
+          vj,
+          referenciaDoGrupo({
+            mensal: c.mensal,
+            diaria: c.diaria,
+            lancamentos: Object.values(S.caixa || {}),
+            hoje: today(),
+          })
+        );
+    if (dup || fora) {
+      const textos = [];
+      if (dup) textos.push(tx('jogador.nomeRepetido', { nome: name }));
+      if (fora) textos.push(tx('jogador.valorFora', { valor: brl(vj) }));
+      const r = confirmou(el, {
+        titulo:
+          dup && fora
+            ? tx('jogador.conferirTitulo')
+            : dup
+              ? tx('jogador.nomeRepetidoTitulo', { nome: name })
+              : tx('caixa.foraTitulo', { valor: brl(vj) }),
+        texto: dup && !fora ? tx('jogador.mesmoNome') : textos.join(' '),
+        acao: dup && !fora ? tx('jogador.cadastrarAssim') : tx('jogador.salvarAssim'),
+        cancelar: fora ? tx('caixa.foraCorrigir') : undefined,
+        fim: fora
+          ? () =>
+              setTimeout(() => {
+                const c = $('#prv');
+                if (c && !$('#dlgBody .conf')) c.focus();
+              }, 40)
+          : undefined,
+      });
+      if (r !== 'sim') return;
+    }
     const old = S.jog[id] || {},
       tp = val('ptp'),
       data = Object.assign({}, old, {

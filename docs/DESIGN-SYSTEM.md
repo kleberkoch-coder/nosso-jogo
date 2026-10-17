@@ -133,6 +133,10 @@ Registrados na pelada-v43 (KAN-152); os da v44 a v47 entraram na versão de cada
 - **Artilharia da rodada** (KAN-178; sem classe nova):
   - Na aba Partida, depois de "Partidas desta rodada", fica o painel "Artilharia da rodada", com "Lançar" (ou "Editar") em `btn sm`. Embaixo, uma linha em `muted`: a ajuda, ou o lançamento já feito ("Marcão 3 · Bruno 1").
   - A janela tem uma ajuda em `muted`; se a rodada já tem partidas com placar, um aviso em `out`. Depois vem uma linha por jogador dos times, com "−" (`btn sm`, desligado no zero), o número em negrito e "+". Para o leitor de tela, os botões dizem "Somar 1 para Marcão" e "Tirar 1 de Marcão". Rodapé: "Cancelar" e "Salvar artilharia" (`primary`).
+- **Ainda não responderam** (KAN-64; sem classe nova):
+  - Na aba Rodada, logo depois do quadro da rodada, há um `panel` com o título "Ainda não responderam (12)" e o botão "Cobrar no grupo" (`btn sm primary`). Embaixo vêm os nomes em `muted`, separados por vírgula, e um `details` "Cobrar um por um".
+  - Aberto, ele mostra uma lista (`plist`): cada nome com "WhatsApp" (`btn sm`, link de 36px, que para o leitor de tela diz "Cobrar Rafa no WhatsApp") ou "sem telefone" em `muted`.
+- **Valor fora do padrão** (KAN-161): é a janela de confirmação do app (KAN-128) com o título "Lançar R$ 8.000,00?", o texto "É bem mais que o normal deste grupo. Confira se não sobrou um dígito." e os botões "Corrigir valor" (volta ao campo, com o cursor nele) e "Lançar assim mesmo" (`primary`).
 - **Carregando a gestão** (KAN-149): ao abrir a gestão pela primeira vez, a área principal mostra "Carregando…" em `muted`; sem internet, "Não foi possível carregar" com a orientação de recarregar.
 
 ## Componentes (pelada-v30)

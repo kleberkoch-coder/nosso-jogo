@@ -166,6 +166,7 @@ O app só funciona com o site publicado (https). Abrindo o arquivo direto do com
 
 1. **Criar a rodada:** informe só a data, o horário e o local.
 2. **Mandar o link:** no jogo fixo, use o link permanente; numa rodada avulsa, clique em "Mandar link no WhatsApp". Cada jogador abre o link, acha o nome e toca em **Vou** ou **Não vou**. Quem não está na lista toca em **Adicionar meu nome** e entra como avulso.
+   - **Quem falta responder:** o bloco **Ainda não responderam** mostra os nomes. **Cobrar no grupo** monta a mensagem para o grupo do WhatsApp; em **Cobrar um por um**, o botão **WhatsApp** abre a conversa de cada pessoa que tem telefone cadastrado.
 3. **Fechar a lista:** quando quiser travar as confirmações, clique em "Fechar lista".
 4. **Sortear:** escolha quantos times, quanto variar os parceiros e, se precisar, desmarque quem não vai entrar. Os times aparecem também no link da rodada.
 5. **Partida:** use o placar e o cronômetro, registre os gols e salve o resultado. Isso alimenta o ranking. Quando o tempo acaba, além do som e da vibração, aparece o aviso **Tempo esgotado** no placar.

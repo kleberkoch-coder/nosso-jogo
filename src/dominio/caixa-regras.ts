@@ -115,3 +115,26 @@ export function mesesDoCaixa(hoje: string, lancamentos: Lancamento[], datasRodad
     .sort()
     .reverse();
 }
+
+/* Valor fora do padrão do grupo (KAN-161): o app pergunta antes de lançar, em vez de bloquear.
+   Sem teto em dinheiro (o app é para o mundo todo): a referência é o próprio grupo.
+   - com mensalidade ou diária: o maior dos dois;
+   - sem os dois: o maior lançamento dos últimos 3 meses (contando o mês de hoje);
+   - sem nenhuma referência: não pergunta.
+   Fora do padrão = mais de FATOR_FORA vezes a referência. */
+export const FATOR_FORA = 10;
+export function referenciaDoGrupo(p: {
+  mensal?: number;
+  diaria?: number;
+  lancamentos: Lancamento[];
+  hoje: string;
+}): number {
+  const base = Math.max(num(p.mensal), num(p.diaria));
+  if (base > 0) return base;
+  const [a, m] = p.hoje.slice(0, 7).split('-').map(Number),
+    desde = new Date(Date.UTC(a, m - 3, 1)).toISOString().slice(0, 7);
+  return p.lancamentos.filter(l => (l.d || '').slice(0, 7) >= desde).reduce((mx, l) => Math.max(mx, num(l.v)), 0);
+}
+export function foraDoPadrao(valor: number, referencia: number): boolean {
+  return referencia > 0 && num(valor) > referencia * FATOR_FORA;
+}

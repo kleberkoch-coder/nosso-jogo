@@ -1,5 +1,6 @@
 /* Ações: Caixa: lançamentos, pendências e cobrança. Fazem parte de ACT (src/acoes.js). */
 import { cfg } from '../dominio/caixa.js';
+import { foraDoPadrao, referenciaDoGrupo } from '../dominio/caixa-regras';
 import { gname, players, pname, rodadas } from '../dominio/grupo.js';
 import { tp, tx } from '../i18n/index.js';
 import { simboloMoeda } from '../i18n/formatos.js';
@@ -11,6 +12,37 @@ import { $, brl, esc, fmonth, toast, toastAcao, today, usarAvisoAcao } from '../
 import { listaAPagar, montarPagar, pendencias } from '../telas/Caixa.tsx';
 import { closeDlg, confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
 import { ACT } from '../acoes.js';
+
+/* KAN-161: valor muito acima do padrão do grupo pergunta antes de gravar ("Corrigir valor" volta ao campo). */
+function refGrupo() {
+  /* Os mesmos valores que o Caixa usa para cobrar (mensalidade e diária do grupo). */
+  const c = cfg();
+  return referenciaDoGrupo({
+    mensal: c.mensal,
+    diaria: c.diaria,
+    lancamentos: Object.values(S.caixa || {}),
+    hoje: today(),
+  });
+}
+function valorConferido(el, v, ref, campo) {
+  if (!foraDoPadrao(v, ref)) return true;
+  return (
+    confirmou(el, {
+      titulo: tx('caixa.foraTitulo', { valor: brl(v) }),
+      texto: tx('caixa.foraTexto'),
+      acao: tx('caixa.foraLancar'),
+      cancelar: tx('caixa.foraCorrigir'),
+      fim: () =>
+        setTimeout(() => {
+          const c = $(campo);
+          if (c && !$('#dlgBody .conf')) {
+            c.focus();
+            c.select?.();
+          }
+        }, 40),
+    }) === 'sim'
+  );
+}
 
 const acoes = {
   addLan: () => {
@@ -24,7 +56,7 @@ const acoes = {
     <label class="f"><span>Descrição</span><input class="inp" id="ln" maxlength="60"></label>
     <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveLan">Lançar</button></div>`);
   },
-  saveLan: () => {
+  saveLan: el => {
     const k = val('lk'),
       v = +val('lv');
     if (!(v > 0)) {
@@ -35,6 +67,7 @@ const acoes = {
       toast('Escolha o jogador.');
       return;
     }
+    if (!valorConferido(el, v, refGrupo(), '#lv')) return;
     const d = val('ld') || today();
     let ref = d.slice(0, 7);
     if (k === 'diaria') {
@@ -81,6 +114,7 @@ const acoes = {
       $('#apgv')?.focus();
       return;
     }
+    if (!valorConferido(el, v, a.v * refs.length, '#apgv')) return;
     const id = B.newId(),
       d = today(),
       o = { k: 'despesa', pid, v, d, ref: d.slice(0, 7), refs, note: tp('caixa.pagamentoPorJogo', refs.length) };
@@ -133,4 +167,4 @@ const acoes = {
   },
 };
 
-export { acoes };
+export { acoes, refGrupo };

@@ -23,7 +23,8 @@ import { draw } from '../dominio/sorteio.js';
 import { foraDosTimes } from '../dominio/divergencia.ts';
 import { reservas, sugerirTimes, titulares } from '../dominio/times.ts';
 import { tp, tx } from '../i18n/index.js';
-import { shareDlg, txtConvite, txtTimes } from '../dominio/whatsapp.js';
+import { linkDaRodada, shareDlg, txtConvite, txtTimes } from '../dominio/whatsapp.js';
+import { semResposta } from '../dominio/cobrar';
 import { copyText } from '../eventos.js';
 import { B, setCAP, sleep } from '../nucleo/backend.js';
 import { campoTelefone, lerContato } from '../ui/contato-form';
@@ -188,6 +189,25 @@ const acoes = {
   },
   shareConvite: () => shareDlg('Convite da rodada', txtConvite(curRodada())),
   copyLink: () => copyText(linkRodada(curRodada().id)),
+  /* KAN-64: mensagem pronta para o grupo do WhatsApp com quem ainda não respondeu. */
+  cobrarGrupo: () => {
+    const r = curRodada(),
+      falta = semResposta(
+        players().map(p => p.id),
+        S.pres
+      );
+    if (!r || !falta.length) return;
+    shareDlg(
+      tx('cobrar.noGrupo'),
+      tx('cobrar.textoGrupo', {
+        e: sport().e,
+        grupo: gname(),
+        data: fdate(r.date),
+        nomes: falta.map(pname).join(', '),
+        link: linkDaRodada(r),
+      })
+    );
+  },
   shareTimes: () => shareDlg('Times sorteados', txtTimes(curRodada())),
   mark: el => {
     const r = curRodada(),

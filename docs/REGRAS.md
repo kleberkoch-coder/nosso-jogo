@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v56 (17/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v57 (17/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -82,6 +82,11 @@ Atualizado na pelada-v56 (17/10/2026). Toda entrega que mudar uma regra atualiza
 - Sortear de novo: proibido com votação na rodada; com partidas salvas, pergunta antes; mover e pôr no time continuam (KAN-138).
 - Cor do colete é gravada à parte dos times (KAN-108).
 
+- Cobrar quem não respondeu (KAN-64; regra em `dominio/cobrar.ts`, com teste): na aba Rodada, logo depois do quadro da rodada, aparece o bloco "Ainda não responderam (N)" com os nomes do elenco ativo sem Vou nem Não vou. Ele tem dois caminhos:
+  - **Cobrar no grupo:** monta a mensagem do WhatsApp com os nomes e o link de confirmar (o permanente, no jogo fixo).
+  - **Cobrar um por um:** abre o WhatsApp de cada pessoa que tem telefone, com a mensagem e o link, pelo aparelho do administrador. Os telefones continuam só para administradores. Quem não tem telefone aparece como "sem telefone".
+  - O bloco some quando todos responderam ou a lista está fechada.
+
 ## Partida, ranking e votação
 - A aba Partida tem o seletor de rodada no topo, mesmo quando a rodada escolhida não tem times (KAN-160).
 - Placar com a pontuação do esporte e o autor; cronômetro com alarme.
@@ -97,6 +102,7 @@ Atualizado na pelada-v56 (17/10/2026). Toda entrega que mudar uma regra atualiza
 ## Caixa
 - Mensalidade (quem não é diarista, por mês), diária (diaristas e avulsos que jogaram, por rodada), outras entradas e despesas.
 - Pendências do mês e cobrança pronta para o WhatsApp com Pix. Regra em `dominio/caixa-regras.ts`, com teste.
+- Valor fora do padrão (KAN-161; regra `foraDoPadrao` em `dominio/caixa-regras.ts`, com teste): o app pergunta antes de gravar ("Lançar R$ X? É bem mais que o normal deste grupo.", com "Corrigir valor", que volta ao campo, e "Lançar assim mesmo") quando o valor passa de 10 vezes a referência do grupo. A referência é a maior entre a mensalidade e a diária do grupo; sem elas, o maior lançamento dos últimos 3 meses; sem nada, não pergunta. Não existe teto em dinheiro (vale para qualquer moeda). A mesma conferência vale para o "Lançar" do Caixa, o valor por jogo da ficha e o total da janela Pagar (referência: valor por jogo × jogos marcados). Na ficha, nome repetido e valor fora do padrão viram uma pergunta só.
 - "Recebi" grava na hora com Desfazer por 6 s; apagar lançamento também tem Desfazer (KAN-129).
 - A pagar por jogo (KAN-172; regra `aPagar` em `dominio/caixa-regras.ts`, com teste):
   - Quem tem "Recebe por jogo" na ficha (qualquer tipo) passa a ter a receber cada rodada em que jogou, ou seja, em que estava num time sorteado. Quem só confirmou não entra. Contam as rodadas a partir do dia em que a pessoa passou a receber.
@@ -143,13 +149,13 @@ Atualizado na pelada-v56 (17/10/2026). Toda entrega que mudar uma regra atualiza
 | Assunto | Tela | Ações | Regra (sem tela) | Dados no Firebase | Testes |
 |---|---|---|---|---|---|
 | Presença pelo link | `telas/PublicoRodada.tsx` | `acoes/publico.js` | `nucleo/edicoes.js` (setPres) | `rodadas/{rid}/presencas`, `limites/avulsos` | `testes_app.py` (link), `regras-firebase` (presença) |
-| Presença na gestão | `telas/Rodada.tsx` | `acoes/rodada.js` | `dominio/grupo.js` (attendance, curRodada) | idem | `testes_app.py` (Rodada) |
+| Presença na gestão | `telas/Rodada.tsx` (com "Ainda não responderam") | `acoes/rodada.js` (cobrarGrupo) | `dominio/grupo.js` (attendance, curRodada), `dominio/cobrar.ts` | idem | `regras/cobrar`, `testes_app.py` (Rodada, CT-KAN-64) |
 | Sorteio e times | `telas/Rodada.tsx` | `acoes/rodada.js` | `dominio/sorteio.js`, `times.ts`, `divergencia.ts` | `rodadas/{rid}` (times, cores, base) | `regras/times`, `lista-sorteio` |
 | Partida e ranking | `telas/Partida.tsx` (placar em `ui/placar.js`; janela Editar; baixa sob demanda por `src/partida.ts`), `ranking.js` | `acoes/partida.js` (saveMatch, editarPartida, salvarEdicao), `acoes/recalcular.ts` | `nucleo/partidas.js` (addMatch, editMatch, delMatch, salvarArtilharia), `dominio/resumos.ts` (camposPartida, camposEdicao, camposArtilharia), `dominio/fila.ts` (próximo jogo), `dominio/escalacao.ts` (empréstimo e troca) | `rodadas/{rid}/partidas` (com `ver`), `resumos/{mês}` | `regras/ranking`, `regras/editar-partida`, `regras/fila`, `regras-firebase` (partidas), `regras/escalacao`, `regras/artilharia`, `testes_app.py` (CT-KAN-175 a CT-KAN-178), `persistencia_app.py` (P13, P13b, P13c) |
 | Importar elenco | `ui/ImportarJogadores.tsx`, `telas/Jogadores.tsx` | `acoes/jogadores.js` (importarJogadores) | `dominio/planilha.ts`, `ui/arquivo-planilha.ts` | `jogadores/{id}`, `privado/caixa`, `privado/ratings`, `privado/contatos` | `regras/planilha`, `testes_app.py` (CT-KAN-159) |
 | País, moeda e fuso | `ui/menu-conta.ts` (menu da conta, KAN-166), `grupo-form.js`, `login.js` (cadastro), `ui/regiao.ts` (combos), `ui/contato-form.ts` (telefone) | `acoes/grupo.js` (contaPais, createGroup, saveGroup) | `dominio/paises.ts`, `regiao.ts`, `telefone.ts`, `i18n/formatos.js` (formato, moeda, `agora()`) | `usuarios/{uid}` (pais, formato), `grupos/{gid}` (cfg.pais, moeda, fuso, formato) | `regras/paises`, `regras/contato`, `testes_app.py` (CT-KAN-162) |
 | Votação | `telas/votacao.js`, `publico-voto.js` | `acoes/votacao.js` | `telas/votacao.js` (tally) | `votacoes/{vid}`, `votos` | `testes_app.py` (votação) |
-| Caixa | `telas/Caixa.tsx` | `acoes/caixa.js` | `dominio/caixa-regras.ts`, `caixa.js` | `caixa/{id}`, `privado/caixa`, `resumos` | `regras/caixa` |
+| Caixa | `telas/Caixa.tsx` | `acoes/caixa.js` (com a conferência de valor fora do padrão) | `dominio/caixa-regras.ts` (pendências, foraDoPadrao), `caixa.js` | `caixa/{id}`, `privado/caixa`, `resumos` | `regras/caixa`, `regras/fora-do-padrao`, `testes_app.py` (CT-KAN-161) |
 | Isento e A pagar por jogo | `ui/dialogos-gestao.js` (ficha), `telas/Caixa.tsx` (A pagar, janela Pagar) | `acoes/jogadores.js` (savePlayer), `acoes/caixa.js` (abrirPagar, pagarJogos) | `dominio/caixa-regras.ts` (aPagar), `caixa.js` (recebePorJogo, inicioAPagar); rodadas desde o início em `rotas.js` (rodPag) | `privado/caixa` (tipos, porJogo), `caixa/{id}` (refs) | `regras/a-pagar`, `testes_app.py` (CT-KAN-172), `persistencia_app.py` (P20) |
 | Grupo e convite | `telas/grupo.js`, `grupo-form.js`, `convite.js` | `acoes/grupo.js` | `dominio/limites.ts` | `grupos/{gid}`, `membros`, `privado/convite`, `contas/{uid}` | `regras/limites`, `regras-firebase` |
 | Planos e portal | `portal/` | `portal/tela.js` | `dominio/planos.ts` | `contas/{uid}`, `sistema/planos` | `regras/planos`, portal em `testes_app.py` |

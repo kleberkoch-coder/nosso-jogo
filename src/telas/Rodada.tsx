@@ -2,6 +2,9 @@
    Por fora é a mesma tela de antes; os testes automáticos conferem. Os botões usam data-a (ações em acoes/rodada.js). */
 import { render } from 'preact';
 import { divergencia } from '../dominio/divergencia';
+import { linkCobrar, semResposta } from '../dominio/cobrar';
+import { linkWhatsApp } from '../dominio/contato';
+import { linkDaRodada } from '../dominio/whatsapp.js';
 import { col, posIdx, posLabel, sport, tn } from '../dominio/esportes.js';
 import {
   attendance,
@@ -227,6 +230,59 @@ const TAG_MUDADO = () => (
 
 /* KAN-71: uma lista só de presença, com filtros. Em "Vão", a ordem é a de chegada (numerada). */
 const FILTROS = ['todos', 'in', 'out', 'sem'];
+/* Cobrar quem ainda não respondeu (KAN-64): no topo da Rodada, perto de "Mandar link no WhatsApp". */
+function textoCobrarUm(r: Rodada, id: string) {
+  return tx('cobrar.individual', { nome: pname(id), data: fdate(r.date), link: linkDaRodada(r) });
+}
+function Cobrar({ r }: { r: Rodada }) {
+  const S = st(),
+    falta = semResposta(
+      (players() as { id: string }[]).map(p => p.id),
+      S.pres
+    );
+  if (!falta.length || r.locked) return null;
+  return (
+    <div class="panel" id="semResposta">
+      <div class="row between">
+        <h3 style="margin:0">{tx('cobrar.titulo', { n: falta.length })}</h3>
+        <button class="btn sm primary" data-a="cobrarGrupo">
+          {tx('cobrar.noGrupo')}
+        </button>
+      </div>
+      <p class="small muted" style="margin:6px 0 0">
+        {falta.map(pname).join(', ')}
+      </p>
+      <details style="margin-top:6px">
+        <summary class="small">{tx('cobrar.umPorUm')}</summary>
+        <ul class="plist" id="cobrarLista">
+          {falta.map(id => {
+            const tel = ((S.cont || {})[id] || {}).tel,
+              href = linkCobrar(tel ? linkWhatsApp(tel) : '', textoCobrarUm(r, id));
+            return (
+              <li key={id}>
+                <span class="pn">{pname(id)}</span>
+                {href ? (
+                  <a
+                    class="btn sm"
+                    href={href}
+                    target="_blank"
+                    rel="noopener"
+                    aria-label={tx('cobrar.individualRotulo', { nome: pname(id) })}
+                  >
+                    {tx('cobrar.whatsapp')}
+                  </a>
+                ) : (
+                  <span class="small muted">{tx('cobrar.semTelefone')}</span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </details>
+    </div>
+  );
+}
+
 function Presenca({ r, inn, carregou, avs }: { r: Rodada; inn: string[]; carregou: boolean; avs: string[] }) {
   const S = st();
   const ids = [...new Set((players() as { id: string }[]).map(p => p.id).concat(avs))];
@@ -512,6 +568,7 @@ function RodadaTela() {
           )}
         </div>
       </div>
+      {carregou ? <Cobrar r={r} /> : null}
       <Presenca r={r} inn={a.inn} carregou={carregou} avs={avs} />
       <Times r={r} inn={a.inn.length} />
       {r.times ? null : <BarraSortear k={a.inn.length} />}

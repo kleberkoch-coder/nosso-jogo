@@ -6,6 +6,10 @@ import { esc, fdate } from '../nucleo/util.js';
 import { openDlg } from '../ui/dialogos.js';
 
 /* =================== textos WhatsApp =================== */
+/* Link para confirmar: no jogo fixo, o permanente (sempre a próxima rodada); senão, o da rodada. */
+function linkDaRodada(r) {
+  return upcoming()[0]?.id === r.id && r.fixo ? linkProxima() : linkRodada(r.id);
+}
 function txtConvite(r) {
   const a = attendance(),
     isNext = upcoming()[0]?.id === r.id && r.fixo;
@@ -38,4 +42,4 @@ function shareDlg(title, text) {
   <a class="btn primary" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(text)}">Abrir no WhatsApp</a></div>`);
 }
 
-export { shareDlg, txtConvite, txtTimes };
+export { linkDaRodada, shareDlg, txtConvite, txtTimes };

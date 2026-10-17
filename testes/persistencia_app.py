@@ -166,6 +166,14 @@ with sync_playwright() as pw:
     gravou(pg); pronto(pg, 'partida'); pg.wait_for_timeout(800)
     ok(pg.locator('[data-a=delMatch]').count() == 1, 'CT-KAN-170-P13: partida salva continua depois de recarregar')
 
+    # P13b partida editada depois de salva (rodadas/{rid}/partidas com versão, resumos do mês) (KAN-176)
+    ga13 = J(pg, "Object.values(S.parts||{})[0].ga")
+    pg.locator('[data-a=editarPartida]').first.click(); pg.wait_for_timeout(500)
+    pg.click('#dlg .ed-mais[data-lado=a]'); pg.wait_for_timeout(200); pg.click('#dlg [data-a=salvarEdicao]')
+    gravou(pg); pronto(pg, 'partida'); pg.wait_for_timeout(800)
+    m13 = J(pg, "Object.values(S.parts||{})[0]||{}")
+    ok(m13.get('ga') == ga13 + 1 and m13.get('ver') == 1, f'CT-KAN-170-P13b: partida editada continua depois de recarregar ({ga13} → {m13.get("ga")}, versão {m13.get("ver")})')
+
     # P14 lançamento no caixa (caixa/{id} e resumos do mês)
     pronto(pg, 'caixa'); pg.click('[data-a=addLan]'); pg.wait_for_timeout(300)
     pg.select_option('#lp2', index=1); pg.click('#dlg [data-a=saveLan]')

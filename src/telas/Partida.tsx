@@ -1,6 +1,7 @@
 /* Aba Partida (KAN-160): componente em TypeScript + Preact, com o seletor de rodada sempre no topo.
    O cronômetro continua sendo atualizado por tick(), pelo id "clock" (a cada 250 ms, sem redesenhar a tela). */
 import { render } from 'preact';
+import { useState } from 'preact/hooks';
 import { cfg } from '../dominio/caixa.js';
 import { col, sport, tn } from '../dominio/esportes.js';
 import { curRodada, pname } from '../dominio/grupo.js';
@@ -15,7 +16,16 @@ import { proximoJogo, type Proximo } from '../dominio/fila';
 type Time = { c: number; players: string[] };
 type Rodada = { id: string; date: string; time?: string; times?: Time[] | null };
 type Gol = { t: 'a' | 'b'; pid?: string | null; og?: boolean; pts?: number };
-type Partida = { id: string; ca: number; cb: number; ga: number; gb: number; goals: Gol[] };
+type Partida = {
+  id: string;
+  ca: number;
+  cb: number;
+  ga: number;
+  gb: number;
+  goals: Gol[];
+  pa?: string[];
+  pb?: string[];
+};
 
 const st = (): any => estado;
 const MINUTOS = [5, 7, 8, 10, 12, 15, 20, 25, 30, 45];
@@ -218,6 +228,14 @@ function Salvas({ r }: { r: Rodada }) {
                   {autores(m) ? ' — ' + (sport() as { word: string }).word.toLowerCase() + ': ' + autores(m) : ''}
                 </span>
               </span>
+              <button
+                class="btn sm"
+                data-a="editarPartida"
+                data-v={m.id}
+                aria-label={tx('partida.editarRotulo', { n: i + 1 })}
+              >
+                {tx('partida.editar')}
+              </button>
               <button class="btn sm ghost danger" data-a="delMatch" data-v={m.id}>
                 {tx('partida.apagar')}
               </button>
@@ -279,6 +297,108 @@ function PartidaTela() {
   );
 }
 
+/* Editar partida salva (KAN-176): os gols de cada lado, com o autor; o placar sai dos gols.
+   O que está na janela fica em "edicao", que a ação salvarEdicao lê ao gravar. */
+let edicao: { mid: string; goals: Gol[] } | null = null;
+const edicaoAtual = () => edicao;
+function EditarPartida({ m }: { m: Partida }) {
+  const [goals, setGoals] = useState<Gol[]>(m.goals.map(g => ({ ...g })));
+  edicao = { mid: m.id, goals };
+  const SP = sport() as unknown as { score: [string, number][]; og?: boolean },
+    mudar = (gs: Gol[]) => setGoals(gs);
+  const lado = (t: 'a' | 'b') => {
+    const meus = (t === 'a' ? m.pa : m.pb) || [],
+      deles = (t === 'a' ? m.pb : m.pa) || [],
+      cor = t === 'a' ? m.ca : m.cb;
+    return (
+      <div class="panel" style="margin:0 0 10px">
+        <h3 style="margin:0 0 6px">
+          <span class="dot" style={{ background: col(cor).c }}></span> {tn(cor)} · {sumPts(goals, t)}
+        </h3>
+        <ul class="plist">
+          {goals.map((g, i) =>
+            g.t !== t ? null : (
+              <li key={i}>
+                <select
+                  class="sel ed-autor"
+                  aria-label={tx('partida.autorDoGol')}
+                  value={g.pid ? (g.og ? 'c:' : 'p:') + g.pid : ''}
+                  onChange={e => {
+                    const v = (e.currentTarget as HTMLSelectElement).value,
+                      gs = goals.slice();
+                    gs[i] = { ...g, pid: v ? v.slice(2) : null, og: v.startsWith('c:') };
+                    mudar(gs);
+                  }}
+                >
+                  <option value="">{tx('partida.semAutor')}</option>
+                  {meus.map(id => (
+                    <option key={id} value={'p:' + id}>
+                      {pname(id)}
+                    </option>
+                  ))}
+                  {SP.og
+                    ? deles.map(id => (
+                        <option key={'c' + id} value={'c:' + id}>
+                          {pname(id) + ' ' + tx('partida.contraMarca')}
+                        </option>
+                      ))
+                    : null}
+                </select>
+                {(g.pts || 1) > 1 ? <span class="tag">+{g.pts}</span> : null}
+                <button
+                  type="button"
+                  class="btn sm ghost danger"
+                  aria-label={tx('partida.tirarGol')}
+                  onClick={() => mudar(goals.filter((_, j) => j !== i))}
+                >
+                  ✕
+                </button>
+              </li>
+            )
+          )}
+        </ul>
+        <div class="row" style="margin-top:6px">
+          {SP.score.map(([rotulo, pts], k) => (
+            <button
+              key={k}
+              type="button"
+              class="btn sm ed-mais"
+              data-lado={t}
+              onClick={() => mudar(goals.concat({ t, pid: null, og: false, pts }))}
+            >
+              {SP.score.length === 1 ? '+ ' + rotulo : rotulo}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  };
+  return (
+    <>
+      <h3>{tx('partida.editarTitulo')}</h3>
+      <p class="small muted">{tx('partida.editarTexto')}</p>
+      {lado('a')}
+      {lado('b')}
+      <div class="dlg-f">
+        <button class="btn" data-a="close">
+          {tx('comum.cancelar')}
+        </button>
+        <button class="btn primary" data-a="salvarEdicao" data-v={m.id}>
+          {tx('partida.salvarEdicao', { a: sumPts(goals, 'a'), b: sumPts(goals, 'b') })}
+        </button>
+      </div>
+    </>
+  );
+}
+function montarEdicao(mid: string) {
+  const r = curRodada() as Rodada | null,
+    m = r && (partidasDe(r.id) as Partida[]).find(x => x.id === mid),
+    el = document.getElementById('edRaiz');
+  if (!m || !el) return false;
+  render(<EditarPartida m={m} />, el);
+  return true;
+}
+
 /* A gestão desenha as abas com texto; a Partida entra num lugar reservado (#partidaRaiz), como Rodada e Caixa. */
 const vPartida = () => '<div id="partidaRaiz"></div>';
 function montarPartida() {
@@ -286,4 +406,4 @@ function montarPartida() {
   if (el) render(<PartidaTela />, el);
 }
 
-export { limiteAtingido, montarPartida, novaPartida, vPartida };
+export { edicaoAtual, limiteAtingido, montarEdicao, montarPartida, novaPartida, vPartida };

@@ -239,11 +239,14 @@ service cloud.firestore {
         // Partidas da rodada (pelada-v18, KAN-86): placar e autor de cada ponto.
         // Leitura aberta como a da rodada (o jogador vê o placar pelo link); só administradores gravam.
         // Criar só se ainda não existe e apagar só se existe: assim, se dois aparelhos fazem a mesma coisa,
-        // o segundo lote é recusado inteiro e o ranking não conta em dobro. Partida não é editada.
+        // o segundo lote é recusado inteiro e o ranking não conta em dobro.
+        // Editar (KAN-176): só administradores, e a versão ('ver') tem de subir de 1 em 1. Se dois aparelhos editam
+        // a mesma partida ao mesmo tempo, o segundo lote (partida + ajuste do ranking) é recusado inteiro.
         match /partidas/{mid} {
           allow read: if true;
           allow create: if isMember(gid);
-          allow update: if false;
+          allow update: if isMember(gid)
+            && request.resource.data.get('ver', 0) == resource.data.get('ver', 0) + 1;
           allow delete: if isMember(gid) && resource != null;
         }
       }

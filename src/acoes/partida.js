@@ -2,11 +2,11 @@
 import { sport, tn } from '../dominio/esportes.js';
 import { curRodada, pname } from '../dominio/grupo.js';
 import { tx } from '../i18n/index.js';
-import { addMatch, delMatch as apagarPartida } from '../nucleo/partidas.js';
+import { addMatch, delMatch as apagarPartida, editMatch } from '../nucleo/partidas.js';
 import { S } from '../nucleo/estado.js';
 import { $, esc, toast, uid } from '../nucleo/util.js';
 import { actx, beep, elapsed, setActx, sumPts } from '../ui/placar.js';
-import { limiteAtingido, novaPartida } from '../telas/Partida';
+import { edicaoAtual, limiteAtingido, montarEdicao, novaPartida } from '../telas/Partida';
 import { closeDlg, confirmou, dlg, openDlg } from '../ui/dialogos.js';
 import { render } from '../ui/render.js';
 import { ACT } from '../acoes.js';
@@ -93,6 +93,22 @@ const acoes = {
     /* KAN-175: o próximo jogo sai dos jogos salvos (quem ganha fica, entra quem espera há mais tempo). */
     S.live = novaPartida(r, L);
     toast(`Salvo: ${tn(ta.c)} ${ga} × ${gb} ${tn(tb.c)}`);
+  },
+  /* KAN-176: corrigir uma partida salva (autores, gols a mais ou a menos). */
+  editarPartida: el => {
+    openDlg('<div id="edRaiz"></div>');
+    if (!montarEdicao(el.dataset.v)) closeDlg();
+  },
+  salvarEdicao: el => {
+    const e = edicaoAtual(),
+      r = curRodada();
+    if (!e || !r || e.mid !== el.dataset.v) return;
+    const goals = e.goals.map(g => ({ t: g.t, pid: g.pid || null, og: !!g.og, pts: g.pts || 1 })),
+      ga = sumPts(goals, 'a'),
+      gb = sumPts(goals, 'b');
+    closeDlg();
+    toast(tx('partida.editada', { a: ga, b: gb }));
+    return editMatch(r.id, e.mid, { goals, ga, gb });
   },
   delMatch: el => {
     if (

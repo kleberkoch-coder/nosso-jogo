@@ -11,6 +11,7 @@ Atualizado a cada entrega (quando a proposta é aberta) e de novo depois do Merg
 - **Tamanho:** app comprimido medido na montagem (decisão D7). Desde a v41, também o link do jogador (limite de 50 KB); desde a v43, o total vai até 85 KB; desde a v46, 90 KB; desde a v47, 95 KB.
 - **Conferência da entrega (desde a v44):** passo da tarefa "montar" que barra proposta sem VERSION nova, sem registro no Design System ou no REGRAS, ou com checklist em branco.
 - **Roteiro de gravação (desde a v50, KAN-170):** tarefa "persistencia": `testes/persistencia_app.py` com o app ligado ao emulador do Firebase (Firestore e login de verdade, com as regras). Grava cada tipo de dado, recarrega e confere; no fim, entra de novo num navegador limpo e confere tudo.
+- **Teste de carga (desde 16/10/2026, KAN-158):** tarefa "Teste de carga" (`.github/workflows/carga.yml`), fora das propostas comuns: roda toda segunda às 6h17, à mão e em proposta que mexe nas regras. Simula no emulador 50 confirmações em 10 s, 40 avulsos ao mesmo tempo (limite 30), 30 votos ao mesmo tempo e 2 administradores juntos. Resultados na seção "Teste de carga" no fim.
 - **Formato do código (desde a v45):** passo da tarefa "montar" que recusa código fora do formato do Prettier.
 - **Prévia:** roda em modo demonstração (não usa dados reais nem o App Check); o GitHub confere isso na tarefa "montar". Desde a v24, a prévia sai no Firebase Hosting (automação "Prévia da proposta").
 - **No ar:** desde a v24, vem da automação "Publicar o site", que **confere a versão no endereço oficial** (`https://nosso-jogo-f4762.web.app`). Antes disso, era anotado com base no Merge, e isso escondeu que a v20 a v23 não chegaram ao ar (ver abaixo).
@@ -19,6 +20,7 @@ Atualizado a cada entrega (quando a proposta é aberta) e de novo depois do Merg
 
 | Versão | Proposta | Testes do app | Regras de negócio | Regras do Firebase (emulador) | Tamanho | Mapa de origem | Regras publicadas | No ar |
 |---|---|---|---|---|---|---|---|---|
+| pelada-v52 | [#60](https://github.com/kleberkoch-coder/nosso-jogo/pull/60) | ✅ 411 de 411 (site e portal compactados) · **gravação no emulador: 23 de 23** (caso P20 novo; a primeira rodada da proposta parou sem dizer onde, a seguinte e uma repetição passaram; desde então, parada vira anotação com a linha) | ✅ 96 de 96 | ✅ 59 de 59 | link do jogador 46,6 KB; app inteiro 94,9 KB (limite 95 KB) | ✅ | não mudaram | ✅ Merge 16/10 22h10; **conferido no ar** (pelada-v52), testes depois do Merge verdes. KAN-172: isento de pagamento, Recebe por jogo e A pagar no Caixa |
 | pelada-v51 | [#59](https://github.com/kleberkoch-coder/nosso-jogo/pull/59) | ✅ 395 de 395 (site e portal compactados) · gravação no emulador: ✅ | ✅ 89 de 89 | ✅ 59 de 59 | link do jogador 46,5 KB; app inteiro 93,3 KB | ✅ | não mudaram | ✅ Merge 16/10 20h14; **conferido no ar** (pelada-v51); testado pelo Kleber no celular. KAN-171: app instalado do organizador não volta mais sozinho ao link do jogador |
 | pelada-v50 | [#58](https://github.com/kleberkoch-coder/nosso-jogo/pull/58) | ✅ 392 de 392 (site e portal compactados) · **gravação no emulador: 21 de 21** | ✅ 89 de 89 | ✅ 59 de 59 | link do jogador 46,4 KB; app inteiro 93,3 KB | ✅ | não mudaram | ✅ Merge 16/10 18h43; **conferido no ar** (pelada-v50). Prova do KAN-170: com o formato antigo das posições, a gravação no emulador falhou (16 de 21, "Nested arrays are not supported"), como em produção |
 | pelada-v49 | [#57](https://github.com/kleberkoch-coder/nosso-jogo/pull/57) | ✅ 382 de 382 (site e portal compactados) | ✅ 83 de 83 | ✅ 59 de 59 | link do jogador 46,1 KB; app inteiro 92,3 KB | ✅ | não mudaram | ✅ Merge 16/10 16h20; **conferido no ar** (pelada-v49) |
@@ -62,3 +64,11 @@ Atualizado a cada entrega (quando a proposta é aberta) e de novo depois do Merg
 Propostas só de documentação ou testes (sem mudança no app): #5, #7 (D12), #13 (D14), #14 (testes sugeridos pela Qualidade, 138 de 138), #18 (KAN-59, ícones mantidos e teste dos 5 ícones, 148 de 148, Merge 09/10 12h30) e #19 (registro do Merge da #18), todas verdes e com Merge. Só regras: #25 (KAN-79, caixa nunca no documento público; Merge 13/10 15h21).
 
 **Correção urgente #21 (10/10/2026, Merge 14h04):** regras do Firebase com os contadores da KAN-89 opcionais, para a v19 que estava no ar voltar a aceitar avulso pelo link e criação de grupo. 40 de 40 no emulador (2 casos pulados, marcados como temporários). Voltar a exigir os contadores depois que a v24 estiver no ar.
+
+## Teste de carga (KAN-158)
+
+| Data | Proposta | 50 confirmações em 10 s | 40 avulsos (limite 30) | 30 votos | 2 administradores | Abrir o link (lista cheia) |
+|---|---|---|---|---|---|---|
+| 16/10/2026 | [#61](https://github.com/kleberkoch-coder/nosso-jogo/pull/61) | ✅ 50 de 50; mediana 39 ms, máx. 446 ms | ✅ 30 entraram, 10 recusadas pelo limite; máx. 1.489 ms | ✅ 30 de 30 contados; máx. 621 ms | ✅ sem falha; máx. 154 ms | 132 leituras, 112 ms |
+
+Tempos do emulador (uma máquina só): servem para comparar versões, não são os do Firebase no ar. Custo estimado em `docs/ARQUITETURA.md` (D18).

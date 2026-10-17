@@ -1,0 +1,43 @@
+# Teste de carga no emulador do Firebase (KAN-158): muita gente confirmando, se adicionando e votando ao mesmo tempo.
+# Roda toda segunda de manhã, à mão (Actions → Teste de carga → Run workflow) e em proposta que mexe nas regras ou no teste.
+# Não toca nos dados reais. O resultado aparece no resumo da execução e fica guardado como arquivo.
+name: Teste de carga
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 9 * * 1" # segunda, 6h17 em Brasília
+  pull_request:
+    paths: ['testes/carga/**', 'firestore.rules', '.github/workflows/carga.yml']
+
+jobs:
+  carga:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Instalar o emulador e a biblioteca de testes
+        run: npm install --no-save --no-audit --no-fund firebase-tools@13 @firebase/rules-unit-testing@3 firebase@10
+      - name: Rodar a carga no emulador
+        shell: bash
+        run: |
+          set -o pipefail
+          npx firebase emulators:exec --only firestore --project demo-nosso-jogo "node testes/carga/carga.mjs" 2>&1 | tee "$RUNNER_TEMP/carga.txt"
+      - name: Resumo da execução
+        if: always()
+        run: |
+          if [ -f testes/carga/resultado-carga.md ]; then
+            { echo "## Teste de carga (emulador)"; echo; cat testes/carga/resultado-carga.md; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: resultado-da-carga
+          path: testes/carga/resultado-carga.*
+          if-no-files-found: ignore

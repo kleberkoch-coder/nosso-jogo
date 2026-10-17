@@ -4,7 +4,8 @@ import { render } from 'preact';
 import { useState } from 'preact/hooks';
 import { cfg } from '../dominio/caixa.js';
 import { col, sport, tn } from '../dominio/esportes.js';
-import { curRodada, pname } from '../dominio/grupo.js';
+import { attendance, curRodada, pname } from '../dominio/grupo.js';
+import { desfazer, emQuadra, entrar, escVazia, podemEntrar, type Esc } from '../dominio/escalacao';
 import { tx } from '../i18n/index.js';
 import { S as estado } from '../nucleo/estado.js';
 import { partidasDe } from '../nucleo/partidas-lista.js';
@@ -45,6 +46,15 @@ function sugestao(r: Rodada): Proximo {
 function naEspera(r: Rodada, a: number, b: number): number[] {
   const s = sugestao(r);
   return [s.b, ...s.espera, s.a].filter((t, i, l) => t !== a && t !== b && l.indexOf(t) === i);
+}
+/* Escalação da partida em andamento (KAN-177): o time do sorteio mais quem entrou, menos quem saiu. */
+function escDe(L: { esc?: Record<string, Esc | null> }, t: 'a' | 'b'): Esc {
+  return (L.esc && L.esc[t]) || escVazia();
+}
+function quadra(r: Rodada, t: 'a' | 'b') {
+  const L = st().live,
+    time = (r.times as Time[])[t === 'a' ? L.a : L.b];
+  return emQuadra(time ? time.players : [], escDe(L, t));
 }
 /* Placar chegou ao limite? */
 const limiteAtingido = (L: { lim?: number; goals: Gol[] }) =>
@@ -97,6 +107,21 @@ function Placar({ r }: { r: Rodada }) {
             </button>
           ))}
         </div>
+        <button class="btn sm" data-a="abrirEscalacao" data-v={t} style="margin:8px auto 4px">
+          {tx('partida.escalacao')}
+        </button>
+        {(() => {
+          const e = escDe(L, t),
+            base = new Set(time.players),
+            novos = e.entrou.filter(id => !base.has(id) && !e.saiu.includes(id));
+          return novos.length || e.saiu.length ? (
+            <div class="goals esc-resumo">
+              {novos.length ? tx('partida.entraram', { nomes: novos.map(pname).join(', ') }) : ''}
+              {novos.length && e.saiu.length ? ' · ' : ''}
+              {e.saiu.length ? tx('partida.sairam', { nomes: e.saiu.map(pname).join(', ') }) : ''}
+            </div>
+          ) : null;
+        })()}
       </div>
     );
   };
@@ -297,6 +322,124 @@ function PartidaTela() {
   );
 }
 
+/* Janela da escalação de um lado (KAN-177): quem está na partida, trocar e puxar de outro time ou da lista de presença. */
+function Escalacao({ r, t }: { r: Rodada; t: 'a' | 'b' }) {
+  const [, redesenhar] = useState(0);
+  const L = st().live,
+    times = r.times as Time[],
+    idx = t === 'a' ? L.a : L.b,
+    time = times[idx],
+    e = escDe(L, t),
+    q = quadra(r, t),
+    outro = quadra(r, t === 'a' ? 'b' : 'a'),
+    base = new Set(time.players),
+    S = st(),
+    presentes = S.presRid === r.id ? (attendance().inn as string[]) : [],
+    opc = podemEntrar(
+      times.map(x => x.players),
+      q.jogaram.concat(outro.jogaram),
+      presentes
+    );
+  const gravar = (nova: Esc) => {
+    L.esc = Object.assign({}, L.esc, { [t]: nova });
+    redesenhar(n => n + 1);
+    changedTela();
+  };
+  const confirmar = () => {
+    const quem = (document.getElementById('escQuem') as HTMLSelectElement).value,
+      lugar = (document.getElementById('escLugar') as HTMLSelectElement).value;
+    if (quem) gravar(entrar(e, quem, lugar || null));
+  };
+  const temOpcao = opc.semTime.length || opc.deTimes.some((x, i) => i !== idx && x.length);
+  return (
+    <>
+      <h3>
+        <span class="dot" style={{ background: col(time.c).c }}></span>{' '}
+        {tx('partida.escalacaoDe', { time: tn(time.c) })}
+      </h3>
+      <p class="small muted">{tx('partida.escalacaoTexto')}</p>
+      <ul class="plist" id="escLista">
+        {q.jogaram.map(id => {
+          const saiu = e.saiu.includes(id),
+            veio = !base.has(id);
+          return (
+            <li key={id}>
+              <span class="pn">
+                {pname(id)} {veio ? <span class="tag">{tx('partida.entrou')}</span> : null}{' '}
+                {saiu ? <span class="tag alt">{tx('partida.saiu')}</span> : null}
+              </span>
+              {veio || saiu ? (
+                <button type="button" class="btn sm ghost" onClick={() => gravar(desfazer(e, id))}>
+                  {tx('partida.desfazerEsc')}
+                </button>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+      {temOpcao ? (
+        <div class="panel" style="margin:10px 0 0">
+          <label class="f">
+            <span>{tx('partida.quemEntra')}</span>
+            <select class="sel" id="escQuem">
+              {times.map((x, i) =>
+                i === idx || !opc.deTimes[i].length ? null : (
+                  <optgroup key={i} label={tn(x.c)}>
+                    {opc.deTimes[i].map(id => (
+                      <option key={id} value={id}>
+                        {pname(id)}
+                      </option>
+                    ))}
+                  </optgroup>
+                )
+              )}
+              {opc.semTime.length ? (
+                <optgroup label={tx('partida.semTime')}>
+                  {opc.semTime.map(id => (
+                    <option key={id} value={id}>
+                      {pname(id)}
+                    </option>
+                  ))}
+                </optgroup>
+              ) : null}
+            </select>
+          </label>
+          <label class="f">
+            <span>{tx('partida.noLugarDe')}</span>
+            <select class="sel" id="escLugar">
+              <option value="">{tx('partida.soCompletar')}</option>
+              {q.atuais.map(id => (
+                <option key={id} value={id}>
+                  {pname(id)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button type="button" class="btn" id="escConfirmar" onClick={confirmar}>
+            {tx('partida.confirmarEntrada')}
+          </button>
+        </div>
+      ) : (
+        <p class="small muted">{tx('partida.ninguemParaEntrar')}</p>
+      )}
+      <div class="dlg-f">
+        <button class="btn primary" data-a="close">
+          {tx('partida.pronto')}
+        </button>
+      </div>
+    </>
+  );
+}
+let changedTela = () => {};
+function montarEscalacao(t: 'a' | 'b', redesenharTela: () => void) {
+  const r = curRodada() as Rodada | null,
+    el = document.getElementById('escRaiz');
+  if (!r || !r.times || !el) return false;
+  changedTela = redesenharTela;
+  render(<Escalacao r={r} t={t} />, el);
+  return true;
+}
+
 /* Editar partida salva (KAN-176): os gols de cada lado, com o autor; o placar sai dos gols.
    O que está na janela fica em "edicao", que a ação salvarEdicao lê ao gravar. */
 let edicao: { mid: string; goals: Gol[] } | null = null;
@@ -406,4 +549,4 @@ function montarPartida() {
   if (el) render(<PartidaTela />, el);
 }
 
-export { edicaoAtual, limiteAtingido, montarEdicao, montarPartida, novaPartida, vPartida };
+export { edicaoAtual, limiteAtingido, montarEdicao, montarEscalacao, montarPartida, novaPartida, quadra, vPartida };

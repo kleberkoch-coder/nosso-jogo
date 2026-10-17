@@ -170,6 +170,7 @@ O app só funciona com o site publicado (https). Abrindo o arquivo direto do com
 4. **Sortear:** escolha quantos times, quanto variar os parceiros e, se precisar, desmarque quem não vai entrar. Os times aparecem também no link da rodada.
 5. **Partida:** use o placar e o cronômetro, registre os gols e salve o resultado. Isso alimenta o ranking. Quando o tempo acaba, além do som e da vibração, aparece o aviso **Tempo esgotado** no placar.
    - **Fim por placar:** escolha, por exemplo, 2 gols; quando um time chegar lá, o app avisa e pausa o tempo. No vôlei, use **Minutos: Sem tempo** e o limite de pontos.
+   - **Escalação:** se faltar gente num time ou alguém se machucar, toque em **Escalação** no lado do time. Dá para puxar alguém de outro time, trocar quem saiu por quem entrou ou pôr alguém da lista de presença. Vale só para aquela partida, e quem esteve em quadra conta o jogo e o resultado.
    - **Corrigir uma partida:** na lista de partidas da rodada, toque em **Editar** para trocar o autor de um gol, tirar ou incluir gols. O ranking se ajusta sozinho.
    - **Próximo jogo:** depois de salvar, o app já sugere quem joga (quem ganha fica e entra quem espera há mais tempo) e mostra **Na espera**. Se o grupo combinar diferente, é só trocar o Time A ou o Time B.
 6. **Votação:** crie a votação e mande o link. Os jogadores votam pelo celular, sem login, e o resultado aparece quando você encerrar.

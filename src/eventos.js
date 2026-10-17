@@ -177,10 +177,12 @@ document.addEventListener('change', e => {
     S.live.a = +v;
     S.live.goals = [];
     S.live.auto = false;
+    if (S.live.esc) S.live.esc.a = null;
   } else if (c === 'tb') {
     S.live.b = +v;
     S.live.goals = [];
     S.live.auto = false;
+    if (S.live.esc) S.live.esc.b = null;
   } else if (c === 'lim') {
     S.live.lim = +v;
     S.live.limAviso = false;

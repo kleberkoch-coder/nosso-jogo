@@ -4,7 +4,19 @@ import assert from 'node:assert/strict';
 import { aplicar, camposEdicao, ranking, resumirTudo } from '../../src/dominio/resumos.ts';
 
 const ART = gols => ({ id: 'art', tipo: 'art', rid: 'r1', date: '2026-10-17', gols });
-const PART = { id: 'm1', rid: 'r1', date: '2026-10-17', ca: 0, cb: 1, pa: ['a'], pb: ['b'], ga: 1, gb: 0, goals: [{ t: 'a', pid: 'a' }], at: 1 };
+const PART = {
+  id: 'm1',
+  rid: 'r1',
+  date: '2026-10-17',
+  ca: 0,
+  cb: 1,
+  pa: ['a'],
+  pb: ['b'],
+  ga: 1,
+  gb: 0,
+  goals: [{ t: 'a', pid: 'a' }],
+  at: 1,
+};
 const linha = (doc, id) => ranking([doc]).find(l => l.id === id) || {};
 
 test('lançar 3 gols: a artilharia sobe 3 e não conta jogo nem vitória (critério 1)', () => {

@@ -1595,6 +1595,30 @@ with sync_playwright() as pw:
     ok(dv(emprestado, 'g') == 1 and dv(emprestado, 'v') == 1, f'CT-KAN-177-01: o gol e a vitória vão para o emprestado no ranking (gols {dv(emprestado, "g")}, vitórias {dv(emprestado, "v")})')
     ok(dv(sai, 'j') == 1 and dv(entra, 'j') == 1 and dv(sai, 'v') == 1 and dv(entra, 'v') == 1, f'CT-KAN-177-02: quem saiu e quem entrou contam o jogo e a vitória ({dv(sai, "j")}/{dv(sai, "v")}, {dv(entra, "j")}/{dv(entra, "v")})')
     ok(p8.evaluate("!S.live.esc") and 'Entrou:' not in p8.inner_text('#partidaRaiz .board'), 'CT-KAN-177-03: a partida seguinte volta à escalação do sorteio')
+
+    # ---------- v56 (KAN-178): artilharia da rodada, só gols (mesmo navegador)
+    n_salvas = p8.locator('#partidaRaiz [data-a=editarPartida]').count()
+    p8.click('#artPainel [data-a=abrirArtilharia]'); p8.wait_for_timeout(400)
+    ok(p8.locator('#dlg #artLista li').count() >= 8 and 'já tem partidas com placar' in p8.inner_text('#dlg'), 'CT-KAN-178: a janela lista os jogadores dos times e avisa que a rodada já tem partidas com placar')
+    p8.screenshot(path=f'{OUT}/56-artilharia.png'); contraste(p8, 'Artilharia da rodada')
+    art = p8.eval_on_selector('#dlg #artLista li button[data-p]', 'b=>b.dataset.p')
+    nome_art = p8.inner_text('#dlg #artLista li .pn')
+    a0 = dict(res8().get(art) or {})
+    for _ in range(3):
+        p8.click(f'#dlg #artLista button[data-p="{art}"]'); p8.wait_for_timeout(100)
+    p8.click('#dlg [data-a=salvarArtilharia]'); p8.wait_for_timeout(1000)
+    a1 = res8().get(art) or {}
+    ok(a1.get('g', 0) - a0.get('g', 0) == 3 and a1.get('v', 0) == a0.get('v', 0) and a1.get('j', 0) == a0.get('j', 0),
+       f'CT-KAN-178-01: lançar 3 gols sobe a artilharia em 3, sem mexer em jogos e vitórias ({a0} → {a1})')
+    ok(nome_art.strip() + ' 3' in p8.inner_text('#artPainel') and p8.locator('#partidaRaiz [data-a=editarPartida]').count() == n_salvas,
+       'CT-KAN-178: o painel mostra o lançamento e ele não vira partida na lista')
+    p8.click('#artPainel [data-a=abrirArtilharia]'); p8.wait_for_timeout(400)
+    p8.click(f'#dlg #artLista [aria-label="Tirar 1 de {nome_art.strip()}"]'); p8.wait_for_timeout(100)
+    p8.click('#dlg [data-a=salvarArtilharia]'); p8.wait_for_timeout(1000)
+    a2 = res8().get(art) or {}
+    ok(a2.get('g', 0) - a0.get('g', 0) == 2, f'CT-KAN-178-02: corrigir de 3 para 2 desce a artilharia em 1 ({a1.get("g")} → {a2.get("g")})')
+    p8.reload(); p8.wait_for_timeout(1500); p8.click('[data-a=tab][data-v=partida]'); p8.wait_for_selector('#artPainel', timeout=8000); p8.wait_for_timeout(800)
+    ok(nome_art.strip() + ' 2' in p8.inner_text('#artPainel'), 'CT-KAN-178-03: depois de recarregar, a artilharia lançada continua')
     ctx8.close()
 
     # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)

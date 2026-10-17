@@ -130,6 +130,9 @@ Registrados na pelada-v43 (KAN-152); os da v44 a v47 entraram na versão de cada
   - **No placar:** embaixo dos botões de ponto de cada lado, o botão "Escalação" (`btn sm`). Quando alguém entrou ou saiu, aparece embaixo a linha "Entrou: Neto · Saiu: Rafa", no estilo dos gols.
   - **Na janela:** título com a bolinha da cor ("Escalação · Laranja"), uma linha de ajuda em `muted` e a lista de quem está na partida. Quem veio de fora tem a `tag` "entrou"; quem saiu, a `tag alt` "saiu". Nos dois casos há um "Desfazer" (`btn sm ghost`).
   - **Para entrar alguém:** um painel com "Quem entra" (agrupado pelo time de origem e "Sem time"), "No lugar de" ("Ninguém (só completar o time)" ou quem está em quadra) e o botão "Confirmar". O rodapé tem "Pronto" (`primary`).
+- **Artilharia da rodada** (KAN-178; sem classe nova):
+  - Na aba Partida, depois de "Partidas desta rodada", fica o painel "Artilharia da rodada", com "Lançar" (ou "Editar") em `btn sm`. Embaixo, uma linha em `muted`: a ajuda, ou o lançamento já feito ("Marcão 3 · Bruno 1").
+  - A janela tem uma ajuda em `muted`; se a rodada já tem partidas com placar, um aviso em `out`. Depois vem uma linha por jogador dos times, com "−" (`btn sm`, desligado no zero), o número em negrito e "+". Para o leitor de tela, os botões dizem "Somar 1 para Marcão" e "Tirar 1 de Marcão". Rodapé: "Cancelar" e "Salvar artilharia" (`primary`).
 - **Carregando a gestão** (KAN-149): ao abrir a gestão pela primeira vez, a área principal mostra "Carregando…" em `muted`; sem internet, "Não foi possível carregar" com a orientação de recarregar.
 
 ## Componentes (pelada-v30)

@@ -2,11 +2,20 @@
 import { sport, tn } from '../dominio/esportes.js';
 import { curRodada, pname } from '../dominio/grupo.js';
 import { tx } from '../i18n/index.js';
-import { addMatch, delMatch as apagarPartida, editMatch } from '../nucleo/partidas.js';
+import { addMatch, delMatch as apagarPartida, editMatch, salvarArtilharia } from '../nucleo/partidas.js';
 import { S } from '../nucleo/estado.js';
 import { $, esc, toast, uid } from '../nucleo/util.js';
 import { actx, beep, elapsed, setActx, sumPts } from '../ui/placar.js';
-import { edicaoAtual, limiteAtingido, montarEdicao, montarEscalacao, novaPartida, quadra } from '../telas/Partida';
+import {
+  artAtual,
+  edicaoAtual,
+  limiteAtingido,
+  montarArtilharia,
+  montarEdicao,
+  montarEscalacao,
+  novaPartida,
+  quadra,
+} from '../telas/Partida';
 import { closeDlg, confirmou, dlg, openDlg } from '../ui/dialogos.js';
 import { render } from '../ui/render.js';
 import { ACT } from '../acoes.js';
@@ -114,6 +123,23 @@ const acoes = {
     /* KAN-175: o próximo jogo sai dos jogos salvos (quem ganha fica, entra quem espera há mais tempo). */
     S.live = novaPartida(r, L);
     toast(`Salvo: ${tn(ta.c)} ${ga} × ${gb} ${tn(tb.c)}`);
+  },
+  /* KAN-178: artilharia da rodada (só o total de gols de cada jogador). */
+  abrirArtilharia: () => {
+    openDlg('<div id="artRaiz"></div>');
+    if (!montarArtilharia()) closeDlg();
+  },
+  salvarArtilharia: () => {
+    const g = artAtual(),
+      r = curRodada();
+    if (!g || !r) return;
+    const gols = {};
+    Object.entries(g).forEach(([id, n]) => {
+      if (n > 0) gols[id] = n;
+    });
+    closeDlg();
+    toast(tx('partida.artSalva'));
+    return salvarArtilharia(r.id, gols);
   },
   /* KAN-177: escalação de um lado (empréstimo, troca, alguém da lista de presença). */
   abrirEscalacao: el => {

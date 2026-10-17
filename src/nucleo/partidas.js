@@ -141,6 +141,27 @@ function editMatch(rid, mid, novo) {
   return w(GB.lote(sem(ops)));
 }
 
+/* Artilharia da rodada (KAN-178): um documento por rodada (partidas/art). Na primeira vez cria; depois edita com versão. */
+function salvarArtilharia(rid, gols) {
+  const r = rodById(rid);
+  if (!r) return Promise.resolve();
+  if ((S.parts || {}).art) return editMatch(rid, 'art', { gols });
+  const doc = clean({ tipo: 'art', gols, rid, date: r.date, at: Date.now() });
+  if (S.partsRid === rid) S.parts = Object.assign({}, S.parts, { art: doc });
+  const ops = [{ tipo: 'set', p: 'rodadas/' + rid + '/partidas/art', o: doc }];
+  if (!S.rod[rid]) {
+    const o = Object.assign({}, r, { createdAt: Date.now() });
+    delete o.id;
+    delete o.virtual;
+    delete o.matches;
+    S.rod[rid] = o;
+    ops.unshift({ tipo: 'patch', p: 'rodadas/' + rid, o: clean(o) });
+  }
+  ops.push(opResumo(camposPartida(Object.assign({ id: 'art' }, doc), rid, r.date, 1)));
+  changed();
+  return w(GB.lote(sem(ops)));
+}
+
 /* Caixa: lançamento junto com o resumo do mês. */
 function salvarLanc(id, o) {
   S.caixa[id] = o;
@@ -317,6 +338,7 @@ export {
   apagarPartidasDaRodada,
   delMatch,
   editMatch,
+  salvarArtilharia,
   gravarVotacao,
   migrar,
   partidasDe,

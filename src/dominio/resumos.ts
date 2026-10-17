@@ -13,6 +13,9 @@
 export type Gol = { t: 'a' | 'b'; pid?: string | null; og?: boolean; pts?: number };
 export type Partida = {
   id: string;
+  /* 'art' = artilharia da rodada (KAN-178): só gols por jogador, sem placar nem resultado. */
+  tipo?: 'art';
+  gols?: Record<string, number>;
   ca: number;
   cb: number;
   pa: string[];
@@ -51,6 +54,7 @@ function soma(c: Campos, chave: string, n: number) {
 
 /* Partida salva (sinal 1) ou apagada (sinal -1). */
 export function camposPartida(m: Partida, rid: string, date: string, sinal: 1 | -1): Campos {
+  if (m.tipo === 'art') return camposArtilharia(m, date, sinal);
   const c = novo(mesDe(date)),
     res = m.ga > m.gb ? 'a' : m.ga < m.gb ? 'b' : 'e';
   const lado = (ids: string[], meu: 'a' | 'b') =>
@@ -65,6 +69,13 @@ export function camposPartida(m: Partida, rid: string, date: string, sinal: 1 | 
   });
   if (sinal > 0) c.gravar[`jogos.${m.id}`] = { rid, date, ca: m.ca, cb: m.cb, ga: m.ga, gb: m.gb, at: m.at || 0 };
   else c.apagar.push(`jogos.${m.id}`);
+  return c;
+}
+
+/* Artilharia da rodada (KAN-178): soma só os gols de cada jogador. Não conta jogo nem resultado (decisão do Kleber). */
+export function camposArtilharia(m: Partida, date: string, sinal: 1 | -1): Campos {
+  const c = novo(mesDe(date));
+  Object.entries(m.gols || {}).forEach(([pid, n]) => soma(c, `jog.${pid}.g`, (+n || 0) * sinal));
   return c;
 }
 

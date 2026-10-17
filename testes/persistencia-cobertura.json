@@ -14,6 +14,7 @@
   "avulsos": ["P11"],
   "rodadas/limites/avulsos": ["P11"],
   "rodadas/partidas": ["P13", "P13b", "P13c"],
+  "rodadas/partidas/art": ["P13c"],
   "resumos": ["P13", "P14"],
   "caixa": ["P14", "P20"],
   "votacoes": ["P15"],

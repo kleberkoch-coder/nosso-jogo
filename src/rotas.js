@@ -259,7 +259,13 @@ function setupRoute() {
   // Até o grupo carregar, vale o país da conta (ou Brasil); o grupo traz o dele (KAN-162).
   aplicarRegiao(!R.gid ? S.me : null);
   /* KAN-149: fora do link público, a parte de gestão já começa a baixar enquanto o Firebase conecta. */
-  if (R.n !== 'r' && R.n !== 'v' && !(R.n === 'auth')) carregarAdmin().catch(() => {});
+  /* KAN-175: na gestão, a aba Partida também já vem logo depois, para abrir na hora (e na quadra, sem sinal). */
+  if (R.n !== 'r' && R.n !== 'v' && !(R.n === 'auth'))
+    carregarAdmin()
+      .then(A => {
+        if (R.n === 'admin') setTimeout(() => A.carregarPartida().catch(() => {}), 1500);
+      })
+      .catch(() => {});
   if (R.n === 'auth') {
     if (logged) {
       location.hash = '#/';

@@ -1,11 +1,12 @@
-/* Ações: Partida: placar, cronômetro, salvar e recalcular totais. Fazem parte de ACT (src/acoes.js). */
+/* Ações: Partida: placar, cronômetro e salvar (recalcular os totais fica em acoes/recalcular.ts). Fazem parte de ACT (src/acoes.js). */
 import { sport, tn } from '../dominio/esportes.js';
 import { curRodada, pname } from '../dominio/grupo.js';
 import { tx } from '../i18n/index.js';
-import { addMatch, delMatch as apagarPartida, recalcular } from '../nucleo/partidas.js';
+import { addMatch, delMatch as apagarPartida } from '../nucleo/partidas.js';
 import { S } from '../nucleo/estado.js';
 import { $, esc, toast, uid } from '../nucleo/util.js';
-import { actx, elapsed, setActx, sumPts } from '../ui/placar.js';
+import { actx, beep, elapsed, setActx, sumPts } from '../ui/placar.js';
+import { limiteAtingido, novaPartida } from '../telas/Partida';
 import { closeDlg, confirmou, dlg, openDlg } from '../ui/dialogos.js';
 import { render } from '../ui/render.js';
 import { ACT } from '../acoes.js';
@@ -33,12 +34,23 @@ const acoes = {
     <div class="dlg-f"><button class="btn" data-a="addGoal" data-v="${t}" data-pts="${pts}">${tx('partida.semAutor')}</button><button class="btn" data-a="close">${tx('comum.cancelar')}</button></div>`);
   },
   addGoal: el => {
-    S.live.goals.push({ t: el.dataset.v, pid: el.dataset.p || null, og: !!el.dataset.og, pts: +el.dataset.pts || 1 });
+    const L = S.live;
+    L.goals.push({ t: el.dataset.v, pid: el.dataset.p || null, og: !!el.dataset.og, pts: +el.dataset.pts || 1 });
+    /* Fim por placar (KAN-175): avisa uma vez, pausa o cronômetro e toca como no fim do tempo. */
+    if (limiteAtingido(L) && !L.limAviso) {
+      L.limAviso = true;
+      if (L.run) {
+        L.el = elapsed();
+        L.run = false;
+      }
+      beep();
+    }
     closeDlg();
     render();
   },
   undoGoal: () => {
     S.live.goals.pop();
+    if (!limiteAtingido(S.live)) S.live.limAviso = false;
     render();
   },
   clock: () => {
@@ -78,16 +90,8 @@ const acoes = {
       goals: L.goals.map(g => ({ t: g.t, pid: g.pid, og: g.og, pts: g.pts || 1 })),
       at: Date.now(),
     });
-    let na = L.a,
-      nb = L.b;
-    if (r.times.length > 2) {
-      const win = ga > gb ? L.a : gb > ga ? L.b : L.a,
-        out = win === L.a ? L.b : L.a,
-        next = [...Array(r.times.length).keys()].filter(i => i !== L.a && i !== L.b);
-      na = win;
-      nb = next.concat(out)[0];
-    }
-    S.live = { rid: r.id, a: na, b: nb, goals: [], dur: L.dur, el: 0, run: false, st: 0, beeped: false };
+    /* KAN-175: o próximo jogo sai dos jogos salvos (quem ganha fica, entra quem espera há mais tempo). */
+    S.live = novaPartida(r, L);
     toast(`Salvo: ${tn(ta.c)} ${ga} × ${gb} ${tn(tb.c)}`);
   },
   delMatch: el => {
@@ -101,22 +105,6 @@ const acoes = {
     )
       return;
     return apagarPartida(curRodada().id, el.dataset.v);
-  },
-  /* Recalcular os totais (KAN-87): ranking (ano, mês ou tudo) ou caixa (mês). */
-  recalc: el => {
-    const p = el.dataset.v;
-    if (
-      confirmou(el, {
-        titulo: tx('resumo.recalcularTitulo'),
-        texto: tx('resumo.confirmaRecalcular'),
-        acao: tx('resumo.recalcularAcao'),
-      }) !== 'sim'
-    )
-      return;
-    return recalcular(p).catch(e => {
-      console.warn(e);
-      toast(tx('resumo.erroRecalcular'));
-    });
   },
 };
 

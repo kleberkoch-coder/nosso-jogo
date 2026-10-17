@@ -116,6 +116,11 @@ Registrados na pelada-v43 (KAN-152); os da v44 a v47 entraram na versão de cada
   - **Na ficha do jogador:** o combo "Tipo" ganha "Isento de pagamento". Abaixo, a caixa de marcar "Recebe por jogo" (`chk`). Ao marcar, aparece "Valor por jogo (R$)" com o cursor nele. Embaixo, uma dica em `muted`.
   - **No Caixa:** quando alguém tem jogos a pagar, os números do topo ganham "A pagar" em `out` (`money neg`). Entre os números e as Pendências entra o painel "A pagar", com uma linha de ajuda em `muted` e uma linha por pessoa: nome, "3 jogos" em `tag`, o total em negrito e o botão "Pagar" (`btn sm`, que diz o nome e o valor para o leitor de tela). Sem nada a pagar, o painel e o número somem.
   - **Janela "Pagar Fulano":** texto em `muted` com o valor por jogo, os jogos em `chk` (data de cada um, todos marcados) e "Total pago (R$)", que acompanha as marcas e pode ser editado. Botões "Cancelar" e "Paguei" (`primary`). Paguei grava com Desfazer por 6 s, como o "Recebi".
+- **Partida: fim por placar e fila** (KAN-175; sem classe nova):
+  - Ao lado de "Minutos" (com a opção "Sem tempo"), o combo "Fim por placar": "Sem limite", depois de 1 a 25. No celular de 360px, os quatro combos ficam em duas linhas.
+  - Ao chegar no limite, aparece a faixa "Fim por placar: chegou a 2" no placar, no mesmo estilo do "Tempo esgotado" (`clock-msg`).
+  - Abaixo dos combos, a linha "Na espera:" em `muted`, seguida dos times na ordem da fila, cada um com a bolinha da cor (`dot`), separados por "·".
+  - Ao lado de "Encerrar e salvar partida", a dica em `muted`: "Sugestão: quem ganha fica e entra quem espera há mais tempo. Troque os times acima se precisar."
 - **Carregando a gestão** (KAN-149): ao abrir a gestão pela primeira vez, a área principal mostra "Carregando…" em `muted`; sem internet, "Não foi possível carregar" com a orientação de recarregar.
 
 ## Componentes (pelada-v30)

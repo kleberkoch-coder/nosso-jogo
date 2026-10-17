@@ -121,6 +121,11 @@ Registrados na pelada-v43 (KAN-152); os da v44 a v47 entraram na versão de cada
   - Ao chegar no limite, aparece a faixa "Fim por placar: chegou a 2" no placar, no mesmo estilo do "Tempo esgotado" (`clock-msg`).
   - Abaixo dos combos, a linha "Na espera:" em `muted`, seguida dos times na ordem da fila, cada um com a bolinha da cor (`dot`), separados por "·".
   - Ao lado de "Encerrar e salvar partida", a dica em `muted`: "Sugestão: quem ganha fica e entra quem espera há mais tempo. Troque os times acima se precisar."
+- **Editar partida** (KAN-176; sem classe nova): na lista "Partidas desta rodada", cada linha ganha "Editar" (`btn sm`) antes de "Apagar".
+  - A janela "Editar partida" tem uma linha de ajuda em `muted` e um painel por time, com a bolinha da cor, o nome e o placar ("Laranja · 1").
+  - Cada gol aparece como uma linha com o combo do autor ("Sem autor", os jogadores do time e, no futebol, "(contra)" com os do adversário) e um ✕ (`ghost danger`) para tirar o gol. Valor maior que 1 aparece como `tag` ("+3").
+  - Embaixo de cada painel, os botões de ponto do esporte ("+ Gol"; no basquete "+1", "+2", "+3").
+  - Rodapé: "Cancelar" e o principal "Salvar 1 × 0", que mostra o placar novo.
 - **Carregando a gestão** (KAN-149): ao abrir a gestão pela primeira vez, a área principal mostra "Carregando…" em `muted`; sem internet, "Não foi possível carregar" com a orientação de recarregar.
 
 ## Componentes (pelada-v30)

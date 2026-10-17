@@ -68,6 +68,21 @@ export function camposPartida(m: Partida, rid: string, date: string, sinal: 1 | 
   return c;
 }
 
+/* Partida editada depois de salva (KAN-176): desconta a versão antiga e soma a nova numa gravação só.
+   O placar da lista (jogos.{id}) é regravado com o placar novo. Se a data mudar de mês (não acontece hoje), vira dois ajustes. */
+export function camposEdicao(antes: Partida, depois: Partida, rid: string, date: string): Campos[] {
+  const a = camposPartida(antes, rid, date, -1),
+    d = camposPartida(depois, rid, date, 1);
+  if (a.mes !== d.mes) return [a, d];
+  Object.entries(d.somar).forEach(([k, n]) => soma(a, k, n));
+  Object.keys(a.somar).forEach(k => {
+    if (!a.somar[k]) delete a.somar[k];
+  });
+  a.apagar = a.apagar.filter(k => !(k in d.gravar));
+  Object.assign(a.gravar, d.gravar);
+  return [a];
+}
+
 /* Lançamento do caixa criado (1) ou apagado (-1). Despesa é saída; o resto é entrada. */
 export function camposLancamento(l: Lancamento, sinal: 1 | -1): Campos {
   const c = novo(mesDe(l.d));

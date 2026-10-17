@@ -1544,6 +1544,32 @@ with sync_playwright() as pw:
     antes = viva()
     p8.reload(); p8.wait_for_timeout(1500); p8.click('[data-a=tab][data-v=partida]'); p8.wait_for_selector('#partidaRaiz .board', timeout=8000); p8.wait_for_timeout(800)
     ok(viva() == antes, f'CT-KAN-175-06: depois de recarregar, a sugestão continua a mesma ({antes} → {viva()})')
+
+    # ---------- v54 (KAN-176): editar uma partida salva (mesmo navegador do KAN-175)
+    g8 = p8.url.split('#/g/')[1].split('/')[0]
+    m1 = p8.evaluate("(()=>{const ms=Object.entries(S.parts).map(([id,m])=>Object.assign({id},m)).sort((a,b)=>a.at-b.at);return ms[0]})()")
+    mes8 = m1['date'][:7]
+    res8 = lambda: (p8.evaluate(LER, f'grupos/{g8}/resumos/{mes8}') or {}).get('jog', {})
+    p8.locator('#partidaRaiz [data-a=editarPartida]').first.click(); p8.wait_for_timeout(400)
+    ok(p8.locator('#dlg .ed-autor').count() == 1, f'CT-KAN-176: a janela Editar mostra os gols da partida ({p8.locator("#dlg .ed-autor").count()})')
+    p8.screenshot(path=f'{OUT}/54-editar-partida.png'); contraste(p8, 'Editar partida')
+    autor = m1['pa'][0]
+    p8.select_option('#dlg .ed-autor', 'p:' + autor); p8.wait_for_timeout(150)
+    p8.click('#dlg [data-a=salvarEdicao]'); p8.wait_for_timeout(1000)
+    ok((res8().get(autor) or {}).get('g') == 1, f'CT-KAN-176-01: trocar "sem autor" por um jogador dá o gol a ele na artilharia ({res8().get(autor)})')
+    r0 = dict(res8().get(autor) or {})
+    p8.locator('#partidaRaiz [data-a=editarPartida]').first.click(); p8.wait_for_timeout(400)
+    p8.click('#dlg .plist [aria-label="Tirar este gol"]'); p8.wait_for_timeout(150)
+    p8.click('#dlg [data-a=salvarEdicao]'); p8.wait_for_timeout(1000)
+    r1 = res8().get(autor) or {}
+    ok(not r1.get('g') and r1.get('v', 0) == r0.get('v', 0) - 1 and r1.get('e', 0) == r0.get('e', 0) + 1 and r1.get('j') == r0.get('j') and '0 × 0' in p8.inner_text('#partidaRaiz .plist'),
+       f'CT-KAN-176-02: tirar o único gol de um 1×0 troca a vitória por empate no ranking e na lista ({r0} → {r1})')
+    p8.locator('#partidaRaiz [data-a=editarPartida]').first.click(); p8.wait_for_timeout(400)
+    p8.click('#dlg .ed-mais[data-lado=b]'); p8.wait_for_timeout(150)
+    ok('Salvar 0 × 1' in p8.inner_text('#dlg [data-a=salvarEdicao]'), 'CT-KAN-176-03: incluir um gol atualiza o placar na janela')
+    p8.click('#dlg [data-a=salvarEdicao]'); p8.wait_for_timeout(1000)
+    p8.reload(); p8.wait_for_timeout(1500); p8.click('[data-a=tab][data-v=partida]'); p8.wait_for_selector('#partidaRaiz .board', timeout=8000); p8.wait_for_timeout(800)
+    ok('0 × 1' in p8.inner_text('#partidaRaiz .plist li'), 'CT-KAN-176-04: depois de recarregar, a partida corrigida continua 0 × 1')
     ctx8.close()
 
     # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)

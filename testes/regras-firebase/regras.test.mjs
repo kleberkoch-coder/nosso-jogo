@@ -105,6 +105,20 @@ describe('partidas (KAN-86)', () => {
   test('partida já existente não é regravada (evita contar em dobro)', async () => {
     await assertFails(setDoc(doc(db.adm(), G + '/rodadas/r1/partidas/p1'), { ga: 5 }));
   });
+  test('KAN-176: administrador edita a partida subindo a versão de 1 em 1', async () => {
+    const p = doc(db.adm(), G + '/rodadas/r1/partidas/p1');
+    await assertSucceeds(setDoc(p, { ca: 0, cb: 1, ga: 1, gb: 1, pa: ['a'], pb: ['b'], goals: [], ver: 1 }));
+    await assertSucceeds(setDoc(p, { ca: 0, cb: 1, ga: 2, gb: 1, pa: ['a'], pb: ['b'], goals: [], ver: 2 }));
+  });
+  test('KAN-176: edição com versão velha (outro aparelho já editou) é recusada', async () => {
+    const p = doc(db.adm(), G + '/rodadas/r1/partidas/p1');
+    await assertSucceeds(setDoc(p, { ga: 1, gb: 1, ver: 1 }));
+    await assertFails(setDoc(p, { ga: 3, gb: 1, ver: 1 }));
+  });
+  test('KAN-176: jogador pelo link e administrador de outro grupo não editam', async () => {
+    await assertFails(setDoc(doc(db.anon(), G + '/rodadas/r1/partidas/p1'), { ga: 9, ver: 1 }));
+    await assertFails(setDoc(doc(db.outro(), G + '/rodadas/r1/partidas/p1'), { ga: 9, ver: 1 }));
+  });
   test('apagar só o que existe: a segunda vez é recusada', async () => {
     await assertSucceeds(deleteDoc(doc(db.adm(), G + '/rodadas/r1/partidas/p1')));
     await assertFails(deleteDoc(doc(db.adm(), G + '/rodadas/r1/partidas/p1')));

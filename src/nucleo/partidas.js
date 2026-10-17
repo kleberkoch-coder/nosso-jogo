@@ -1,4 +1,12 @@
-import { camposLancamento, camposPartida, camposVotacao, mesDe, resumirTudo, vazio } from '../dominio/resumos.ts';
+import {
+  camposEdicao,
+  camposLancamento,
+  camposPartida,
+  camposVotacao,
+  mesDe,
+  resumirTudo,
+  vazio,
+} from '../dominio/resumos.ts';
 import { rodById } from '../dominio/grupo.js';
 import { B, op } from './backend.js';
 import { GB, S, clean, gp, w } from './estado.js';
@@ -114,6 +122,21 @@ function delMatch(rid, mid) {
     { tipo: 'patch', p: 'rodadas/' + rid, o: { np: op.somar(-1) } },
     opResumo(camposPartida(Object.assign({ id: mid }, m), rid, m.date || r.date, -1)),
   ];
+  changed();
+  return w(GB.lote(sem(ops)));
+}
+
+/* Partida editada depois de salva (KAN-176): regrava a partida e ajusta o resumo do mês no mesmo lote. */
+function editMatch(rid, mid, novo) {
+  const antes = (S.parts || {})[mid],
+    r = rodById(rid);
+  if (!antes || !r) return Promise.resolve();
+  const date = antes.date || r.date,
+    doc = clean(Object.assign({}, antes, novo, { rid, date, editadaEm: Date.now(), ver: (antes.ver || 0) + 1 }));
+  S.parts = Object.assign({}, S.parts, { [mid]: doc });
+  const ops = [{ tipo: 'set', p: 'rodadas/' + rid + '/partidas/' + mid, o: doc }].concat(
+    camposEdicao(Object.assign({ id: mid }, antes), Object.assign({ id: mid }, doc), rid, date).map(opResumo)
+  );
   changed();
   return w(GB.lote(sem(ops)));
 }
@@ -293,6 +316,7 @@ export {
   apagarLanc,
   apagarPartidasDaRodada,
   delMatch,
+  editMatch,
   gravarVotacao,
   migrar,
   partidasDe,

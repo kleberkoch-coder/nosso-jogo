@@ -11,6 +11,17 @@ from playwright.sync_api import sync_playwright
 
 URL = sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:8765/index.html'
 GITHUB = bool(os.environ.get('GITHUB_ACTIONS'))
+
+# Se o roteiro parar no meio (seletor que não aparece, tempo esgotado), o motivo vira anotação no GitHub,
+# com o último caso que passou: o log completo nem sempre está acessível.
+def _parou(tipo, valor, tb):
+    import traceback
+    ultimo = res[-1]['teste'][:80] if res else 'nenhum'
+    linha = traceback.extract_tb(tb)[-1].lineno if tb else '?'
+    msg = f'roteiro parou na linha {linha} ({tipo.__name__}: {str(valor).splitlines()[0][:200]}); último caso: {ultimo}'
+    print(('::error::Gravação: ' if GITHUB else 'ERRO    ') + msg, flush=True)
+    sys.__excepthook__(tipo, valor, tb)
+sys.excepthook = _parou
 res = []; errs = []
 
 def ok(cond, msg):

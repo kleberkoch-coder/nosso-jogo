@@ -37,6 +37,14 @@ const adm = uid => env.authenticatedContext(uid, senha).firestore();
 /* Contagem de operações feitas pelos aparelhos simulados (leituras e gravações de documento). */
 const ops = { leituras: 0, gravacoes: 0 };
 const resultados = [];
+/* withSecurityRulesDisabled não devolve o valor da função: este atalho devolve. */
+async function semRegras(fn) {
+  let r;
+  await env.withSecurityRulesDisabled(async ctx => {
+    r = await fn(ctx.firestore());
+  });
+  return r;
+}
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const agora = () => performance.now();
 async function cronometrar(fn) {
@@ -92,9 +100,7 @@ async function confirmacoes() {
     );
   }
   const r = await Promise.all(tarefas);
-  const gravadas = await env.withSecurityRulesDisabled(
-    async ctx => (await getDocs(collection(ctx.firestore(), R + '/presencas'))).size
-  );
+  const gravadas = await semRegras(async f => (await getDocs(collection(f, R + '/presencas'))).size);
   const t = resumoTempos(r),
     falhas = r.filter(x => !x.ok);
   registrar(
@@ -128,9 +134,8 @@ async function avulsos() {
       });
     })
   );
-  const { n, entraram } = await env.withSecurityRulesDisabled(async ctx => {
-    const f = ctx.firestore(),
-      c = (await getDoc(doc(f, C))).data() || {},
+  const { n, entraram } = await semRegras(async f => {
+    const c = (await getDoc(doc(f, C))).data() || {},
       ps = await getDocs(collection(f, R + '/presencas'));
     return { n: c.n, entraram: ps.docs.filter(d => d.data().avulso).length };
   });
@@ -205,9 +210,8 @@ async function administradores() {
     })
   );
   const r = await Promise.all([...marcar, ...sortear]);
-  const fim = await env.withSecurityRulesDisabled(async ctx => {
-    const f = ctx.firestore(),
-      rd = (await getDoc(doc(f, R2))).data(),
+  const fim = await semRegras(async f => {
+    const rd = (await getDoc(doc(f, R2))).data(),
       ps = await getDocs(collection(f, R2 + '/presencas'));
     return { times: (rd.times || []).length, presencas: ps.size };
   });

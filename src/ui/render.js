@@ -15,6 +15,23 @@ import { renderPublicRodada } from '../telas/publico-rodada.js';
 import { renderPublicVoto } from '../telas/publico-voto.js';
 
 /* =================== render =================== */
+/* Parte do app que baixa sob demanda (gestão, apresentação, aba Partida): mostra "Carregando…" e desenha de novo quando
+   chega; sem internet, avisa que não carregou. */
+let apresentacao = null;
+function baixar(promessa, guardar, onde = main) {
+  onde.replaceChildren(el('div', 'empty muted', tx('comum.carregando')));
+  promessa.then(
+    m => {
+      if (guardar) guardar(m);
+      render();
+    },
+    () => {
+      const p = el('div', 'panel empty');
+      p.append(el('h2', '', tx('comum.naoCarregouTitulo')), el('p', 'muted', tx('comum.naoCarregou')));
+      onde.replaceChildren(p);
+    }
+  );
+}
 let rq = false;
 function changed() {
   if (rq) return;
@@ -91,26 +108,17 @@ function renderCore() {
       : '';
   if (logged) $('#topright').append(botaoConta());
   document.body.classList.remove('is-landing');
-  /* KAN-149: página inicial, convite e gestão vêm da parte de gestão, que carrega na primeira vez. */
-  const A = adm();
-  if (!A && (R.n === 'home' || R.n === 'inv' || (logged && R.n === 'admin'))) {
-    main.replaceChildren(el('div', 'empty muted', tx('comum.carregando')));
-    carregarAdmin().then(
-      () => render(),
-      () => {
-        const p = el('div', 'panel empty');
-        p.append(el('h2', '', tx('comum.naoCarregouTitulo')), el('p', 'muted', tx('comum.naoCarregou')));
-        main.replaceChildren(p);
-      }
-    );
-    return;
-  }
+  /* KAN-175: a apresentação (quem ainda não tem conta) baixa sozinha, sem esperar a gestão. */
   if (R.n === 'home' && !logged && !isStandalone()) {
+    if (!apresentacao) return baixar(import('../telas/apresentacao.js'), m => (apresentacao = m));
     document.body.classList.add('is-landing');
     $('#tabsnav').hidden = true;
-    main.innerHTML = A.vLanding();
+    main.innerHTML = apresentacao.vLanding();
     return;
   }
+  /* KAN-149: página inicial, convite e gestão vêm da parte de gestão, que carrega na primeira vez. */
+  const A = adm();
+  if (!A && (R.n === 'home' || R.n === 'inv' || (logged && R.n === 'admin'))) return baixar(carregarAdmin());
   if (R.n === 'inv') return A.renderInvite();
   if (!logged) {
     main.innerHTML = vAuth();
@@ -154,7 +162,7 @@ function renderCore() {
     {
       rodada: A.vRodada,
       jogadores: A.vJogadores,
-      partida: A.vPartida,
+      partida: () => (A.partidaPronta() ? A.partidaPronta().vPartida() : '<div id="partidaRaiz"></div>'),
       ranking: A.vRanking,
       caixa: A.vCaixa,
       votacao: A.vVotacao,
@@ -165,8 +173,10 @@ function renderCore() {
   if (S.tab === 'rodada') A.montarRodada();
   if (S.tab === 'jogadores') A.montarJogadores();
   if (S.tab === 'partida') {
-    A.montarPartida();
-    A.tick();
+    const P = A.partidaPronta();
+    if (!P) return baixar(A.carregarPartida(), null, $('#partidaRaiz'));
+    P.montarPartida();
+    P.tick();
   }
 }
 

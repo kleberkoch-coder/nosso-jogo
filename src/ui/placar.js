@@ -12,6 +12,15 @@ function elapsed() {
 function tick() {
   const el = document.getElementById('clock');
   if (!el || !S.live) return;
+  /* Sem tempo (KAN-175): conta para cima, sem alarme. */
+  if (!S.live.dur) {
+    const s = elapsed();
+    el.textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+    el.classList.remove('over', 'pisca');
+    const m = document.getElementById('clockMsg');
+    if (m) m.hidden = true;
+    return;
+  }
   const rem = S.live.dur - elapsed(),
     a = Math.abs(rem);
   el.textContent =
@@ -58,4 +67,4 @@ function setActx(v) {
   actx = v;
 }
 
-export { actx, elapsed, setActx, sumPts, tick };
+export { actx, beep, elapsed, setActx, sumPts, tick };

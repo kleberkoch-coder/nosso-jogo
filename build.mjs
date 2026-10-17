@@ -98,7 +98,11 @@ const gestao = [...pedacos.keys()].filter(c => !nucleo.includes(c));
   );
   const doNucleo = new Set();
   for (const [saida, o] of Object.entries(rMin.metafile.outputs))
-    if (saida.endsWith('.js') && !/admin-/.test(saida)) Object.keys(o.inputs).forEach(f => doNucleo.add(f));
+    if (
+      saida.endsWith('.js') &&
+      (saida.endsWith('main.js') || nucleo.includes(path.relative(OUT, saida).split(path.sep).join('/')))
+    )
+      Object.keys(o.inputs).forEach(f => doNucleo.add(f));
   const errados = [];
   for (const f of doNucleo) {
     if (!f.startsWith('src/') || f.includes('i18n')) continue;
@@ -189,9 +193,23 @@ const z = t => zlib.gzipSync(t, { level: 9 }).length;
 const gzPub = z(html) + nucleo.reduce((n, c) => n + z(pedacos.get(c)), 0);
 const gzGest = gestao.reduce((n, c) => n + z(pedacos.get(c)), 0);
 const gz = gzPub + gzGest;
+/* KAN-175 (D7): o orçamento mede o que baixa ao abrir a gestão (o pedaço admin e o que ele importa direto).
+   Abas e páginas que baixam só quando abertas (Partida, apresentação) têm limite próprio, cada uma. */
+const daGestao = [];
+{
+  const fila2 = gestao.filter(c => /^chunks\/admin-/.test(c));
+  while (fila2.length) {
+    const c = fila2.shift();
+    if (daGestao.includes(c) || nucleo.includes(c)) continue;
+    daGestao.push(c);
+    importsDiretos(pedacos.get(c)).forEach(x => fila2.push('chunks/' + x));
+  }
+}
+const sobDemanda = gestao.filter(c => !daGestao.includes(c));
+const gzAbrir = gzPub + daGestao.reduce((n, c) => n + z(pedacos.get(c)), 0);
 const gzLeg = z(legivel);
 console.log(
-  `Site ${VERSAO} montado em ${OUT}/ em ${Date.now() - t0} ms · link do jogador ${kb(gzPub)} comprimido · com a gestão ${kb(gz)} (sem compactar seria ${kb(gzLeg)}) · ${pedacos.size} pedaços · cópia legível em ${LEGIVEL}/`
+  `Site ${VERSAO} montado em ${OUT}/ em ${Date.now() - t0} ms · link do jogador ${kb(gzPub)} comprimido · ao abrir a gestão ${kb(gzAbrir)} · sob demanda ${sobDemanda.map(c => c.replace(/^chunks\/|-[A-Z0-9]+\.js$/g, '') + ' ' + kb(z(pedacos.get(c)))).join(', ')} · tudo ${kb(gz)} (sem compactar seria ${kb(gzLeg)}) · ${pedacos.size} pedaços · cópia legível em ${LEGIVEL}/`
 );
 
 /* Painel da dívida técnica (docs/ARQUITETURA.md, D12): números que devem melhorar a cada versão. */
@@ -255,12 +273,23 @@ console.log(
 // KAN-149: o link do jogador (página + pedaços que ela carrega logo) tem limite próprio.
 // Desde a v46 o total vai até 90 KB (era 85 desde a v43): funcionalidades de gestão (importar planilha, componentes), que só quem administra baixa (D7).
 // Desde a v47, 95 KB: a tabela de países (telefone, moeda, formato e fusos de 44 países, KAN-162), que vem só com a gestão (D7).
+// Desde a v53 (KAN-175), os 95 KB medem o que baixa ao abrir a gestão; o que baixa só ao abrir uma aba tem até 15 KB cada.
 const LIMITE = 95 * 1024,
-  LIMITE_LINK = 50 * 1024;
-if (gz > LIMITE) {
-  console.error(`Passou do orçamento de desempenho: ${kb(gz)} comprimido (limite ${kb(LIMITE)}).`);
+  LIMITE_LINK = 50 * 1024,
+  LIMITE_DEMANDA = 15 * 1024;
+if (gzAbrir > LIMITE) {
+  console.error(
+    `Passou do orçamento de desempenho: ${kb(gzAbrir)} comprimido ao abrir a gestão (limite ${kb(LIMITE)}).`
+  );
   process.exit(1);
 }
+for (const c of sobDemanda)
+  if (z(pedacos.get(c)) > LIMITE_DEMANDA) {
+    console.error(
+      `A parte sob demanda ${c} passou do orçamento: ${kb(z(pedacos.get(c)))} (limite ${kb(LIMITE_DEMANDA)}).`
+    );
+    process.exit(1);
+  }
 if (gzPub > LIMITE_LINK) {
   console.error(`O link do jogador passou do orçamento: ${kb(gzPub)} comprimido (limite ${kb(LIMITE_LINK)}).`);
   process.exit(1);

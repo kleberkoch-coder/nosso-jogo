@@ -10,6 +10,7 @@ import { partidasDe } from '../nucleo/partidas-lista.js';
 import { SeletorRodada } from '../ui/componentes';
 import { rodadasProntas } from './rodada-partes.js';
 import { sumPts } from '../ui/placar.js';
+import { proximoJogo, type Proximo } from '../dominio/fila';
 
 type Time = { c: number; players: string[] };
 type Rodada = { id: string; date: string; time?: string; times?: Time[] | null };
@@ -18,6 +19,43 @@ type Partida = { id: string; ca: number; cb: number; ga: number; gb: number; goa
 
 const st = (): any => estado;
 const MINUTOS = [5, 7, 8, 10, 12, 15, 20, 25, 30, 45];
+/* Fim por placar (KAN-175): 0 = sem limite. Vale para gols e para pontos. */
+const LIMITES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 21, 25];
+
+/* Sugestão do próximo jogo (KAN-175), a partir dos jogos salvos desta rodada (dominio/fila.ts). */
+function sugestao(r: Rodada): Proximo {
+  const times = r.times as Time[],
+    pos = (c: number) => times.findIndex(t => t.c === c);
+  const jogos = (partidasDe(r.id) as Partida[])
+    .map(m => ({ a: pos(m.ca), b: pos(m.cb), ga: m.ga, gb: m.gb }))
+    .filter(j => j.a >= 0 && j.b >= 0);
+  return proximoJogo(times.length, jogos);
+}
+/* Quem está esperando, na ordem da fila, fora os dois times em quadra (mesmo que trocados à mão). */
+function naEspera(r: Rodada, a: number, b: number): number[] {
+  const s = sugestao(r);
+  return [s.b, ...s.espera, s.a].filter((t, i, l) => t !== a && t !== b && l.indexOf(t) === i);
+}
+/* Placar chegou ao limite? */
+const limiteAtingido = (L: { lim?: number; goals: Gol[] }) =>
+  !!L.lim && (sumPts(L.goals, 'a') >= L.lim || sumPts(L.goals, 'b') >= L.lim);
+/* Partida nova da rodada: times sugeridos, mantendo o tempo e o limite escolhidos antes. */
+function novaPartida(r: Rodada, antes?: { dur?: number; lim?: number } | null) {
+  const s = sugestao(r);
+  return {
+    rid: r.id,
+    a: s.a,
+    b: s.b,
+    auto: true,
+    goals: [],
+    dur: antes && antes.dur != null ? antes.dur : cfg().minutes * 60,
+    lim: (antes && antes.lim) || 0,
+    el: 0,
+    run: false,
+    st: 0,
+    beeped: false,
+  };
+}
 
 function Placar({ r }: { r: Rodada }) {
   const L = st().live,
@@ -63,6 +101,11 @@ function Placar({ r }: { r: Rodada }) {
       <div id="clockMsg" class="clock-msg" role="status" hidden>
         {tx('partida.tempoEsgotado')}
       </div>
+      {limiteAtingido(L) ? (
+        <div id="limMsg" class="clock-msg" role="status">
+          {tx('partida.limiteAtingido', { n: L.lim })}
+        </div>
+      ) : null}
       <div class="row" style="justify-content:center">
         <button class="btn" data-a="clock" id="clockBtn">
           {tx(L.run ? 'partida.pausar' : 'partida.iniciar')}
@@ -80,7 +123,8 @@ function Placar({ r }: { r: Rodada }) {
 
 function Ajustes({ r }: { r: Rodada }) {
   const L = st().live,
-    times = r.times as Time[];
+    times = r.times as Time[],
+    espera = times.length > 2 ? naEspera(r, L.a, L.b) : [];
   const opcoes = (sel: number, pula: number) =>
     times.map((t, i) => (
       <option key={i} value={i} selected={i === sel} disabled={i === pula}>
@@ -102,22 +146,46 @@ function Ajustes({ r }: { r: Rodada }) {
             {opcoes(L.b, L.a)}
           </select>
         </label>
-        <label class="f" style="margin:0;width:110px">
+        <label class="f" style="margin:0;width:124px">
           <span>{tx('partida.minutos')}</span>
           <select class="sel" data-c="dur">
             {MINUTOS.map(m => (
-              <option key={m} selected={m * 60 === L.dur}>
+              <option key={m} value={m} selected={m * 60 === L.dur}>
                 {m}
+              </option>
+            ))}
+            <option value="0" selected={L.dur === 0}>
+              {tx('partida.semTempo')}
+            </option>
+          </select>
+        </label>
+        <label class="f" style="margin:0;width:130px">
+          <span>{tx('partida.fimPorPlacar')}</span>
+          <select class="sel" data-c="lim">
+            {LIMITES.map(n => (
+              <option key={n} value={n} selected={n === (L.lim || 0)}>
+                {n ? n : tx('partida.semLimite')}
               </option>
             ))}
           </select>
         </label>
       </div>
+      {espera.length ? (
+        <p class="small" id="naEspera" style="margin:10px 0 0">
+          <span class="muted">{tx('partida.naEspera')}</span>{' '}
+          {espera.map((t, i) => (
+            <span key={t}>
+              {i ? ' · ' : ''}
+              <span class="dot" style={{ background: col(times[t].c).c }}></span> {tn(times[t].c)}
+            </span>
+          ))}
+        </p>
+      ) : null}
       <div class="row" style="margin-top:12px">
         <button class="btn primary" data-a="saveMatch">
           {tx('partida.salvar')}
         </button>
-        {times.length > 2 ? <span class="small muted">{tx('partida.vencedorFica')}</span> : null}
+        {times.length > 2 ? <span class="small muted">{tx('partida.sugestao')}</span> : null}
       </div>
     </div>
   );
@@ -193,8 +261,14 @@ function PartidaTela() {
       </div>
     );
   }
-  if (!S.live || S.live.rid !== r.id || S.live.a >= r.times.length || S.live.b >= r.times.length)
-    S.live = { rid: r.id, a: 0, b: 1, goals: [], dur: cfg().minutes * 60, el: 0, run: false, st: 0, beeped: false };
+  const L = S.live;
+  if (!L || L.rid !== r.id || L.a >= r.times.length || L.b >= r.times.length) S.live = novaPartida(r, L);
+  else if (L.auto && !L.goals.length && !L.run && !L.el) {
+    /* Ainda não começou: acompanha os jogos salvos (que podem chegar depois, ou de outro aparelho). */
+    const s = sugestao(r);
+    L.a = s.a;
+    L.b = s.b;
+  }
   return (
     <div class="stack">
       <SeletorRodada r={r} />
@@ -212,4 +286,4 @@ function montarPartida() {
   if (el) render(<PartidaTela />, el);
 }
 
-export { montarPartida, vPartida };
+export { limiteAtingido, montarPartida, novaPartida, vPartida };

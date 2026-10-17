@@ -176,9 +176,14 @@ document.addEventListener('change', e => {
   } else if (c === 'ta') {
     S.live.a = +v;
     S.live.goals = [];
+    S.live.auto = false;
   } else if (c === 'tb') {
     S.live.b = +v;
     S.live.goals = [];
+    S.live.auto = false;
+  } else if (c === 'lim') {
+    S.live.lim = +v;
+    S.live.limAviso = false;
   } else if (c === 'dur') {
     S.live.dur = +v * 60;
     S.live.beeped = false;

@@ -211,6 +211,7 @@ Medido a cada versão, no celular de 390px:
   - **1.000 grupos:** cerca de 37 milhões de leituras e 650 mil gravações por mês, ou **cerca de US$ 11 por mês** no plano pago.
   - **Alerta para o negócio:** o projeto está no plano grátis (Spark), que **para de responder** quando passa de 50 mil leituras no dia, em vez de cobrar. Como os grupos concentram o uso perto do dia do jogo, isso pode acontecer já com **15 a 25 grupos ativos** jogando no mesmo dia. Recomendação: passar para o Blaze, com alerta de orçamento, antes de chegar a 15 grupos ativos.
 - **O que faria mudar:** o link ler menos (só a próxima rodada e as respostas, sem o elenco inteiro a cada abertura), se as leituras crescerem mais rápido que os grupos.
+- **Decisão do Kleber (16/10/2026):** o Blaze fica para o futuro. O gatilho para rever é chegar perto de 15 grupos ativos ou ver o Firebase recusar leituras por cota (cartão KAN-174).
 
 ### D12. Ficar em JavaScript/TypeScript e pagar a dívida técnica aos poucos (8 out. 2026)
 - **Contexto:** a dúvida era se valeria trocar de linguagem para não acumular dívida técnica.

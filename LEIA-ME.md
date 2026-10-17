@@ -171,6 +171,8 @@ O app só funciona com o site publicado (https). Abrindo o arquivo direto do com
 5. **Partida:** use o placar e o cronômetro, registre os gols e salve o resultado. Isso alimenta o ranking. Quando o tempo acaba, além do som e da vibração, aparece o aviso **Tempo esgotado** no placar.
 6. **Votação:** crie a votação e mande o link. Os jogadores votam pelo celular, sem login, e o resultado aparece quando você encerrar.
 7. **Caixa:** mensalistas e diaristas (incluindo os avulsos que jogaram) aparecem como pendentes até você marcar "Recebi".
+   - Quem não paga (por exemplo, um goleiro fixo) fica como **Isento de pagamento** na ficha e nunca aparece como pendente.
+   - Quem recebe um valor por jogo tem **Recebe por jogo** marcado na ficha, com o valor. Cada jogo em que a pessoa jogar entra no Caixa, em **A pagar**. Quando você pagar, toque em **Pagar**, deixe marcados os jogos que está pagando e toque em **Paguei**: a despesa é lançada sozinha.
 
 Para promover um avulso que virou frequente, clique em **Pôr no elenco** na lista de confirmados. O histórico dele é mantido.
 

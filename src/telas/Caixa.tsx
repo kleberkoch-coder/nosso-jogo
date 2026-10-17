@@ -3,10 +3,22 @@
    de mês com data-c, então ações, carregando e gravação sem sinal são as mesmas do resto do app.
    Caixa é só para administradores: valores e Pix ficam em privado/caixa (KAN-79). */
 import { render } from 'preact';
+import { useState } from 'preact/hooks';
 import { cfg, ptipo } from '../dominio/caixa.js';
-import { mesesDoCaixa, pendenciasDoMes, resumoDoCaixa, type Lancamento, type Tipo } from '../dominio/caixa-regras';
+import {
+  aPagar,
+  mesesDoCaixa,
+  pendenciasDoMes,
+  resumoDoCaixa,
+  type APagar,
+  type Lancamento,
+  type Recebe,
+  type RodadaDoMes,
+  type Tipo,
+} from '../dominio/caixa-regras';
 import { players, pname, rodadas, rodadasDoMes } from '../dominio/grupo.js';
-import { tx } from '../i18n/index.js';
+import { tp, tx } from '../i18n/index.js';
+import { simboloMoeda } from '../i18n/formatos.js';
 import { S as estado } from '../nucleo/estado.js';
 import { brl, fdate, fmonth, today } from '../nucleo/util.js';
 
@@ -32,6 +44,74 @@ function pendencias(month: string) {
   );
 }
 
+/* A pagar por jogo (KAN-172): rodadas carregadas desde o primeiro dia em que alguém passou a receber (S.rodPag). */
+function listaAPagar(): APagar[] {
+  const S = st();
+  return aPagar({
+    lancamentos: Object.values(S.caixa) as Lancamento[],
+    recebe: ((S.pc || {}).porJogo || {}) as Record<string, Recebe>,
+    rodadas: Object.entries((S.rodPag || {}) as Record<string, RodadaDoMes>).map(([id, v]) => ({ ...v, id })),
+  });
+}
+
+/* Janela "Pagar": os jogos acumulados, todos marcados; o total acompanha as marcas e pode ser ajustado. */
+function Pagar({ a }: { a: APagar }) {
+  const [marcados, setMarcados] = useState<string[]>(a.jogos.map(j => j.rid));
+  const [total, setTotal] = useState<string>(String(a.total));
+  const trocar = (rid: string, on: boolean) => {
+    const m = on ? marcados.concat(rid) : marcados.filter(x => x !== rid);
+    setMarcados(m);
+    setTotal(String(Math.round(a.v * m.length * 100) / 100));
+  };
+  return (
+    <>
+      <h3>{tx('caixa.pagarTitulo', { nome: pname(a.pid) })}</h3>
+      <p class="small muted">{tx('caixa.pagarTexto', { valor: brl(a.v) })}</p>
+      <div class="chk" id="apgLista">
+        {a.jogos.map(j => (
+          <label key={j.rid}>
+            <input
+              type="checkbox"
+              class="apg"
+              value={j.rid}
+              checked={marcados.includes(j.rid)}
+              onChange={e => trocar(j.rid, (e.currentTarget as HTMLInputElement).checked)}
+            />
+            {fdate(j.date)}
+          </label>
+        ))}
+      </div>
+      <label class="f">
+        <span>{tx('caixa.pagarTotal', { moeda: simboloMoeda() })}</span>
+        <input
+          class="inp"
+          type="number"
+          inputmode="decimal"
+          min="0"
+          step="0.01"
+          id="apgv"
+          value={total}
+          onInput={e => setTotal((e.currentTarget as HTMLInputElement).value)}
+        />
+      </label>
+      <div class="dlg-f">
+        <button class="btn" data-a="close">
+          {tx('comum.cancelar')}
+        </button>
+        <button class="btn primary" data-a="pagarJogos" data-v={a.pid}>
+          {tx('caixa.paguei')}
+        </button>
+      </div>
+    </>
+  );
+}
+function montarPagar(pid: string) {
+  const a = listaAPagar().find(x => x.pid === pid),
+    el = document.getElementById('apgRaiz');
+  if (a && el) render(<Pagar a={a} />, el);
+  return !!a;
+}
+
 const KL: Record<string, string> = {
   mensal: 'caixa.mensalidade',
   diaria: 'caixa.diaria',
@@ -50,7 +130,9 @@ function Caixa() {
   /* Os lançamentos já estão todos carregados, então saldo, entradas e saídas saem deles, exatos.
      A ficha do mês (resumos, cx) é mantida a cada lançamento para quando o caixa passar a carregar só o mês (D11, KAN-106). */
   const r = resumoDoCaixa(lan, m),
-    pend = pendencias(m);
+    pend = pendencias(m),
+    apg = listaAPagar(),
+    totalAPagar = apg.reduce((s, x) => s + x.total, 0);
   const meses = mesesDoCaixa(
     today(),
     lan,
@@ -87,8 +169,38 @@ function Caixa() {
             <div class="l">{tx('caixa.saidas')}</div>
             <Dinheiro v={r.saidas} />
           </div>
+          {apg.length > 0 && (
+            <div id="kpiAPagar">
+              <div class="l">{tx('caixa.aPagarTotal')}</div>
+              <div class="money neg">{brl(totalAPagar)}</div>
+            </div>
+          )}
         </div>
       </div>
+      {apg.length > 0 && (
+        <div class="panel">
+          <h3 style={{ margin: 0 }}>{tx('caixa.aPagar')}</h3>
+          <p class="small muted">{tx('caixa.aPagarAjuda')}</p>
+          <ul class="plist" id="apagarLista">
+            {apg.map(a => (
+              <li key={a.pid}>
+                <span class="pn">
+                  {pname(a.pid)} <span class="tag">{tp('caixa.jogos', a.jogos.length)}</span>
+                </span>
+                <b>{brl(a.total)}</b>
+                <button
+                  class="btn sm"
+                  data-a="abrirPagar"
+                  data-v={a.pid}
+                  aria-label={tx('caixa.pagarRotulo', { nome: pname(a.pid), valor: brl(a.total) })}
+                >
+                  {tx('caixa.pagar')}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div class="grid2">
         <div class="panel">
           <div class="row between">
@@ -174,4 +286,4 @@ function montarCaixa() {
   if (el) render(<Caixa />, el);
 }
 
-export { montarCaixa, pendencias, vCaixa };
+export { listaAPagar, montarCaixa, montarPagar, pendencias, vCaixa };

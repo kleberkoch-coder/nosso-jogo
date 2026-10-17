@@ -1,5 +1,5 @@
 /* Ações: Jogadores: elenco, notas, contatos, pares separados e configurações. Fazem parte de ACT (src/acoes.js). */
-import { CAIXA_K, cfg, editPc, ptipo } from '../dominio/caixa.js';
+import { CAIXA_K, cfg, editPc, ptipo, recebePorJogo } from '../dominio/caixa.js';
 import { posKeys } from '../dominio/esportes.js';
 import { normName, players, pname, ppos, setLvl } from '../dominio/grupo.js';
 import { tp, tx } from '../i18n/index.js';
@@ -8,7 +8,7 @@ import { B } from '../nucleo/backend.js';
 import { lerContato } from '../ui/contato-form';
 import { editApp, editRat, saveContato } from '../nucleo/edicoes.js';
 import { GB, S, clean, w } from '../nucleo/estado.js';
-import { $, esc, key, toast } from '../nucleo/util.js';
+import { $, esc, key, toast, today } from '../nucleo/util.js';
 import { closeDlg, confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
 import { playerDlg } from '../ui/dialogos-gestao.js';
 import { changed } from '../ui/render.js';
@@ -28,6 +28,13 @@ const acoes = {
     }
     const ct = lerContato('ptel', 'pmail');
     if (!ct) return;
+    const recebe = $('#prj')?.checked,
+      vj = +val('prv');
+    if (recebe && !(vj > 0)) {
+      toast(tx('jogador.valorPorJogoFalta'));
+      $('#prv')?.focus();
+      return;
+    }
     const nw = el.dataset.new,
       id = el.dataset.p || nw || B.newId(),
       v = +$('#plv').value;
@@ -52,9 +59,14 @@ const acoes = {
     S.jog[id] = data;
     changed();
     w(GB.set('jogadores/' + id, clean(data)));
-    if (ptipo(id) !== tp || !((S.pc || {}).tipos || {})[id])
+    const rj = recebePorJogo(id),
+      mudouRecebe = recebe ? !rj || rj.v !== vj : !!rj;
+    if (ptipo(id) !== tp || !((S.pc || {}).tipos || {})[id] || mudouRecebe)
       editPc(a => {
         a.tipos[id] = tp;
+        a.porJogo = a.porJogo || {};
+        if (recebe) a.porJogo[id] = { v: vj, desde: (rj && rj.desde) || today() };
+        else delete a.porJogo[id];
       });
     editRat(a => setLvl(a, id, v));
     saveContato(id, ct.tel, ct.email);
@@ -104,9 +116,10 @@ const acoes = {
       delete a.stars[id];
       a.sep = a.sep.filter(s => !s.includes(id));
     });
-    if (((S.pc || {}).tipos || {})[id])
+    if (((S.pc || {}).tipos || {})[id] || recebePorJogo(id))
       editPc(a => {
         delete a.tipos[id];
+        if (a.porJogo) delete a.porJogo[id];
       });
     closeDlg();
   },

@@ -1,6 +1,7 @@
 /* Janelas da gestão (KAN-149): jogador, rodada e prévia do sorteio. Vão na parte de gestão, que o link público não baixa. */
 import { horaCampo } from './hora.js';
-import { cfg, ptipo } from '../dominio/caixa.js';
+import { cfg, ptipo, recebePorJogo } from '../dominio/caixa.js';
+import { simboloMoeda } from '../i18n/formatos.js';
 import { porTime, sport } from '../dominio/esportes.js';
 import { resumo } from '../dominio/times.ts';
 import { tp, tx } from '../i18n/index.js';
@@ -12,6 +13,16 @@ import { campoTelefone } from './contato-form';
 
 const starIn = st =>
   `<div class="starin" id="pst" data-v="${st}">${[1, 2, 3, 4, 5].map(i => `<button type="button" class="${i <= st ? 'on' : ''}" data-a="star" data-v="${i}" aria-label="${i} estrelas">★</button>`).join('')}</div>`;
+/* Tipo do jogador e "Recebe por jogo" (KAN-172): só administradores veem; ficam em privado/caixa. */
+const TIPOS = ['mensalista', 'diarista', 'isento'];
+function campoTipo(tipo, recebe) {
+  const t = TIPOS.includes(tipo) ? tipo : 'mensalista',
+    on = !!(recebe && recebe.v > 0);
+  return `<label class="f"><span>${tx('jogador.tipo')}</span><select class="sel" id="ptp">${TIPOS.map(k => `<option value="${k}"${k === t ? ' selected' : ''}>${tx('tipo.' + k)}</option>`).join('')}</select></label>
+  <div class="chk"><label><input type="checkbox" id="prj"${on ? ' checked' : ''}>${tx('jogador.recebePorJogo')}</label></div>
+  <label class="f" id="prvBox"${on ? '' : ' hidden'}><span>${tx('jogador.valorPorJogo', { moeda: simboloMoeda() })}</span><input class="inp" type="number" inputmode="decimal" min="0" step="0.01" id="prv" value="${on ? recebe.v : ''}"></label>
+  <p class="small muted" style="margin-top:-4px">${tx('jogador.recebeDica')}</p>`;
+}
 function playerDlg(id, prefill) {
   const p = id ? S.jog[id] : null,
     cid = id || prefill?.id,
@@ -19,7 +30,7 @@ function playerDlg(id, prefill) {
     ct = (S.cont || {})[cid] || {};
   openDlg(`<h3>${p ? 'Editar jogador' : 'Novo jogador'}</h3><label class="f"><span>Nome ou apelido</span><input class="inp" id="pnm" value="${esc(p?.name || prefill?.name || '')}" maxlength="40"></label>
   ${posField('ppos', p?.pos || prefill?.pos)}<div class="f"><span class="lbl">Nota de 1 a 10 (só administradores veem)</span>${lvlIn(st)}</div>
-  <label class="f"><span>Tipo</span><select class="sel" id="ptp"><option value="mensalista">Mensalista</option><option value="diarista" ${(p ? ptipo(id) : prefill?.tipo) === 'diarista' ? 'selected' : ''}>Diarista</option></select></label>
+  ${campoTipo(p ? ptipo(id) : prefill?.tipo, cid ? recebePorJogo(cid) : null)}
   ${campoTelefone(ct.tel || '', tx('contato.telRotulo'))}
   <label class="f"><span>${tx('contato.emailRotulo')}</span><input class="inp" id="pmail" type="email" autocomplete="email" maxlength="100" value="${esc(ct.email || '')}" placeholder="${tx('contato.emailExemplo')}"></label>
   ${p ? `<p class="small muted" style="margin-top:-4px">Cadastrado em ${fdia(p.criado)} · ${p.ativo === false ? '<b style="color:var(--out)">inativo</b>' : 'ativo'}</p>` : ''}

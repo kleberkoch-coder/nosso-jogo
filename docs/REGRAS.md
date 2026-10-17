@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v51 (16/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v52 (16/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -47,7 +47,8 @@ Atualizado na pelada-v51 (16/10/2026). Toda entrega que mudar uma regra atualiza
 - Administradores entram por link de convite; só o organizador remove, e remover invalida o link atual.
 
 ## Jogadores
-- Ficha: nome, posição, nota de 1 a 10 (meio ponto), tipo mensalista ou diarista, contato. Inativar é diferente de excluir.
+- Ficha: nome, posição, nota de 1 a 10 (meio ponto), tipo (mensalista, diarista ou isento de pagamento), "Recebe por jogo" com o valor, contato. Inativar é diferente de excluir.
+- Isento de pagamento (KAN-172): continua no elenco, no sorteio, no ranking e na votação, mas nunca deve mensalidade nem diária. Importar elenco aceita "Isento" ou "Não paga"; em Ordenar por Tipo, os isentos vêm por último.
 - Telefone (KAN-156, KAN-162; regra em `dominio/telefone.ts` e `dominio/paises.ts`, com teste):
   - O país fica num combo ao lado do número (bandeira e código), que já vem com o país do grupo.
   - Sem "+", vale a regra do país do combo: quantidade de dígitos e o "0" na frente que sai. No Brasil, DDD + número, com 10 ou 11 dígitos. No +1, o código de área não começa com 1, o que pega um número brasileiro com o combo nos EUA.
@@ -92,6 +93,12 @@ Atualizado na pelada-v51 (16/10/2026). Toda entrega que mudar uma regra atualiza
 - Mensalidade (quem não é diarista, por mês), diária (diaristas e avulsos que jogaram, por rodada), outras entradas e despesas.
 - Pendências do mês e cobrança pronta para o WhatsApp com Pix. Regra em `dominio/caixa-regras.ts`, com teste.
 - "Recebi" grava na hora com Desfazer por 6 s; apagar lançamento também tem Desfazer (KAN-129).
+- A pagar por jogo (KAN-172; regra `aPagar` em `dominio/caixa-regras.ts`, com teste):
+  - Quem tem "Recebe por jogo" na ficha (qualquer tipo) passa a ter a receber cada rodada em que jogou, ou seja, em que estava num time sorteado. Quem só confirmou não entra. Contam as rodadas a partir do dia em que a pessoa passou a receber.
+  - No Caixa, o painel "A pagar" mostra cada pessoa com os jogos acumulados e o total, e o topo mostra o total a pagar. O saldo só desconta quando se paga.
+  - "Pagar" abre os jogos, todos marcados. Dá para desmarcar alguns e ajustar o total. "Paguei" lança uma despesa com o jogador, o total e as rodadas pagas (`refs`), com Desfazer. Os jogos pagos saem do A pagar.
+  - Se o valor por jogo mudar, os jogos ainda não pagos usam o valor novo.
+  - O valor e o tipo ficam em `privado/caixa` (`tipos`, `porJogo: {id: {v, desde}}`), só para administradores.
 
 ## Planos e portal
 - Plano é por conta do organizador e vale para todos os grupos dela; vencido volta ao Grátis.
@@ -138,6 +145,7 @@ Atualizado na pelada-v51 (16/10/2026). Toda entrega que mudar uma regra atualiza
 | País, moeda e fuso | `ui/menu-conta.ts` (menu da conta, KAN-166), `grupo-form.js`, `login.js` (cadastro), `ui/regiao.ts` (combos), `ui/contato-form.ts` (telefone) | `acoes/grupo.js` (contaPais, createGroup, saveGroup) | `dominio/paises.ts`, `regiao.ts`, `telefone.ts`, `i18n/formatos.js` (formato, moeda, `agora()`) | `usuarios/{uid}` (pais, formato), `grupos/{gid}` (cfg.pais, moeda, fuso, formato) | `regras/paises`, `regras/contato`, `testes_app.py` (CT-KAN-162) |
 | Votação | `telas/votacao.js`, `publico-voto.js` | `acoes/votacao.js` | `telas/votacao.js` (tally) | `votacoes/{vid}`, `votos` | `testes_app.py` (votação) |
 | Caixa | `telas/Caixa.tsx` | `acoes/caixa.js` | `dominio/caixa-regras.ts`, `caixa.js` | `caixa/{id}`, `privado/caixa`, `resumos` | `regras/caixa` |
+| Isento e A pagar por jogo | `ui/dialogos-gestao.js` (ficha), `telas/Caixa.tsx` (A pagar, janela Pagar) | `acoes/jogadores.js` (savePlayer), `acoes/caixa.js` (abrirPagar, pagarJogos) | `dominio/caixa-regras.ts` (aPagar), `caixa.js` (recebePorJogo, inicioAPagar); rodadas desde o início em `rotas.js` (rodPag) | `privado/caixa` (tipos, porJogo), `caixa/{id}` (refs) | `regras/a-pagar`, `testes_app.py` (CT-KAN-172), `persistencia_app.py` (P20) |
 | Grupo e convite | `telas/grupo.js`, `grupo-form.js`, `convite.js` | `acoes/grupo.js` | `dominio/limites.ts` | `grupos/{gid}`, `membros`, `privado/convite`, `contas/{uid}` | `regras/limites`, `regras-firebase` |
 | Planos e portal | `portal/` | `portal/tela.js` | `dominio/planos.ts` | `contas/{uid}`, `sistema/planos` | `regras/planos`, portal em `testes_app.py` |
 | Janelas e avisos | `ui/dialogos.js`, `nucleo/util.js` (toast) | `acoes/conta.js` (confSim) | — | — | `testes_app.py` (CT-KAN-128) |

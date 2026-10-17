@@ -4,6 +4,8 @@
 export type Ordem = 'nome' | 'posicao' | 'nota' | 'tipo' | 'recentes';
 export const ORDENS: Ordem[] = ['nome', 'posicao', 'nota', 'tipo', 'recentes'];
 
+/* Tipo: mensalistas, diaristas e, por último, isentos de pagamento (KAN-172). */
+const ordemTipo = (t: string) => (t === 'isento' ? 2 : t === 'diarista' ? 1 : 0);
 export type ItemOrdem = { id: string; nome: string; pos?: string; nota: number; tipo: string; criado?: number };
 export type ContextoOrdem = { posicoes: string[]; local: string }; // posicoes: siglas na ordem do esporte
 
@@ -17,7 +19,7 @@ export function ordenarJogadores<T extends ItemOrdem>(lista: T[], ordem: Ordem, 
     nome: () => 0,
     posicao: (a, b) => idx(a.pos) - idx(b.pos),
     nota: (a, b) => b.nota - a.nota,
-    tipo: (a, b) => (a.tipo === 'diarista' ? 1 : 0) - (b.tipo === 'diarista' ? 1 : 0),
+    tipo: (a, b) => ordemTipo(a.tipo) - ordemTipo(b.tipo),
     recentes: (a, b) => (b.criado || 0) - (a.criado || 0),
   };
   const c = criterio[ordem] || criterio.nome;

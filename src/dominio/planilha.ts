@@ -11,7 +11,7 @@ export type Item = {
   nome: string;
   pos?: string;
   nota?: number;
-  tipo: 'mensalista' | 'diarista';
+  tipo: 'mensalista' | 'diarista' | 'isento';
   tel?: string;
   email?: string;
   situacao: 'novo' | 'existe' | 'repetido';
@@ -102,10 +102,11 @@ function nota(valor: string): number | null | undefined {
   return Math.round(n * 2) / 2;
 }
 
-function tipo(valor: string): 'mensalista' | 'diarista' | null {
+function tipo(valor: string): 'mensalista' | 'diarista' | 'isento' | null {
   const v = semAcento(valor);
   if (!v || v.startsWith('m')) return 'mensalista';
   if (v.startsWith('d') || v.startsWith('a')) return 'diarista';
+  if (v.startsWith('i') || v.startsWith('n')) return 'isento';
   return null;
 }
 

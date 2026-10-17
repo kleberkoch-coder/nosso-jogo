@@ -139,6 +139,21 @@ function ensureExtras() {
     drop('rodMes');
     S.rodMesM = null;
   }
+  /* A pagar por jogo (KAN-172): rodadas desde o primeiro dia em que alguém passou a receber, em qualquer mês. */
+  const desde = S.tab === 'caixa' ? A.inicioAPagar() : null;
+  if (desde) {
+    if (S.rodPagDe !== desde) {
+      S.rodPagDe = desde;
+      S.rodPag = {};
+      subQ('rodPag', 'rodadas', { campo: 'date', de: desde, ordem: 'asc' }, d => {
+        S.rodPag = d || {};
+      });
+    }
+  } else if (SUBS.rodPag) {
+    drop('rodPag');
+    S.rodPagDe = null;
+    S.rodPag = {};
+  }
   if (S.tab === 'historico') {
     const h = A.estadoHist();
     if (!h.buscou && !h.carregando && !h.auto) {
@@ -287,6 +302,8 @@ function setupRoute() {
     migrandoDados: false,
     rodMes: {},
     rodMesM: null,
+    rodPag: {},
+    rodPagDe: null,
     rodX: {},
     rodXid: null,
     hist: null,

@@ -80,8 +80,7 @@ function LinhaJogador({ p }: { p: Jogador }) {
         {p.name}
         <br />
         <span class="tag">
-          {tx(ptipo(p.id) === 'diarista' ? 'importar.diarista' : 'importar.mensalista')} ·{' '}
-          {tx('jogadores.desde', { data: fdia(p.criado) })}
+          {tx('tipo.' + ptipo(p.id))} · {tx('jogadores.desde', { data: fdia(p.criado) })}
           <Contato id={p.id} />
         </span>
       </span>

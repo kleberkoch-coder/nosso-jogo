@@ -22,7 +22,7 @@ function Linha({ it }: { it: Item }) {
   const partes = [
     it.pos ? posLabel(it.pos) : '',
     it.nota != null ? tx('importar.nota', { n: fmtL(it.nota) }) : '',
-    tx(it.tipo === 'diarista' ? 'importar.diarista' : 'importar.mensalista'),
+    tx('tipo.' + it.tipo),
     it.tel ? telefoneParaLer(it.tel) : '',
     it.email || '',
   ].filter(Boolean);

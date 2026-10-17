@@ -6,7 +6,7 @@ import { addMatch, delMatch as apagarPartida, editMatch } from '../nucleo/partid
 import { S } from '../nucleo/estado.js';
 import { $, esc, toast, uid } from '../nucleo/util.js';
 import { actx, beep, elapsed, setActx, sumPts } from '../ui/placar.js';
-import { edicaoAtual, limiteAtingido, montarEdicao, novaPartida } from '../telas/Partida';
+import { edicaoAtual, limiteAtingido, montarEdicao, montarEscalacao, novaPartida, quadra } from '../telas/Partida';
 import { closeDlg, confirmou, dlg, openDlg } from '../ui/dialogos.js';
 import { render } from '../ui/render.js';
 import { ACT } from '../acoes.js';
@@ -29,8 +29,28 @@ const acoes = {
       SP = sport(),
       sc = SP.score[+el.dataset.i || 0],
       pts = sc[1];
-    openDlg(`<h3>${esc(tx('partida.pontoTime', { ponto: nomePonto(sc, SP), time: tn(r.times[ti].c) }))}</h3><p class="small muted">${tx('partida.quemMarcou')}</p><div class="vgrid">${r.times[ti].players.map(id => `<button class="opt" data-a="addGoal" data-v="${t}" data-p="${id}" data-pts="${pts}">${esc(pname(id))}</button>`).join('')}</div>
-    ${SP.og ? `<p class="small muted" style="margin-top:14px">${tx('partida.contra')}</p><div class="vgrid">${r.times[oi].players.map(id => `<button class="opt" data-a="addGoal" data-v="${t}" data-p="${id}" data-og="1" data-pts="${pts}">${esc(pname(id))}</button>`).join('')}</div>` : ''}
+    openDlg(`<h3>${esc(tx('partida.pontoTime', { ponto: nomePonto(sc, SP), time: tn(r.times[ti].c) }))}</h3><p class="small muted">${tx('partida.quemMarcou')}</p><div class="vgrid">${quadra(
+      r,
+      t
+    )
+      .atuais.map(
+        id =>
+          `<button class="opt" data-a="addGoal" data-v="${t}" data-p="${id}" data-pts="${pts}">${esc(pname(id))}</button>`
+      )
+      .join('')}</div>
+    ${
+      SP.og
+        ? `<p class="small muted" style="margin-top:14px">${tx('partida.contra')}</p><div class="vgrid">${quadra(
+            r,
+            t === 'a' ? 'b' : 'a'
+          )
+            .atuais.map(
+              id =>
+                `<button class="opt" data-a="addGoal" data-v="${t}" data-p="${id}" data-og="1" data-pts="${pts}">${esc(pname(id))}</button>`
+            )
+            .join('')}</div>`
+        : ''
+    }
     <div class="dlg-f"><button class="btn" data-a="addGoal" data-v="${t}" data-pts="${pts}">${tx('partida.semAutor')}</button><button class="btn" data-a="close">${tx('comum.cancelar')}</button></div>`);
   },
   addGoal: el => {
@@ -83,8 +103,9 @@ const acoes = {
       id: uid(),
       ca: ta.c,
       cb: tb.c,
-      pa: ta.players.slice(),
-      pb: tb.players.slice(),
+      /* KAN-177: quem esteve em quadra (com empréstimos e trocas) conta o jogo e o resultado. */
+      pa: quadra(r, 'a').jogaram,
+      pb: quadra(r, 'b').jogaram,
       ga,
       gb,
       goals: L.goals.map(g => ({ t: g.t, pid: g.pid, og: g.og, pts: g.pts || 1 })),
@@ -93,6 +114,11 @@ const acoes = {
     /* KAN-175: o próximo jogo sai dos jogos salvos (quem ganha fica, entra quem espera há mais tempo). */
     S.live = novaPartida(r, L);
     toast(`Salvo: ${tn(ta.c)} ${ga} × ${gb} ${tn(tb.c)}`);
+  },
+  /* KAN-177: escalação de um lado (empréstimo, troca, alguém da lista de presença). */
+  abrirEscalacao: el => {
+    openDlg('<div id="escRaiz"></div>');
+    if (!montarEscalacao(el.dataset.v, render)) closeDlg();
   },
   /* KAN-176: corrigir uma partida salva (autores, gols a mais ou a menos). */
   editarPartida: el => {

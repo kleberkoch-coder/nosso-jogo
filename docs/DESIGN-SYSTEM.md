@@ -126,6 +126,10 @@ Registrados na pelada-v43 (KAN-152); os da v44 a v47 entraram na versão de cada
   - Cada gol aparece como uma linha com o combo do autor ("Sem autor", os jogadores do time e, no futebol, "(contra)" com os do adversário) e um ✕ (`ghost danger`) para tirar o gol. Valor maior que 1 aparece como `tag` ("+3").
   - Embaixo de cada painel, os botões de ponto do esporte ("+ Gol"; no basquete "+1", "+2", "+3").
   - Rodapé: "Cancelar" e o principal "Salvar 1 × 0", que mostra o placar novo.
+- **Escalação da partida** (KAN-177; sem classe nova):
+  - **No placar:** embaixo dos botões de ponto de cada lado, o botão "Escalação" (`btn sm`). Quando alguém entrou ou saiu, aparece embaixo a linha "Entrou: Neto · Saiu: Rafa", no estilo dos gols.
+  - **Na janela:** título com a bolinha da cor ("Escalação · Laranja"), uma linha de ajuda em `muted` e a lista de quem está na partida. Quem veio de fora tem a `tag` "entrou"; quem saiu, a `tag alt` "saiu". Nos dois casos há um "Desfazer" (`btn sm ghost`).
+  - **Para entrar alguém:** um painel com "Quem entra" (agrupado pelo time de origem e "Sem time"), "No lugar de" ("Ninguém (só completar o time)" ou quem está em quadra) e o botão "Confirmar". O rodapé tem "Pronto" (`primary`).
 - **Carregando a gestão** (KAN-149): ao abrir a gestão pela primeira vez, a área principal mostra "Carregando…" em `muted`; sem internet, "Não foi possível carregar" com a orientação de recarregar.
 
 ## Componentes (pelada-v30)

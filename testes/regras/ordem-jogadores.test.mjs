@@ -19,6 +19,13 @@ test('nome (A–Z) é o padrão', () => assert.equal(ids('nome'), 'bacd'));
 test('posição: na ordem do esporte, sem posição no fim, empate por nome', () => assert.equal(ids('posicao'), 'bcad'));
 test('nota: maior primeiro, empate por nome', () => assert.equal(ids('nota'), 'bacd'));
 test('tipo: mensalistas primeiro', () => assert.equal(ids('tipo'), 'acbd'));
+test('tipo: isentos por último (KAN-172)', () =>
+  assert.deepEqual(
+    ordenarJogadores([{ id: 'x', nome: 'Abel', nota: 5, tipo: 'isento' }, ...L], 'tipo', ctx)
+      .map(p => p.id)
+      .join(''),
+    'acbdx'
+  ));
 test('mais recentes: quem entrou por último primeiro', () => assert.equal(ids('recentes'), 'acbd'));
 test('ordem guardada inválida ou posição num esporte sem posição volta para nome', () => {
   assert.equal(ordemValida('xyz', true), 'nome');

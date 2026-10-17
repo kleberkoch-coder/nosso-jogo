@@ -104,3 +104,11 @@ test('limite de jogadores por importação', () => {
   assert.equal(interpretar(linhas, ctx()).itens.length, LIMITE_IMPORTACAO);
   assert.equal(excedentes(linhas), 5);
 });
+
+test('tipo isento de pagamento (KAN-172): "Isento" e "Não paga" viram isento', () => {
+  const { itens } = interpretar(lerTexto('Nome\tTipo\nGol\tIsento\nGol2\tNão paga'), ctx());
+  assert.deepEqual(
+    itens.map(i => i.tipo),
+    ['isento', 'isento']
+  );
+});

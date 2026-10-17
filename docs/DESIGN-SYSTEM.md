@@ -72,7 +72,7 @@ Times em pastel, sempre com o nome da cor: laranja #F4B183, azul #9DBBF0, amarel
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo; **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
-## Componentes (pelada-v31 a v47)
+## Componentes (pelada-v31 a v52)
 Registrados na pelada-v43 (KAN-152); os da v44 a v47 entraram na versão de cada um. Desde a v43, os componentes reaproveitáveis ficam em `src/ui/componentes.tsx` (TypeScript + Preact); tela nova ou migrada usa estes, não HTML montado à mão.
 
 - **Botão** (`Botao`): classes `btn`, `primary`, `bib`, `ghost`, `perigo`, `sm`. Todo botão que grava mostra carregando (`busy`: texto some, girador no centro, largura mantida) e não aceita segundo toque. Desabilitado com motivo: o texto diz o que falta ("Faltam 2 para sortear"), nunca só cinza.
@@ -112,6 +112,10 @@ Registrados na pelada-v43 (KAN-152); os da v44 a v47 entraram na versão de cada
   - **Prévia:** primeiro um resumo ("12 jogadores novos · 1 já está no elenco ou repetido · 2 com aviso"), depois uma linha por jogador. A linha começa com um sinal: "✓" em `in` (entra), "⚠" em `out` (entra, com aviso) ou "↺" em `muted` (fica de fora, com 60% de opacidade). Embaixo vêm os dados reconhecidos (posição · nota · tipo · telefone · e-mail) e o motivo de cada aviso em `out`.
   - A prévia rola dentro da janela (até 45% da altura da tela).
   - O botão principal diz quantos entram ("Importar 12 jogadores") e fica desligado sem nenhum novo. Arquivo que não é planilha mostra o erro em `out`, embaixo do botão de arquivo.
+- **A pagar por jogo** (KAN-172; reaproveita `panel`, `plist`, `tag`, `kpis`, `chk` e `money neg`, sem classe nova):
+  - **Na ficha do jogador:** o combo "Tipo" ganha "Isento de pagamento". Abaixo, a caixa de marcar "Recebe por jogo" (`chk`). Ao marcar, aparece "Valor por jogo (R$)" com o cursor nele. Embaixo, uma dica em `muted`.
+  - **No Caixa:** quando alguém tem jogos a pagar, os números do topo ganham "A pagar" em `out` (`money neg`). Entre os números e as Pendências entra o painel "A pagar", com uma linha de ajuda em `muted` e uma linha por pessoa: nome, "3 jogos" em `tag`, o total em negrito e o botão "Pagar" (`btn sm`, que diz o nome e o valor para o leitor de tela). Sem nada a pagar, o painel e o número somem.
+  - **Janela "Pagar Fulano":** texto em `muted` com o valor por jogo, os jogos em `chk` (data de cada um, todos marcados) e "Total pago (R$)", que acompanha as marcas e pode ser editado. Botões "Cancelar" e "Paguei" (`primary`). Paguei grava com Desfazer por 6 s, como o "Recebi".
 - **Carregando a gestão** (KAN-149): ao abrir a gestão pela primeira vez, a área principal mostra "Carregando…" em `muted`; sem internet, "Não foi possível carregar" com a orientação de recarregar.
 
 ## Componentes (pelada-v30)

@@ -14,6 +14,7 @@ export { buscarHist, estadoHist, vHistorico } from './telas/historico.js';
 export { anoRank, vRanking } from './telas/ranking.js';
 export { vLanding } from './telas/apresentacao.js';
 export { montarCaixa, vCaixa } from './telas/Caixa.tsx';
+export { inicioAPagar } from './dominio/caixa.js';
 export { renderInvite } from './telas/convite.js';
 export { vGrupo } from './telas/grupo.js';
 export { montarHome, vHome } from './telas/Grupos';

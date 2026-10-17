@@ -1490,6 +1490,73 @@ with sync_playwright() as pw:
     ok(p5.input_value('#lpais') == 'BR', 'CT-KAN-162-01: computador em inglês, mas no fuso de Manaus: o cadastro sugere Brasil (vale o fuso)')
     ctx5.close()
 
+    # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
+    ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
+    p7 = ctx7.new_page()
+    p7.on('pageerror', lambda e: errs.append(str(e)))
+    p7.goto(URL + '#/criar'); p7.wait_for_timeout(800)
+    p7.fill('#le', 'caixa.jogo@teste.com'); p7.fill('#lp', 'Jogo@2026'); p7.fill('#lp2', 'Jogo@2026'); p7.keyboard.press('Enter'); p7.wait_for_timeout(1300)
+    p7.fill('#ngn', 'Goleiros Pagos'); p7.click('[data-a=pickSport][data-v=futebol]'); p7.click('[data-a=createGroup]'); p7.wait_for_timeout(1500)
+    g7 = p7.url.split('#/g/')[1]
+    p7.click('[data-a=tab][data-v=jogadores]'); p7.wait_for_timeout(300); p7.click('[data-a=seed]'); p7.wait_for_timeout(1500)
+    ids7 = p7.evaluate("Object.keys(S.jog).sort()")
+    gol, outros = ids7[0], ids7[1:]
+    nome_gol = p7.evaluate("(id)=>S.jog[id].name", gol)
+    p7.click(f'[data-a=editPlayer][data-p="{gol}"]'); p7.wait_for_timeout(300)
+    opc = p7.evaluate("[...document.querySelectorAll('#ptp option')].map(o=>o.textContent)")
+    ok(opc == ['Mensalista', 'Diarista', 'Isento de pagamento'] and p7.locator('#prvBox').is_hidden(),
+       f'CT-KAN-172-05: ficha tem o tipo "Isento de pagamento" e o valor por jogo só aparece ao marcar "Recebe por jogo" ({opc})')
+    p7.select_option('#ptp', 'isento'); p7.check('#prj'); p7.wait_for_timeout(150)
+    ok(p7.locator('#prvBox').is_visible() and p7.evaluate("document.activeElement.id") == 'prv', 'CT-KAN-172-05: ao marcar "Recebe por jogo", aparece o valor e o cursor vai para ele')
+    p7.screenshot(path=f'{OUT}/52-ficha-recebe-por-jogo.png'); contraste(p7, 'Ficha com Recebe por jogo')
+    p7.click('[data-a=savePlayer]'); p7.wait_for_timeout(400)
+    ok('Informe o valor por jogo' in p7.inner_text('#toast') and p7.locator('#prv').count() == 1, 'CT-KAN-172-06: "Recebe por jogo" sem valor não salva e avisa')
+    p7.fill('#prv', '50'); p7.click('[data-a=savePlayer]'); p7.wait_for_timeout(800)
+    hoje7 = p7.evaluate("new Date().toLocaleDateString('sv')")
+    rod7 = lambda h, times: {'date': hoje7, 'time': h, 'place': '', 'createdAt': 1, 'times': [{'players': t} for t in times]}
+    p7.evaluate(PUT, {
+        f'grupos/{g7}/rodadas/rA': rod7('08:00', [[gol, outros[0]], [outros[1], outros[2]]]),
+        f'grupos/{g7}/rodadas/rB': rod7('09:00', [[outros[0], outros[1]], [gol, outros[2]]]),
+        f'grupos/{g7}/rodadas/rC': rod7('10:00', [[outros[0], outros[1]], [outros[2], outros[3]]]),
+        f'grupos/{g7}/rodadas/rD': {'date': hoje7, 'time': '11:00', 'place': '', 'createdAt': 1},
+        f'grupos/{g7}/rodadas/rD/presencas/{gol}': {'s': 'in', 'nome': nome_gol, 'at': 1},
+    })
+    p7.reload(); p7.wait_for_timeout(1200); p7.click('[data-a=tab][data-v=caixa]'); p7.wait_for_timeout(900)
+    pend7 = p7.inner_text('#pendLista')
+    ok(nome_gol not in pend7 and p7.evaluate("(id)=>S.pc.tipos[id]", gol) == 'isento',
+       'CT-KAN-172-01: isento que jogou não aparece nas pendências de mensalidade nem de diária')
+    lin = p7.locator('#apagarLista li')
+    t7 = lin.first.inner_text().replace('\xa0', ' ') if lin.count() else ''
+    ok(lin.count() == 1 and nome_gol in t7 and '2 jogos' in t7 and 'R$ 100,00' in t7,
+       f'CT-KAN-172-02: quem recebe por jogo aparece em A pagar com os 2 jogos em que jogou (não conta onde só confirmou) e o total ({t7!r})')
+    kpi = p7.inner_text('#kpiAPagar').replace('\xa0', ' ') if p7.locator('#kpiAPagar').count() else ''
+    ok('R$ 100,00' in kpi, f'CT-KAN-172-02: o total a pagar aparece ao lado do saldo ({kpi!r})')
+    p7.screenshot(path=f'{OUT}/52-caixa-a-pagar.png', full_page=True); contraste(p7, 'Caixa com A pagar')
+    p7.set_viewport_size({'width': 360, 'height': 780}); p7.wait_for_timeout(200)
+    larg = p7.evaluate("document.documentElement.scrollWidth")
+    ok(larg <= 360, f'A pagar cabe em 360px sem rolagem lateral ({larg}px)')
+    p7.screenshot(path=f'{OUT}/52-caixa-a-pagar-360.png', full_page=True)
+    p7.set_viewport_size({'width': 390, 'height': 844})
+    p7.click('#apagarLista [data-a=abrirPagar]'); p7.wait_for_timeout(400)
+    marc = p7.locator('#apgLista .apg:checked').count()
+    ok(marc == 2 and p7.input_value('#apgv') == '100', f'CT-KAN-172-03: a janela Pagar lista os 2 jogos marcados e o total ({marc}, {p7.input_value("#apgv")})')
+    p7.locator('#apgLista .apg').first.uncheck(); p7.wait_for_timeout(150)
+    ok(p7.input_value('#apgv') == '50', f'CT-KAN-172-03: desmarcar um jogo recalcula o total ({p7.input_value("#apgv")})')
+    p7.screenshot(path=f'{OUT}/52-janela-pagar.png'); contraste(p7, 'Janela Pagar')
+    p7.click('[data-a=pagarJogos]'); p7.wait_for_timeout(900)
+    t8 = p7.locator('#apagarLista li').first.inner_text().replace('\xa0', ' ') if p7.locator('#apagarLista li').count() else ''
+    sal = p7.locator('.kpis .money').first.inner_text().replace('\xa0', ' ')
+    ok('1 jogo' in t8 and 'R$ 50,00' in t8 and '50,00' in sal and ('-' in sal or '−' in sal),
+       f'CT-KAN-172-03: Paguei com 1 de 2 jogos lança a despesa de 1 jogo, sobra 1 em A pagar e o saldo desconta só o pago ({t8!r}, saldo {sal!r})')
+    ok('Pagamento de 1 jogo' in p7.inner_text('#lanLista'), 'CT-KAN-172-03: a despesa aparece nos lançamentos do mês como "Pagamento de 1 jogo"')
+    p7.reload(); p7.wait_for_timeout(1300); p7.click('[data-a=tab][data-v=caixa]'); p7.wait_for_timeout(900)
+    t9 = p7.locator('#apagarLista li').first.inner_text().replace('\xa0', ' ') if p7.locator('#apagarLista li').count() else ''
+    ok('1 jogo' in t9 and p7.evaluate("(id)=>S.pc.tipos[id]==='isento'&&S.pc.porJogo[id].v===50", gol),
+       f'CT-KAN-172-04: depois de recarregar, tipo isento, valor por jogo e o pagamento continuam ({t9!r})')
+    p7.click('#apagarLista [data-a=abrirPagar]'); p7.wait_for_timeout(400); p7.click('[data-a=pagarJogos]'); p7.wait_for_timeout(900)
+    ok(p7.locator('#apagarLista').count() == 0 and p7.locator('#kpiAPagar').count() == 0, 'CT-KAN-172-03: tudo pago, o bloco A pagar some')
+    ctx7.close()
+
     # ---------- v51 (KAN-171): app instalado só volta sozinho ao link do jogador em aparelho que nunca entrou com conta
     ctx6 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block', timezone_id='America/Sao_Paulo')
     ctx6.add_init_script("Object.defineProperty(navigator,'standalone',{get:()=>true})")

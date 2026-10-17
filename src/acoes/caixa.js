@@ -1,14 +1,14 @@
 /* Ações: Caixa: lançamentos, pendências e cobrança. Fazem parte de ACT (src/acoes.js). */
 import { cfg } from '../dominio/caixa.js';
 import { gname, players, pname, rodadas } from '../dominio/grupo.js';
-import { tx } from '../i18n/index.js';
+import { tp, tx } from '../i18n/index.js';
 import { simboloMoeda } from '../i18n/formatos.js';
 import { shareDlg } from '../dominio/whatsapp.js';
 import { B } from '../nucleo/backend.js';
 import { apagarLanc, salvarLanc } from '../nucleo/partidas.js';
 import { S } from '../nucleo/estado.js';
 import { $, brl, esc, fmonth, toast, toastAcao, today, usarAvisoAcao } from '../nucleo/util.js';
-import { pendencias } from '../telas/Caixa.tsx';
+import { listaAPagar, montarPagar, pendencias } from '../telas/Caixa.tsx';
 import { closeDlg, confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
 import { ACT } from '../acoes.js';
 
@@ -58,6 +58,38 @@ const acoes = {
       const d = apagarLanc(id);
       toast(tx('caixa.pagamentoDesfeito'));
       return d;
+    });
+    return r;
+  },
+  /* A pagar por jogo (KAN-172): a janela lista os jogos acumulados; Paguei lança uma despesa com o total e as rodadas pagas. */
+  abrirPagar: el => {
+    openDlg('<div id="apgRaiz"></div>');
+    if (!montarPagar(el.dataset.v)) closeDlg();
+  },
+  pagarJogos: el => {
+    const pid = el.dataset.v,
+      a = listaAPagar().find(x => x.pid === pid);
+    if (!a) return;
+    const refs = [...document.querySelectorAll('#apgLista .apg:checked')].map(x => x.value),
+      v = Math.round(+val('apgv') * 100) / 100;
+    if (!refs.length) {
+      toast(tx('caixa.pagarNenhum'));
+      return;
+    }
+    if (!(v > 0)) {
+      toast(tx('caixa.pagarValor'));
+      $('#apgv')?.focus();
+      return;
+    }
+    const id = B.newId(),
+      d = today(),
+      o = { k: 'despesa', pid, v, d, ref: d.slice(0, 7), refs, note: tp('caixa.pagamentoPorJogo', refs.length) };
+    closeDlg();
+    const r = salvarLanc(id, o);
+    toastAcao(tx('caixa.pago', { nome: pname(pid), valor: brl(v) }), tx('caixa.desfazer'), () => {
+      const x = apagarLanc(id);
+      toast(tx('caixa.pagamentoDesfeito'));
+      return x;
     });
     return r;
   },

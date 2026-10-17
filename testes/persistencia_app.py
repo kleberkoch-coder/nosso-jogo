@@ -162,6 +162,19 @@ with sync_playwright() as pw:
     n14 = J(pg, "Object.keys(S.caixa||{}).length")
     ok(n14 >= 1, f'CT-KAN-170-P14: lançamento do caixa continua depois de recarregar ({n14})')
 
+    # P20 isento que recebe por jogo (privado/caixa: tipos e porJogo) e pagamento dos jogos (caixa/{id} com refs) (KAN-172)
+    rid20, pid20 = J(pg, """(()=>{for(const [r,d] of Object.entries(S.rod)){if(!d.times)continue;const p=d.times.flatMap(t=>t.players).find(x=>S.jog[x]);if(p)return [r,p]}return [null,null]})()""")
+    pronto(pg, 'jogadores'); pg.click(f'[data-a=editPlayer][data-p="{pid20}"]'); pg.wait_for_timeout(300)
+    pg.select_option('#ptp', 'isento'); pg.check('#prj'); pg.fill('#prv', '40'); pg.click('#dlg [data-a=savePlayer]')
+    gravou(pg); pronto(pg, 'caixa'); pg.wait_for_timeout(1200)
+    ok(J(pg, "(id)=>S.pc.tipos[id]==='isento'&&S.pc.porJogo[id].v===40", pid20) and pg.locator(f'#apagarLista [data-a=abrirPagar][data-v="{pid20}"]').count() == 1,
+       'CT-KAN-170-P20: tipo isento e "Recebe por jogo" continuam, e o jogo aparece em A pagar')
+    pg.click(f'#apagarLista [data-a=abrirPagar][data-v="{pid20}"]'); pg.wait_for_timeout(400); pg.click('#dlg [data-a=pagarJogos]')
+    gravou(pg); pronto(pg, 'caixa'); pg.wait_for_timeout(1200)
+    ok(J(pg, "(a)=>Object.values(S.caixa).some(l=>l.k==='despesa'&&l.pid===a[0]&&(l.refs||[]).includes(a[1]))", [pid20, rid20])
+       and pg.locator(f'#apagarLista [data-a=abrirPagar][data-v="{pid20}"]').count() == 0,
+       'CT-KAN-170-P20: pagamento dos jogos continua e o jogo pago não volta para A pagar')
+
     # P15 votação (votacoes/{vid})
     pronto(pg, 'votacao'); pg.click('[data-a=newVote]'); pg.wait_for_timeout(300); pg.click('#dlg [data-a=saveVote]')
     gravou(pg); pronto(pg, 'votacao'); pg.wait_for_timeout(600)

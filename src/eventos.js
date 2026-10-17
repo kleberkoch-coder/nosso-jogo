@@ -152,6 +152,12 @@ document.addEventListener('change', e => {
     adm()?.trocarPaisTelefone();
     return;
   }
+  if (t.id === 'prj') {
+    const b = $('#prvBox');
+    if (b) b.hidden = !t.checked;
+    if (t.checked) $('#prv')?.focus();
+    return;
+  }
   if (t.id === 'lpais') {
     S.paisNovo = t.value;
     return;

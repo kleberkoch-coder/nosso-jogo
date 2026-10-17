@@ -8,7 +8,7 @@ import { attendance, curRodada, pname } from '../dominio/grupo.js';
 import { desfazer, emQuadra, entrar, escVazia, podemEntrar, type Esc } from '../dominio/escalacao';
 import { tx } from '../i18n/index.js';
 import { S as estado } from '../nucleo/estado.js';
-import { partidasDe } from '../nucleo/partidas-lista.js';
+import { artilhariaDe, partidasDe } from '../nucleo/partidas-lista.js';
 import { SeletorRodada } from '../ui/componentes';
 import { rodadasProntas } from './rodada-partes.js';
 import { sumPts } from '../ui/placar.js';
@@ -274,6 +274,91 @@ function Salvas({ r }: { r: Rodada }) {
   );
 }
 
+/* Artilharia da rodada (KAN-178): para quem lança só o total de gols de cada jogador, sem partida a partida. */
+function Artilharia({ r }: { r: Rodada }) {
+  const a = artilhariaDe(r.id) as { gols?: Record<string, number> } | null,
+    lista = Object.entries((a && a.gols) || {})
+      .filter(([, n]) => n > 0)
+      .sort((x, y) => y[1] - x[1] || pname(x[0]).localeCompare(pname(y[0])));
+  return (
+    <div class="panel" id="artPainel">
+      <div class="row between">
+        <h3 style="margin:0">{tx('partida.artTitulo')}</h3>
+        <button class="btn sm" data-a="abrirArtilharia">
+          {tx(a ? 'partida.artEditar' : 'partida.artLancar')}
+        </button>
+      </div>
+      <p class="small muted" style="margin:6px 0 0">
+        {lista.length ? lista.map(([p, n]) => pname(p) + ' ' + n).join(' · ') : tx('partida.artAjuda')}
+      </p>
+    </div>
+  );
+}
+let artEdicao: Record<string, number> | null = null;
+const artAtual = () => artEdicao;
+function LancarArtilharia({ r }: { r: Rodada }) {
+  const a = artilhariaDe(r.id) as { gols?: Record<string, number> } | null;
+  const [gols, setGols] = useState<Record<string, number>>({ ...((a && a.gols) || {}) });
+  artEdicao = gols;
+  const ids = [...new Set([...(r.times as Time[]).flatMap(x => x.players), ...Object.keys(gols)])],
+    somar = (id: string, d: number) => setGols({ ...gols, [id]: Math.max(0, (gols[id] || 0) + d) }),
+    temGolEmPartida = (partidasDe(r.id) as Partida[]).some(m => m.ga || m.gb);
+  return (
+    <>
+      <h3>{tx('partida.artTitulo')}</h3>
+      <p class="small muted">{tx('partida.artTexto', { ponto: (sport() as { word: string }).word.toLowerCase() })}</p>
+      {temGolEmPartida ? (
+        <p class="small" style="color:var(--out)">
+          {tx('partida.artAviso', { ponto: (sport() as { word: string }).word.toLowerCase() })}
+        </p>
+      ) : null}
+      <ul class="plist" id="artLista">
+        {ids.map(id => (
+          <li key={id}>
+            <span class="pn">{pname(id)}</span>
+            <button
+              type="button"
+              class="btn sm"
+              aria-label={tx('partida.artMenos', { nome: pname(id) })}
+              onClick={() => somar(id, -1)}
+              disabled={!gols[id]}
+            >
+              −
+            </button>
+            <b class="art-n" data-p={id} style="min-width:2ch;text-align:center">
+              {gols[id] || 0}
+            </b>
+            <button
+              type="button"
+              class="btn sm"
+              aria-label={tx('partida.artMais', { nome: pname(id) })}
+              data-p={id}
+              onClick={() => somar(id, 1)}
+            >
+              +
+            </button>
+          </li>
+        ))}
+      </ul>
+      <div class="dlg-f">
+        <button class="btn" data-a="close">
+          {tx('comum.cancelar')}
+        </button>
+        <button class="btn primary" data-a="salvarArtilharia">
+          {tx('partida.artSalvar')}
+        </button>
+      </div>
+    </>
+  );
+}
+function montarArtilharia() {
+  const r = curRodada() as Rodada | null,
+    el = document.getElementById('artRaiz');
+  if (!r || !r.times || !el) return false;
+  render(<LancarArtilharia r={r} />, el);
+  return true;
+}
+
 function PartidaTela() {
   const S = st();
   if (!rodadasProntas()) return <div class="empty muted">{tx('comum.carregando')}</div>;
@@ -318,6 +403,7 @@ function PartidaTela() {
       <Placar r={r} />
       <Ajustes r={r} />
       <Salvas r={r} />
+      <Artilharia r={r} />
     </div>
   );
 }
@@ -549,4 +635,15 @@ function montarPartida() {
   if (el) render(<PartidaTela />, el);
 }
 
-export { edicaoAtual, limiteAtingido, montarEdicao, montarEscalacao, montarPartida, novaPartida, quadra, vPartida };
+export {
+  artAtual,
+  edicaoAtual,
+  limiteAtingido,
+  montarArtilharia,
+  montarEdicao,
+  montarEscalacao,
+  montarPartida,
+  novaPartida,
+  quadra,
+  vPartida,
+};

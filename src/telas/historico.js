@@ -97,6 +97,7 @@ async function abrirHist(id) {
   h.pres = pres || {};
   h.parts = Object.entries(parts || {})
     .map(([pid, m]) => Object.assign({ id: pid }, m))
+    .filter(m => m.tipo !== 'art')
     .concat(r.matches || [])
     .sort((a, b) => (a.at || 0) - (b.at || 0));
   changed();

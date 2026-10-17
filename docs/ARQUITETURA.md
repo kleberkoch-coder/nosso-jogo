@@ -189,6 +189,29 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D18. Teste de carga no emulador e custo estimado (16 out. 2026, KAN-158)
+- **Contexto:** o app nunca tinha sido medido com muita gente ao mesmo tempo. Três pontos recebem gravações de várias pessoas no mesmo instante: o contador de avulsos da rodada (`limites/avulsos`), o documento da rodada e os votos.
+- **Decisão:** a tarefa **Teste de carga** (`.github/workflows/carga.yml`, script `testes/carga/carga.mjs`) sobe o emulador do Firestore com as regras de verdade e simula aparelhos diferentes fazendo as mesmas gravações do app. Ela roda toda segunda às 6h17, à mão (Actions → Teste de carga → Run workflow) e em toda proposta que mexe nas regras ou no próprio teste. O resultado aparece no resumo da execução e fica guardado como arquivo.
+- **Resultado da primeira medição (16/10/2026, emulador no GitHub):**
+
+  | Cenário | Resultado | Tempo (mediana / mais lento) |
+  |---|---|---|
+  | 50 confirmações em 10 s | 50 de 50 gravadas, nenhuma falha | 39 ms / 446 ms |
+  | 40 avulsos ao mesmo tempo, limite 30 | exatamente 30 entraram e 10 receberam o aviso de limite; contador em 30 | 1.132 ms / 1.489 ms |
+  | 30 votos ao mesmo tempo | 30 de 30 contados ao encerrar | 608 ms / 621 ms |
+  | 2 administradores (sorteio + 10 marcações) | tudo gravado, nenhuma falha | 109 ms / 154 ms |
+  | Abrir o link com a lista cheia (50 jogadores, 80 respostas) | 132 leituras | 112 ms |
+
+  - **Ponto de atenção:** o contador de avulsos é o mais lento (até 1,5 s com 40 pessoas no mesmo segundo), porque todas as gravações passam pelo mesmo documento. Continua abaixo do critério de 2 s e só acontece com avulsos novos. Se um dia passar disso, dá para dividir o contador em partes.
+  - O emulador roda numa máquina só: os tempos servem para comparar versões e achar gargalos, não são os tempos do Firebase no ar.
+- **Custo estimado (premissas: grupo com 25 jogadores, 1 jogo por semana, cada jogador abre o link 3 vezes, o administrador abre a gestão 10 vezes e há uma votação):**
+  - **Por grupo:** cerca de 8.500 leituras e 150 gravações por semana, ou seja, cerca de 37 mil leituras e 650 gravações por mês. A maior parte das leituras vem de quem abre o link, porque cada abertura lê o elenco e a lista inteira: 132 leituras com a lista cheia na medição.
+  - **Preço do Firestore (out. 2026, edição Standard):** franquia grátis de 50 mil leituras e 20 mil gravações **por dia**. Acima disso, US$ 0,03 por 100 mil leituras e US$ 0,09 por 100 mil gravações. O preço pode variar com a região do banco; conferir no console.
+  - **100 grupos:** cerca de 3,7 milhões de leituras e 65 mil gravações por mês. No plano pago, com a franquia, dá **menos de US$ 1 por mês**.
+  - **1.000 grupos:** cerca de 37 milhões de leituras e 650 mil gravações por mês, ou **cerca de US$ 11 por mês** no plano pago.
+  - **Alerta para o negócio:** o projeto está no plano grátis (Spark), que **para de responder** quando passa de 50 mil leituras no dia, em vez de cobrar. Como os grupos concentram o uso perto do dia do jogo, isso pode acontecer já com **15 a 25 grupos ativos** jogando no mesmo dia. Recomendação: passar para o Blaze, com alerta de orçamento, antes de chegar a 15 grupos ativos.
+- **O que faria mudar:** o link ler menos (só a próxima rodada e as respostas, sem o elenco inteiro a cada abertura), se as leituras crescerem mais rápido que os grupos.
+
 ### D12. Ficar em JavaScript/TypeScript e pagar a dívida técnica aos poucos (8 out. 2026)
 - **Contexto:** a dúvida era se valeria trocar de linguagem para não acumular dívida técnica.
 - **Decisão:** não trocar. Todo app web roda em JavaScript; o caminho certo é o **TypeScript** (JavaScript com tipos conferidos antes de ir para o ar), que já começou na v14. As funções no servidor, quando vierem, também serão em TypeScript: uma linguagem só no produto inteiro.

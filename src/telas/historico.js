@@ -1,4 +1,4 @@
-import { sport, tn } from '../dominio/esportes.js';
+import { sport, tnJogo } from '../dominio/esportes.js';
 import { comCores, pname } from '../dominio/grupo.js';
 import { hora } from '../dominio/rodadas.js';
 import { tp, tx } from '../i18n/index.js';
@@ -156,7 +156,7 @@ function vDetalhe(h) {
         ? `<ul class="plist wrap">${ms
             .map((m, i) => {
               const gs = (m.goals || []).filter(g => g.pid && !g.og);
-              return `<li><span class="num">${i + 1}</span><span class="pn">${tn(m.ca)} <b>${m.ga} × ${m.gb}</b> ${tn(m.cb)}${gs.length ? ` <span class="small muted">— ${esc(sport().word.toLowerCase())}: ${gs.map(g => esc(pname(g.pid)) + ((g.pts || 1) > 1 ? ' (' + g.pts + ')' : '')).join(', ')}</span>` : ''}</span></li>`;
+              return `<li><span class="num">${i + 1}</span><span class="pn">${tnJogo(m, 'a', r.times)} <b>${m.ga} × ${m.gb}</b> ${tnJogo(m, 'b', r.times)}${gs.length ? ` <span class="small muted">— ${esc(sport().word.toLowerCase())}: ${gs.map(g => esc(pname(g.pid)) + ((g.pts || 1) > 1 ? ' (' + g.pts + ')' : '')).join(', ')}</span>` : ''}</span></li>`;
             })
             .join('')}</ul>`
         : `<p class="muted small">${tx('hist.semPartidas')}</p>`

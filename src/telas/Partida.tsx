@@ -3,7 +3,7 @@
 import { render } from 'preact';
 import { useState } from 'preact/hooks';
 import { cfg } from '../dominio/caixa.js';
-import { col, sport, tn } from '../dominio/esportes.js';
+import { col, sport, timeDoJogo, tn, tnJogo } from '../dominio/esportes.js';
 import { attendance, curRodada, pname } from '../dominio/grupo.js';
 import { desfazer, emQuadra, entrar, escVazia, podemEntrar, type Esc } from '../dominio/escalacao';
 import { tx } from '../i18n/index.js';
@@ -29,16 +29,17 @@ type Partida = {
 };
 
 const st = (): any => estado;
-const MINUTOS = [5, 7, 8, 10, 12, 15, 20, 25, 30, 45];
+/* Qualquer minuto de 1 a 60, e jogos longos (v60: antes faltavam 9, 11, 13…). */
+const MINUTOS = Array.from({ length: 60 }, (_, i) => i + 1).concat([70, 80, 90]);
 /* Fim por placar (KAN-175): 0 = sem limite. Vale para gols e para pontos. */
 const LIMITES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 21, 25];
 
 /* Sugestão do próximo jogo (KAN-175), a partir dos jogos salvos desta rodada (dominio/fila.ts). */
 function sugestao(r: Rodada): Proximo {
   const times = r.times as Time[],
-    pos = (c: number) => times.findIndex(t => t.c === c);
+    pos = (m: Partida, l: 'a' | 'b') => timeDoJogo(m, l, times) as number;
   const jogos = (partidasDe(r.id) as Partida[])
-    .map(m => ({ a: pos(m.ca), b: pos(m.cb), ga: m.ga, gb: m.gb }))
+    .map(m => ({ a: pos(m, 'a'), b: pos(m, 'b'), ga: m.ga, gb: m.gb }))
     .filter(j => j.a >= 0 && j.b >= 0);
   return proximoJogo(times.length, jogos);
 }
@@ -96,7 +97,7 @@ function Placar({ r }: { r: Rodada }) {
       <div>
         <div class="tn">
           <span class="dot" style={{ background: c.c }}></span>
-          {tn(time.c)}
+          {tn(t === 'a' ? L.a : L.b)}
         </div>
         <div class="sc">{sumPts(L.goals, t)}</div>
         <div class="goals">{gols}</div>
@@ -163,7 +164,7 @@ function Ajustes({ r }: { r: Rodada }) {
   const opcoes = (sel: number, pula: number) =>
     times.map((t, i) => (
       <option key={i} value={i} selected={i === sel} disabled={i === pula}>
-        {tn(t.c)}
+        {tn(i)}
       </option>
     ));
   return (
@@ -184,8 +185,8 @@ function Ajustes({ r }: { r: Rodada }) {
         <label class="f" style="margin:0;width:124px">
           <span>{tx('partida.minutos')}</span>
           <select class="sel" data-c="dur">
-            {MINUTOS.map(m => (
-              <option key={m} value={m} selected={m * 60 === L.dur}>
+            {(L.dur && !MINUTOS.includes(L.dur / 60) ? [Math.round(L.dur / 60)] : []).concat(MINUTOS).map(m => (
+              <option key={m} value={m} selected={m * 60 === L.dur || (m === Math.round(L.dur / 60) && L.dur > 0)}>
                 {m}
               </option>
             ))}
@@ -211,7 +212,7 @@ function Ajustes({ r }: { r: Rodada }) {
           {espera.map((t, i) => (
             <span key={t}>
               {i ? ' · ' : ''}
-              <span class="dot" style={{ background: col(times[t].c).c }}></span> {tn(times[t].c)}
+              <span class="dot" style={{ background: col(times[t].c).c }}></span> {tn(t)}
             </span>
           ))}
         </p>
@@ -244,11 +245,11 @@ function Salvas({ r }: { r: Rodada }) {
             <li key={m.id}>
               <span class="num">{i + 1}</span>
               <span class="pn">
-                <span class="dot" style={{ background: col(m.ca).c }}></span> {tn(m.ca)}{' '}
+                <span class="dot" style={{ background: col(m.ca).c }}></span> {tnJogo(m, 'a', r.times)}{' '}
                 <b>
                   {m.ga} × {m.gb}
                 </b>{' '}
-                {tn(m.cb)} <span class="dot" style={{ background: col(m.cb).c }}></span>{' '}
+                {tnJogo(m, 'b', r.times)} <span class="dot" style={{ background: col(m.cb).c }}></span>{' '}
                 <span class="small muted">
                   {autores(m) ? ' — ' + (sport() as { word: string }).word.toLowerCase() + ': ' + autores(m) : ''}
                 </span>
@@ -440,8 +441,7 @@ function Escalacao({ r, t }: { r: Rodada; t: 'a' | 'b' }) {
   return (
     <>
       <h3>
-        <span class="dot" style={{ background: col(time.c).c }}></span>{' '}
-        {tx('partida.escalacaoDe', { time: tn(time.c) })}
+        <span class="dot" style={{ background: col(time.c).c }}></span> {tx('partida.escalacaoDe', { time: tn(idx) })}
       </h3>
       <p class="small muted">{tx('partida.escalacaoTexto')}</p>
       <ul class="plist" id="escLista">
@@ -470,7 +470,7 @@ function Escalacao({ r, t }: { r: Rodada; t: 'a' | 'b' }) {
             <select class="sel" id="escQuem">
               {times.map((x, i) =>
                 i === idx || !opc.deTimes[i].length ? null : (
-                  <optgroup key={i} label={tn(x.c)}>
+                  <optgroup key={i} label={tn(i)}>
                     {opc.deTimes[i].map(id => (
                       <option key={id} value={id}>
                         {pname(id)}
@@ -542,7 +542,8 @@ function EditarPartida({ m }: { m: Partida }) {
     return (
       <div class="panel" style="margin:0 0 10px">
         <h3 style="margin:0 0 6px">
-          <span class="dot" style={{ background: col(cor).c }}></span> {tn(cor)} · {sumPts(goals, t)}
+          <span class="dot" style={{ background: col(cor).c }}></span>{' '}
+          {tnJogo(m, t, ((curRodada() as Rodada | null) || { times: [] }).times)} · {sumPts(goals, t)}
         </h3>
         <ul class="plist">
           {goals.map((g, i) =>

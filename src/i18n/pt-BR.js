@@ -36,6 +36,10 @@ export default {
   'publico.subtitulo': '{emoji} {esporte} · confirmação de presença',
   'publico.localADefinir': 'Local a definir',
   'publico.confirmados': 'confirmados',
+  /* Times por número (v60): a cor fica só para o colete */
+  'time.nome': 'Time {n}',
+  'time.dupla': 'Dupla {n}',
+  'time.colete': 'colete {cor}',
   /* Confirmados por posição (KAN-179) */
   'porpos.titulo': 'Confirmados por posição',
   'porpos.tituloTotal': 'Mínimo para o jogo',
@@ -266,7 +270,6 @@ export default {
   'rodada.sortearTimes': 'Sortear times ({n})',
   'rodada.sortearDuplas': 'Sortear duplas ({n})',
   'times.titulo': 'Times',
-  'times.cor': 'Cor',
   'times.mover': 'Mover',
   'times.moverRotulo': 'Mover {nome}',
   'times.media': 'Nota média {n}',

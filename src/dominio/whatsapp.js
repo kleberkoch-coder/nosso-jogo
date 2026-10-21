@@ -1,4 +1,4 @@
-import { col, hasPos, posIdx, posLabel, sport, tn } from './esportes.js';
+import { col, colete, hasPos, posIdx, posLabel, sport, tn } from './esportes.js';
 import { attendance, gname, pname, ppos, upcoming } from './grupo.js';
 import { hora } from './rodadas.js';
 import { linkMaps, linkProxima, linkRodada } from '../nucleo/links.js';
@@ -22,11 +22,11 @@ function txtConvite(r) {
 }
 function txtTimes(r) {
   let t = `${sport().e} *Times — ${fdate(r.date)}*${r.place ? '\n📍 ' + r.place + '\n🗺️ ' + linkMaps(r.place) : ''}\n`;
-  r.times.forEach(tm => {
+  r.times.forEach((tm, i) => {
     const c = col(tm.c),
       rs = id => ((tm.res || []).includes(id) ? 1 : 0);
     t +=
-      `\n${sport().pairs ? '🤝' : c.e} *${tn(tm.c)}*\n` +
+      `\n${sport().pairs ? '🤝' : c.e} *${tn(i)}*${sport().pairs ? '' : ' · ' + colete(tm.c)}\n` +
       tm.players
         .slice()
         .sort((a, b) => rs(a) - rs(b) || posIdx(ppos(a)) - posIdx(ppos(b)))

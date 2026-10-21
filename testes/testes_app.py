@@ -86,6 +86,12 @@ def confirmar_app(pg, sim=True):
     pg.click('#dlg .conf [data-a=confSim]' if sim else '#dlg .conf [data-a=confNao]'); pg.wait_for_timeout(500)
     return True
 
+def trocar_colete(pg, sel):
+    """Abre a escolha do colete (v60) e escolhe a primeira cor que nenhum time usa."""
+    pg.locator(sel).first.click(); pg.wait_for_timeout(400)
+    livre = pg.locator('#coletes [data-a=pickColor][aria-pressed=false]:not(:has(.tag))').first
+    livre.click(); pg.wait_for_timeout(800)
+
 def adicionar_pelo_link(pg, nome):
     pg.click('[data-a=pubAdd]'); pg.wait_for_timeout(300); pg.fill('#anm', nome); pg.click('[data-a=pubSaveAdd]'); pg.wait_for_timeout(1200)
     return pg.evaluate("n=>Object.keys(S.pres).find(id=>S.pres[id].nome===n)||null", nome)
@@ -848,7 +854,7 @@ with sync_playwright() as pw:
         # tela deste aparelho desatualizada (times antigos); no banco estão os times do outro administrador
         novo = pg.evaluate("(a)=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2'));return JSON.stringify(s['grupos/'+a[0]+'/rodadas/'+a[1]].times.map(t=>t.players))}", [gid_fut, rid_x])
         pg.evaluate("S.rod[S.rid]=Object.assign({},S.rod[S.rid],{times:S.rod[S.rid].times.map(t=>Object.assign({},t,{players:t.players.slice().reverse()}))})")
-        pg.locator('.team [data-a=color]').first.click(); pg.wait_for_timeout(800)
+        trocar_colete(pg, '.team [data-a=color]')
         depois = pg.evaluate("(a)=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2')),d=s['grupos/'+a[0]+'/rodadas/'+a[1]];return [JSON.stringify(d.times.map(t=>t.players)),d.cores&&d.cores['0']!=null]}", [gid_fut, rid_x])
         ok(depois[0] == novo and depois[1], 'CT-KAN-108-01: a cor nova é gravada sem desfazer o sorteio do outro administrador')
     else:
@@ -1001,7 +1007,7 @@ with sync_playwright() as pw:
     # KAN-108 CT-02: troca a cor e, com uma cópia desatualizada, sorteia de novo: o sorteio novo é gravado e a cor escolhida continua
     pg.click('[data-a=tab][data-v=rodada]'); pg.wait_for_timeout(500)
     RODDB = "(a)=>JSON.parse(localStorage.getItem('pelada-demo-v2'))['grupos/'+a[0]+'/rodadas/'+a[1]]"
-    pg.locator('.team [data-a=color][data-v="1"]').click(); pg.wait_for_timeout(800)
+    trocar_colete(pg, '.team [data-a=color][data-v="1"]')
     d0 = pg.evaluate(RODDB, [gid_fut, rid_main])
     pg.evaluate("S.rod[S.rid]=Object.assign({},S.rod[S.rid]);delete S.rod[S.rid].cores")  # este aparelho não viu a troca de cor
     # A rodada principal tem votação (desde a v33 isso bloqueia sortear de novo); aqui a votação sai só da memória para testar as cores
@@ -1012,9 +1018,9 @@ with sync_playwright() as pw:
     ok((d0.get('cores') or {}).get('1') is not None and d1.get('drawnAt') != d0.get('drawnAt') and d1.get('cores') == d0.get('cores') and d1.get('locked'),
        f'CT-KAN-108-02: sortear de novo com a tela desatualizada grava o sorteio novo e mantém as cores escolhidas ({d1.get("cores")})')
     # KAN-108 CT-06: o link do jogador mostra os times novos com as cores novas, sem notas
-    esperado = [[CORES[((d1.get('cores') or {}).get(str(i), t.get('c', 0)) or 0) % 8], len(t['players'])] for i, t in enumerate(d1['times'])]
+    esperado = [[f'Time {i + 1}', 'colete ' + CORES[((d1.get('cores') or {}).get(str(i), t.get('c', 0)) or 0) % 8].lower() + ' · ' + str(len(t['players']))] for i, t in enumerate(d1['times'])]
     pg.goto(URL + '#/p/' + gid_fut); pg.wait_for_timeout(1200)
-    visto = pg.evaluate("[...document.querySelectorAll('.team')].map(t=>[t.querySelector('.th b').textContent,+t.querySelector('.th .tag').textContent])")
+    visto = pg.evaluate("[...document.querySelectorAll('.team')].map(t=>[t.querySelector('.th b').textContent,t.querySelector('.th .tag').textContent])")
     ok(pg.evaluate("S.route.id") == rid_main and visto == esperado and pg.locator('.lvl-tag').count() == 0,
        f'CT-KAN-108-06: link do jogador mostra os times novos com as cores novas e sem notas ({visto})')
     # KAN-108 CT-05: basquete não perde nenhuma mudança; em duplas (beach tennis) não existe botão de Cor, de propósito
@@ -1022,7 +1028,7 @@ with sync_playwright() as pw:
     rid_bq = pg.evaluate("S.rid")
     novo = json.dumps([t['players'] for t in pg.evaluate(RODDB, [gid_bq, rid_bq])['times']], separators=(',', ':'))
     pg.evaluate("S.rod[S.rid]=Object.assign({},S.rod[S.rid],{times:S.rod[S.rid].times.map(t=>Object.assign({},t,{players:t.players.slice().reverse()}))})")
-    pg.locator('.team [data-a=color]').first.click(); pg.wait_for_timeout(800)
+    trocar_colete(pg, '.team [data-a=color]')
     db = pg.evaluate(RODDB, [gid_bq, rid_bq])
     ok(json.dumps([t['players'] for t in db['times']], separators=(',', ':')) == novo and (db.get('cores') or {}).get('0') is not None,
        'CT-KAN-108-05: basquete: a cor nova é gravada sem desfazer o sorteio do outro administrador')
@@ -1830,6 +1836,52 @@ with sync_playwright() as pw:
     ok(d10[0] == 0 and d10[1] == 0 and all(d10[2]) and d10[3] == 0,
        f'CT-KAN-63-10 {d10}: desligado o controle, as marcas somem e o link volta a ser como antes')
     ctx11.close()
+
+    # ---------- v60: times por número (Time 1, Time 2), cor só no colete, e qualquer minuto no cronômetro (navegador separado)
+    ctx12 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
+    p12 = ctx12.new_page()
+    p12.on('pageerror', lambda e: errs.append(str(e)))
+    p12.goto(URL + '#/criar'); p12.wait_for_timeout(800)
+    p12.fill('#le', 'times@teste.com'); p12.fill('#lp', 'Jogo@2026'); p12.fill('#lp2', 'Jogo@2026'); p12.keyboard.press('Enter'); p12.wait_for_timeout(1300)
+    p12.fill('#ngn', 'Times FC'); p12.click('[data-a=pickSport][data-v=futebol]'); p12.click('[data-a=createGroup]'); p12.wait_for_timeout(1500)
+    elenco_e_presenca(p12, 10)
+    p12.click('[data-a=drawDlg]'); p12.wait_for_timeout(300)
+    p12.click('[data-a=dN][data-v="2"]'); p12.wait_for_timeout(200); p12.click('#drawGo'); p12.wait_for_timeout(2500)
+    nomes12 = p12.evaluate("[...document.querySelectorAll('.team .th b')].map(b=>b.textContent)")
+    col12 = p12.evaluate("[...document.querySelectorAll('.team [data-a=color]')].map(b=>b.textContent.trim())")
+    cores0 = p12.evaluate("Object.values(S.rod).find(r=>r.times).times.map(t=>t.c)")
+    ok(nomes12 == ['Time 1', 'Time 2'] and all(c.startswith('colete ') for c in col12), f'CT-v60-01: os times se chamam Time 1 e Time 2, e a cor aparece como colete ({nomes12}, {col12})')
+    p12.locator('.team').first.screenshot(path=f'{OUT}/60-time-colete.png'); contraste(p12, 'Time com colete')
+    p12.locator('.team [data-a=color][data-v="0"]').click(); p12.wait_for_timeout(400)
+    n_cores = p12.locator('#coletes [data-a=pickColor]').count()
+    p12.screenshot(path=f'{OUT}/60-escolher-colete.png')
+    p12.locator(f'#coletes [data-a=pickColor][data-c2="{cores0[1]}"]').click(); p12.wait_for_timeout(800)
+    cores1 = p12.evaluate("(()=>{const r=Object.values(S.rod).find(r=>r.times);return r.times.map((t,i)=>(r.cores&&r.cores[i]!=null)?r.cores[i]:t.c)})()")
+    ok(n_cores == 8 and cores1 == [cores0[1], cores0[0]] and p12.evaluate("[...document.querySelectorAll('.team .th b')].map(b=>b.textContent)") == ['Time 1', 'Time 2'],
+       f'CT-v60-02: escolher a cor de outro time troca os coletes dos dois; os nomes continuam ({cores0} → {cores1})')
+    # Cronômetro: qualquer minuto (o Kleber não conseguia 9)
+    p12.click('[data-a=tab][data-v=partida]'); p12.wait_for_selector('#partidaRaiz .board', timeout=8000); p12.wait_for_timeout(300)
+    mins = p12.evaluate("[...document.querySelectorAll('[data-c=dur] option')].map(o=>o.value)")
+    p12.select_option('[data-c=dur]', '9'); p12.wait_for_timeout(300)
+    ok(all(str(m) in mins for m in range(1, 61)) and p12.evaluate("S.live.dur") == 540 and p12.inner_text('#clock') == '09:00',
+       f'CT-v60-03: o cronômetro aceita qualquer minuto de 1 a 60; 9 minutos mostra 09:00 ({p12.inner_text("#clock")})')
+    ok(p12.evaluate("[...document.querySelectorAll('[data-c=ta] option')].map(o=>o.textContent)") == ['Time 1', 'Time 2'], 'CT-v60-04: na Partida, os times aparecem como Time 1 e Time 2')
+    p12.click('[data-a=saveMatch]'); p12.wait_for_timeout(900)
+    if p12.locator('#dlg .conf').count(): confirmar_app(p12, True); p12.wait_for_timeout(600)
+    m12 = p12.evaluate("(()=>{const ms=Object.values(S.parts||{}).filter(m=>m.tipo!=='art');return ms.length?ms[0]:null})()") or {}
+    salvas = p12.inner_text('#partidaRaiz') if p12.locator('#partidaRaiz').count() else ''
+    ok(m12.get('ta') == 0 and m12.get('tb') == 1 and 'Time 1' in salvas and 'Time 2' in salvas, f'CT-v60-05: a partida salva guarda a posição dos times e aparece como Time 1 × Time 2 ({m12.get("ta")}, {m12.get("tb")})')
+    # Trocar o colete depois não muda o nome na partida já salva
+    p12.click('[data-a=tab][data-v=rodada]'); p12.wait_for_timeout(500)
+    trocar_colete(p12, '.team [data-a=color][data-v="0"]')
+    p12.click('[data-a=tab][data-v=partida]'); p12.wait_for_timeout(600)
+    ok('Time 1' in p12.inner_text('#partidaRaiz'), 'CT-v60-05: trocar o colete depois não muda o nome na partida salva')
+    gid12 = p12.evaluate("S.gid"); rid12 = p12.evaluate("S.presRid")
+    pl12 = ctx12.new_page(); pl12.goto(URL + '#/p/' + gid12 + '/r/' + rid12); pl12.wait_for_timeout(1500)
+    tl = pl12.inner_text('main')
+    ok('Time 1' in tl and 'Time 2' in tl and 'colete ' in tl and not any(c + ' ' in tl.split('Partidas')[0] for c in ['Laranja', 'Azul', 'Amarelo']),
+       'CT-v60-06: no link do jogador, os times aparecem como Time 1 e Time 2, com o colete ao lado')
+    pl12.close(); ctx12.close()
 
     # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
     ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')

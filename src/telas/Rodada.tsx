@@ -5,7 +5,7 @@ import { divergencia } from '../dominio/divergencia';
 import { linkCobrar, semResposta } from '../dominio/cobrar';
 import { linkWhatsApp } from '../dominio/contato';
 import { linkDaRodada } from '../dominio/whatsapp.js';
-import { col, hasPos, posIdx, posKeys, posLabel, sport, tn } from '../dominio/esportes.js';
+import { COL, col, colete, hasPos, posIdx, posKeys, posLabel, sport, tn } from '../dominio/esportes.js';
 import { TOTAL, faltaTotal, minimoValido } from '../dominio/posicoes';
 import { situacao } from '../dominio/vagas';
 import {
@@ -126,12 +126,18 @@ function CartaoTime({ t, ti }: { t: Time; ti: number }) {
     <div class="team">
       <div class={'band' + (c.n === 'Branco' && !pares ? ' branco' : '')} style={{ background: c.c }}></div>
       <div class="th">
-        <b>{tn(t.c)}</b>
+        <b>{tn(ti)}</b>
         {pares ? (
           <Tag>{t.players.length}</Tag>
         ) : (
-          <button class="btn sm ghost" data-a="color" data-v={ti}>
-            {tx('times.cor')}
+          <button
+            class="btn sm ghost colete-btn"
+            data-a="color"
+            data-v={ti}
+            aria-label={tx('colete.trocarRotulo', { time: tn(ti) })}
+          >
+            <span class="dot" style={{ background: c.c }}></span>
+            {colete(t.c)}
           </button>
         )}
       </div>
@@ -710,6 +716,49 @@ function montarVagas(r: Rodada, inn: number) {
   if (el) render(<AbrirVagas r={r} inn={inn} />, el);
 }
 
+/* Cor do colete (v60): escolha livre entre as cores; se outro time já usa, os dois trocam. */
+function Coletes({ r, ti }: { r: Rodada; ti: number }) {
+  const times = r.times || [];
+  return (
+    <>
+      <h3 id="coleteTitulo">{tx('colete.titulo', { time: tn(ti) })}</h3>
+      <p class="small muted">{tx('colete.ajuda')}</p>
+      <div class="vgrid" id="coletes">
+        {COL.map((x: { n: string; c: string }, c: number) => {
+          const dono = times.findIndex(t => t.c === c);
+          return (
+            <button
+              key={c}
+              class="opt"
+              data-a="pickColor"
+              data-v={ti}
+              data-c2={c}
+              aria-pressed={dono === ti ? 'true' : 'false'}
+            >
+              <span class={'dot' + (x.n === 'Branco' ? ' branco' : '')} style={{ background: x.c }}></span>
+              {x.n}
+              {dono >= 0 && dono !== ti ? (
+                <span class="tag" style="margin-left:auto">
+                  {tn(dono)}
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+      <div class="dlg-f">
+        <button class="btn" data-a="close">
+          {tx('comum.cancelar')}
+        </button>
+      </div>
+    </>
+  );
+}
+function montarColetes(r: Rodada, ti: number) {
+  const el = document.getElementById('coleteRaiz');
+  if (el) render(<Coletes r={r} ti={ti} />, el);
+}
+
 function montarMinimos() {
   const el = document.getElementById('minRaiz');
   if (el) render(<Minimos />, el);
@@ -722,4 +771,4 @@ function montarRodada() {
   if (el) render(<RodadaTela />, el);
 }
 
-export { minimosDoGrupo, montarMinimos, montarRodada, montarVagas, vRodada };
+export { minimosDoGrupo, montarColetes, montarMinimos, montarRodada, montarVagas, vRodada };

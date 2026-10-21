@@ -327,6 +327,11 @@ export default {
   'partida.semLimite': 'Sem limite',
   'partida.limiteAtingido': 'Fim por placar: chegou a {n}',
   'partida.salvasTitulo': 'Partidas desta rodada',
+  'partida.salva': 'Salvo: {a} {ga} × {gb} {b}',
+  /* Cor do colete (v60): o nome do time é o número */
+  'colete.titulo': 'Colete do {time}',
+  'colete.ajuda': 'Escolha a cor do colete que vocês têm na quadra. Se outro time já usa essa cor, os dois trocam.',
+  'colete.trocarRotulo': 'Trocar a cor do colete do {time}',
   'partida.apagar': 'Apagar',
   'partida.nenhumaSalva': 'Nenhuma partida salva ainda.',
   'partida.semRodada': 'Crie a rodada na aba Rodada e sorteie os times para começar.',

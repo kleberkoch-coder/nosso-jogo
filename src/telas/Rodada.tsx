@@ -5,7 +5,8 @@ import { divergencia } from '../dominio/divergencia';
 import { linkCobrar, semResposta } from '../dominio/cobrar';
 import { linkWhatsApp } from '../dominio/contato';
 import { linkDaRodada } from '../dominio/whatsapp.js';
-import { col, posIdx, posLabel, sport, tn } from '../dominio/esportes.js';
+import { col, hasPos, posIdx, posKeys, posLabel, sport, tn } from '../dominio/esportes.js';
+import { TOTAL, minimoValido } from '../dominio/posicoes';
 import {
   attendance,
   curRodada,
@@ -27,7 +28,7 @@ import { tp, tx } from '../i18n/index.js';
 import { presAlterada } from '../nucleo/edicoes.js';
 import { S as estado } from '../nucleo/estado.js';
 import { fdate } from '../nucleo/util.js';
-import { ComoChegar, Nota, Pos, Segmentado, SeletorRodada, Tag, TextoCortado } from '../ui/componentes';
+import { ComoChegar, Nota, Pos, PorPosicao, Segmentado, SeletorRodada, Tag, TextoCortado } from '../ui/componentes';
 import { rodadasProntas, temVotacao } from './rodada-partes.js';
 
 type Time = { c: number; players: string[]; res?: string[] };
@@ -542,6 +543,17 @@ function RodadaTela() {
             <small>{tx('rodada.confirmados')}</small>
           </div>
         </div>
+        {carregou ? (
+          <PorPosicao
+            inn={a.inn}
+            minimos={minimosDoGrupo()}
+            acao={
+              <button class="btn sm ghost" data-a="abrirMinimos">
+                {tx('minimo.definir')}
+              </button>
+            }
+          />
+        ) : null}
         {carregou ? <Divergencia r={r} /> : null}
         {carregou ? <RespostasMudadas alt={alt} /> : null}
         <div class="row" style="margin-top:12px">
@@ -576,6 +588,54 @@ function RodadaTela() {
   );
 }
 
+/* Mínimo para o jogo (KAN-179): total de jogadores (qualquer esporte) e, se houver posições, o mínimo de cada uma. */
+const minimosDoGrupo = (): Record<string, number> => (st().app?.cfg || {}).minPos || {};
+function Minimos() {
+  const m = minimosDoGrupo(),
+    campo = (k: string, rotulo: string, titulo?: string) => (
+      <label class="f minpos" key={k} title={titulo}>
+        <span>{rotulo}</span>
+        <input
+          class="inp minp"
+          type="number"
+          inputmode="numeric"
+          min="0"
+          max="99"
+          step="1"
+          data-k={k}
+          value={String(minimoValido(m[k]))}
+        />
+      </label>
+    );
+  return (
+    <>
+      <h3 id="minTitulo">{tx('minimo.dlgTitulo')}</h3>
+      <p class="small muted">{tx('minimo.dlgAjuda')}</p>
+      {campo(TOTAL, tx('minimo.campoTotal'))}
+      {hasPos() ? (
+        <>
+          <p class="small muted" style="margin:10px 0 4px">
+            {tx('minimo.porPosicao')}
+          </p>
+          <div class="minpos-grade">{(posKeys() as string[]).map(k => campo(k, k, posLabel(k)))}</div>
+        </>
+      ) : null}
+      <div class="dlg-f">
+        <button class="btn" data-a="close">
+          {tx('comum.cancelar')}
+        </button>
+        <button class="btn primary" data-a="salvarMinimos">
+          {tx('comum.salvar')}
+        </button>
+      </div>
+    </>
+  );
+}
+function montarMinimos() {
+  const el = document.getElementById('minRaiz');
+  if (el) render(<Minimos />, el);
+}
+
 /* A gestão desenha as abas com texto; a Rodada entra num lugar reservado (#rodadaRaiz) logo depois (como o Caixa). */
 const vRodada = () => '<div id="rodadaRaiz"></div>';
 function montarRodada() {
@@ -583,4 +643,4 @@ function montarRodada() {
   if (el) render(<RodadaTela />, el);
 }
 
-export { montarRodada, vRodada };
+export { minimosDoGrupo, montarMinimos, montarRodada, vRodada };

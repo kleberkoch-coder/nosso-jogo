@@ -4,7 +4,7 @@
   "grupos": ["P02"],
   "grupos/membros": ["P02"],
   "contas": ["P02"],
-  "config/app": ["P02", "P03", "P16"],
+  "config/app": ["P02", "P03", "P16", "P21"],
   "jogadores": ["P04", "P05", "P09"],
   "privado/ratings": ["P04", "P05", "P06", "P07"],
   "privado/caixa": ["P05", "P08", "P20"],

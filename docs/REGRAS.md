@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v57 (17/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v58 (21/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -86,6 +86,12 @@ Atualizado na pelada-v57 (17/10/2026). Toda entrega que mudar uma regra atualiza
   - **Cobrar no grupo:** monta a mensagem do WhatsApp com os nomes e o link de confirmar (o permanente, no jogo fixo).
   - **Cobrar um por um:** abre o WhatsApp de cada pessoa que tem telefone, com a mensagem e o link, pelo aparelho do administrador. Os telefones continuam só para administradores. Quem não tem telefone aparece como "sem telefone".
   - O bloco some quando todos responderam ou a lista está fechada.
+- Mínimo para o jogo e confirmados por posição (KAN-179; regra em `dominio/posicoes.ts`, com teste):
+  - Na aba Rodada e no link do jogador, o quadro da rodada mostra quantos confirmados há em cada posição (ex.: GOL 1 · DEF 4). Aparece só a posição com alguém confirmado ou com mínimo definido.
+  - "Definir mínimo" (só na gestão) grava no grupo, em `cfg.minPos`, o total de jogadores e o mínimo de cada posição; vale para todas as rodadas. 0 = não acompanhar.
+  - Com mínimo, a contagem vira "GOL 1 de 2" e o que falta aparece em destaque: "Faltam 2 jogadores · Falta 1 GOL", também no link.
+  - Vale para qualquer esporte: as posições vêm do esporte e das posições criadas pelo grupo; esporte sem posição (beach tennis, futevôlei, vôlei de praia) usa só o mínimo total.
+  - O mínimo total é o quórum que a liberação controlada de diaristas e avulsos (KAN-63) vai usar.
 
 ## Partida, ranking e votação
 - A aba Partida tem o seletor de rodada no topo, mesmo quando a rodada escolhida não tem times (KAN-160).
@@ -150,6 +156,7 @@ Atualizado na pelada-v57 (17/10/2026). Toda entrega que mudar uma regra atualiza
 |---|---|---|---|---|---|
 | Presença pelo link | `telas/PublicoRodada.tsx` | `acoes/publico.js` | `nucleo/edicoes.js` (setPres) | `rodadas/{rid}/presencas`, `limites/avulsos` | `testes_app.py` (link), `regras-firebase` (presença) |
 | Presença na gestão | `telas/Rodada.tsx` (com "Ainda não responderam") | `acoes/rodada.js` (cobrarGrupo) | `dominio/grupo.js` (attendance, curRodada), `dominio/cobrar.ts` | idem | `regras/cobrar`, `testes_app.py` (Rodada, CT-KAN-64) |
+| Mínimo para o jogo | `ui/componentes.tsx` (PorPosicao, na Rodada e no link), `telas/Rodada.tsx` (janela Mínimo) | `acoes/rodada.js` (abrirMinimos, salvarMinimos) | `dominio/posicoes.ts` | `grupos/{gid}` (cfg.minPos) | `regras/minimo-posicao`, `testes_app.py` (CT-KAN-179), `persistencia_app.py` (P21) |
 | Sorteio e times | `telas/Rodada.tsx` | `acoes/rodada.js` | `dominio/sorteio.js`, `times.ts`, `divergencia.ts` | `rodadas/{rid}` (times, cores, base) | `regras/times`, `lista-sorteio` |
 | Partida e ranking | `telas/Partida.tsx` (placar em `ui/placar.js`; janela Editar; baixa sob demanda por `src/partida.ts`), `ranking.js` | `acoes/partida.js` (saveMatch, editarPartida, salvarEdicao), `acoes/recalcular.ts` | `nucleo/partidas.js` (addMatch, editMatch, delMatch, salvarArtilharia), `dominio/resumos.ts` (camposPartida, camposEdicao, camposArtilharia), `dominio/fila.ts` (próximo jogo), `dominio/escalacao.ts` (empréstimo e troca) | `rodadas/{rid}/partidas` (com `ver`), `resumos/{mês}` | `regras/ranking`, `regras/editar-partida`, `regras/fila`, `regras-firebase` (partidas), `regras/escalacao`, `regras/artilharia`, `testes_app.py` (CT-KAN-175 a CT-KAN-178), `persistencia_app.py` (P13, P13b, P13c) |
 | Importar elenco | `ui/ImportarJogadores.tsx`, `telas/Jogadores.tsx` | `acoes/jogadores.js` (importarJogadores) | `dominio/planilha.ts`, `ui/arquivo-planilha.ts` | `jogadores/{id}`, `privado/caixa`, `privado/ratings`, `privado/contatos` | `regras/planilha`, `testes_app.py` (CT-KAN-159) |

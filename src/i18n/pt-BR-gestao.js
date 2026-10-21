@@ -49,6 +49,13 @@ export default {
   /* A pagar por jogo (KAN-172) */
   /* Cobrar quem não respondeu (KAN-64) */
   'cobrar.titulo': 'Ainda não responderam ({n})',
+  'minimo.definir': 'Definir mínimo',
+  'minimo.dlgTitulo': 'Mínimo para o jogo',
+  'minimo.dlgAjuda':
+    'Quantos o grupo precisa para o jogo acontecer. Vale para todas as rodadas; o app avisa quando faltar. Deixe 0 para não acompanhar.',
+  'minimo.campoTotal': 'Total de jogadores',
+  'minimo.porPosicao': 'Por posição',
+  'minimo.salvo': 'Mínimo para o jogo salvo.',
   'cobrar.noGrupo': 'Cobrar no grupo',
   'cobrar.umPorUm': 'Cobrar um por um',
   'cobrar.whatsapp': 'WhatsApp',

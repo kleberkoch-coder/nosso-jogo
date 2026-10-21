@@ -2,7 +2,7 @@ import { sport, sportName } from '../dominio/esportes.js';
 import { gname } from '../dominio/grupo.js';
 import { S } from '../nucleo/estado.js';
 import { $, esc, main } from '../nucleo/util.js';
-import { vAuth } from './login.js';
+import { entrarPronto } from '../nucleo/carga-entrar';
 
 /* ---------- Convite para administrador ---------- */
 function invHead() {
@@ -20,7 +20,7 @@ function renderInvite() {
       return;
     }
     main.dataset.inv = S.authMode;
-    main.innerHTML = vAuth(`<div id="invHead">${invHead()}</div>`);
+    main.innerHTML = entrarPronto().vAuth(`<div id="invHead">${invHead()}</div>`);
     return;
   }
   main.dataset.inv = '';

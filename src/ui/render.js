@@ -10,14 +10,14 @@ import { adm, carregarAdmin } from '../nucleo/carga-admin.js';
 import { tx } from '../i18n/index.js';
 import { desmontarPublico } from '../telas/PublicoRodada.tsx';
 import { botaoConta } from './menu-conta.ts';
-import { vAuth } from '../telas/login.js';
+import { carregarEntrar, entrarPronto } from '../nucleo/carga-entrar';
 import { renderPublicRodada } from '../telas/publico-rodada.js';
-import { renderPublicVoto } from '../telas/publico-voto.js';
 
 /* =================== render =================== */
 /* Parte do app que baixa sob demanda (gestão, apresentação, aba Partida): mostra "Carregando…" e desenha de novo quando
    chega; sem internet, avisa que não carregou. */
-let apresentacao = null;
+let apresentacao = null,
+  voto = null;
 function baixar(promessa, guardar, onde = main) {
   onde.replaceChildren(el('div', 'empty muted', tx('comum.carregando')));
   promessa.then(
@@ -95,7 +95,11 @@ function renderCore() {
   $('#themeBtn').hidden = logged && R.n !== 'r' && R.n !== 'v';
   if (R.n !== 'r') desmontarPublico();
   if (R.n === 'r') return renderPublicRodada();
-  if (R.n === 'v') return renderPublicVoto();
+  /* KAN-183: a votação pública baixa só quando o link de votação é aberto. */
+  if (R.n === 'v') {
+    if (!voto) return baixar(import('../telas/publico-voto.js'), m => (voto = m));
+    return voto.renderPublicVoto();
+  }
   $('#tabsnav').hidden = true;
   $('#gsub').textContent = 'Presença, sorteio de times, placar, ranking e caixa dos seus jogos';
   // Com conta: "⇄ Grupos" (fora da página inicial) e o botão da conta, que abre o menu com país e Sair (KAN-166).
@@ -119,9 +123,11 @@ function renderCore() {
   /* KAN-149: página inicial, convite e gestão vêm da parte de gestão, que carrega na primeira vez. */
   const A = adm();
   if (!A && (R.n === 'home' || R.n === 'inv' || (logged && R.n === 'admin'))) return baixar(carregarAdmin());
+  /* KAN-183: a tela de entrar (e o convite, que usa a mesma tela) baixa só quando precisa. */
+  if ((R.n === 'inv' || !logged) && !entrarPronto()) return baixar(carregarEntrar());
   if (R.n === 'inv') return A.renderInvite();
   if (!logged) {
-    main.innerHTML = vAuth();
+    main.innerHTML = entrarPronto().vAuth();
     return;
   }
   if (R.n === 'home') {

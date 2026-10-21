@@ -3,7 +3,7 @@ import { S } from './nucleo/estado.js';
 import { $, main, toast } from './nucleo/util.js';
 import { isStandalone } from './pwa.js';
 import { setupRoute } from './rotas.js';
-import { AUTH_CANCEL, authMsg, avisoGoogle } from './telas/login.js';
+import { carregarEntrar } from './nucleo/carga-entrar';
 import { render } from './ui/render.js';
 import { applyTheme } from './ui/tema.js';
 import { tx } from './i18n/index.js';
@@ -54,21 +54,27 @@ async function boot() {
     S.authMode = 'signup';
   }
   if (B.redirectResult)
+    /* Volta do login com Google por redirecionamento: a tela de entrar (KAN-183) só baixa se houver algo a avisar. */
     B.redirectResult()
       .then(r => {
-        const av = avisoGoogle(r, S.authMode);
-        if (av) setTimeout(() => toast(av, 6000), 300);
+        if (!(r && r.additionalUserInfo)) return;
+        return carregarEntrar().then(m => {
+          const av = m.avisoGoogle(r, S.authMode);
+          if (av) setTimeout(() => toast(av, 6000), 300);
+        });
       })
-      .catch(e => {
-        if (AUTH_CANCEL.includes(e && e.code)) return;
-        console.warn(e);
-        const m = authMsg(e);
-        setTimeout(() => {
-          const le = $('#lerr');
-          if (le) le.textContent = m;
-          else toast(m, 6000);
-        }, 300);
-      });
+      .catch(e =>
+        carregarEntrar().then(m => {
+          if (m.AUTH_CANCEL.includes(e && e.code)) return;
+          console.warn(e);
+          const msg = m.authMsg(e);
+          setTimeout(() => {
+            const le = $('#lerr');
+            if (le) le.textContent = msg;
+            else toast(msg, 6000);
+          }, 300);
+        })
+      );
   let first = true;
   B.onAuth(u => {
     const prev = S.user;

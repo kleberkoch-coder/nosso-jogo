@@ -94,6 +94,8 @@ Medido a cada versão, no celular de 390px:
   - Na v61: link do jogador 49,1 KB, ao abrir a gestão **88,9 KB** (era 94,4 KB na v60). Sob demanda: Caixa 3,4 KB, Histórico 2,4 KB, Votação 2,3 KB, Ranking 1,4 KB, Partida 6,1 KB, Importar 3,4 KB e apresentação 3,4 KB.
   - **Alvo: manter ao menos 3 KB de folga em cada limite.** Quando a folga cair abaixo disso, o próximo passo é mover mais uma parte para sob demanda (candidatas: aba Grupo e o dicionário da gestão), não subir o limite.
   - Se um pedaço falhar sem internet, o navegador guarda a falha até a página ser recarregada. Por isso o aviso pede para recarregar.
+- **Desde a v63 (KAN-183), o link do jogador não traz a tela de entrar nem a votação.** A tela de entrar e criar conta (`src/entrar.ts`: tela, ações e textos `login.*`, `senha.*` e `auth.*`, em `i18n/pt-BR-entrar.ts`) e a votação pública (`telas/publico-voto.js`) baixam só quando são abertas. O convite de administrador usa a mesma tela de entrar.
+  - Na v63: **link do jogador 45,4 KB** (era 49,8 KB), ao abrir a gestão 85,4 KB. Sob demanda: entrar 4,1 KB e votação pública 1,3 KB.
 - Passar desses limites exige justificativa registrada aqui.
 
 ### D8. Montagem com esbuild, sem framework por enquanto (8 out. 2026)

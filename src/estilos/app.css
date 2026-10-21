@@ -154,6 +154,31 @@
   padding: 4px 10px;
   font-size: 13px;
 }
+/* Mínimo para o jogo (KAN-179): contagem por posição na aba Rodada e no link. */
+.porpos {
+  margin-top: 12px;
+  display: grid;
+  gap: 6px;
+}
+.poschips > span.falta {
+  background: var(--out-soft);
+  border-color: var(--out-fill);
+  color: var(--on-out);
+}
+.porpos-falta {
+  margin: 0;
+  color: var(--out);
+  font-weight: 600;
+  font-size: 14px;
+}
+.minpos-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+}
+.minpos .inp {
+  min-height: var(--touch-min);
+}
 .opt .pos {
   flex: none;
 }
@@ -1941,7 +1966,8 @@ dialog::backdrop {
   margin: 0 0 12px;
   line-height: 1.5;
 }
-.conf .dlg-f .btn {
+/* Botões do rodapé de toda janela com 44px de toque (KAN-179; antes só nas confirmações). */
+.dlg-f .btn {
   min-height: var(--touch-min);
 }
 .btn.perigo {

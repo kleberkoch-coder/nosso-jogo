@@ -229,6 +229,12 @@ with sync_playwright() as pw:
     gravou(pg); pronto(pg, 'grupo'); pg.wait_for_timeout(600)
     ok(bool(tk) and J(pg, "S.convite&&S.convite.token") == tk, 'CT-KAN-170-P15c: link de convite de administrador continua depois de recarregar')
 
+    # P21 mínimo para o jogo: total e por posição, um mapa dentro de cfg (config/app, KAN-179)
+    pronto(pg, 'rodada'); pg.click('#porPosicao [data-a=abrirMinimos]'); pg.wait_for_timeout(400)
+    pg.fill('#minRaiz .minp[data-k="_total"]', '12'); pg.fill('#minRaiz .minp[data-k="GOL"]', '2'); pg.click('#dlg [data-a=salvarMinimos]')
+    gravou(pg); pronto(pg, 'rodada')
+    ok(J(pg, "JSON.stringify(S.app.cfg.minPos)") == '{"GOL":2,"_total":12}' and 'de 2' in pg.inner_text('#porPosicao'), 'CT-KAN-170-P21: mínimo para o jogo (total e por posição) continua depois de recarregar')
+
     # P16 editar o grupo: nome e moeda (config/app)
     pronto(pg, 'grupo'); pg.click('[data-a=editGroup]'); pg.wait_for_timeout(400)
     pg.fill('#ngn', 'Persistência FC 2'); pg.select_option('#ngm', 'EUR'); pg.click('#dlg [data-a=saveGroup]'); pg.wait_for_timeout(300); conf(pg)

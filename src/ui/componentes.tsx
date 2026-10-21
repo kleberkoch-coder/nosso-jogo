@@ -3,11 +3,12 @@
    Tela nova ou migrada usa estes componentes, em vez de montar HTML como texto.
    Os botões continuam com data-a: as ações, o carregando e o aviso de sem sinal são os mesmos do resto do app. */
 import type { ComponentChildren } from 'preact';
-import { hasPos, posLabel, sport } from '../dominio/esportes.js';
+import { hasPos, posKeys, posLabel, sport } from '../dominio/esportes.js';
 import { fmtL, lvl, ppos, rodadasJanela } from '../dominio/grupo.js';
+import { faltaTotal, porPosicao } from '../dominio/posicoes';
 import { hora } from '../dominio/rodadas.js';
 import { fdate } from '../nucleo/util.js';
-import { tx } from '../i18n/index.js';
+import { tp, tx } from '../i18n/index.js';
 import { linkMaps, linkWaze } from '../nucleo/links.js';
 
 /* Texto longo numa linha só, com "…" (KAN-146). Ao cortar, ui/render.js (subtituloCompleto) liga o título e o toque. */
@@ -82,6 +83,54 @@ export function Nota({ id }: { id: string }) {
     <span class="lvl-tag" title={tx('nota.titulo')}>
       {fmtL(lvl(id))}
     </span>
+  );
+}
+
+/* Mínimo para o jogo (KAN-179), na aba Rodada e no link: total de confirmados contra o mínimo do grupo
+   (qualquer esporte) e, se o esporte ou o grupo tiver posições, "GOL 1 de 2 · DEF 4". Se faltar: "Falta 1 GOL".
+   A gestão passa o botão de definir o mínimo em "acao". */
+export function PorPosicao({
+  inn,
+  minimos,
+  acao,
+}: {
+  inn: string[];
+  minimos?: Record<string, unknown>;
+  acao?: ComponentChildren;
+}) {
+  const m = minimos || {},
+    lista = hasPos() ? porPosicao(posKeys(), inn, id => ppos(id) as string, m) : [],
+    total = faltaTotal(inn.length, m),
+    faltas = (total.falta ? [tp('porpos.faltaTotal', total.falta)] : []).concat(
+      lista.filter(x => x.falta).map(x => tp('porpos.falta', x.falta, { pos: x.k }))
+    );
+  if (!lista.length && !total.min && !acao) return null;
+  return (
+    <div class="porpos" id="porPosicao">
+      <div class="row between">
+        <span class="small muted">{tx(hasPos() ? 'porpos.titulo' : 'porpos.tituloTotal')}</span>
+        {acao}
+      </div>
+      {lista.length || total.min ? (
+        <div class="poschips">
+          {total.min ? (
+            <span class={total.falta ? 'falta' : ''} data-pos="total">
+              <b>{tx('porpos.total')}</b> {tx('porpos.deMinimo', { n: inn.length, min: total.min })}
+            </span>
+          ) : null}
+          {lista.map(x => (
+            <span key={x.k} class={x.falta ? 'falta' : ''} data-pos={x.k} title={posLabel(x.k)}>
+              <b>{x.k}</b> {x.min ? tx('porpos.deMinimo', { n: x.n, min: x.min }) : x.n}
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {faltas.length ? (
+        <p class="porpos-falta" id="faltaPos">
+          {faltas.join(' · ')}
+        </p>
+      ) : null}
+    </div>
   );
 }
 

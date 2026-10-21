@@ -133,6 +133,12 @@ Registrados na pelada-v43 (KAN-152); os da v44 a v47 entraram na versão de cada
 - **Artilharia da rodada** (KAN-178; sem classe nova):
   - Na aba Partida, depois de "Partidas desta rodada", fica o painel "Artilharia da rodada", com "Lançar" (ou "Editar") em `btn sm`. Embaixo, uma linha em `muted`: a ajuda, ou o lançamento já feito ("Marcão 3 · Bruno 1").
   - A janela tem uma ajuda em `muted`; se a rodada já tem partidas com placar, um aviso em `out`. Depois vem uma linha por jogador dos times, com "−" (`btn sm`, desligado no zero), o número em negrito e "+". Para o leitor de tela, os botões dizem "Somar 1 para Marcão" e "Tirar 1 de Marcão". Rodapé: "Cancelar" e "Salvar artilharia" (`primary`).
+- **Mínimo para o jogo** (`PorPosicao`, classes `porpos`, `porpos-falta` e `minpos-grade`; KAN-179):
+  - Dentro do quadro da rodada (aba Rodada e link), depois do resumo: rótulo "Confirmados por posição" em `small muted` (ou "Mínimo para o jogo" no esporte sem posição) e, na gestão, o botão "Definir mínimo" (`btn sm ghost`) na mesma linha.
+  - Contagem em chips `poschips` (os mesmos das Posições do grupo): sigla em negrito e o número ("GOL 1", ou "GOL 1 de 2" com mínimo). "Total 3 de 5" vem primeiro quando há mínimo total. A sigla tem o nome da posição no `title`.
+  - Chip abaixo do mínimo usa `out-soft` com borda `out-fill` e texto `on-out`. Embaixo, "Faltam 2 jogadores · Falta 1 GOL" em `out`, 14px, negrito.
+  - Janela "Mínimo para o jogo": ajuda em `muted`, campo "Total de jogadores" (cursor já nele) e, se houver posições, "Por posição" com um campo numérico de 44px por sigla em grade (`minpos-grade`, colunas de 84px). Enter salva.
+- **Rodapé das janelas**: desde a pelada-v58, os botões de toda janela (`.dlg-f .btn`) têm 44px de altura, como já tinham as confirmações.
 - **Ainda não responderam** (KAN-64; sem classe nova):
   - Na aba Rodada, logo depois do quadro da rodada, há um `panel` com o título "Ainda não responderam (12)" e o botão "Cobrar no grupo" (`btn sm primary`). Embaixo vêm os nomes em `muted`, separados por vírgula, e um `details` "Cobrar um por um".
   - Aberto, ele mostra uma lista (`plist`): cada nome com "WhatsApp" (`btn sm`, link de 36px, que para o leitor de tela diz "Cobrar Rafa no WhatsApp") ou "sem telefone" em `muted`.

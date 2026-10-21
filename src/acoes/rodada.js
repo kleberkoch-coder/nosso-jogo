@@ -25,6 +25,8 @@ import { reservas, sugerirTimes, titulares } from '../dominio/times.ts';
 import { tp, tx } from '../i18n/index.js';
 import { linkDaRodada, shareDlg, txtConvite, txtTimes } from '../dominio/whatsapp.js';
 import { semResposta } from '../dominio/cobrar';
+import { limparMinimos } from '../dominio/posicoes';
+import { minimosDoGrupo, montarMinimos } from '../telas/Rodada';
 import { copyText } from '../eventos.js';
 import { B, setCAP, sleep } from '../nucleo/backend.js';
 import { campoTelefone, lerContato } from '../ui/contato-form';
@@ -189,6 +191,25 @@ const acoes = {
   },
   shareConvite: () => shareDlg('Convite da rodada', txtConvite(curRodada())),
   copyLink: () => copyText(linkRodada(curRodada().id)),
+  /* KAN-179: mínimo para o jogo (total e por posição), salvo no grupo e válido para todas as rodadas. */
+  abrirMinimos: () => {
+    openDlg('<div id="minRaiz"></div>');
+    dlg.setAttribute('aria-labelledby', 'minTitulo');
+    montarMinimos();
+    $('#minRaiz .minp')?.focus();
+  },
+  salvarMinimos: () => {
+    const m = {};
+    document.querySelectorAll('#minRaiz .minp').forEach(i => (m[i.dataset.k] = i.value));
+    const novo = limparMinimos(hasPos() ? posKeys() : [], m);
+    closeDlg();
+    if (JSON.stringify(novo) === JSON.stringify(minimosDoGrupo())) return;
+    const p = editApp(a => {
+      a.cfg.minPos = novo;
+    });
+    toast(tx('minimo.salvo'));
+    return p;
+  },
   /* KAN-64: mensagem pronta para o grupo do WhatsApp com quem ainda não respondeu. */
   cobrarGrupo: () => {
     const r = curRodada(),

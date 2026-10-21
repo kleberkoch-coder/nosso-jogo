@@ -23,7 +23,7 @@ import { S as estado } from '../nucleo/estado.js';
 import { $, fdate, main } from '../nucleo/util.js';
 import { myLocal } from './publico-rodada.js';
 import { partidasDe } from '../nucleo/partidas-lista.js';
-import { ComoChegar, Pos, TextoCortado } from '../ui/componentes';
+import { ComoChegar, Pos, PorPosicao, TextoCortado } from '../ui/componentes';
 import { avulsosEsgotados } from '../dominio/limites';
 
 type Rodada = {
@@ -221,6 +221,7 @@ function PublicoRodada() {
             <small>{tx('publico.confirmados')}</small>
           </div>
         </div>
+        <PorPosicao inn={a.inn} minimos={(S.app.cfg || {}).minPos} />
       </div>
       {times && !aberta && (
         <div class="panel">

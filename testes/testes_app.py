@@ -1913,6 +1913,39 @@ with sync_playwright() as pw:
     ok(pedaco('votacao') and p13.locator('[data-a=newVote]').count() > 0, 'CT-KAN-180-04: com a internet de volta, recarregando a página, a Votação abre')
     ctx13.close()
 
+    # ---------- v62 (KAN-184): link com internet ruim tenta de novo e nunca diz "não encontrado" por falha de rede
+    ctx14 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
+    p14 = ctx14.new_page()
+    p14.on('pageerror', lambda e: errs.append(str(e)))
+    p14.goto(URL + '#/criar'); p14.wait_for_timeout(800)
+    p14.fill('#le', 'carga@teste.com'); p14.fill('#lp', 'Jogo@2026'); p14.fill('#lp2', 'Jogo@2026'); p14.keyboard.press('Enter'); p14.wait_for_timeout(1300)
+    p14.fill('#ngn', 'Carga FC'); p14.click('[data-a=pickSport][data-v=futebol]'); p14.click('[data-a=createGroup]'); p14.wait_for_timeout(1500)
+    p14.click('[data-a=tab][data-v=rodada]'); p14.wait_for_timeout(700)
+    gid14 = p14.evaluate("S.gid")
+    def link_com(falhas, segurar=False, espera=1500):
+        pg_ = ctx14.new_page()
+        chave = 'grupos/' + gid14
+        pg_.add_init_script(f"window.__njFalhar={{{json.dumps(chave)}:{falhas}}};" + (f"window.__njSegurar={{{json.dumps(chave)}:true}};" if segurar else ''))
+        pg_.goto(URL + '#/p/' + gid14); pg_.wait_for_timeout(espera)
+        return pg_
+    l1 = link_com(2, espera=5000)
+    t1 = l1.inner_text('main')
+    ok('Carga FC' in l1.inner_text('body') and 'não encontrado' not in t1 and 'Você vai?' in t1,
+       'CT-KAN-184-01: a leitura do grupo falha 2 vezes por rede e, na nova tentativa, o link abre normalmente')
+    l1.close()
+    l2 = link_com(99, espera=9500)
+    t2 = l2.inner_text('main')
+    ok('Não foi possível carregar' in t2 and l2.locator('#cargaFalhou').count() == 1 and 'não encontrado' not in t2,
+       f'CT-KAN-184-02: falhando sempre, o link avisa "Não foi possível carregar" com "Tentar de novo", e não "Grupo não encontrado" ({t2[:60]!r})')
+    l2.screenshot(path=f'{OUT}/62-falhou-carga.png'); contraste(l2, 'Falha ao carregar')
+    l2.close()
+    l3 = ctx14.new_page(); l3.goto(URL + '#/p/grupoQueNaoExiste'); l3.wait_for_timeout(1500)
+    ok('Grupo não encontrado' in l3.inner_text('main'), 'CT-KAN-184-03: grupo que não existe mesmo continua "Grupo não encontrado"')
+    l3.close()
+    l4 = link_com(0, segurar=True, espera=13000)
+    ok(l4.locator('#cargaDemorada').count() == 1 and 'demorando' in l4.inner_text('main'), 'CT-KAN-184-04: carregando há mais de 12 s, avisa que está demorando e oferece tentar de novo')
+    l4.close(); ctx14.close()
+
     # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
     ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
     p7 = ctx7.new_page()

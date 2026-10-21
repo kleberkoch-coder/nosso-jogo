@@ -155,6 +155,7 @@ Registrados na pelada-v43 (KAN-152); os da v44 a v47 entraram na versão de cada
   - Aberto, ele mostra uma lista (`plist`): cada nome com "WhatsApp" (`btn sm`, link de 36px, que para o leitor de tela diz "Cobrar Rafa no WhatsApp") ou "sem telefone" em `muted`.
 - **Valor fora do padrão** (KAN-161): é a janela de confirmação do app (KAN-128) com o título "Lançar R$ 8.000,00?", o texto "É bem mais que o normal deste grupo. Confira se não sobrou um dígito." e os botões "Corrigir valor" (volta ao campo, com o cursor nele) e "Lançar assim mesmo" (`primary`).
 - **Carregando a gestão** (KAN-149): ao abrir a gestão pela primeira vez, a área principal mostra "Carregando…" em `muted`; sem internet, "Não foi possível carregar" com a orientação de recarregar.
+- **Carregando com internet ruim** (KAN-184; sem classe nova): no link e na votação, "Carregando…" em `muted`. Depois de 12 s, vira um `panel empty` com "Está demorando mais que o normal. A internet pode estar fraca." e o botão "Tentar de novo" (`btn primary`). Se as tentativas acabarem, o painel tem o título "Não foi possível carregar", o texto de orientação e o mesmo botão. Nunca "não encontrado" por falha de rede.
 
 ## Componentes (pelada-v30)
 - **Janela de confirmação** (KAN-128): variação da janela (`dlg`) no lugar do `confirm()` e do `alert()` do navegador.

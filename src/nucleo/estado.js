@@ -1,6 +1,7 @@
 import { B } from './backend.js';
 import { toast, today } from './util.js';
 import { changed } from '../ui/render.js';
+import { proximaTentativa } from './carga.ts';
 
 /* =================== estado =================== */
 const S = {
@@ -37,55 +38,46 @@ const GB = {
   del: p => B.del(gp(p)),
   lote: ops => B.lote(ops.map(x => Object.assign({}, x, { p: gp(x.p) }))),
 };
-function subRaw(k, path, cb) {
+/* Assinatura com nova tentativa (KAN-184): erro de rede repete depois de 1, 2 e 4 s antes de desistir.
+   Só depois de desistir a leitura conta como pronta, com a falha anotada em S.falhou[k] para a tela avisar
+   "Não foi possível carregar" (e não "não encontrado"). */
+function assinar(k, abrir, cb) {
   drop(k);
-  SUBS[k] = B.sub(
-    path,
-    d => {
-      S.loaded[k] = true;
-      cb(d);
-      changed();
-    },
-    e => {
-      S.loaded[k] = true;
-      console.warn(k, e);
-      changed();
-    }
-  );
+  let tentativa = 0;
+  const ligar = () => {
+    SUBS[k] = abrir(
+      d => {
+        tentativa = 0;
+        S.loaded[k] = true;
+        if (S.falhou) delete S.falhou[k];
+        cb(d);
+        changed();
+      },
+      e => {
+        const espera = proximaTentativa(e && e.code, tentativa++);
+        console.warn(k, e);
+        if (espera != null) {
+          const t = setTimeout(ligar, espera);
+          SUBS[k] = () => clearTimeout(t);
+          return;
+        }
+        S.loaded[k] = true;
+        S.falhou = Object.assign({}, S.falhou, { [k]: (e && e.code) || 'erro' });
+        changed();
+      }
+    );
+  };
+  ligar();
+}
+function subRaw(k, path, cb) {
+  assinar(k, (ok, erro) => B.sub(path, ok, erro), cb);
 }
 function sub(k, path, cb) {
-  drop(k);
-  SUBS[k] = B.sub(
-    gp(path),
-    d => {
-      S.loaded[k] = true;
-      cb(d);
-      changed();
-    },
-    e => {
-      S.loaded[k] = true;
-      console.warn(k, e);
-      changed();
-    }
-  );
+  assinar(k, (ok, erro) => B.sub(gp(path), ok, erro), cb);
 }
 /* Assinatura de uma consulta (rodadas por data, com limite): ver D10 em docs/ARQUITETURA.md. */
 function subQ(k, path, q, cb) {
-  drop(k);
-  SUBS[k] = B.query(
-    gp(path),
-    q,
-    d => {
-      S.loaded[k] = true;
-      cb(d);
-      changed();
-    },
-    e => {
-      S.loaded[k] = true;
-      console.warn(k, e);
-      changed();
-    }
-  );
+  assinar(k, (ok, erro) => B.query(gp(path), q, ok, erro), cb);
 }
 function drop(k) {
   if (SUBS[k]) {
@@ -93,6 +85,7 @@ function drop(k) {
     delete SUBS[k];
   }
   delete S.loaded[k];
+  if (S.falhou) delete S.falhou[k];
 }
 function dropAll() {
   Object.keys(SUBS).forEach(drop);

@@ -194,6 +194,14 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D20. Leitura confiável com internet ruim (21 out. 2026, pelada-v62, KAN-184)
+- **Problema:** com a cópia offline do Firestore ligada, quem abria o link pela primeira vez com internet lenta recebia antes a resposta da cópia do aparelho ("documento não existe") e via "Grupo não encontrado". Um erro de rede também marcava a leitura como pronta, sem nova tentativa.
+- **Decisão:**
+  - A escuta de documento (`backend.js`, `sub`) inclui as mudanças de metadados. "Não existe" vindo só da cópia, com o aparelho online, é ignorado até o servidor responder (`esperarServidor`). O app só é avisado quando o conteúdo muda.
+  - Toda assinatura (`estado.js`, `assinar`) repete depois de 1, 2 e 4 s em erros passageiros (`proximaTentativa`). Só depois de desistir a leitura conta como pronta, com a falha anotada em `S.falhou`.
+  - As telas públicas mostram "Não foi possível carregar" com "Tentar de novo" (recarrega a página), e "Está demorando mais que o normal" depois de 12 s.
+  - No modo demonstração, `window.__njFalhar` e `window.__njSegurar` simulam falha e lentidão para os testes.
+
 ### D19. Vagas para diaristas e avulsos garantidas nas regras (21 out. 2026, pelada-v59, KAN-63)
 - **Decisão:** com o controle ligado no grupo (`cfg.vagasCtrl`), a presença pelo link de quem precisa de vaga (avulso, ou jogador com a marca pública `vaga`) só entra com `vagas.aberta` na rodada e somando 1 em `rodadas/{rid}/limites/vagas` na mesma gravação, até `vagas.max` (0 = sem limite). Quem estava dentro e sai pode devolver 1. É o mesmo desenho do contador de avulsos (KAN-89): sem servidor, conferido com `getAfter`.
 - **Privacidade:** para o link esconder o diarista, a marca `vaga` fica no documento público do jogador. O app a ajusta sozinho a partir do tipo (`privado/caixa`), só com o controle ligado (`sincronizarVagas`). Exceção à regra de que o tipo é privado, aprovada pelo Kleber em 21/10/2026.

@@ -5,23 +5,41 @@ import { S } from '../nucleo/estado.js';
 import { $, esc, fdate, main } from '../nucleo/util.js';
 import { myLocal } from './publico-rodada.js';
 import { candidates } from './votacao.js';
+import { DEMORA_MS } from '../nucleo/carga.ts';
 
 /* ---------- Página pública de votação ---------- */
+let desdeVoto = 0;
 function renderPublicVoto() {
   $('#tabsnav').hidden = true;
   $('#topright').replaceChildren();
   $('#gsub').textContent = tx('voto.subtitulo');
   const v = S.vot[S.route.id];
-  if (!S.loaded.v || !S.loaded.app) {
-    main.innerHTML = `<div class="empty muted">${tx('comum.carregando')}</div>`;
-    return;
+  /* KAN-184: falha de rede (depois das novas tentativas) avisa e oferece tentar de novo; nunca vira "não encontrada".
+     Carregando há mais de 12 s, avisa que está demorando. */
+  const painel = (titulo, texto, botao) =>
+    `<div class="panel empty">${titulo ? `<h2>${titulo}</h2>` : ''}<p class="muted">${texto}</p>${botao ? `<button class="btn primary" data-a="recarregar">${tx('carga.tentarDeNovo')}</button>` : ''}</div>`;
+  const carregou = S.loaded.v && S.loaded.app;
+  if (carregou) desdeVoto = 0;
+  else if (!desdeVoto) {
+    desdeVoto = Date.now();
+    setTimeout(() => {
+      if (desdeVoto && S.route.n === 'v') renderPublicVoto();
+    }, DEMORA_MS + 50);
   }
-  if (!grpAtivo()) {
-    main.innerHTML = `<div class="panel empty"><h2>${esc(gname())}</h2><p class="muted">${tx('voto.grupoInativo')}</p></div>`;
-    return;
-  }
-  if (!v) {
-    main.innerHTML = `<div class="panel empty"><h2>${tx('voto.naoEncontrada')}</h2><p class="muted">${tx('voto.naoEncontradaTexto')}</p></div>`;
+  const aviso =
+    (S.falhou || {}).v || (S.falhou || {}).app
+      ? painel(tx('comum.naoCarregouTitulo'), tx('carga.falhouTexto'), true)
+      : !carregou
+        ? Date.now() - desdeVoto >= DEMORA_MS
+          ? painel('', tx('carga.demorando'), true)
+          : `<div class="empty muted">${tx('comum.carregando')}</div>`
+        : !grpAtivo()
+          ? painel(esc(gname()), tx('voto.grupoInativo'))
+          : !v
+            ? painel(tx('voto.naoEncontrada'), tx('voto.naoEncontradaTexto'))
+            : '';
+  if (aviso) {
+    main.innerHTML = aviso;
     return;
   }
   const r = S.rod[v.rid],

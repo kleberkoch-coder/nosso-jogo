@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v61 (21/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v62 (21/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -148,6 +148,12 @@ Atualizado na pelada-v61 (21/10/2026). Toda entrega que mudar uma regra atualiza
 - Tema (KAN-169): com conta, fica no menu da conta ("Tema: Automático", que abre Automático, Claro e Escuro) e o botão 🌓 sai do cabeçalho. Sem conta (link do jogador, votação, login, apresentação), o botão 🌓 continua. A aba Grupo segue com o painel Aparência. Vale só para o aparelho.
 - Dias fixos do grupo: cada horário tem o rótulo em cima, "Início" e "Término (opcional)" (KAN-166).
 - Alvos de toque: 44px nos principais, 36px nos pequenos. Contraste WCAG AA nos temas claro e escuro.
+- Leitura com internet ruim (KAN-184, regra em `nucleo/carga.ts`, com teste):
+  - "Não encontrado" só depois que o servidor confirmar. Com internet, a resposta vazia da cópia do aparelho não vale, e a tela continua em "Carregando…".
+  - Erro de rede: o app tenta de novo depois de 1, 2 e 4 segundos. Sem permissão, não repete.
+  - Carregando há mais de 12 s: "Está demorando mais que o normal", com "Tentar de novo".
+  - Se as tentativas acabarem: "Não foi possível carregar. A internet pode estar fraca…", com "Tentar de novo", e nunca "Grupo não encontrado".
+  - Vale para o link do jogador e para a votação; a nova tentativa vale para todas as leituras, inclusive na gestão.
 
 ## Entrega (como toda mudança vai ao ar)
 - Proposta (PR) com testes verdes e prévia; `VERSION` do `site/sw.js` sobe; o Kleber aprova com Merge.

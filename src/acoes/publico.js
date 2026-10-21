@@ -23,6 +23,8 @@ function semVaga(id) {
   return true;
 }
 const acoes = {
+  /* KAN-184: "Tentar de novo" quando o link não carregou. */
+  recarregar: () => location.reload(),
   /* público */
   pubMark: el => {
     const r = rodById(S.route.id);

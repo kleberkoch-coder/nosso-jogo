@@ -1,5 +1,6 @@
 import { cl, idOk, uid } from './util.js';
 import { doBanco, paraBanco, temListaDentroDeLista } from './dados-banco.ts';
+import { esperarServidor } from './carga.ts';
 
 /* =================== backends =================== */
 function FirebaseBackend(cfg, appCheckKey) {
@@ -106,11 +107,19 @@ function FirebaseBackend(cfg, appCheckKey) {
           });
           cb(o);
         }, err);
+      /* KAN-184: "não existe" vindo só da cópia do aparelho, com internet, ainda não vale: espera o servidor.
+         Por isso a escuta inclui as mudanças de metadados (é assim que chega a confirmação do servidor),
+         e o app só é avisado quando o conteúdo muda. */
+      let ultimo;
       return fs.doc(path).onSnapshot(
-        { includeMetadataChanges: false },
+        { includeMetadataChanges: true },
         s => {
-          if (!s.exists && s.metadata.fromCache && path.startsWith('usuarios/') && navigator.onLine) return;
-          cb(s.exists ? doBanco(s.data()) : null);
+          if (esperarServidor({ existe: s.exists, daCopia: s.metadata.fromCache, online: navigator.onLine })) return;
+          const d = s.exists ? s.data() : null,
+            chave = JSON.stringify(d);
+          if (chave === ultimo) return;
+          ultimo = chave;
+          cb(d ? doBanco(d) : null);
         },
         err
       );
@@ -341,7 +350,16 @@ function LocalBackend() {
     },
     redirectResult: async () => null,
     anon: async () => setU({ uid: 'anon-' + uid(), email: null, anon: true }),
-    sub(path, cb) {
+    sub(path, cb, err) {
+      /* Testes (KAN-184): window.__njFalhar = {caminho: n} faz as n primeiras leituras daquele caminho falharem por rede;
+         window.__njSegurar = {caminho: true} faz a leitura nunca responder (internet muito lenta). */
+      if ((window.__njSegurar || {})[path]) return () => {};
+      const f = window.__njFalhar;
+      if (f && f[path] > 0) {
+        f[path]--;
+        const t = setTimeout(() => err && err({ code: 'unavailable' }), 30);
+        return () => clearTimeout(t);
+      }
       const s = { path, cb };
       subs.add(s);
       setTimeout(() => cb(cl(read(path))), 0);

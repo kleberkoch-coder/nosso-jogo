@@ -8,12 +8,7 @@ import { acoes as rodada } from './acoes/rodada.js';
 import { acoes as jogadores } from './acoes/jogadores.js';
 import { acoes as recalcular } from './acoes/recalcular';
 import { ACT } from './acoes.js';
-import { acoes as caixa } from './acoes/caixa.js';
-import { acoes as votacao } from './acoes/votacao.js';
 
-export { buscarHist, estadoHist, vHistorico } from './telas/historico.js';
-export { anoRank, vRanking } from './telas/ranking.js';
-export { montarCaixa, vCaixa } from './telas/Caixa.tsx';
 export { inicioAPagar } from './dominio/caixa.js';
 export { renderInvite } from './telas/convite.js';
 export { vGrupo } from './telas/grupo.js';
@@ -25,11 +20,38 @@ export { drawPreview } from './ui/dialogos-gestao.js';
 export { trocarPaisGrupo } from './telas/grupo-form.js';
 export { contaRegiao, listaPais, paisAparelho, preencher } from './ui/regiao.ts';
 export { trocarPaisTelefone } from './ui/contato-form';
-export { vVotacao } from './telas/votacao-gestao.js';
 /* Os textos da gestão entram no dicionário assim que esta parte chega (KAN-159). */
 juntarTextos(textosGestao);
 
-export const ACOES = Object.assign({}, grupo, rodada, jogadores, recalcular, caixa, votacao);
+export const ACOES = Object.assign({}, grupo, rodada, jogadores, recalcular);
+
+/* Abas sob demanda (KAN-180): Caixa, Histórico, Votação e Ranking baixam na primeira vez que a aba é aberta, como a Partida.
+   Cada uma traz a tela (ver, e montar quando é componente) e as próprias ações, que entram no ACT. */
+const ABAS = {
+  caixa: () => import('./abas/caixa'),
+  historico: () => import('./abas/historico'),
+  votacao: () => import('./abas/votacao'),
+  ranking: () => import('./abas/ranking'),
+};
+const abas = {},
+  baixandoAba = {};
+export const abaSobDemanda = k => k in ABAS;
+export const abaPronta = k => abas[k] || null;
+export function carregarAba(k) {
+  return (
+    baixandoAba[k] ||
+    (baixandoAba[k] = ABAS[k]()
+      .then(m => {
+        Object.assign(ACT, m.ACOES);
+        abas[k] = m;
+        return m;
+      })
+      .catch(e => {
+        delete baixandoAba[k];
+        throw e;
+      }))
+  );
+}
 
 /* Aba Partida sob demanda (KAN-175): baixa na primeira vez que a aba é aberta; as ações entram no ACT. */
 let partida = null,

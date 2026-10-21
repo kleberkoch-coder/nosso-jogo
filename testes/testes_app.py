@@ -1883,6 +1883,36 @@ with sync_playwright() as pw:
        'CT-v60-06: no link do jogador, os times aparecem como Time 1 e Time 2, com o colete ao lado')
     pl12.close(); ctx12.close()
 
+    # ---------- v61 (KAN-180): Caixa, Histórico, Votação e Ranking baixam só ao abrir a aba (navegador separado)
+    ctx13 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
+    p13 = ctx13.new_page(); ped13 = []
+    p13.on('pageerror', lambda e: errs.append(str(e)))
+    p13.on('request', lambda r: ped13.append(r.url))
+    p13.goto(URL + '#/criar'); p13.wait_for_timeout(800)
+    p13.fill('#le', 'abas@teste.com'); p13.fill('#lp', 'Jogo@2026'); p13.fill('#lp2', 'Jogo@2026'); p13.keyboard.press('Enter'); p13.wait_for_timeout(1300)
+    p13.fill('#ngn', 'Abas FC'); p13.click('[data-a=pickSport][data-v=futebol]'); p13.click('[data-a=createGroup]'); p13.wait_for_timeout(1500)
+    p13.click('[data-a=tab][data-v=jogadores]'); p13.wait_for_timeout(300); p13.click('[data-a=seed]'); p13.wait_for_timeout(1500)
+    pedaco = lambda nome: any(f'/chunks/{nome}-' in u for u in ped13)
+    ok(not any(pedaco(n) for n in ('caixa', 'historico', 'votacao', 'ranking')), 'CT-KAN-180-01: abrir a gestão não baixa Caixa, Histórico, Votação nem Ranking')
+    abriu = {}
+    for aba, sinal in (('caixa', '[data-a=addLan]'), ('historico', '[data-a=histModo]'), ('ranking', '#rankAno,[data-c=rankAno],.tbl,.empty')):
+        p13.click(f'[data-a=tab][data-v={aba}]'); p13.wait_for_timeout(1200)
+        abriu[aba] = (pedaco(aba), p13.locator(sinal).count() > 0)
+    ok(all(v == (True, True) for v in abriu.values()), f'CT-KAN-180-02: cada aba baixa a sua parte ao ser aberta e aparece normalmente ({abriu})')
+    # Sem internet: as abas que já chegaram abrem; a que nunca foi aberta avisa e, com a internet de volta, abre
+    ctx13.set_offline(True)
+    p13.click('[data-a=tab][data-v=caixa]'); p13.wait_for_timeout(500)
+    cx_off = p13.locator('[data-a=addLan]').count() > 0
+    p13.click('[data-a=tab][data-v=historico]'); p13.wait_for_timeout(500)
+    ok(cx_off and p13.locator('[data-a=histModo]').count() > 0, 'CT-KAN-180-03: sem internet, Caixa e Histórico já usados abrem normalmente')
+    p13.click('[data-a=tab][data-v=votacao]'); p13.wait_for_timeout(1500)
+    ok('Não foi possível carregar' in p13.inner_text('main'), 'CT-KAN-180-04: sem internet, aba que nunca chegou avisa que não carregou')
+    # O navegador guarda a falha de um pedaço até recarregar; por isso o aviso pede para recarregar a página.
+    ctx13.set_offline(False)
+    p13.reload(); p13.wait_for_timeout(1500); p13.click('[data-a=tab][data-v=votacao]'); p13.wait_for_timeout(1500)
+    ok(pedaco('votacao') and p13.locator('[data-a=newVote]').count() > 0, 'CT-KAN-180-04: com a internet de volta, recarregando a página, a Votação abre')
+    ctx13.close()
+
     # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
     ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
     p7 = ctx7.new_page()

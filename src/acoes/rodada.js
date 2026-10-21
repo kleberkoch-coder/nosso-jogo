@@ -1,5 +1,4 @@
 /* Ações: Rodada: datas, presença, avulsos, sorteio, times, lista × times e histórico. Fazem parte de ACT (src/acoes.js). */
-import { abrirHist, buscarHist, estadoHist } from '../telas/historico.js';
 import { cfg } from '../dominio/caixa.js';
 import { COL, col, hasPos, porTime, posKeys, posLabel, posTag, sport, tn } from '../dominio/esportes.js';
 import {
@@ -633,18 +632,6 @@ const acoes = {
     if (!cur || cur.s !== 'in') ps.push(setPres(r.id, pid, Object.assign({}, cur || {}, { s: 'in' })));
     ps.push(porNoTime(ti, pid));
     return Promise.all(ps);
-  },
-  /* histórico (KAN-85) */
-  histModo: el => {
-    estadoHist().modo = el.dataset.v;
-    render();
-  },
-  histBuscar: () => buscarHist(false),
-  histMais: () => buscarHist(true),
-  histAbrir: el => abrirHist(el.dataset.v),
-  histVoltar: () => {
-    estadoHist().sel = null;
-    render();
   },
 };
 

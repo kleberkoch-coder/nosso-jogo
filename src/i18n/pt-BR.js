@@ -222,6 +222,10 @@ export default {
     'Define a moeda, o formato das datas e o código do telefone dos seus grupos. Dá para trocar depois.',
   'comum.naoCarregouTitulo': 'Não foi possível carregar',
   'comum.naoCarregou': 'Verifique sua conexão e recarregue a página.',
+  /* Leitura com nova tentativa (KAN-184) */
+  'carga.falhouTexto': 'A internet pode estar fraca. Verifique a conexão e toque em Tentar de novo.',
+  'carga.demorando': 'Está demorando mais que o normal. A internet pode estar fraca.',
+  'carga.tentarDeNovo': 'Tentar de novo',
   'nota.titulo': 'Nota de 1 a 10',
   'rodada.seletor': 'Rodada',
   'rodada.canceladaOpcao': '(cancelada)',

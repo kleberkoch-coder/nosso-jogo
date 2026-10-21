@@ -25,6 +25,7 @@ import { myLocal } from './publico-rodada.js';
 import { partidasDe } from '../nucleo/partidas-lista.js';
 import { ComoChegar, Pos, PorPosicao, TextoCortado } from '../ui/componentes';
 import { avulsosEsgotados } from '../dominio/limites';
+import { DEMORA_MS } from '../nucleo/carga';
 import { precisaVaga, situacao } from '../dominio/vagas';
 
 type Rodada = {
@@ -82,6 +83,39 @@ function Time({ t, i }: { t: { c: number; players: string[]; res?: string[] }; i
   );
 }
 
+/* Carregando (KAN-184): depois de 12 s, avisa que está demorando e oferece tentar de novo. */
+let desde = 0;
+function Carregando() {
+  if (!desde) {
+    desde = Date.now();
+    setTimeout(() => {
+      if (desde && st().route.n === 'r') montarPublico();
+    }, DEMORA_MS + 50);
+  }
+  return Date.now() - desde >= DEMORA_MS ? (
+    <div class="panel empty" id="cargaDemorada">
+      <p class="muted">{tx('carga.demorando')}</p>
+      <button class="btn primary" data-a="recarregar">
+        {tx('carga.tentarDeNovo')}
+      </button>
+    </div>
+  ) : (
+    <div class="empty muted">{tx('comum.carregando')}</div>
+  );
+}
+function FalhouCarga() {
+  return (
+    <Aviso
+      titulo={tx('comum.naoCarregouTitulo')}
+      texto={tx('carga.falhouTexto')}
+      extra={
+        <button class="btn primary" data-a="recarregar" id="cargaFalhou">
+          {tx('carga.tentarDeNovo')}
+        </button>
+      }
+    />
+  );
+}
 function Aviso({ titulo, texto, extra }: { titulo: string; texto: string; extra?: preact.ComponentChildren }) {
   return (
     <div class="panel empty">
@@ -170,7 +204,10 @@ function PublicoRodada() {
   const S = st();
   const r = rodById(S.route.id) as Rodada | null;
   const carregou = S.route.next ? S.loaded.rods && S.loaded.app : S.loaded.r && S.loaded.app;
-  if (!carregou) return <div class="empty muted">{tx('comum.carregando')}</div>;
+  /* KAN-184: falha de rede (depois das novas tentativas) avisa e oferece tentar de novo; nunca vira "não encontrado". */
+  if (['app', 'r', 'rods'].some(k => (S.falhou || {})[k])) return <FalhouCarga />;
+  if (!carregou) return <Carregando />;
+  desde = 0;
   if (!S.app) return <Aviso titulo={tx('publico.grupoNaoEncontrado')} texto={tx('publico.grupoNaoEncontradoTexto')} />;
   if (!grpAtivo()) return <Aviso titulo={gname()} texto={tx('publico.grupoInativo')} />;
   if (!r && S.route.next) return <Aviso titulo={tx('publico.semJogo')} texto={tx('publico.semJogoTexto')} />;

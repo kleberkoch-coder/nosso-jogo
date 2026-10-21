@@ -95,7 +95,9 @@ function ensureExtras() {
   A.migrar();
   A.verificarRodadas();
   /* Fichas de resumo: o ranking lê só as do ano escolhido (até 12). */
-  const want = S.tab === 'ranking' ? A.anoRank() : null;
+  /* Ranking sob demanda (KAN-180): a ficha do ano carrega quando a aba já chegou. */
+  const RK = S.tab === 'ranking' ? A.abaPronta('ranking') : null,
+    want = RK ? RK.anoRank() : null;
   if (want) {
     if (S.resK !== want) {
       S.resK = want;
@@ -160,11 +162,13 @@ function ensureExtras() {
     S.rodPagDe = null;
     S.rodPag = {};
   }
-  if (S.tab === 'historico') {
-    const h = A.estadoHist();
+  /* Histórico sob demanda (KAN-180): a busca automática roda quando a aba já chegou. */
+  const H = S.tab === 'historico' ? A.abaPronta('historico') : null;
+  if (H) {
+    const h = H.estadoHist();
     if (!h.buscou && !h.carregando && !h.auto) {
       h.auto = true;
-      A.buscarHist(false);
+      H.buscarHist(false);
     }
   }
   if (S.tab === 'votacao') {

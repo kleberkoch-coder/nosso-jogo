@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v60 (21/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v61 (21/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -153,7 +153,7 @@ Atualizado na pelada-v60 (21/10/2026). Toda entrega que mudar uma regra atualiza
 - Proposta (PR) com testes verdes e prévia; `VERSION` do `site/sw.js` sobe; o Kleber aprova com Merge.
 - O Merge publica o site e, se mudaram, as regras do Firebase; a automação confere a versão no ar.
 - Na mesma entrega: atualizar este arquivo, os docs afetados, a pasta `app/` do projeto e os cartões do Jira ([Entrega], Em análise).
-- Limite de tamanho (D7): o link do jogador até 50 KB comprimido; ao abrir a gestão, até 95 KB; cada parte sob demanda (aba Partida, apresentação), até 15 KB (desde a v53, KAN-175).
+- Limite de tamanho (D7): o link do jogador até 50 KB comprimido; ao abrir a gestão, até 95 KB; cada parte sob demanda (Partida, Caixa, Histórico, Votação, Ranking, Importar e apresentação), até 15 KB. Alvo: pelo menos 3 KB de folga; quando apertar, mover mais uma parte para sob demanda em vez de subir o limite (KAN-180, v61).
 - Textos da gestão ficam em `src/i18n/pt-BR-gestao.js` e chegam com a parte de gestão; os do link público e do login, em `src/i18n/pt-BR.js`. A montagem barra o link público usando texto da gestão.
 - Dívida técnica não piora (D12, KAN-154): a montagem falha se aumentar innerHTML, textos fora do dicionário ou arquivos sem tipos, ou se diminuírem as telas como componente (tetos em `docs/divida.json`).
 - O GitHub confere toda proposta (KAN-157, `testes/conferir-entrega.mjs`): app mudou → VERSION sobe; componente `.tsx` novo em `src/ui/` ou classe nova no CSS → `docs/DESIGN-SYSTEM.md` muda; tela ou ação mudou → `docs/REGRAS.md` muda (ou "sem mudança de regra" na proposta); `firestore.rules` mudou → a proposta avisa; checklist da proposta sem item em branco.
@@ -179,7 +179,7 @@ Atualizado na pelada-v60 (21/10/2026). Toda entrega que mudar uma regra atualiza
 | Grupo e convite | `telas/grupo.js`, `grupo-form.js`, `convite.js` | `acoes/grupo.js` | `dominio/limites.ts` | `grupos/{gid}`, `membros`, `privado/convite`, `contas/{uid}` | `regras/limites`, `regras-firebase` |
 | Planos e portal | `portal/` | `portal/tela.js` | `dominio/planos.ts` | `contas/{uid}`, `sistema/planos` | `regras/planos`, portal em `testes_app.py` |
 | Janelas e avisos | `ui/dialogos.js`, `nucleo/util.js` (toast) | `acoes/conta.js` (confSim) | — | — | `testes_app.py` (CT-KAN-128) |
-| Tamanho e carga | `ui/render.js` (espera a gestão) | `acoes.js` (só públicas) | `admin.js`, `nucleo/carga-admin.js`, `build.mjs` | — | `testes_app.py` (CT-KAN-149) |
+| Tamanho e carga | `ui/render.js` (espera a gestão e as abas sob demanda) | `acoes.js` (só públicas) | `admin.js` (carregarPartida, carregarAba), `abas/*.ts` (Caixa, Histórico, Votação, Ranking), `nucleo/carga-admin.js`, `build.mjs` | — | `testes_app.py` (CT-KAN-149, CT-KAN-180) |
 | Esportes | catálogo em `dominio/esportes.js` | — | — | `grupos/{gid}` (sport, posx) | `testes_app.py` (outros esportes, CT-KAN-75) |
 | Abertura do app instalado | `ui/render.js` (home) | `acoes/conta.js` (Sair) | `inicio.js` (marca `nj-organizador`, último link `pelada-last`) | nenhum (só o aparelho) | `testes_app.py` (CT-KAN-171) |
 Qualquer mudança em `firestore.rules` afeta todas as linhas: rodar o emulador (`testes/regras-firebase`) e avisar o Kleber.

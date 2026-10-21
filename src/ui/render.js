@@ -155,6 +155,8 @@ function renderCore() {
   ensurePres();
   ensureVotos();
   ensureExtras();
+  /* Abas sob demanda (KAN-180): enquanto a parte não chegou, um lugar para o "Carregando…". */
+  const aba = k => (A.abaPronta(k) ? A.abaPronta(k).ver() : '<div id="abaRaiz"></div>');
   main.innerHTML =
     (grpAtivo()
       ? ''
@@ -163,13 +165,17 @@ function renderCore() {
       rodada: A.vRodada,
       jogadores: A.vJogadores,
       partida: () => (A.partidaPronta() ? A.partidaPronta().vPartida() : '<div id="partidaRaiz"></div>'),
-      ranking: A.vRanking,
-      caixa: A.vCaixa,
-      votacao: A.vVotacao,
-      historico: A.vHistorico,
+      ranking: () => aba('ranking'),
+      caixa: () => aba('caixa'),
+      votacao: () => aba('votacao'),
+      historico: () => aba('historico'),
       grupo: A.vGrupo,
     }[S.tab]();
-  if (S.tab === 'caixa') A.montarCaixa();
+  if (A.abaSobDemanda(S.tab)) {
+    const M = A.abaPronta(S.tab);
+    if (!M) return baixar(A.carregarAba(S.tab), null, $('#abaRaiz'));
+    if (M.montar) M.montar();
+  }
   if (S.tab === 'rodada') A.montarRodada();
   if (S.tab === 'jogadores') A.montarJogadores();
   if (S.tab === 'partida') {

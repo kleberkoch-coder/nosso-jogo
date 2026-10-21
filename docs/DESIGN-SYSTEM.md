@@ -133,6 +133,12 @@ Registrados na pelada-v43 (KAN-152); os da v44 a v47 entraram na versão de cada
 - **Artilharia da rodada** (KAN-178; sem classe nova):
   - Na aba Partida, depois de "Partidas desta rodada", fica o painel "Artilharia da rodada", com "Lançar" (ou "Editar") em `btn sm`. Embaixo, uma linha em `muted`: a ajuda, ou o lançamento já feito ("Marcão 3 · Bruno 1").
   - A janela tem uma ajuda em `muted`; se a rodada já tem partidas com placar, um aviso em `out`. Depois vem uma linha por jogador dos times, com "−" (`btn sm`, desligado no zero), o número em negrito e "+". Para o leitor de tela, os botões dizem "Somar 1 para Marcão" e "Tirar 1 de Marcão". Rodapé: "Cancelar" e "Salvar artilharia" (`primary`).
+- **Vagas para diaristas e avulsos** (`PainelVagas`, classes `chk-linha` e `aviso-vagas`; KAN-63):
+  - Na aba Rodada, só com o controle ligado, um `panel` logo antes de "Ainda não responderam". Tem o título "Vagas para diaristas e avulsos" e o estado em `small`: "Fechadas. Pelo link, só mensalistas e isentos confirmam." (`muted`), "Abertas · 1 de 3 preenchidas" ou "Esgotadas · 3 de 3 preenchidas" (`muted`).
+  - Botões: "Abrir vagas" (`btn sm primary` quando fechadas ou esgotadas), "Mudar vagas" e "Fechar vagas" (`btn sm`).
+  - Janela "Abrir vagas": ajuda em `muted` e o campo "Quantas vagas?" (140px, exemplo "Sem limite"), com o cursor nele. Enter abre.
+  - Ligar o controle: na janela "Mínimo e vagas", a caixa de marcar em linha (`chk-linha`: 44px de altura, caixa de 22px na cor `brand`) "Diaristas e avulsos só entram quando eu abrir vagas na rodada".
+  - No link: aviso `aviso-vagas` no fim de "Você vai?", no lugar de "Adicionar meu nome". Fechadas ou esgotadas: em `out`, negrito. Abertas com limite: "Restam 2 vagas para diaristas e avulsos." em `muted`.
 - **Mínimo para o jogo** (`PorPosicao`, classes `porpos`, `porpos-falta` e `minpos-grade`; KAN-179):
   - Dentro do quadro da rodada (aba Rodada e link), depois do resumo: rótulo "Confirmados por posição" em `small muted` (ou "Mínimo para o jogo" no esporte sem posição) e, na gestão, o botão "Definir mínimo" (`btn sm ghost`) na mesma linha.
   - Contagem em chips `poschips` (os mesmos das Posições do grupo): sigla em negrito e o número ("GOL 1", ou "GOL 1 de 2" com mínimo). "Total 3 de 5" vem primeiro quando há mínimo total. A sigla tem o nome da posição no `title`.

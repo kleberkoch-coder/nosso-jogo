@@ -1750,6 +1750,87 @@ with sync_playwright() as pw:
        f'CT-KAN-179-04: beach tennis (sem posição) usa só o mínimo total ({tb[:80]!r})')
     ctx10.close()
 
+    # ---------- v59 (KAN-63): vagas para diaristas e avulsos (navegador separado)
+    ctx11 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
+    p11 = ctx11.new_page()
+    p11.on('pageerror', lambda e: errs.append(str(e)))
+    p11.goto(URL + '#/criar'); p11.wait_for_timeout(800)
+    p11.fill('#le', 'vagas@teste.com'); p11.fill('#lp', 'Jogo@2026'); p11.fill('#lp2', 'Jogo@2026'); p11.keyboard.press('Enter'); p11.wait_for_timeout(1300)
+    p11.fill('#ngn', 'Vagas FC'); p11.click('[data-a=pickSport][data-v=futebol]'); p11.click('[data-a=createGroup]'); p11.wait_for_timeout(1500)
+    p11.click('[data-a=tab][data-v=jogadores]'); p11.wait_for_timeout(300); p11.click('[data-a=seed]'); p11.wait_for_timeout(1500)
+    p11.click('[data-a=tab][data-v=rodada]'); p11.wait_for_timeout(700)
+    dia11 = p11.evaluate("Object.keys(S.pc.tipos).filter(id=>S.pc.tipos[id]==='diarista'&&S.jog[id]&&S.jog[id].ativo!==false)")
+    men11 = p11.evaluate("Object.keys(S.jog).filter(id=>S.jog[id].ativo!==false&&(S.pc.tipos[id]||'mensalista')!=='diarista')")
+    ok(p11.locator('#vagasPainel').count() == 0 and p11.evaluate("Object.values(S.jog).every(j=>!j.vaga)") and len(dia11) >= 2,
+       f'CT-KAN-63-01: sem o controle ligado, nada muda (sem quadro de vagas e ninguém marcado; {len(dia11)} diaristas no elenco)')
+    p11.click('#porPosicao [data-a=abrirMinimos]'); p11.wait_for_timeout(400)
+    p11.check('#vagasCtrl'); p11.click('#dlg [data-a=salvarMinimos]'); p11.wait_for_timeout(1200)
+    est = p11.inner_text('#vagasEstado') if p11.locator('#vagasEstado').count() else ''
+    marc = p11.evaluate("Object.keys(S.jog).filter(id=>S.jog[id].vaga).sort().join()")
+    ok('Fechadas' in est and marc == ','.join(sorted(p11.evaluate("Object.keys(S.pc.tipos).filter(id=>S.pc.tipos[id]==='diarista'&&S.jog[id])"))),
+       f'CT-KAN-63-02: ligado o controle, o quadro mostra "Fechadas" e só os diaristas ganham a marca ({est!r})')
+    p11.locator('#vagasPainel').screenshot(path=f'{OUT}/59-vagas-fechadas.png'); contraste(p11, 'Vagas fechadas')
+    gid11 = p11.evaluate("S.gid"); rid11 = p11.evaluate("S.presRid")
+    pl11 = ctx11.new_page(); pl11.on('pageerror', lambda e: errs.append(str(e)))
+    abrir_link = lambda: (pl11.goto(URL + '#/p/' + gid11 + '/r/' + rid11), pl11.reload(), pl11.wait_for_timeout(1500))
+    # No modo demonstração, cada aba guarda o banco inteiro: recarregue a gestão antes de agir depois do link.
+    gestao11 = lambda: (p11.reload(), p11.wait_for_timeout(1500), p11.click('[data-a=tab][data-v=rodada]'), p11.wait_for_timeout(700))
+    abrir_link()
+    vis = lambda pid: pl11.locator(f'[data-a=pubMark][data-v=in][data-p="{pid}"]').count() > 0
+    av = pl11.inner_text('#avisoVagas') if pl11.locator('#avisoVagas').count() else ''
+    ok(not any(vis(x) for x in dia11) and vis(men11[0]) and pl11.locator('[data-a=pubAdd]').count() == 0 and 'ainda não abertas' in av,
+       f'CT-KAN-63-03: vagas fechadas: diaristas somem do link, mensalista aparece, sem "Adicionar meu nome" ({av!r})')
+    pl11.locator('#avisoVagas').screenshot(path=f'{OUT}/59-link-fechadas.png'); contraste(pl11, 'Link com vagas fechadas')
+    pl11.click(f'[data-a=pubMark][data-v=in][data-p="{men11[0]}"]'); pl11.wait_for_timeout(700)
+    ok((pl11.evaluate(LER, pres_k(gid11, rid11, men11[0])) or {}).get('s') == 'in', 'CT-KAN-63-03: mensalista confirma normalmente com as vagas fechadas')
+    # Abrir 1 vaga
+    gestao11(); p11.click('#vagasPainel [data-a=abrirVagas]'); p11.wait_for_timeout(400)
+    foco = p11.evaluate("document.activeElement && document.activeElement.id")
+    p11.fill('#vagasN', '1'); p11.locator('#vagasN').press('Enter'); p11.wait_for_timeout(900)
+    est = p11.inner_text('#vagasEstado')
+    ok(foco == 'vagasN' and 'Abertas · 0 de 1' in est and not p11.locator('#dlg[open]').count(), f'CT-KAN-63-04: "Abrir vagas" abre com o cursor na quantidade; Enter abre ({est!r})')
+    abrir_link()
+    av = pl11.inner_text('#avisoVagas') if pl11.locator('#avisoVagas').count() else ''
+    ok(all(vis(x) for x in dia11) and pl11.locator('[data-a=pubAdd]').count() == 1 and 'Resta 1 vaga' in av, f'CT-KAN-63-05: com vaga aberta, diaristas e "Adicionar meu nome" voltam ao link ({av!r})')
+    pl11.click(f'[data-a=pubMark][data-v=in][data-p="{dia11[0]}"]'); pl11.wait_for_timeout(900)
+    nvg = (pl11.evaluate(LER, f'grupos/{gid11}/rodadas/{rid11}/limites/vagas') or {}).get('n')
+    abrir_link()
+    av = pl11.inner_text('#avisoVagas') if pl11.locator('#avisoVagas').count() else ''
+    ok(nvg == 1 and vis(dia11[0]) and not vis(dia11[1]) and pl11.locator('[data-a=pubAdd]').count() == 0 and 'acabaram' in av,
+       f'CT-KAN-63-05: o diarista ocupa a vaga ({nvg}); esgotou, os outros somem e o link avisa ({av!r})')
+    gestao11()
+    ok('Esgotadas · 1 de 1' in p11.inner_text('#vagasEstado'), 'CT-KAN-63-05: na gestão, "Esgotadas · 1 de 1 preenchidas"')
+    pl11.click(f'[data-a=pubMark][data-v=out][data-p="{dia11[0]}"]'); pl11.wait_for_timeout(900)
+    nvg2 = (pl11.evaluate(LER, f'grupos/{gid11}/rodadas/{rid11}/limites/vagas') or {}).get('n')
+    abrir_link()
+    ok(nvg2 == 0 and vis(dia11[1]) and 'Resta 1 vaga' in pl11.inner_text('#avisoVagas'), f'CT-KAN-63-06: quem desiste devolve a vaga ({nvg2}) e o link volta a mostrar os diaristas')
+    # Avulso novo ocupa a vaga
+    av_id = adicionar_pelo_link(pl11, 'Avulso Vaga')
+    nvg3 = (pl11.evaluate(LER, f'grupos/{gid11}/rodadas/{rid11}/limites/vagas') or {}).get('n')
+    ok(av_id and nvg3 == 1, f'CT-KAN-63-07: avulso novo pelo link ocupa uma vaga ({nvg3})')
+    # Fechar
+    gestao11(); p11.click('#vagasPainel [data-a=fecharVagas]'); p11.wait_for_timeout(800)
+    abrir_link()
+    ok('Fechadas' in p11.inner_text('#vagasEstado') and not vis(dia11[1]) and 'Avulso Vaga' in pl11.inner_text('main'),
+       'CT-KAN-63-08: "Fechar vagas" esconde de novo quem precisa de vaga; quem já entrou continua na lista')
+    # Administrador põe o diarista mesmo com as vagas fechadas
+    p11.click(f'[data-a=mark][data-v=in][data-p="{dia11[1]}"]'); p11.wait_for_timeout(700)
+    ok((p11.evaluate(LER, pres_k(gid11, rid11, dia11[1])) or {}).get('s') == 'in', 'CT-KAN-63-09: o administrador confirma o diarista pela gestão mesmo com as vagas fechadas')
+    p11.set_viewport_size({'width': 360, 'height': 800}); p11.wait_for_timeout(300)
+    p11.click('#vagasPainel [data-a=abrirVagas]'); p11.wait_for_timeout(400); p11.screenshot(path=f'{OUT}/59-abrir-vagas-360.png')
+    ok(p11.evaluate("document.documentElement.scrollWidth") <= 360 and p11.locator('#dlg [data-a=salvarVagas]').bounding_box()['height'] >= 44, 'CT-KAN-63: janela "Abrir vagas" cabe em 360px, botão com 44px')
+    p11.click('#dlg [data-a=close]'); p11.wait_for_timeout(300)
+    if p11.locator('#dlg .conf').count(): confirmar_app(p11, True)
+    p11.set_viewport_size({'width': 390, 'height': 844})
+    # Desligar o controle: marcas somem e o link mostra todo mundo
+    p11.click('#porPosicao [data-a=abrirMinimos]'); p11.wait_for_timeout(400)
+    p11.uncheck('#vagasCtrl'); p11.click('#dlg [data-a=salvarMinimos]'); p11.wait_for_timeout(1200)
+    abrir_link()
+    d10 = (p11.locator('#vagasPainel').count(), p11.evaluate("Object.keys(S.jog).filter(id=>S.jog[id].vaga).length"), [vis(x) for x in dia11], pl11.locator('#avisoVagas').count())
+    ok(d10[0] == 0 and d10[1] == 0 and all(d10[2]) and d10[3] == 0,
+       f'CT-KAN-63-10 {d10}: desligado o controle, as marcas somem e o link volta a ser como antes')
+    ctx11.close()
+
     # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
     ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
     p7 = ctx7.new_page()

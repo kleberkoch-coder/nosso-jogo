@@ -14,7 +14,10 @@ import { closeDlg, confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
 import { playerDlg } from '../ui/dialogos-gestao.js';
 import { changed } from '../ui/render.js';
 import { ACT } from '../acoes.js';
-import { montarImportar, paraImportar } from '../ui/ImportarJogadores';
+/* Importar da planilha (KAN-159) baixa só quando a janela abre (v59), para a gestão abrir mais leve.
+   O service worker guarda essa parte junto com a gestão, então funciona sem sinal depois do primeiro uso. */
+let IMP = null;
+const carregarImportar = () => (IMP ? Promise.resolve(IMP) : import('../ui/ImportarJogadores').then(m => (IMP = m)));
 
 const acoes = {
   addPlayer: () => playerDlg(null),
@@ -207,14 +210,18 @@ const acoes = {
     return Promise.all(ps);
   },
   /* KAN-159: importar o elenco de uma planilha (colar ou arquivo), com prévia. */
-  importarDlg: () => {
-    openDlg('<div id="impRaiz"></div>');
-    const el = $('#impRaiz');
-    if (el) montarImportar(el);
-    setTimeout(() => $('#impTexto')?.focus(), 50);
-  },
+  importarDlg: () =>
+    carregarImportar().then(
+      m => {
+        openDlg('<div id="impRaiz"></div>');
+        const el = $('#impRaiz');
+        if (el) m.montarImportar(el);
+        setTimeout(() => $('#impTexto')?.focus(), 50);
+      },
+      () => toast(tx('comum.naoCarregouTitulo') + '. ' + tx('comum.naoCarregou'))
+    ),
   importarJogadores: () => {
-    const novos = paraImportar();
+    const novos = IMP ? IMP.paraImportar() : [];
     if (!novos.length) return;
     const agora = Date.now(),
       ops = [],

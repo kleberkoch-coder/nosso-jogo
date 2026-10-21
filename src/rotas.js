@@ -1,6 +1,6 @@
 import { adm, carregarAdmin } from './nucleo/carga-admin.js';
 import { ACT } from './acoes.js';
-import { migrarPrivado } from './dominio/caixa.js';
+import { migrarPrivado, sincronizarVagas } from './dominio/caixa.js';
 import { curRodada, isAdmin, upcoming, ymd } from './dominio/grupo.js';
 import { B } from './nucleo/backend.js';
 import { GB, S, SUBS, drop, dropAll, sub, subQ, subRaw, w } from './nucleo/estado.js';
@@ -31,11 +31,17 @@ function ensurePres() {
 /* Contador de avulsos novos pelo link nesta rodada (KAN-89). */
 function subLimAv(id) {
   S.limAv = null;
+  S.limVg = null;
   drop('limAv');
-  if (id)
-    sub('limAv', 'rodadas/' + id + '/limites/avulsos', d => {
-      S.limAv = d;
-    });
+  drop('limVg');
+  if (!id) return;
+  sub('limAv', 'rodadas/' + id + '/limites/avulsos', d => {
+    S.limAv = d;
+  });
+  /* Vagas para diaristas e avulsos ocupadas pelo link (KAN-63). */
+  sub('limVg', 'rodadas/' + id + '/limites/vagas', d => {
+    S.limVg = d;
+  });
 }
 const subLimCfg = () =>
   subRaw('limCfg', 'sistema/limites', d => {
@@ -293,6 +299,7 @@ function setupRoute() {
     caixa: {},
     presRid: undefined,
     limAv: null,
+    limVg: null,
     limCfg: null,
     votosVid: undefined,
     dataOn: false,
@@ -351,6 +358,8 @@ function setupRoute() {
       if (R.next) resolveNext();
       syncName();
       migrarPrivado();
+      sincronizarVagas();
+      sincronizarVagas();
     });
   const anon = () => {
     if (!S.user) B.anon().catch(() => toast('Não foi possível conectar. Recarregue a página.'));
@@ -477,6 +486,7 @@ function startData() {
   sub('jog', 'jogadores', d => {
     S.jog = d || {};
     migrarPrivado();
+    sincronizarVagas();
   });
   subQ('rodF', 'rodadas', Object.assign({ de: dia(-1) }, Q_PROX), d => {
     S.rodF = d || {};
@@ -489,6 +499,7 @@ function startData() {
   sub('pc', 'privado/caixa', d => {
     S.pc = d;
     migrarPrivado();
+    sincronizarVagas();
   });
   sub('migr', 'privado/migracao', d => {
     S.migr = d || { v: 0 };

@@ -229,6 +229,83 @@ describe('votos pelo link (KAN-76)', () => {
   });
 });
 
+describe('vagas para diaristas e avulsos (KAN-63)', () => {
+  const R = G + '/rodadas/r1',
+    CV = R + '/limites/vagas',
+    CA = R + '/limites/avulsos';
+  const semRegras = fn => env.withSecurityRulesDisabled(async ctx => fn(ctx.firestore()));
+  const pres = (s, extra = {}) => Object.assign({ s, t: Date.now(), by: 'anon1', dev: 'anon1' }, extra);
+  // Presença pelo link com (ou sem) o contador de vagas na mesma gravação
+  const marcar = (f, pid, s, delta, extra = {}) => {
+    const b = writeBatch(f);
+    b.set(doc(f, R + '/presencas/' + pid), pres(s, extra));
+    if (delta) b.set(doc(f, CV), { n: increment(delta), ult: pid }, { merge: true });
+    if (extra.avulso) b.set(doc(f, CA), { n: increment(1), ult: pid }, { merge: true });
+    return b.commit();
+  };
+  const preparar = (vagas, ctrl = true) =>
+    semRegras(async f => {
+      await setDoc(doc(f, G), { name: 'G1', owner: 'dono', ativo: true, createdAt: 1, cfg: { vagasCtrl: ctrl } });
+      await setDoc(doc(f, G + '/jogadores/d1'), { name: 'Diarista', vaga: true });
+      await setDoc(doc(f, G + '/jogadores/d2'), { name: 'Diarista 2', vaga: true });
+      await setDoc(doc(f, R), Object.assign({ date: '2026-10-05', locked: false }, vagas ? { vagas } : {}));
+    });
+
+  test('vagas fechadas: diarista não entra pelo link, nem somando no contador', async () => {
+    await preparar(null);
+    await assertFails(marcar(db.anon(), 'd1', 'in', 0));
+    await assertFails(marcar(db.anon(), 'd1', 'in', 1));
+  });
+  test('vagas fechadas: mensalista (sem a marca) confirma normalmente', async () => {
+    await preparar(null);
+    await assertSucceeds(marcar(db.anon(), 'j1', 'in', 0));
+  });
+  test('vagas abertas: diarista entra somando 1; sem somar é recusado', async () => {
+    await preparar({ aberta: true, max: 2 });
+    await assertFails(marcar(db.anon(), 'd1', 'in', 0));
+    await assertSucceeds(marcar(db.anon(), 'd1', 'in', 1));
+  });
+  test('vagas acabaram (2 de 2): o próximo é recusado', async () => {
+    await preparar({ aberta: true, max: 2 });
+    await semRegras(f => setDoc(doc(f, CV), { n: 2, ult: 'x' }));
+    await assertFails(marcar(db.anon(), 'd2', 'in', 1));
+  });
+  test('sem limite (max 0): entra mesmo com o contador alto', async () => {
+    await preparar({ aberta: true, max: 0 });
+    await semRegras(f => setDoc(doc(f, CV), { n: 40, ult: 'x' }));
+    await assertSucceeds(marcar(db.anon(), 'd2', 'in', 1));
+  });
+  test('quem estava dentro sai e devolve a vaga (-1); sair sem devolver também pode', async () => {
+    await preparar({ aberta: true, max: 1 });
+    await assertSucceeds(marcar(db.anon(), 'd1', 'in', 1));
+    await assertSucceeds(marcar(db.anon(), 'd1', 'out', -1));
+    await assertSucceeds(marcar(db.anon(), 'd1', 'in', 1));
+    await assertSucceeds(marcar(db.anon(), 'd1', 'out', 0));
+  });
+  test('avulso novo com vagas abertas soma nos dois contadores; só no de avulsos é recusado', async () => {
+    await preparar({ aberta: true, max: 3 });
+    await assertFails(marcar(db.anon(), 'av1', 'in', 0, { nome: 'Avulso', avulso: true }));
+    await assertSucceeds(marcar(db.anon(), 'av1', 'in', 1, { nome: 'Avulso', avulso: true }));
+  });
+  test('controle desligado: diarista entra como antes, sem contador', async () => {
+    await preparar(null, false);
+    await assertSucceeds(marcar(db.anon(), 'd1', 'in', 0));
+  });
+  test('contador não sobe com quem não precisa de vaga, nem com valor inventado', async () => {
+    await preparar({ aberta: true, max: 2 });
+    await assertFails(marcar(db.anon(), 'j1', 'in', 1));
+    await assertFails(setDoc(doc(db.anon(), CV), { n: 0, ult: 'd1' }));
+  });
+  test('administrador abre e zera as vagas; o jogador pelo link não', async () => {
+    await preparar(null);
+    await assertSucceeds(setDoc(doc(db.adm(), R), { vagas: { aberta: true, max: 3 } }, { merge: true }));
+    await assertSucceeds(setDoc(doc(db.adm(), CV), { n: 0, ult: 'adm' }));
+    await assertSucceeds(deleteDoc(doc(db.adm(), CV)));
+    await assertFails(setDoc(doc(db.anon(), R), { vagas: { aberta: true, max: 99 } }, { merge: true }));
+    await assertSucceeds(marcar(db.adm(), 'd1', 'in', 0));
+  });
+});
+
 describe('limites contra abuso (KAN-89)', () => {
   const R = G + '/rodadas/r1',
     C = R + '/limites/avulsos';

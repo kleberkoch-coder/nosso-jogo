@@ -77,6 +77,30 @@ service cloud.firestore {
         && getAfter(contAv(gid, rid)).data.get('ult', '') == pid
         && getAfter(contAv(gid, rid)).data.get('n', 0) == (exists(contAv(gid, rid)) ? get(contAv(gid, rid)).data.get('n', 0) : 0) + 1;
     }
+    // Vagas para diaristas e avulsos (KAN-63). Com o controle ligado no grupo (cfg.vagasCtrl), quem precisa de vaga
+    // (avulso, ou jogador com a marca pública 'vaga') só entra pelo link com vaga aberta na rodada (vagas.aberta),
+    // e a mesma gravação soma 1 no contador de vagas, que não passa de vagas.max (0 = sem limite).
+    function jogador(gid, pid) { return /databases/$(database)/documents/grupos/$(gid)/jogadores/$(pid); }
+    function contVg(gid, rid) { return /databases/$(database)/documents/grupos/$(gid)/rodadas/$(rid)/limites/vagas; }
+    function controleVagas(gid) { return get(grp(gid)).data.get('cfg', {}).get('vagasCtrl', false) == true; }
+    function precisaVaga(gid, pid) {
+      return !exists(jogador(gid, pid)) || get(jogador(gid, pid)).data.get('vaga', false) == true;
+    }
+    function vagasDaRodada(gid, rid) { return exists(rod(gid, rid)) ? get(rod(gid, rid)).data.get('vagas', {}) : {}; }
+    function vagasAbertas(gid, rid) { return vagasDaRodada(gid, rid).get('aberta', false) == true; }
+    function vagasMax(gid, rid) {
+      return vagasDaRodada(gid, rid).get('max', 0) is int ? vagasDaRodada(gid, rid).get('max', 0) : 0;
+    }
+    function vagaContada(gid, rid, pid) {
+      return existsAfter(contVg(gid, rid))
+        && getAfter(contVg(gid, rid)).data.get('ult', '') == pid
+        && getAfter(contVg(gid, rid)).data.get('n', 0) == (exists(contVg(gid, rid)) ? get(contVg(gid, rid)).data.get('n', 0) : 0) + 1;
+    }
+    // Entrando agora: a resposta passa a ser Vou (antes não era).
+    function entrando() { return request.resource.data.s == 'in' && (resource == null || resource.data.get('s', '') != 'in'); }
+    function vagaOk(gid, rid, pid) {
+      return !entrando() || !controleVagas(gid) || !precisaVaga(gid, pid) || vagaContada(gid, rid, pid);
+    }
     // Grupo novo: a mesma gravação soma 1 no contador da conta e deixa nele o identificador do grupo.
     function grupoContado(gid) {
       return existsAfter(conta(request.auth.uid))
@@ -213,11 +237,13 @@ service cloud.firestore {
             && request.resource.data.get('dev', '') == request.auth.uid
             // Avulso novo pelo link conta no limite da rodada (KAN-89); obrigatório de novo desde a pelada-v28 (KAN-134).
             && (exists(/databases/$(database)/documents/grupos/$(gid)/jogadores/$(pid)) || avulsoContado(gid, rid, pid))
+            && vagaOk(gid, rid, pid)
           );
           allow update: if isMember(gid) || (
             idValido(pid) && presencaAberta(gid, rid) && presencaValida() && mudancaPeloLinkOk()
             && ((('dev' in resource.data) && request.resource.data.get('dev', '') == resource.data.dev)
               || (!('dev' in resource.data) && request.resource.data.get('dev', '') == request.auth.uid))
+            && vagaOk(gid, rid, pid)
           );
           allow delete: if isMember(gid);
         }
@@ -233,6 +259,25 @@ service cloud.firestore {
             && request.resource.data.n <= limAvulsos()
             && !exists(pres(gid, rid, request.resource.data.ult))
             && existsAfter(pres(gid, rid, request.resource.data.ult));
+          // Vagas para diaristas e avulsos (KAN-63): sobe 1 com a presença de quem entra (vagas abertas, até o máximo)
+          // e desce 1 com a de quem estava dentro e sai. Administradores ajustam ou zeram à vontade.
+          allow create, update: if signed() && doc == 'vagas'
+            && request.resource.data.keys().hasOnly(['n', 'ult'])
+            && idValido(request.resource.data.get('ult', ''))
+            && existsAfter(pres(gid, rid, request.resource.data.ult))
+            && ((request.resource.data.n == (resource == null ? 0 : resource.data.get('n', 0)) + 1
+                && controleVagas(gid) && precisaVaga(gid, request.resource.data.ult)
+                && vagasAbertas(gid, rid)
+                && (vagasMax(gid, rid) == 0 || request.resource.data.n <= vagasMax(gid, rid))
+                && getAfter(pres(gid, rid, request.resource.data.ult)).data.s == 'in'
+                && (!exists(pres(gid, rid, request.resource.data.ult))
+                  || get(pres(gid, rid, request.resource.data.ult)).data.get('s', '') != 'in'))
+              || (resource != null && resource.data.get('n', 0) > 0
+                && request.resource.data.n == resource.data.get('n', 0) - 1
+                && exists(pres(gid, rid, request.resource.data.ult))
+                && get(pres(gid, rid, request.resource.data.ult)).data.get('s', '') == 'in'
+                && getAfter(pres(gid, rid, request.resource.data.ult)).data.s != 'in'));
+          allow create, update: if isMember(gid) && doc == 'vagas';
           allow delete: if isMember(gid);
         }
 

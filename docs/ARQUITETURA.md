@@ -190,6 +190,12 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D19. Vagas para diaristas e avulsos garantidas nas regras (21 out. 2026, pelada-v59, KAN-63)
+- **Decisão:** com o controle ligado no grupo (`cfg.vagasCtrl`), a presença pelo link de quem precisa de vaga (avulso, ou jogador com a marca pública `vaga`) só entra com `vagas.aberta` na rodada e somando 1 em `rodadas/{rid}/limites/vagas` na mesma gravação, até `vagas.max` (0 = sem limite). Quem estava dentro e sai pode devolver 1. É o mesmo desenho do contador de avulsos (KAN-89): sem servidor, conferido com `getAfter`.
+- **Privacidade:** para o link esconder o diarista, a marca `vaga` fica no documento público do jogador. O app a ajusta sozinho a partir do tipo (`privado/caixa`), só com o controle ligado (`sincronizarVagas`). Exceção à regra de que o tipo é privado, aprovada pelo Kleber em 21/10/2026.
+- **Sem abertura automática:** abrir num horário marcado precisaria de servidor (Blaze, KAN-174). O administrador abre na hora, com a sugestão do que falta para o mínimo (KAN-179).
+- **Tamanho:** para a gestão continuar abaixo de 95 KB, "Importar jogadores" (KAN-159) passou a baixar só quando a janela abre (parte sob demanda `ImportarJogadores`, 3,4 KB), guardada pelo service worker como as outras partes da gestão.
+
 ### D18. Teste de carga no emulador e custo estimado (16 out. 2026, KAN-158)
 - **Contexto:** o app nunca tinha sido medido com muita gente ao mesmo tempo. Três pontos recebem gravações de várias pessoas no mesmo instante: o contador de avulsos da rodada (`limites/avulsos`), o documento da rodada e os votos.
 - **Decisão:** a tarefa **Teste de carga** (`.github/workflows/carga.yml`, script `testes/carga/carga.mjs`) sobe o emulador do Firestore com as regras de verdade e simula aparelhos diferentes fazendo as mesmas gravações do app. Ela roda toda segunda às 6h17, à mão (Actions → Teste de carga → Run workflow) e em toda proposta que mexe nas regras ou no próprio teste. O resultado aparece no resumo da execução e fica guardado como arquivo.

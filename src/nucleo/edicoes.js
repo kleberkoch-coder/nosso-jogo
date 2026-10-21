@@ -3,6 +3,7 @@ import { isAdmin, rodById } from '../dominio/grupo.js';
 import { GB, S, clean, w } from './estado.js';
 import { cl, toast } from './util.js';
 import { contaComoAvulso } from '../dominio/limites.ts';
+import { movimento, precisaVaga } from '../dominio/vagas.ts';
 import { tx } from '../i18n/index.js';
 import { op } from './backend.js';
 import { changed } from '../ui/render.js';
@@ -106,20 +107,28 @@ function setPres(rid, pid, data) {
     S.pres[pid] = d;
     changed();
   }
-  if (!novo) return w(GB.set('rodadas/' + rid + '/presencas/' + pid, clean(d)));
-  /* Avulso novo pelo link (KAN-89): grava junto com +1 no contador da rodada; passou do limite, o Firebase recusa as duas. */
-  return GB.lote([
-    { tipo: 'set', p: 'rodadas/' + rid + '/presencas/' + pid, o: clean(d) },
-    { tipo: 'patch', p: 'rodadas/' + rid + '/limites/avulsos', o: { n: op.somar(1), ult: pid } },
-  ]).catch(e => {
+  /* KAN-63: com o controle de vagas ligado, diarista ou avulso que entra pelo link ocupa uma vaga (+1 no contador
+     da rodada) e quem sai devolve (-1). Sem vaga aberta, o Firebase recusa a presença e o contador juntos. */
+  const mov =
+      !isAdmin() && ((S.app || {}).cfg || {}).vagasCtrl && precisaVaga((S.jog || {})[pid])
+        ? movimento(cur && cur.s, d.s)
+        : 0,
+    vaga = mov > 0 || (mov < 0 && ((S.limVg || {}).n || 0) > 0);
+  if (!novo && !vaga) return w(GB.set('rodadas/' + rid + '/presencas/' + pid, clean(d)));
+  /* Avulso novo pelo link (KAN-89): grava junto com +1 no contador da rodada; passou do limite, o Firebase recusa tudo. */
+  const ops = [{ tipo: 'set', p: 'rodadas/' + rid + '/presencas/' + pid, o: clean(d) }];
+  if (novo) ops.push({ tipo: 'patch', p: 'rodadas/' + rid + '/limites/avulsos', o: { n: op.somar(1), ult: pid } });
+  if (vaga) ops.push({ tipo: 'patch', p: 'rodadas/' + rid + '/limites/vagas', o: { n: op.somar(mov), ult: pid } });
+  return GB.lote(ops).catch(e => {
     console.error(e);
     if (S.presRid === rid) {
-      delete S.pres[pid];
+      if (cur) S.pres[pid] = cur;
+      else delete S.pres[pid];
       changed();
     }
     toast(
       e && e.code === 'permission-denied'
-        ? tx('limite.avulsosPublico')
+        ? tx(vaga && mov > 0 ? 'vagas.fechadasPublico' : 'limite.avulsosPublico')
         : 'Não foi possível salvar. Verifique a conexão.'
     );
     throw e;

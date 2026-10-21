@@ -2,6 +2,7 @@ import { isAdmin } from './grupo.js';
 import { B } from '../nucleo/backend.js';
 import { GB, S, clean, gp, w } from '../nucleo/estado.js';
 import { cl } from '../nucleo/util.js';
+import { marcasParaAjustar } from './vagas.ts';
 import { changed } from '../ui/render.js';
 
 function cfg() {
@@ -84,4 +85,16 @@ function migrarPrivado() {
     });
 }
 
-export { CAIXA_K, cfg, editPc, inicioAPagar, migrarPrivado, ptipo, recebePorJogo };
+/* KAN-63: a marca pública "só entra com vaga aberta" acompanha o tipo do jogador (só diarista, só com o controle ligado).
+   Roda quando o elenco, o caixa privado ou o grupo chegam, e grava só quem precisa mudar. */
+function sincronizarVagas() {
+  if (S.ajVagas || !S.dataOn || !isAdmin() || !S.app || !S.loaded.app || !S.loaded.jog || !S.loaded.pc) return;
+  const aj = marcasParaAjustar(S.jog, ptipo, !!(S.app.cfg || {}).vagasCtrl);
+  if (!aj.length) return;
+  S.ajVagas = true;
+  const fim = () => {
+    S.ajVagas = false;
+  };
+  w(GB.lote(aj.map(([id, m]) => ({ tipo: 'patch', p: 'jogadores/' + id, o: { vaga: m } })))).then(fim, fim);
+}
+export { CAIXA_K, cfg, editPc, inicioAPagar, migrarPrivado, ptipo, recebePorJogo, sincronizarVagas };

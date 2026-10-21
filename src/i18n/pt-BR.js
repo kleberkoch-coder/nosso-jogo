@@ -192,6 +192,11 @@ export default {
   'times.marcarReserva': 'Marcar como reserva',
   'times.marcarTitular': 'Marcar como titular',
   /* limites contra abuso (KAN-89) */
+  /* Vagas para diaristas e avulsos (KAN-63) */
+  'vagaslink.fechadas': 'Vagas para diaristas e avulsos ainda não abertas. O organizador avisa no grupo.',
+  'vagaslink.esgotadas': 'As vagas para diaristas e avulsos desta rodada acabaram. Fale com o organizador.',
+  'vagaslink.restam.um': 'Resta 1 vaga para diaristas e avulsos.',
+  'vagaslink.restam.outros': 'Restam {n} vagas para diaristas e avulsos.',
   'limite.avulsosPublico': 'A lista chegou ao limite de nomes novos pelo link. Fale com o organizador para entrar.',
   'limite.avulsosAdmin':
     'O link desta rodada chegou ao limite de avulsos novos ({n}). Quem mais precisar entrar, adicione por aqui em Adicionar avulso.',

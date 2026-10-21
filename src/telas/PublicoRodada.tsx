@@ -25,9 +25,11 @@ import { myLocal } from './publico-rodada.js';
 import { partidasDe } from '../nucleo/partidas-lista.js';
 import { ComoChegar, Pos, PorPosicao, TextoCortado } from '../ui/componentes';
 import { avulsosEsgotados } from '../dominio/limites';
+import { precisaVaga, situacao } from '../dominio/vagas';
 
 type Rodada = {
   id: string;
+  vagas?: { aberta?: boolean; max?: number };
   date: string;
   time?: string;
   place?: string;
@@ -188,7 +190,13 @@ function PublicoRodada() {
   const ids: string[] = players()
     .map((p: { id: string }) => p.id)
     .concat(Object.keys(S.pres).filter(id => isAvulso(id) && S.pres[id].nome));
-  const lista = [...new Set(ids)].sort((x, y) =>
+  /* KAN-63: com as vagas para diaristas e avulsos fechadas (ou esgotadas), quem precisa de vaga some do link,
+     a não ser que já esteja confirmado. */
+  const vg = vagasDoLink(r);
+  const visiveis = vg.podeEntrar
+    ? ids
+    : ids.filter(id => !precisaVaga((S.jog || {})[id]) || (S.pres[id] && S.pres[id].s === 'in'));
+  const lista = [...new Set(visiveis)].sort((x, y) =>
     x === me ? -1 : y === me ? 1 : pname(x).localeCompare(pname(y), LOCAL)
   );
   const aberta = !r.locked;
@@ -275,11 +283,30 @@ function PublicoRodada() {
 }
 
 /* "Você vai?" com a busca pelo nome (KAN-127): filtra enquanto digita, sem diferenciar acentos e maiúsculas. */
+/* Vagas para diaristas e avulsos desta rodada, como o link vê (KAN-63). */
+function vagasDoLink(r: Rodada) {
+  const S = st();
+  return situacao(!!((S.app || {}).cfg || {}).vagasCtrl, r.vagas, S.limVg);
+}
+function AvisoVagas({ r }: { r: Rodada }) {
+  const v = vagasDoLink(r);
+  const texto = !v.podeEntrar
+    ? tx(v.cheia ? 'vagaslink.esgotadas' : 'vagaslink.fechadas')
+    : v.aberta && v.max && ((st().app || {}).cfg || {}).vagasCtrl
+      ? tp('vagaslink.restam', v.max - v.n)
+      : '';
+  return texto ? (
+    <p class={'small aviso-vagas' + (v.podeEntrar ? ' muted' : '')} id="avisoVagas">
+      {texto}
+    </p>
+  ) : null;
+}
 function Lista({ r, lista, me }: { r: Rodada; lista: string[]; me: string | null }) {
   const [busca, setBusca] = useState('');
   const q = normName(busca) as string;
   const vis = q ? lista.filter(id => (normName(pname(id)) as string).includes(q)) : lista;
-  const esgotou = avulsosEsgotados(st().limAv, st().limCfg);
+  const esgotou = avulsosEsgotados(st().limAv, st().limCfg),
+    semVaga = !vagasDoLink(r).podeEntrar;
   return (
     <div class="panel">
       <h3>{tx('publico.voceVai')}</h3>
@@ -307,7 +334,8 @@ function Lista({ r, lista, me }: { r: Rodada; lista: string[]; me: string | null
           <li class="muted small">{lista.length ? tx('publico.buscarVazio') : tx('publico.listaVazia')}</li>
         )}
       </ul>
-      {esgotou ? (
+      <AvisoVagas r={r} />
+      {semVaga ? null : esgotou ? (
         <p class="small muted aviso-limite" style={{ marginTop: '14px' }}>
           {tx('limite.avulsosPublico')}
         </p>

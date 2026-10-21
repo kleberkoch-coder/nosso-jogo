@@ -6,7 +6,8 @@ import { linkCobrar, semResposta } from '../dominio/cobrar';
 import { linkWhatsApp } from '../dominio/contato';
 import { linkDaRodada } from '../dominio/whatsapp.js';
 import { col, hasPos, posIdx, posKeys, posLabel, sport, tn } from '../dominio/esportes.js';
-import { TOTAL, minimoValido } from '../dominio/posicoes';
+import { TOTAL, faltaTotal, minimoValido } from '../dominio/posicoes';
+import { situacao } from '../dominio/vagas';
 import {
   attendance,
   curRodada,
@@ -42,6 +43,7 @@ type Rodada = {
   cancelada?: boolean;
   fixo?: boolean;
   times?: Time[] | null;
+  vagas?: { aberta?: boolean; max?: number };
 };
 type Qualidade = { diff: number; gk?: number[]; nsep?: number; viol?: number; newPct?: number | null } | null;
 
@@ -580,6 +582,7 @@ function RodadaTela() {
           )}
         </div>
       </div>
+      {carregou ? <PainelVagas r={r} /> : null}
       {carregou ? <Cobrar r={r} /> : null}
       <Presenca r={r} inn={a.inn} carregou={carregou} avs={avs} />
       <Times r={r} inn={a.inn.length} />
@@ -620,6 +623,13 @@ function Minimos() {
           <div class="minpos-grade">{(posKeys() as string[]).map(k => campo(k, k, posLabel(k)))}</div>
         </>
       ) : null}
+      <p class="small muted" style="margin:14px 0 4px">
+        {tx('vagas.titulo')}
+      </p>
+      <label class="chk-linha">
+        <input type="checkbox" id="vagasCtrl" checked={controleVagas()} />
+        <span>{tx('vagas.controle')}</span>
+      </label>
       <div class="dlg-f">
         <button class="btn" data-a="close">
           {tx('comum.cancelar')}
@@ -631,6 +641,75 @@ function Minimos() {
     </>
   );
 }
+/* Vagas para diaristas e avulsos (KAN-63): com o controle ligado no grupo, só entram pelo link quando a rodada abre vagas. */
+const controleVagas = (): boolean => !!(st().app?.cfg || {}).vagasCtrl;
+const vagasDaRodada = (r: Rodada) => situacao(true, r.vagas, st().limVg);
+function PainelVagas({ r }: { r: Rodada }) {
+  if (!controleVagas()) return null;
+  const v = vagasDaRodada(r),
+    estado = !v.aberta
+      ? tx('vagas.fechadas')
+      : v.max
+        ? tx(v.cheia ? 'vagas.esgotadas' : 'vagas.abertas', { n: v.n, max: v.max })
+        : tp('vagas.abertasSemLimite', v.n);
+  return (
+    <div class="panel" id="vagasPainel">
+      <h3 style="margin:0 0 4px">{tx('vagas.titulo')}</h3>
+      <p class={'small' + (v.aberta && !v.cheia ? '' : ' muted')} id="vagasEstado" style="margin:0">
+        {estado}
+      </p>
+      <div class="row" style="margin-top:10px">
+        <button class={'btn sm' + (v.aberta && !v.cheia ? '' : ' primary')} data-a="abrirVagas">
+          {tx(v.aberta ? 'vagas.mudar' : 'vagas.abrir')}
+        </button>
+        {v.aberta ? (
+          <button class="btn sm" data-a="fecharVagas">
+            {tx('vagas.fechar')}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+/* Janela "Abrir vagas": já vem com o que falta para o mínimo do jogo (v58); vazio = sem limite. */
+function AbrirVagas({ r, inn }: { r: Rodada; inn: number }) {
+  const v = vagasDaRodada(r),
+    sug = v.aberta ? v.max : faltaTotal(inn, minimosDoGrupo()).falta;
+  return (
+    <>
+      <h3 id="vagasTitulo">{tx(v.aberta ? 'vagas.mudar' : 'vagas.abrir')}</h3>
+      <p class="small muted">{tx('vagas.ajuda')}</p>
+      <label class="f">
+        <span>{tx('vagas.quantas')}</span>
+        <input
+          class="inp"
+          id="vagasN"
+          type="number"
+          inputmode="numeric"
+          min="0"
+          max="99"
+          step="1"
+          placeholder={tx('vagas.semLimite')}
+          value={sug ? String(sug) : ''}
+          style="max-width:140px"
+        />
+      </label>
+      <div class="dlg-f">
+        <button class="btn" data-a="close">
+          {tx('comum.cancelar')}
+        </button>
+        <button class="btn primary" data-a="salvarVagas">
+          {tx(v.aberta ? 'comum.salvar' : 'vagas.abrir')}
+        </button>
+      </div>
+    </>
+  );
+}
+function montarVagas(r: Rodada, inn: number) {
+  const el = document.getElementById('vagasRaiz');
+  if (el) render(<AbrirVagas r={r} inn={inn} />, el);
+}
+
 function montarMinimos() {
   const el = document.getElementById('minRaiz');
   if (el) render(<Minimos />, el);
@@ -643,4 +722,4 @@ function montarRodada() {
   if (el) render(<RodadaTela />, el);
 }
 
-export { minimosDoGrupo, montarMinimos, montarRodada, vRodada };
+export { minimosDoGrupo, montarMinimos, montarRodada, montarVagas, vRodada };

@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v58 (21/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v59 (21/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -16,6 +16,7 @@ Atualizado na pelada-v58 (21/10/2026). Toda entrega que mudar uma regra atualiza
 
 ## Privacidade e segurança (valem nas regras do Firebase, não só na tela)
 - Só administradores veem notas, caixa (mensalidade, diária, Pix), contatos, tipo do jogador e votos individuais.
+  - Exceção aprovada pelo Kleber em 21/10/2026 (KAN-63): com o controle de vagas ligado, o jogador diarista ganha a marca pública `vaga` ("só entra com vaga aberta"), para o link escondê-lo. A marca não diz o tipo nem o valor, mas permite deduzir quem é diarista. Sem o controle, ninguém tem a marca.
 - Links públicos mostram nomes, posições, presença, times e resultados.
 - Pix, mensalidade e diária nunca no documento público do grupo; ficam em `privado/caixa` (KAN-79).
 - Identificador vindo do link só com letras, números, `_` e `-` (KAN-76). Todo texto do banco é escapado antes da tela.
@@ -91,7 +92,15 @@ Atualizado na pelada-v58 (21/10/2026). Toda entrega que mudar uma regra atualiza
   - "Definir mínimo" (só na gestão) grava no grupo, em `cfg.minPos`, o total de jogadores e o mínimo de cada posição; vale para todas as rodadas. 0 = não acompanhar.
   - Com mínimo, a contagem vira "GOL 1 de 2" e o que falta aparece em destaque: "Faltam 2 jogadores · Falta 1 GOL", também no link.
   - Vale para qualquer esporte: as posições vêm do esporte e das posições criadas pelo grupo; esporte sem posição (beach tennis, futevôlei, vôlei de praia) usa só o mínimo total.
-  - O mínimo total é o quórum que a liberação controlada de diaristas e avulsos (KAN-63) vai usar.
+  - O mínimo total é o quórum que a liberação controlada de diaristas e avulsos (KAN-63) usa.
+  - O botão chama "Mínimo e vagas" desde a v59.
+- Vagas para diaristas e avulsos (KAN-63, pelada-v59; regra em `dominio/vagas.ts`, com teste; garantida nas regras do Firebase):
+  - **Ligar:** em "Mínimo e vagas", "Diaristas e avulsos só entram quando eu abrir vagas na rodada" (`cfg.vagasCtrl`). Vem desligado: sem ele, nada muda.
+  - **Quem precisa de vaga:** avulso (fora do elenco) e diarista (marca `vaga` no jogador, ajustada sozinha pelo app a partir do tipo). Mensalista e isento confirmam sempre.
+  - **Na rodada:** quadro "Vagas para diaristas e avulsos" com "Fechadas", "Abertas · 1 de 3 preenchidas" ou "Esgotadas". "Abrir vagas" pergunta "Quantas vagas?", já com o que falta para o mínimo; vazio = sem limite. Abrir zera o contador; "Mudar vagas" mantém quem já entrou; "Fechar vagas" fecha.
+  - **No link, fechadas ou esgotadas:** quem precisa de vaga some (a não ser que já esteja confirmado), "Adicionar meu nome" some e aparece o aviso. Abertas: "Restam N vagas".
+  - **Contador** (`rodadas/{rid}/limites/vagas`): entrar pelo link soma 1, quem estava dentro e sai devolve 1, na mesma gravação da presença. Passou do máximo, o Firebase recusa.
+  - O administrador continua pondo qualquer pessoa pela gestão, aberto ou fechado.
 
 ## Partida, ranking e votação
 - A aba Partida tem o seletor de rodada no topo, mesmo quando a rodada escolhida não tem times (KAN-160).
@@ -155,6 +164,7 @@ Atualizado na pelada-v58 (21/10/2026). Toda entrega que mudar uma regra atualiza
 | Assunto | Tela | Ações | Regra (sem tela) | Dados no Firebase | Testes |
 |---|---|---|---|---|---|
 | Presença pelo link | `telas/PublicoRodada.tsx` | `acoes/publico.js` | `nucleo/edicoes.js` (setPres) | `rodadas/{rid}/presencas`, `limites/avulsos` | `testes_app.py` (link), `regras-firebase` (presença) |
+| Vagas para diaristas e avulsos | `telas/Rodada.tsx` (PainelVagas, janela Abrir vagas; ligar em Mínimo e vagas), `telas/PublicoRodada.tsx` (esconde e avisa) | `acoes/rodada.js` (abrirVagas, salvarVagas, fecharVagas, salvarMinimos), `acoes/publico.js` | `dominio/vagas.ts`; `nucleo/edicoes.js` (setPres soma no contador); `dominio/caixa.js` (sincronizarVagas: marca dos diaristas) | `grupos/{gid}` (cfg.vagasCtrl), `jogadores/{id}` (vaga), `rodadas/{rid}` (vagas), `limites/vagas` | `regras/vagas`, `regras-firebase` (vagas), `testes_app.py` (CT-KAN-63), `persistencia_app.py` (P22) |
 | Presença na gestão | `telas/Rodada.tsx` (com "Ainda não responderam") | `acoes/rodada.js` (cobrarGrupo) | `dominio/grupo.js` (attendance, curRodada), `dominio/cobrar.ts` | idem | `regras/cobrar`, `testes_app.py` (Rodada, CT-KAN-64) |
 | Mínimo para o jogo | `ui/componentes.tsx` (PorPosicao, na Rodada e no link), `telas/Rodada.tsx` (janela Mínimo) | `acoes/rodada.js` (abrirMinimos, salvarMinimos) | `dominio/posicoes.ts` | `grupos/{gid}` (cfg.minPos) | `regras/minimo-posicao`, `testes_app.py` (CT-KAN-179), `persistencia_app.py` (P21) |
 | Sorteio e times | `telas/Rodada.tsx` | `acoes/rodada.js` | `dominio/sorteio.js`, `times.ts`, `divergencia.ts` | `rodadas/{rid}` (times, cores, base) | `regras/times`, `lista-sorteio` |

@@ -49,7 +49,26 @@ export default {
   /* A pagar por jogo (KAN-172) */
   /* Cobrar quem não respondeu (KAN-64) */
   'cobrar.titulo': 'Ainda não responderam ({n})',
-  'minimo.definir': 'Definir mínimo',
+  'minimo.definir': 'Mínimo e vagas',
+  /* Vagas para diaristas e avulsos (KAN-63) */
+  'vagas.titulo': 'Vagas para diaristas e avulsos',
+  'vagas.controle': 'Diaristas e avulsos só entram quando eu abrir vagas na rodada',
+  'vagas.fechadas': 'Fechadas. Pelo link, só mensalistas e isentos confirmam.',
+  'vagas.abertas': 'Abertas · {n} de {max} preenchidas',
+  'vagas.esgotadas': 'Esgotadas · {n} de {max} preenchidas',
+  'vagas.abertasSemLimite.um': 'Abertas, sem limite · 1 entrou pelo link',
+  'vagas.abertasSemLimite.outros': 'Abertas, sem limite · {n} entraram pelo link',
+  'vagas.abrir': 'Abrir vagas',
+  'vagas.mudar': 'Mudar vagas',
+  'vagas.fechar': 'Fechar vagas',
+  'vagas.quantas': 'Quantas vagas?',
+  'vagas.semLimite': 'Sem limite',
+  'vagas.ajuda':
+    'Já vem com o que falta para o mínimo do jogo. Quem entrar pelo link ocupa uma vaga e quem desistir devolve. Deixe vazio para não ter limite. Você continua pondo qualquer pessoa por aqui.',
+  'vagas.abertasToast.um': '1 vaga aberta para diaristas e avulsos.',
+  'vagas.abertasToast.outros': '{n} vagas abertas para diaristas e avulsos.',
+  'vagas.abertasSemLimiteToast': 'Vagas abertas para diaristas e avulsos, sem limite.',
+  'vagas.fechadasToast': 'Vagas para diaristas e avulsos fechadas.',
   'minimo.dlgTitulo': 'Mínimo para o jogo',
   'minimo.dlgAjuda':
     'Quantos o grupo precisa para o jogo acontecer. Vale para todas as rodadas; o app avisa quando faltar. Deixe 0 para não acompanhar.',

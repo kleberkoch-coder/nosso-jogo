@@ -26,7 +26,8 @@ import { tp, tx } from '../i18n/index.js';
 import { linkDaRodada, shareDlg, txtConvite, txtTimes } from '../dominio/whatsapp.js';
 import { semResposta } from '../dominio/cobrar';
 import { limparMinimos } from '../dominio/posicoes';
-import { minimosDoGrupo, montarMinimos } from '../telas/Rodada';
+import { minimosDoGrupo, montarMinimos, montarVagas } from '../telas/Rodada';
+import { vagasValidas } from '../dominio/vagas';
 import { copyText } from '../eventos.js';
 import { B, setCAP, sleep } from '../nucleo/backend.js';
 import { campoTelefone, lerContato } from '../ui/contato-form';
@@ -201,14 +202,41 @@ const acoes = {
   salvarMinimos: () => {
     const m = {};
     document.querySelectorAll('#minRaiz .minp').forEach(i => (m[i.dataset.k] = i.value));
-    const novo = limparMinimos(hasPos() ? posKeys() : [], m);
+    const novo = limparMinimos(hasPos() ? posKeys() : [], m),
+      ctrl = !!$('#vagasCtrl')?.checked;
     closeDlg();
-    if (JSON.stringify(novo) === JSON.stringify(minimosDoGrupo())) return;
+    if (JSON.stringify(novo) === JSON.stringify(minimosDoGrupo()) && ctrl === !!cfg().vagasCtrl) return;
     const p = editApp(a => {
       a.cfg.minPos = novo;
+      a.cfg.vagasCtrl = ctrl;
     });
     toast(tx('minimo.salvo'));
     return p;
+  },
+  /* KAN-63: vagas para diaristas e avulsos nesta rodada. Abrir zera o contador; mudar a quantidade mantém quem já entrou. */
+  abrirVagas: () => {
+    openDlg('<div id="vagasRaiz"></div>');
+    dlg.setAttribute('aria-labelledby', 'vagasTitulo');
+    montarVagas(curRodada(), attendance().inn.length);
+    $('#vagasN')?.focus();
+  },
+  salvarVagas: () => {
+    const r = curRodada(),
+      max = vagasValidas(val('vagasN')),
+      abrindo = !(r.vagas && r.vagas.aberta);
+    closeDlg();
+    const p = editRod(r.id, x => {
+      x.vagas = { aberta: true, max };
+    });
+    toast(max ? tp('vagas.abertasToast', max) : tx('vagas.abertasSemLimiteToast'));
+    return abrindo ? Promise.all([p, w(GB.del('rodadas/' + r.id + '/limites/vagas'))]) : p;
+  },
+  fecharVagas: () => {
+    const r = curRodada();
+    toast(tx('vagas.fechadasToast'));
+    return editRod(r.id, x => {
+      x.vagas = { aberta: false, max: (r.vagas && r.vagas.max) || 0 };
+    });
   },
   /* KAN-64: mensagem pronta para o grupo do WhatsApp com quem ainda não respondeu. */
   cobrarGrupo: () => {

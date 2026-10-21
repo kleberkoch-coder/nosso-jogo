@@ -4,6 +4,7 @@ import { tx } from '../i18n/index.js';
 import { semConexao } from '../eventos.js';
 import { B } from '../nucleo/backend.js';
 import { avulsosEsgotados, limite } from '../dominio/limites.ts';
+import { precisaVaga, situacao } from '../dominio/vagas.ts';
 import { setPres } from '../nucleo/edicoes.js';
 import { GB, S, w } from '../nucleo/estado.js';
 import { $, cl, esc, toast } from '../nucleo/util.js';
@@ -12,6 +13,15 @@ import { closeDlg, dlg, openDlg, posField, val } from '../ui/dialogos.js';
 import { changed } from '../ui/render.js';
 import { ACT } from '../acoes.js';
 
+/* KAN-63: sem vaga aberta, quem precisa de vaga não entra; o aviso diz por quê (o Firebase também recusa). */
+function semVaga(id) {
+  const r = rodById(S.route.id),
+    v = situacao(!!((S.app || {}).cfg || {}).vagasCtrl, r && r.vagas, S.limVg);
+  if (v.podeEntrar || !precisaVaga((S.jog || {})[id]) || (S.pres[id] && S.pres[id].s === 'in')) return false;
+  closeDlg();
+  toast(tx(v.cheia ? 'vagaslink.esgotadas' : 'vagaslink.fechadas'));
+  return true;
+}
 const acoes = {
   /* público */
   pubMark: el => {
@@ -23,6 +33,7 @@ const acoes = {
       semConexao();
       return;
     }
+    if (el.dataset.v === 'in' && semVaga(id)) return;
     try {
       localStorage.setItem(MEK, id);
     } catch (e) {}
@@ -51,6 +62,7 @@ const acoes = {
       semConexao();
       return;
     }
+    if (semVaga(id)) return;
     if (!S.pres[id] && avulsosEsgotados(S.limAv, S.limCfg)) {
       closeDlg();
       toast(tx('limite.avulsosPublico'));
@@ -85,6 +97,7 @@ const acoes = {
     }
     const same = Object.entries(S.avul || {}).find(([, a]) => normName(a.nome) === normName(n));
     if (same) return ACT.pubPick({ dataset: { p: same[0] } });
+    if (semVaga('')) return;
     if (avulsosEsgotados(S.limAv, S.limCfg)) {
       closeDlg();
       toast(tx('limite.avulsosPublico'));

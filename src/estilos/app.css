@@ -154,6 +154,28 @@
   padding: 4px 10px;
   font-size: 13px;
 }
+/* Vagas para diaristas e avulsos (KAN-63) */
+.chk-linha {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-height: var(--touch-min);
+  font-size: 14px;
+  cursor: pointer;
+}
+.chk-linha input {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  accent-color: var(--brand);
+}
+.aviso-vagas {
+  margin: 14px 0 0;
+}
+.aviso-vagas:not(.muted) {
+  color: var(--out);
+  font-weight: 600;
+}
 /* Mínimo para o jogo (KAN-179): contagem por posição na aba Rodada e no link. */
 .porpos {
   margin-top: 12px;

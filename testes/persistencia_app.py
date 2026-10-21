@@ -151,6 +151,24 @@ with sync_playwright() as pw:
        'CT-KAN-170-P11: presença e avulso pelo link do jogador continuam depois de recarregar')
     pub.close() if pub else pp.close()
 
+    # P22 vagas para diaristas e avulsos (KAN-63): controle no grupo (cfg.vagasCtrl), marca nos diaristas (jogadores.vaga),
+    # vagas abertas na rodada (rodadas/{rid}.vagas) e diarista que entra pelo link ocupando uma vaga (limites/vagas)
+    pronto(pg, 'rodada'); pg.click('#porPosicao [data-a=abrirMinimos]'); pg.wait_for_timeout(400)
+    pg.check('#vagasCtrl'); pg.click('#dlg [data-a=salvarMinimos]'); pg.wait_for_timeout(1500)
+    pg.click('#vagasPainel [data-a=abrirVagas]'); pg.wait_for_timeout(400); pg.fill('#vagasN', '2'); pg.click('#dlg [data-a=salvarVagas]')
+    gravou(pg); pronto(pg, 'rodada')
+    dia = J(pg, "Object.keys(S.jog).filter(id=>(S.pc.tipos||{})[id]==='diarista'&&!(S.pres[id]&&S.pres[id].s==='in'))")
+    marcados = J(pg, "Object.keys(S.jog).filter(id=>S.jog[id].vaga).length"); diaristas = J(pg, "Object.keys(S.jog).filter(id=>(S.pc.tipos||{})[id]==='diarista').length")
+    vg = J(pg, "JSON.stringify((S.rod[S.presRid]||{}).vagas||null)")
+    ok(J(pg, "S.app.cfg.vagasCtrl===true") and marcados == diaristas and diaristas > 0 and vg == '{"aberta":true,"max":2}',
+       f'CT-KAN-170-P22: controle de vagas, marca dos diaristas ({marcados} de {diaristas}) e vagas abertas ({vg}) continuam')
+    pub = novo() if EMU else None; pp = (pub or ctx).new_page()
+    pp.goto(URL + '#/p/' + gid); pp.wait_for_selector('[data-a=pubMark]', timeout=20000); pp.wait_for_timeout(1200)
+    pp.click(f'[data-a=pubMark][data-v=in][data-p="{dia[0]}"]'); pp.wait_for_timeout(800); pp.evaluate("window.__njPendentes ? window.__njPendentes(10000) : true")
+    pub.close() if pub else pp.close()
+    gravou(pg); pronto(pg, 'rodada')
+    ok((J(pg, "(S.pres[%r]||{}).s" % dia[0]) == 'in') and J(pg, "(S.limVg||{}).n") == 1, 'CT-KAN-170-P22: diarista que entrou pelo link ocupa 1 vaga e continua depois de recarregar')
+
     # P12 sorteio (rodadas/{rid}: times, lista fechada)
     gravou(pg); pronto(pg, 'rodada')
     pg.click('[data-a=drawDlg]'); pg.wait_for_timeout(400); conf(pg)

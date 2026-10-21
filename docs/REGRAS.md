@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v59 (21/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v60 (21/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -82,6 +82,7 @@ Atualizado na pelada-v59 (21/10/2026). Toda entrega que mudar uma regra atualiza
 - Sortear fecha a lista e guarda a foto dos confirmados; se a lista mudar depois, a aba Rodada avisa (só depois que a presença carregou).
 - Sortear de novo: proibido com votação na rodada; com partidas salvas, pergunta antes; mover e pôr no time continuam (KAN-138).
 - Cor do colete é gravada à parte dos times (KAN-108).
+- Nome do time = posição no sorteio: "Time 1", "Time 2"… (duplas: "Dupla 1") (v60, KAN-181). A cor é só o colete ("colete laranja"), mostrada ao lado do nome na Rodada, no link e no WhatsApp. Tocar no colete abre as 8 cores; se outro time já usa a escolhida, os dois trocam. Trocar o colete nunca muda o nome.
 
 - Cobrar quem não respondeu (KAN-64; regra em `dominio/cobrar.ts`, com teste): na aba Rodada, logo depois do quadro da rodada, aparece o bloco "Ainda não responderam (N)" com os nomes do elenco ativo sem Vou nem Não vou. Ele tem dois caminhos:
   - **Cobrar no grupo:** monta a mensagem do WhatsApp com os nomes e o link de confirmar (o permanente, no jogo fixo).
@@ -104,7 +105,8 @@ Atualizado na pelada-v59 (21/10/2026). Toda entrega que mudar uma regra atualiza
 
 ## Partida, ranking e votação
 - A aba Partida tem o seletor de rodada no topo, mesmo quando a rodada escolhida não tem times (KAN-160).
-- Placar com a pontuação do esporte e o autor; cronômetro com alarme.
+- Placar com a pontuação do esporte e o autor; cronômetro com alarme. Minutos: qualquer um de 1 a 60, mais 70, 80 e 90 (v60: antes faltavam 9, 11…).
+- Partida salva guarda a posição dos times (`ta`, `tb`, desde a v60), para o nome não depender do colete. Partidas antigas: o nome sai da cor na rodada; se a rodada não estiver carregada (ranking de meses antigos), aparece a cor.
 - Fim por placar (KAN-175, opcional): "Sem limite" ou de 1 a 25 gols/pontos. Quando um time chega ao limite, aparece "Fim por placar", o cronômetro pausa e toca como no fim do tempo; desfazer o gol tira o aviso. Minutos têm a opção "Sem tempo": o cronômetro conta para cima, sem alarme (vôlei). Tempo e limite valem para as partidas seguintes da sessão.
 - Próximo jogo (KAN-175; regra em `dominio/fila.ts`, com teste): o app sugere e o responsável troca o Time A ou o Time B à vontade. Primeiro jogo: os 2 primeiros do sorteio. Quem ganha fica, e entra quem está esperando há mais tempo. Empate no 1º jogo: fica o 1º do sorteio; nos outros, fica o time que entrou. Com 2 times, os mesmos de novo. A sugestão sai dos jogos salvos (vale depois de recarregar ou em outro aparelho). A tela mostra "Na espera" na ordem da fila e a lista numerada dos jogos da rodada.
 - Cada partida guarda quem jogou: re-sorteio não altera o ranking.

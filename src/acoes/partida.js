@@ -38,7 +38,7 @@ const acoes = {
       SP = sport(),
       sc = SP.score[+el.dataset.i || 0],
       pts = sc[1];
-    openDlg(`<h3>${esc(tx('partida.pontoTime', { ponto: nomePonto(sc, SP), time: tn(r.times[ti].c) }))}</h3><p class="small muted">${tx('partida.quemMarcou')}</p><div class="vgrid">${quadra(
+    openDlg(`<h3>${esc(tx('partida.pontoTime', { ponto: nomePonto(sc, SP), time: tn(ti) }))}</h3><p class="small muted">${tx('partida.quemMarcou')}</p><div class="vgrid">${quadra(
       r,
       t
     )
@@ -112,6 +112,9 @@ const acoes = {
       id: uid(),
       ca: ta.c,
       cb: tb.c,
+      /* v60: posição dos times na rodada, para o nome "Time 1" não depender da cor do colete. */
+      ta: L.a,
+      tb: L.b,
       /* KAN-177: quem esteve em quadra (com empréstimos e trocas) conta o jogo e o resultado. */
       pa: quadra(r, 'a').jogaram,
       pb: quadra(r, 'b').jogaram,
@@ -122,7 +125,7 @@ const acoes = {
     });
     /* KAN-175: o próximo jogo sai dos jogos salvos (quem ganha fica, entra quem espera há mais tempo). */
     S.live = novaPartida(r, L);
-    toast(`Salvo: ${tn(ta.c)} ${ga} × ${gb} ${tn(tb.c)}`);
+    toast(tx('partida.salva', { a: tn(L.a), ga, gb, b: tn(L.b) }));
   },
   /* KAN-178: artilharia da rodada (só o total de gols de cada jogador). */
   abrirArtilharia: () => {

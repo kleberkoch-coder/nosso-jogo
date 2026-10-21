@@ -26,7 +26,7 @@ import { tp, tx } from '../i18n/index.js';
 import { linkDaRodada, shareDlg, txtConvite, txtTimes } from '../dominio/whatsapp.js';
 import { semResposta } from '../dominio/cobrar';
 import { limparMinimos } from '../dominio/posicoes';
-import { minimosDoGrupo, montarMinimos, montarVagas } from '../telas/Rodada';
+import { minimosDoGrupo, montarColetes, montarMinimos, montarVagas } from '../telas/Rodada';
 import { vagasValidas } from '../dominio/vagas';
 import { copyText } from '../eventos.js';
 import { B, setCAP, sleep } from '../nucleo/backend.js';
@@ -47,7 +47,7 @@ import { ACT } from '../acoes.js';
 function porNoTime(ti, pid) {
   const r = curRodada(),
     t = r.times[ti];
-  toast(tx('porTime.posto', { nome: pname(pid), time: tn(t.c) }));
+  toast(tx('porTime.posto', { nome: pname(pid), time: tn(ti) }));
   return editRod(r.id, x => {
     x.times.forEach(t => {
       t.players = t.players.filter(p => p !== pid);
@@ -67,7 +67,7 @@ function porNoTime(ti, pid) {
 function escolherTime(pid) {
   const r = curRodada();
   openDlg(
-    `<h3>${esc(tx('porTime.qualTime', { nome: pname(pid) }))}</h3><div class="vgrid">${r.times.map((t, i) => `<button class="opt" data-a="doPorTime" data-v="${i}" data-p="${pid}"><span class="dot" style="background:${col(t.c).c}"></span>${tn(t.c)}<span class="tag" style="margin-left:auto">${tp('porTime.jogadores', t.players.length)}</span></button>`).join('')}</div><div class="dlg-f"><button class="btn" data-a="close">Cancelar</button></div>`
+    `<h3>${esc(tx('porTime.qualTime', { nome: pname(pid) }))}</h3><div class="vgrid">${r.times.map((t, i) => `<button class="opt" data-a="doPorTime" data-v="${i}" data-p="${pid}"><span class="dot" style="background:${col(t.c).c}"></span>${tn(i)}<span class="tag" style="margin-left:auto">${tp('porTime.jogadores', t.players.length)}</span></button>`).join('')}</div><div class="dlg-f"><button class="btn" data-a="close">Cancelar</button></div>`
   );
 }
 /* KAN-71: depois de sortear, a tela vai até os times e o foco fica no título "Times" (leitor de tela anuncia). */
@@ -531,25 +531,36 @@ const acoes = {
     toast(tx('lista.sorteadoFechada'));
   },
   /* Troca a cor do colete gravando só cores.{time} (KAN-108), sem regravar os jogadores. */
+  /* v60: o nome do time é o número; a cor é só o colete. Abre a escolha da cor. */
   color: el => {
+    openDlg('<div id="coleteRaiz"></div>');
+    dlg.setAttribute('aria-labelledby', 'coleteTitulo');
+    montarColetes(curRodada(), +el.dataset.v);
+    $('#coletes [aria-pressed=true]')?.focus();
+  },
+  /* Troca a cor gravando só cores.{time} (KAN-108). Se outro time usa a cor, os dois trocam. */
+  pickColor: el => {
     const r = curRodada(),
       ti = +el.dataset.v,
-      used = r.times.map(t => t.c);
-    let c = r.times[ti].c;
-    for (let k = 0; k < COL.length; k++) {
-      c = (c + 1) % COL.length;
-      if (!used.includes(c)) break;
-    }
+      c = +el.dataset.c2,
+      antes = r.times[ti].c,
+      outro = r.times.findIndex((t, i) => i !== ti && t.c === c);
+    closeDlg();
+    if (c === antes) return;
+    const novas = { [ti]: c };
+    if (outro >= 0) novas[outro] = antes;
     const d = S.rod[r.id] || {};
-    S.rod[r.id] = Object.assign({}, d, { cores: Object.assign({}, d.cores || {}, { [ti]: c }) });
+    S.rod[r.id] = Object.assign({}, d, { cores: Object.assign({}, d.cores || {}, novas) });
     changed();
-    return w(GB.patch('rodadas/' + r.id, { ['cores.' + ti]: c }));
+    const campos = {};
+    Object.keys(novas).forEach(k => (campos['cores.' + k] = novas[k]));
+    return w(GB.patch('rodadas/' + r.id, campos));
   },
   move: el => {
     const r = curRodada(),
       f = +el.dataset.v,
       pid = el.dataset.p;
-    openDlg(`<h3>Mover ${esc(pname(pid))}</h3><div class="vgrid">${r.times.map((t, i) => (i === f ? '' : `<button class="opt" data-a="doMove" data-v="${i}" data-f="${f}" data-p="${pid}"><span class="dot" style="background:${col(t.c).c}"></span>${tn(t.c)}</button>`)).join('')}</div>
+    openDlg(`<h3>Mover ${esc(pname(pid))}</h3><div class="vgrid">${r.times.map((t, i) => (i === f ? '' : `<button class="opt" data-a="doMove" data-v="${i}" data-f="${f}" data-p="${pid}"><span class="dot" style="background:${col(t.c).c}"></span>${tn(i)}</button>`)).join('')}</div>
     <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn" data-a="toggleRes" data-v="${f}" data-p="${pid}">${(r.times[f].res || []).includes(pid) ? tx('times.marcarTitular') : tx('times.marcarReserva')}</button></div>`);
   },
   toggleRes: el => {
@@ -607,7 +618,7 @@ const acoes = {
       ).filter(id => !conf.includes(id));
     const opc = id =>
       `<button class="opt" data-a="doPorTime" data-v="${ti}" data-p="${id}">${posTag(id)}<span>${esc(pname(id))}</span></button>`;
-    openDlg(`<h3><span class="dot" style="background:${col(t.c).c}"></span> ${esc(tx('porTime.titulo', { time: tn(t.c) }))}</h3><p class="small muted">${tx('porTime.ajuda')}</p>
+    openDlg(`<h3><span class="dot" style="background:${col(t.c).c}"></span> ${esc(tx('porTime.titulo', { time: tn(ti) }))}</h3><p class="small muted">${tx('porTime.ajuda')}</p>
     ${conf.length ? `<div class="f"><span class="lbl">${tx('porTime.confirmados')}</span><div class="vgrid">${conf.map(opc).join('')}</div></div>` : ''}
     ${outros.length ? `<div class="f"><span class="lbl">${tx('porTime.outros')}</span><div class="vgrid">${outros.map(opc).join('')}</div></div>` : conf.length ? '' : `<p class="muted small">${tx('porTime.ninguem')}</p>`}
     <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn" data-a="addAvulso" data-t="${ti}">${tx('porTime.avulso')}</button></div>`);

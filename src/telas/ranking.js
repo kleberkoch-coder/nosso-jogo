@@ -1,6 +1,6 @@
 import { tx } from '../i18n/index.js';
-import { col, sport, tn } from '../dominio/esportes.js';
-import { pname } from '../dominio/grupo.js';
+import { col, sport, tnJogo } from '../dominio/esportes.js';
+import { pname, rodById } from '../dominio/grupo.js';
 import { placares, ranking } from '../dominio/resumos.ts';
 import { S } from '../nucleo/estado.js';
 import { esc, fdate, fmonth, today } from '../nucleo/util.js';
@@ -67,7 +67,7 @@ function vRanking() {
   <p class="small muted" style="margin-top:8px">Vitória 3 pts, empate 1. Destaques e bagres vêm das votações encerradas.</p></div>`
       : `<div class="panel empty"><h2>${tx('rank.semPartidas')}</h2><p class="muted">${tx('rank.semPartidasTexto')}</p></div>`
   }
-  ${rs.length ? `<div class="panel"><h3>Histórico</h3><ul class="plist wrap">${rs.map(r => `<li><b style="min-width:110px">${fdate(r.date)}</b><span class="small muted pn">${r.jogos.map(m => `<span class="dot" style="background:${col(m.ca).c}"></span> ${tn(m.ca)} ${m.ga}×${m.gb} ${tn(m.cb)}`).join(' · ')}</span></li>`).join('')}</ul></div>` : ''}
+  ${rs.length ? `<div class="panel"><h3>Histórico</h3><ul class="plist wrap">${rs.map(r => `<li><b style="min-width:110px">${fdate(r.date)}</b><span class="small muted pn">${r.jogos.map(m => `<span class="dot" style="background:${col(m.ca).c}"></span> ${tnJogo(m, 'a', (rodById(r.rid) || {}).times)} ${m.ga}×${m.gb} ${tnJogo(m, 'b', (rodById(r.rid) || {}).times)}`).join(' · ')}</span></li>`).join('')}</ul></div>` : ''}
   <div class="row small muted" style="justify-content:space-between"><span>${tx('resumo.ajuda')}</span><button class="btn sm" data-a="recalc" data-v="${periodoRecalc()}">${tx('resumo.recalcular')}</button></div></div>`;
 }
 

@@ -18,6 +18,9 @@ export type Partida = {
   gols?: Record<string, number>;
   ca: number;
   cb: number;
+  /* Posição dos times na rodada (v60): o nome é "Time 1", "Time 2"; a cor é só o colete. */
+  ta?: number;
+  tb?: number;
   pa: string[];
   pb: string[];
   ga: number;
@@ -39,7 +42,10 @@ export type JogStats = { j?: number; v?: number; e?: number; d?: number; g?: num
 export type Resumo = {
   mes: string;
   jog: Record<string, JogStats>;
-  jogos: Record<string, { rid: string; date: string; ca: number; cb: number; ga: number; gb: number; at?: number }>;
+  jogos: Record<
+    string,
+    { rid: string; date: string; ca: number; cb: number; ta?: number; tb?: number; ga: number; gb: number; at?: number }
+  >;
   cx: { ent?: number; sai?: number };
 };
 
@@ -67,7 +73,11 @@ export function camposPartida(m: Partida, rid: string, date: string, sinal: 1 | 
   (m.goals || []).forEach(g => {
     if (g.pid && !g.og) soma(c, `jog.${g.pid}.g`, (g.pts || 1) * sinal);
   });
-  if (sinal > 0) c.gravar[`jogos.${m.id}`] = { rid, date, ca: m.ca, cb: m.cb, ga: m.ga, gb: m.gb, at: m.at || 0 };
+  if (sinal > 0)
+    c.gravar[`jogos.${m.id}`] = Object.assign(
+      { rid, date, ca: m.ca, cb: m.cb, ga: m.ga, gb: m.gb, at: m.at || 0 },
+      m.ta != null ? { ta: m.ta, tb: m.tb } : {}
+    );
   else c.apagar.push(`jogos.${m.id}`);
   return c;
 }
@@ -210,12 +220,21 @@ export function ranking(docs: Partial<Resumo>[]): Linha[] {
 export function placares(docs: Partial<Resumo>[]) {
   const por: Record<
     string,
-    { rid: string; date: string; jogos: { ca: number; cb: number; ga: number; gb: number; id: string; at: number }[] }
+    {
+      rid: string;
+      date: string;
+      jogos: { ca: number; cb: number; ta?: number; tb?: number; ga: number; gb: number; id: string; at: number }[];
+    }
   > = {};
   docs.forEach(d =>
     Object.entries(d.jogos || {}).forEach(([id, j]) => {
       const r = por[j.rid] || (por[j.rid] = { rid: j.rid, date: j.date, jogos: [] });
-      r.jogos.push({ id, ca: j.ca, cb: j.cb, ga: j.ga, gb: j.gb, at: j.at || 0 });
+      r.jogos.push(
+        Object.assign(
+          { id, ca: j.ca, cb: j.cb, ga: j.ga, gb: j.gb, at: j.at || 0 },
+          j.ta != null ? { ta: j.ta, tb: j.tb } : {}
+        )
+      );
     })
   );
   const rs = Object.values(por).sort((a, b) => b.date.localeCompare(a.date));

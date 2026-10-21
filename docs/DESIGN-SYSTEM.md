@@ -133,6 +133,11 @@ Registrados na pelada-v43 (KAN-152); os da v44 a v47 entraram na versão de cada
 - **Artilharia da rodada** (KAN-178; sem classe nova):
   - Na aba Partida, depois de "Partidas desta rodada", fica o painel "Artilharia da rodada", com "Lançar" (ou "Editar") em `btn sm`. Embaixo, uma linha em `muted`: a ajuda, ou o lançamento já feito ("Marcão 3 · Bruno 1").
   - A janela tem uma ajuda em `muted`; se a rodada já tem partidas com placar, um aviso em `out`. Depois vem uma linha por jogador dos times, com "−" (`btn sm`, desligado no zero), o número em negrito e "+". Para o leitor de tela, os botões dizem "Somar 1 para Marcão" e "Tirar 1 de Marcão". Rodapé: "Cancelar" e "Salvar artilharia" (`primary`).
+- **Time e colete** (v60, classes `colete-btn` e `dot branco`):
+  - O cartão do time tem o nome "Time 1" em negrito. À direita fica o botão do colete (`btn sm ghost`, 36px): uma bolinha da cor e "colete laranja". Duplas não têm colete.
+  - Tocar abre a janela "Colete do Time 1", com uma ajuda em `muted` e as 8 cores em `opt` (bolinha + nome). A cor atual fica marcada (`aria-pressed`) e com o foco. A cor de outro time mostra "Time 2" à direita, em `tag`.
+  - O branco ganha um contorno (`dot branco`) para aparecer no fundo claro.
+  - No link e no Histórico, o selo do time é "colete laranja · 5".
 - **Vagas para diaristas e avulsos** (`PainelVagas`, classes `chk-linha` e `aviso-vagas`; KAN-63):
   - Na aba Rodada, só com o controle ligado, um `panel` logo antes de "Ainda não responderam". Tem o título "Vagas para diaristas e avulsos" e o estado em `small`: "Fechadas. Pelo link, só mensalistas e isentos confirmam." (`muted`), "Abertas · 1 de 3 preenchidas" ou "Esgotadas · 3 de 3 preenchidas" (`muted`).
   - Botões: "Abrir vagas" (`btn sm primary` quando fechadas ou esgotadas), "Mudar vagas" e "Fechar vagas" (`btn sm`).

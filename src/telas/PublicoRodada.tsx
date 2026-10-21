@@ -3,7 +3,7 @@
    Os botões continuam com data-a, então as ações, o carregando e o aviso de sem sinal são os mesmos do resto do app. */
 import { render } from 'preact';
 import { useState } from 'preact/hooks';
-import { APP, COL, sport, sportName, tn } from '../dominio/esportes.js';
+import { APP, COL, colete, sport, sportName, tn, tnJogo } from '../dominio/esportes.js';
 import {
   attendance,
   fixos,
@@ -43,7 +43,7 @@ type Presenca = { s?: 'in' | 'out'; nome?: string };
 // Sempre dentro das funções: ao carregar este módulo o estado ainda não existe (regra de ordem, docs/ARQUITETURA.md).
 const st = (): any => estado;
 
-function Time({ t }: { t: { c: number; players: string[]; res?: string[] } }) {
+function Time({ t, i }: { t: { c: number; players: string[]; res?: string[] }; i: number }) {
   const c = COL[(t.c || 0) % COL.length],
     pares = !!(sport() as { pairs?: boolean }).pairs;
   const ordem = (id: string) => {
@@ -56,8 +56,11 @@ function Time({ t }: { t: { c: number; players: string[]; res?: string[] } }) {
     <div class="team">
       <div class={'band' + (c.n === 'Branco' && !pares ? ' branco' : '')} style={{ background: c.c }}></div>
       <div class="th">
-        <b>{tn(t.c)}</b>
-        <span class="tag">{t.players.length}</span>
+        <b>{tn(i)}</b>
+        <span class="tag">
+          {pares ? '' : colete(t.c) + ' · '}
+          {t.players.length}
+        </span>
       </div>
       <ul>
         {ps.map(id => (
@@ -137,8 +140,8 @@ function Linha({ id, r, me }: { id: string; r: Rodada; me: string | null }) {
 }
 
 /* Placar das partidas já salvas (pelada-v18): só leitura para o jogador. */
-function Placar({ rid }: { rid: string }) {
-  const ms = partidasDe(rid) as { id: string; ca: number; cb: number; ga: number; gb: number }[];
+function Placar({ r }: { r: Rodada }) {
+  const ms = partidasDe(r.id) as { id: string; ca: number; cb: number; ga: number; gb: number }[];
   if (!ms.length) return null;
   return (
     <div class="panel">
@@ -148,11 +151,13 @@ function Placar({ rid }: { rid: string }) {
           <li key={m.id}>
             <span class="num">{i + 1}</span>
             <span class="pn">
-              <span class="dot" style={{ background: COL[(m.ca || 0) % COL.length].c }}></span> {tn(m.ca)}{' '}
+              <span class="dot" style={{ background: COL[(m.ca || 0) % COL.length].c }}></span>{' '}
+              {tnJogo(m, 'a', r.times)}{' '}
               <b>
                 {m.ga} × {m.gb}
               </b>{' '}
-              {tn(m.cb)} <span class="dot" style={{ background: COL[(m.cb || 0) % COL.length].c }}></span>
+              {tnJogo(m, 'b', r.times)}{' '}
+              <span class="dot" style={{ background: COL[(m.cb || 0) % COL.length].c }}></span>
             </span>
           </li>
         ))}
@@ -206,7 +211,7 @@ function PublicoRodada() {
   const times = r.times ? (
     <div class="teams">
       {r.times.map((t, i) => (
-        <Time key={i} t={t} />
+        <Time key={i} t={t} i={i} />
       ))}
     </div>
   ) : null;
@@ -260,7 +265,7 @@ function PublicoRodada() {
           <div style={{ marginTop: '12px' }}>{times}</div>
         </details>
       )}
-      <Placar rid={r.id} />
+      <Placar r={r} />
       {a.inn.length > 0 && (
         <details class="panel">
           <summary>{tp('publico.confirmadosVer', a.inn.length)}</summary>

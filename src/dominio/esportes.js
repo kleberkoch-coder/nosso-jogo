@@ -1,6 +1,7 @@
 import { ppos } from './grupo.js';
 import { S } from '../nucleo/estado.js';
 import { esc } from '../nucleo/util.js';
+import { tx } from '../i18n/index.js';
 
 const POS = { GOL: 'Goleiro', DEF: 'Defesa', MEI: 'Meio', ATA: 'Ataque' };
 const APP = 'Nosso Jogo';
@@ -228,9 +229,22 @@ const posIdx = k => {
   const i = posKeys().indexOf(k);
   return i < 0 ? 99 : i;
 };
-function tn(c) {
-  return sport().pairs ? 'Dupla ' + ((c || 0) + 1) : COL[(c || 0) % COL.length].n;
+/* Nome do time pela posição na rodada (v60, pedido do Kleber): "Time 1", "Time 2"… ou "Dupla 1".
+   A cor ficou só para o colete, que muda à vontade sem mudar o nome. */
+function tn(i) {
+  return tx(sport().pairs ? 'time.dupla' : 'time.nome', { n: (i || 0) + 1 });
 }
+/* Time de uma partida salva: pela posição gravada (ta/tb, desde a v60) ou, nas antigas, pela cor na rodada. */
+function timeDoJogo(m, lado, times) {
+  const i = m['t' + lado];
+  return i != null ? i : (times || []).findIndex(t => t.c === m['c' + lado]);
+}
+function tnJogo(m, lado, times) {
+  const i = timeDoJogo(m, lado, times);
+  return i >= 0 ? tn(i) : COL[(m['c' + lado] || 0) % COL.length].n;
+}
+/* "colete laranja" (sem colete nas duplas). */
+const colete = c => tx('time.colete', { cor: COL[(c || 0) % COL.length].n.toLowerCase() });
 function posTag(id) {
   const k = ppos(id);
   return hasPos() && k
@@ -266,4 +280,7 @@ export {
   sport,
   sportName,
   tn,
+  tnJogo,
+  timeDoJogo,
+  colete,
 };

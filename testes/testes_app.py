@@ -1928,7 +1928,7 @@ with sync_playwright() as pw:
         pg_.add_init_script(f"window.__njFalhar={{{json.dumps(chave)}:{falhas}}};" + (f"window.__njSegurar={{{json.dumps(chave)}:true}};" if segurar else ''))
         pg_.goto(URL + '#/p/' + gid14); pg_.wait_for_timeout(espera)
         return pg_
-    l1 = link_com(2, espera=5000)
+    l1 = link_com(2, espera=4000)
     t1 = l1.inner_text('main')
     ok('Carga FC' in l1.inner_text('body') and 'não encontrado' not in t1 and 'Você vai?' in t1,
        'CT-KAN-184-01: a leitura do grupo falha 2 vezes por rede e, na nova tentativa, o link abre normalmente')

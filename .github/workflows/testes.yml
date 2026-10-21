@@ -108,7 +108,8 @@ jobs:
               pathlib.Path(dest).write_text(s2, encoding='utf-8')
           PY
       - name: Rodar os testes
-        timeout-minutes: 10
+        # 16 min desde a v62: o roteiro passou de 500 verificações e já levava cerca de 9 min (KAN-184 soma ~30 s de espera de propósito).
+        timeout-minutes: 16
         run: |
           (cd /tmp/demo && python -m http.server 8765 >/dev/null 2>&1 &)
           sleep 2

@@ -316,7 +316,11 @@ with sync_playwright() as pw:
     est = pg.evaluate("(g)=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2')),rid=S.rid,ks=Object.keys(s).filter(k=>k.startsWith('grupos/'+g+'/rodadas/'+rid+'/partidas/'));const r=s['grupos/'+g+'/rodadas/'+rid]||{};return [ks.length,(r.matches||[]).length,r.np||0]}", gid_fut)
     ok(est == [1, 0, 1], f'CT-KAN-86-01: partida gravada na subpasta da rodada, não na ficha ({est})')
     ok(pg.locator('[data-a=delMatch]').count() == 1, 'CT-KAN-86-01: aba Partida lista a partida salva')
-    pg.click('[data-a=tab][data-v=ranking]'); pg.wait_for_timeout(500); ok(pg.locator('table').count() == 1, 'ranking mostra a partida salva')
+    # Desde a v61 o Ranking baixa ao abrir a aba (KAN-180): espera a tabela aparecer, até 5 s.
+    pg.click('[data-a=tab][data-v=ranking]')
+    try: pg.wait_for_selector('table', timeout=5000)
+    except Exception: pass
+    ok(pg.locator('table').count() == 1, 'ranking mostra a partida salva')
     ok(pg.evaluate("S.rodAll==null && Object.keys(S.res||{}).length<=12"), 'CT-KAN-87-01: ranking lê só as fichas do ano (nenhuma rodada inteira)')
     j0 = pg.evaluate("Object.values(S.res).reduce((s,d)=>s+Object.values(d.jog||{}).reduce((a,x)=>a+(x.j||0),0),0)")
     ok(j0 == 10, f'CT-KAN-87-02: partida salva já entra no ranking sem recalcular ({j0} jogos de jogadores)')
@@ -1945,6 +1949,28 @@ with sync_playwright() as pw:
     l4 = link_com(0, segurar=True, espera=13000)
     ok(l4.locator('#cargaDemorada').count() == 1 and 'demorando' in l4.inner_text('main'), 'CT-KAN-184-04: carregando há mais de 12 s, avisa que está demorando e oferece tentar de novo')
     l4.close(); ctx14.close()
+
+    # ---------- v63 (KAN-183): o link do jogador não baixa a tela de entrar nem a votação
+    ctx15 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
+    p15 = ctx15.new_page(); ped15 = []
+    p15.on('pageerror', lambda e: errs.append(str(e)))
+    p15.on('request', lambda r: ped15.append(r.url))
+    p15.goto(URL + '#/criar'); p15.wait_for_timeout(800)
+    ok(any('/chunks/entrar-' in u for u in ped15) and p15.evaluate("document.activeElement && document.activeElement.id") == 'le',
+       'CT-KAN-183-02: a tela de criar conta baixa a parte "entrar" e abre com o cursor no e-mail')
+    p15.fill('#le', 'link183@teste.com'); p15.fill('#lp', 'Jogo@2026'); p15.fill('#lp2', 'Jogo@2026'); p15.keyboard.press('Enter'); p15.wait_for_timeout(1300)
+    p15.fill('#ngn', 'Link FC'); p15.click('[data-a=pickSport][data-v=futebol]'); p15.click('[data-a=createGroup]'); p15.wait_for_timeout(1500)
+    gid15 = p15.evaluate("S.gid")
+    # O jogador abre o link num aparelho sem nada guardado: novo navegador, com o banco de demonstração copiado
+    banco = p15.evaluate("localStorage.getItem('pelada-demo-v2')")
+    ctxj = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, service_workers='block')
+    ctxj.add_init_script("localStorage.setItem('pelada-demo-v2', " + json.dumps(banco) + ")")
+    pj = ctxj.new_page(); pedj = []; pj.on('request', lambda r: pedj.append(r.url)); pj.on('pageerror', lambda e: errs.append(str(e)))
+    pj.goto(URL + '#/p/' + gid15); pj.wait_for_timeout(1500)
+    pedacos_j = [u.rsplit('/', 1)[-1].split('-')[0] for u in pedj if '/chunks/' in u]
+    ok('Você vai?' in pj.inner_text('main') and not any(n in pedacos_j for n in ('entrar', 'publico', 'admin')),
+       f'CT-KAN-183-01: o link do jogador abre sem baixar a tela de entrar, a votação nem a gestão ({pedacos_j})')
+    ctxj.close(); ctx15.close()
 
     # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
     ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')

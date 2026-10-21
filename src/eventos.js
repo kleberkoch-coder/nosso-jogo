@@ -6,7 +6,7 @@ import { fmtL, normName } from './dominio/grupo.js';
 import { applyBusy, setBusy, setCAP, sleep } from './nucleo/backend.js';
 import { S } from './nucleo/estado.js';
 import { $, esc, toast } from './nucleo/util.js';
-import { checkPw } from './telas/login.js';
+import { entrarPronto } from './nucleo/carga-entrar';
 import { MEK } from './telas/publico-rodada.js';
 import { closeDlgNow } from './ui/dialogos.js';
 import { render, subtituloCompleto } from './ui/render.js';
@@ -268,7 +268,7 @@ document.addEventListener('input', e => {
       : '';
     return;
   }
-  if (['le', 'lp', 'lp2'].includes(e.target.id) && S.authMode === 'signup') checkPw();
+  if (['le', 'lp', 'lp2'].includes(e.target.id) && S.authMode === 'signup') entrarPronto()?.checkPw();
 });
 
 export { copyText, semConexao };

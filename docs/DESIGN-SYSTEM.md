@@ -147,7 +147,7 @@ Registrados na pelada-v43 (KAN-152); os da v44 a v47 entraram na versão de cada
 - **Mínimo para o jogo** (`PorPosicao`, classes `porpos`, `porpos-falta` e `minpos-grade`; KAN-179):
   - Dentro do quadro da rodada (aba Rodada e link), depois do resumo: rótulo "Confirmados por posição" em `small muted` (ou "Mínimo para o jogo" no esporte sem posição) e, na gestão, o botão "Definir mínimo" (`btn sm ghost`) na mesma linha.
   - Contagem em chips `poschips` (os mesmos das Posições do grupo): sigla em negrito e o número ("GOL 1", ou "GOL 1 de 2" com mínimo). "Total 3 de 5" vem primeiro quando há mínimo total. A sigla tem o nome da posição no `title`.
-  - Chip abaixo do mínimo usa `out-soft` com borda `out-fill` e texto `on-out`. Embaixo, "Faltam 2 jogadores · Falta 1 GOL" em `out`, 14px, negrito.
+  - Chip abaixo do mínimo usa `out-soft` com borda `out-fill` e texto `out` (contraste AA nos dois temas; KAN-185, v64). Embaixo, "Faltam 2 jogadores · Falta 1 GOL" em `out`, 14px, negrito.
   - Janela "Mínimo para o jogo": ajuda em `muted`, campo "Total de jogadores" (cursor já nele) e, se houver posições, "Por posição" com um campo numérico de 44px por sigla em grade (`minpos-grade`, colunas de 84px). Enter salva.
 - **Rodapé das janelas**: desde a pelada-v58, os botões de toda janela (`.dlg-f .btn`) têm 44px de altura, como já tinham as confirmações.
 - **Ainda não responderam** (KAN-64; sem classe nova):

@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v63 (21/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v64 (22/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.

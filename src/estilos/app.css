@@ -193,7 +193,8 @@
 .poschips > span.falta {
   background: var(--out-soft);
   border-color: var(--out-fill);
-  color: var(--on-out);
+  /* KAN-185: texto em --out (como a linha "Falta 1 GOL"); --on-out é para o fundo coral cheio e sumia no escuro. */
+  color: var(--out);
 }
 .porpos-falta {
   margin: 0;

@@ -17,6 +17,29 @@ URL = sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:8765/index.html'
 OUT = sys.argv[2] if len(sys.argv) > 2 else 'fotos'
 os.makedirs(OUT, exist_ok=True)
 res = []; errs = []
+pulados = []
+# O roteiro também roda na cópia de um arquivo só do Project (agentes de Qualidade), sem ícones, pedaços nem portal.
+# Nesses casos, o que depende desses arquivos é pulado e anotado, em vez de virar falha falsa (pedido da Qualidade, 22/10/2026).
+import urllib.request
+BASE = URL.rsplit('/', 1)[0] + '/'
+def existe(rel):
+    try:
+        return urllib.request.urlopen(BASE + rel, timeout=5).status == 200
+    except Exception:
+        return False
+def pagina_usa_pedacos():
+    try:
+        return 'chunks/' in urllib.request.urlopen(URL, timeout=5).read().decode('utf-8', 'ignore')
+    except Exception:
+        return False
+TEM_ICONES, TEM_PORTAL, TEM_PEDACOS = existe('icons/icon-192.png'), existe('portal.html'), pagina_usa_pedacos()
+def pular(msg):
+    pulados.append(msg)
+    print('PULADO  ' + msg, flush=True)
+def okp(cond, msg):
+    """Verificação que depende dos pedaços (chunks/) da montagem publicada."""
+    if TEM_PEDACOS: ok(cond, msg)
+    else: pular(msg.split(':')[0] + ': a cópia de um arquivo só não tem pedaços (chunks/)')
 
 def ok(cond, msg):
     res.append({'ok': bool(cond), 'teste': msg})
@@ -127,7 +150,8 @@ with sync_playwright() as pw:
     ok(pg.evaluate("document.documentElement.scrollWidth<=innerWidth"), 'apresentação sem rolagem lateral no celular')
     # KAN-59: os 5 ícones guardados pelo service worker existem e são imagens (sem eles o modo offline quebra)
     ic = pg.evaluate("""Promise.all(['icon-192.png','icon-512.png','maskable-512.png','apple-touch-icon.png','favicon-32.png'].map(f=>fetch('icons/'+f,{cache:'no-store'}).then(r=>r.ok&&(r.headers.get('content-type')||'').startsWith('image')?'':f).catch(()=>f))).then(a=>a.filter(Boolean))""")
-    ok(not ic, 'CT-KAN-59-01: os 5 ícones do app existem e carregam' + (f' (faltando: {ic})' if ic else ''))
+    if TEM_ICONES: ok(not ic, 'CT-KAN-59-01: os 5 ícones do app existem e carregam' + (f' (faltando: {ic})' if ic else ''))
+    else: pular('CT-KAN-59-01: a pasta icons/ não existe nesta cópia do app')
     # v19: a versão do app aparece e é a mesma do service worker (fonte única: VERSION do sw.js)
     VER = pg.evaluate("fetch('sw.js',{cache:'no-store'}).then(r=>r.text()).then(t=>(/VERSION\\s*=\\s*'pelada-v(\\d+)'/.exec(t)||[])[1])")
     ok(bool(VER) and f'versão {VER}' in pg.inner_text('.ld-foot'), f'CT-KAN-107-01: apresentação mostra a versão {VER} do app')
@@ -574,7 +598,7 @@ with sync_playwright() as pw:
     pl = ctx.new_page(); pedidos = []; pl.on('request', lambda r: pedidos.append(r.url))
     pl.goto(URL + '#/p/' + gid_fut); pl.wait_for_timeout(1200)
     # v41 (KAN-149): o link do jogador não baixa a parte de gestão
-    ok(any('/chunks/chunk-' in u for u in pedidos) and not any('/chunks/admin-' in u for u in pedidos), f'CT-KAN-149-01: o link público não baixa a parte de gestão ({[u.rsplit("/",1)[-1] for u in pedidos if "/chunks/" in u]})')
+    okp(any('/chunks/chunk-' in u for u in pedidos) and not any('/chunks/admin-' in u for u in pedidos), f'CT-KAN-149-01: o link público não baixa a parte de gestão ({[u.rsplit("/",1)[-1] for u in pedidos if "/chunks/" in u]})')
     larg = pl.evaluate("[document.documentElement.scrollWidth, innerWidth]"); pl.close()
     ok(larg[0] <= larg[1], f'CT-KAN-144-02: nem o link do jogador ({larg})')
     pg.click('[data-a=editRod]'); pg.wait_for_timeout(300); pg.fill('#rpl', END_LONGO); pg.click('[data-a=saveRod]'); pg.wait_for_timeout(800)
@@ -1333,95 +1357,98 @@ with sync_playwright() as pw:
     except Exception: pass
 
     # ---------- Portal do Nosso Jogo: site separado (KAN-116), aqui em modo demonstração com os dados de teste
-    PORTAL = URL.rsplit('/', 1)[0] + '/portal.html'
-    pp = ctx.new_page(); pp.on('pageerror', lambda e: errs.append('portal: ' + str(e)))
-    pp.goto(PORTAL); pp.wait_for_timeout(1000)
-    ok(pp.locator('[data-p=google]').count() == 1 and pp.locator('#le, #lp, [data-a=signup], [data-a=login]').count() == 0 and 'Criar conta' not in pp.inner_text('body'),
-       'CT-KAN-116-07: o portal só tem "Entrar com o Google", sem criação de conta nem e-mail e senha')
-    ok('não é o app dos clientes' in pp.inner_text('header'), 'CT-KAN-116-07: o portal se identifica como área da administração')
-    pp.click('[data-p=google]')
-    try: pp.wait_for_selector('li.cli', timeout=8000)
-    except Exception: pass
-    txt = pp.inner_text('main')
-    org = pp.locator('li.cli', has_text='org@teste.com')
-    ok(org.count() == 1 and 'Grátis' in org.inner_text() and 'Último acesso' in org.inner_text() and 'ativo' in org.inner_text() and 'última rodada gravada' in org.inner_text(),
-       'CT-KAN-116-01: a lista mostra o cliente com plano, grupos, último acesso e última rodada')
-    ok('Clientes' in txt and 'Plano A' in txt and 'Plano B' in txt, 'CT-KAN-115-01: os planos do catálogo (Grátis, A e B) aparecem no resumo do portal')
-    ok(not re.search(r'R\$|Pix|Nota|WhatsApp|\(11\)', txt), 'CT-KAN-116-05: o portal não mostra notas, valores de caixa, Pix nem contatos')
-    pp.screenshot(path=f'{OUT}/22-portal.png'); contraste(pp, 'portal (CT-KAN-116-06)')
-    # CT-KAN-116-09: o grupo tem mensalidade 120, diária 25 e chave Pix gravadas (CT-KAN-79-03), e nada disso aparece no portal
-    ok(bool((pg.evaluate(LER, PCK) or {}).get('pix')) and PIX79 not in pp.content() and not re.search(r'R\$|Pix|[Mm]ensalidade|[Dd]iária|120|25,00', txt),
-       'CT-KAN-116-09: com mensalidade e Pix gravados no grupo, o portal não mostra nenhum valor nem a chave Pix')
-    # CT-KAN-115-03: conta sem plano gravado aparece como Grátis
-    ok('plano' not in (pg.evaluate(LER, 'contas/u-orgtestecom') or {}) and org.locator('.tag').first.inner_text().strip() == 'Grátis',
-       'CT-KAN-115-03: org@teste.com, sem plano gravado, aparece no portal como "Grátis"')
-    # CT-KAN-133-03: o portal lista todos os clientes (contas e donos de grupos do banco)
-    n_cli = pp.evaluate("""(()=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2')||'{}'),u=new Set();
-      Object.keys(s).forEach(k=>{const p=k.split('/');if(p.length===2&&p[0]==='contas')u.add(p[1]);if(p.length===2&&p[0]==='grupos'&&s[k]&&s[k].owner)u.add(s[k].owner)});return u.size})()""")
-    kpi = pp.locator('.kpis .money').first.inner_text().strip()
-    ok(n_cli >= 2 and pp.locator('li.cli').count() == n_cli and kpi == str(n_cli), f'CT-KAN-133-03: o portal lista todos os clientes ({pp.locator("li.cli").count()} de {n_cli}, resumo {kpi})')
-    # CT-KAN-116-10: Atualizar mostra loading e a lista volta completa
-    n_antes = pp.locator('li.cli').count()
-    ld = pp.evaluate("""(()=>{const b=document.querySelector('[data-p=atualizar]');b.click();
-      return {busy:b.classList.contains('busy')&&b.disabled&&b.getAttribute('aria-busy')==='true',lista:document.querySelectorAll('#pmain li.cli').length}})()""")
-    try: pp.wait_for_selector('li.cli', timeout=8000)
-    except Exception: pass
-    pp.wait_for_timeout(300)
-    ok(ld['busy'] and ld['lista'] == n_antes and pp.locator('li.cli').count() == n_antes and pp.locator('[data-p=atualizar]:not(.busy):not([disabled])').count() == 1,
-       f'CT-KAN-116-10: tocar Atualizar mostra loading no botão, a lista continua na tela e volta completa ({ld}, {pp.locator("li.cli").count()} de {n_antes})')
-    # CT-KAN-116-07: o organizador entrou hoje (o acesso antigo de 10 dias foi trocado ao entrar) e, depois de Atualizar, aparece com a data de hoje
-    hoje_br = pp.evaluate("new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'})")
-    oi = pp.locator('li.cli', has_text='org@teste.com').inner_text()
-    ok(f'Último acesso: {hoje_br}' in oi, f'CT-KAN-116-07: organizador que entrou hoje aparece com "Último acesso: {hoje_br}" depois de Atualizar')
-    # CT-KAN-116-11: celular de 390px, sem rolagem lateral e controles com 36px ou mais
-    # Mede os controles da lista (busca, filtro e Atualizar) e o chip "Sair" do cabeçalho (36px desde a v28, achado da Qualidade).
-    lay = pp.evaluate("""(()=>{const h=[...document.querySelectorAll('#pmain button,#pmain input,#pmain select')].filter(e=>e.getBoundingClientRect().width>0).map(e=>Math.round(e.getBoundingClientRect().height));
-      const c=document.querySelector('#ptopo .chip');return {w:innerWidth,larg:document.documentElement.scrollWidth<=innerWidth,min:Math.min(...h),n:h.length,chip:c?Math.round(c.getBoundingClientRect().height):null}})()""")
-    ok(lay['w'] == 390 and lay['larg'] and lay['n'] >= 3 and lay['min'] >= 36 and (lay['chip'] or 0) >= 36,
-       f'CT-KAN-116-11: portal em 390px sem rolagem lateral; busca, filtro, Atualizar e Sair com 36px ou mais (menor: {lay["min"]}px; chip Sair do cabeçalho: {lay["chip"]}px)')
-    # CT-KAN-116-08: conta sem acesso há 45 dias: o filtro "sem acesso há mais de 30 dias" mostra só ela
-    agora_ms = int(time.time() * 1000)
-    pp.evaluate(PUT, {'contas/u-velhotestecom': {'email': 'velho@teste.com', 'acesso': agora_ms - 45 * 86400000, 'criada': agora_ms - 100 * 86400000}})
-    pp.reload()
-    try: pp.wait_for_selector('li.cli', timeout=8000)
-    except Exception: pass
-    pp.select_option('#ptf', 'semAcesso30'); pp.wait_for_timeout(300)
-    s30 = pp.locator('li.cli').all_inner_texts()
-    ok(len(s30) == 1 and 'velho@teste.com' in s30[0], f'CT-KAN-116-08: o filtro "sem acesso há mais de 30 dias" mostra só a conta sem acesso há 45 dias ({[x.split(chr(10))[0] for x in s30]})')
-    pp.evaluate(DEL, ['contas/u-velhotestecom'])
-    # CT-KAN-116-12: tema escuro com contraste AA
-    pp.evaluate("localStorage.setItem('nj-tema','dark')"); pp.reload()
-    try: pp.wait_for_selector('li.cli', timeout=8000)
-    except Exception: pass
-    pp.wait_for_timeout(300)
-    ok(pp.evaluate("document.documentElement.dataset.theme") == 'dark' and pp.locator('li.cli').count() >= 2, 'CT-KAN-116-12: portal abre no tema escuro')
-    contraste(pp, 'portal no tema escuro (CT-KAN-116-12)'); pp.screenshot(path=f'{OUT}/23-portal-escuro.png')
-    pp.evaluate("localStorage.removeItem('nj-tema')"); pp.reload()
-    try: pp.wait_for_selector('li.cli', timeout=8000)
-    except Exception: pass
-    pp.fill('#ptq', 'org@'); pp.wait_for_timeout(200)
-    vis = pp.evaluate("[...document.querySelectorAll('#ptlist li.cli')].filter(l=>!l.hidden).map(l=>l.innerText.split('\\n')[0])")
-    ok(len(vis) == 1 and 'org@teste.com' in vis[0], f'CT-KAN-116-04: a busca por e-mail mostra só o cliente procurado ({vis})')
-    pp.fill('#ptq', ''); pp.wait_for_timeout(100)
-    pp.evaluate("(()=>{const K='pelada-demo-v2',s=JSON.parse(localStorage.getItem(K));const c=s['contas/u-orgtestecom']||{};c.plano='A';c.planoAte=Date.now()+864e5;s['contas/u-orgtestecom']=c;localStorage.setItem(K,JSON.stringify(s))})()")
-    pp.reload()
-    try: pp.wait_for_selector('li.cli', timeout=8000)
-    except Exception: pass
-    pp.select_option('#ptf', 'vence7'); pp.wait_for_timeout(300)
-    v7 = pp.locator('li.cli').all_inner_texts()
-    ok(len(v7) == 1 and 'org@teste.com' in v7[0] and 'Plano A' in v7[0] and 'até' in v7[0], f'CT-KAN-116-04: o filtro "vence em até 7 dias" mostra a conta com plano A até amanhã ({len(v7)})')
-    pp.select_option('#ptf', 'plano:gratis'); pp.wait_for_timeout(300)
-    ok(all('org@teste.com' not in x for x in pp.locator('li.cli').all_inner_texts()), 'CT-KAN-116-04: o filtro por plano separa Grátis de Plano A')
-    pp.evaluate("(()=>{const K='pelada-demo-v2',s=JSON.parse(localStorage.getItem(K));s['contas/u-orgtestecom'].planoAte=Date.now()-1000;localStorage.setItem(K,JSON.stringify(s))})()")
-    pp.reload()
-    try: pp.wait_for_selector('li.cli', timeout=8000)
-    except Exception: pass
-    oi = pp.locator('li.cli', has_text='org@teste.com').inner_text()
-    ok('Grátis' in oi and 'vencido' in oi, 'CT-KAN-115-05: plano com validade vencida aparece como Grátis, com o aviso de vencido')
-    pp.evaluate("(()=>{const K='pelada-demo-v2',s=JSON.parse(localStorage.getItem(K));const c=s['contas/u-orgtestecom'];delete c.plano;delete c.planoAte;localStorage.setItem(K,JSON.stringify(s))})()")
-    pp.click('#ptopo [data-p=sair]'); pp.wait_for_timeout(1200)
-    ok(pp.locator('[data-p=google]').count() == 1, 'CT-KAN-116-07: Sair no portal volta para "Entrar com o Google"')
-    pp.close()
+    if not TEM_PORTAL:
+        pular('bloco do portal (18 casos): portal.html não existe nesta cópia do app')
+    else:
+        PORTAL = URL.rsplit('/', 1)[0] + '/portal.html'
+        pp = ctx.new_page(); pp.on('pageerror', lambda e: errs.append('portal: ' + str(e)))
+        pp.goto(PORTAL); pp.wait_for_timeout(1000)
+        ok(pp.locator('[data-p=google]').count() == 1 and pp.locator('#le, #lp, [data-a=signup], [data-a=login]').count() == 0 and 'Criar conta' not in pp.inner_text('body'),
+           'CT-KAN-116-07: o portal só tem "Entrar com o Google", sem criação de conta nem e-mail e senha')
+        ok('não é o app dos clientes' in pp.inner_text('header'), 'CT-KAN-116-07: o portal se identifica como área da administração')
+        pp.click('[data-p=google]')
+        try: pp.wait_for_selector('li.cli', timeout=8000)
+        except Exception: pass
+        txt = pp.inner_text('main')
+        org = pp.locator('li.cli', has_text='org@teste.com')
+        ok(org.count() == 1 and 'Grátis' in org.inner_text() and 'Último acesso' in org.inner_text() and 'ativo' in org.inner_text() and 'última rodada gravada' in org.inner_text(),
+           'CT-KAN-116-01: a lista mostra o cliente com plano, grupos, último acesso e última rodada')
+        ok('Clientes' in txt and 'Plano A' in txt and 'Plano B' in txt, 'CT-KAN-115-01: os planos do catálogo (Grátis, A e B) aparecem no resumo do portal')
+        ok(not re.search(r'R\$|Pix|Nota|WhatsApp|\(11\)', txt), 'CT-KAN-116-05: o portal não mostra notas, valores de caixa, Pix nem contatos')
+        pp.screenshot(path=f'{OUT}/22-portal.png'); contraste(pp, 'portal (CT-KAN-116-06)')
+        # CT-KAN-116-09: o grupo tem mensalidade 120, diária 25 e chave Pix gravadas (CT-KAN-79-03), e nada disso aparece no portal
+        ok(bool((pg.evaluate(LER, PCK) or {}).get('pix')) and PIX79 not in pp.content() and not re.search(r'R\$|Pix|[Mm]ensalidade|[Dd]iária|120|25,00', txt),
+           'CT-KAN-116-09: com mensalidade e Pix gravados no grupo, o portal não mostra nenhum valor nem a chave Pix')
+        # CT-KAN-115-03: conta sem plano gravado aparece como Grátis
+        ok('plano' not in (pg.evaluate(LER, 'contas/u-orgtestecom') or {}) and org.locator('.tag').first.inner_text().strip() == 'Grátis',
+           'CT-KAN-115-03: org@teste.com, sem plano gravado, aparece no portal como "Grátis"')
+        # CT-KAN-133-03: o portal lista todos os clientes (contas e donos de grupos do banco)
+        n_cli = pp.evaluate("""(()=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2')||'{}'),u=new Set();
+          Object.keys(s).forEach(k=>{const p=k.split('/');if(p.length===2&&p[0]==='contas')u.add(p[1]);if(p.length===2&&p[0]==='grupos'&&s[k]&&s[k].owner)u.add(s[k].owner)});return u.size})()""")
+        kpi = pp.locator('.kpis .money').first.inner_text().strip()
+        ok(n_cli >= 2 and pp.locator('li.cli').count() == n_cli and kpi == str(n_cli), f'CT-KAN-133-03: o portal lista todos os clientes ({pp.locator("li.cli").count()} de {n_cli}, resumo {kpi})')
+        # CT-KAN-116-10: Atualizar mostra loading e a lista volta completa
+        n_antes = pp.locator('li.cli').count()
+        ld = pp.evaluate("""(()=>{const b=document.querySelector('[data-p=atualizar]');b.click();
+          return {busy:b.classList.contains('busy')&&b.disabled&&b.getAttribute('aria-busy')==='true',lista:document.querySelectorAll('#pmain li.cli').length}})()""")
+        try: pp.wait_for_selector('li.cli', timeout=8000)
+        except Exception: pass
+        pp.wait_for_timeout(300)
+        ok(ld['busy'] and ld['lista'] == n_antes and pp.locator('li.cli').count() == n_antes and pp.locator('[data-p=atualizar]:not(.busy):not([disabled])').count() == 1,
+           f'CT-KAN-116-10: tocar Atualizar mostra loading no botão, a lista continua na tela e volta completa ({ld}, {pp.locator("li.cli").count()} de {n_antes})')
+        # CT-KAN-116-07: o organizador entrou hoje (o acesso antigo de 10 dias foi trocado ao entrar) e, depois de Atualizar, aparece com a data de hoje
+        hoje_br = pp.evaluate("new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'})")
+        oi = pp.locator('li.cli', has_text='org@teste.com').inner_text()
+        ok(f'Último acesso: {hoje_br}' in oi, f'CT-KAN-116-07: organizador que entrou hoje aparece com "Último acesso: {hoje_br}" depois de Atualizar')
+        # CT-KAN-116-11: celular de 390px, sem rolagem lateral e controles com 36px ou mais
+        # Mede os controles da lista (busca, filtro e Atualizar) e o chip "Sair" do cabeçalho (36px desde a v28, achado da Qualidade).
+        lay = pp.evaluate("""(()=>{const h=[...document.querySelectorAll('#pmain button,#pmain input,#pmain select')].filter(e=>e.getBoundingClientRect().width>0).map(e=>Math.round(e.getBoundingClientRect().height));
+          const c=document.querySelector('#ptopo .chip');return {w:innerWidth,larg:document.documentElement.scrollWidth<=innerWidth,min:Math.min(...h),n:h.length,chip:c?Math.round(c.getBoundingClientRect().height):null}})()""")
+        ok(lay['w'] == 390 and lay['larg'] and lay['n'] >= 3 and lay['min'] >= 36 and (lay['chip'] or 0) >= 36,
+           f'CT-KAN-116-11: portal em 390px sem rolagem lateral; busca, filtro, Atualizar e Sair com 36px ou mais (menor: {lay["min"]}px; chip Sair do cabeçalho: {lay["chip"]}px)')
+        # CT-KAN-116-08: conta sem acesso há 45 dias: o filtro "sem acesso há mais de 30 dias" mostra só ela
+        agora_ms = int(time.time() * 1000)
+        pp.evaluate(PUT, {'contas/u-velhotestecom': {'email': 'velho@teste.com', 'acesso': agora_ms - 45 * 86400000, 'criada': agora_ms - 100 * 86400000}})
+        pp.reload()
+        try: pp.wait_for_selector('li.cli', timeout=8000)
+        except Exception: pass
+        pp.select_option('#ptf', 'semAcesso30'); pp.wait_for_timeout(300)
+        s30 = pp.locator('li.cli').all_inner_texts()
+        ok(len(s30) == 1 and 'velho@teste.com' in s30[0], f'CT-KAN-116-08: o filtro "sem acesso há mais de 30 dias" mostra só a conta sem acesso há 45 dias ({[x.split(chr(10))[0] for x in s30]})')
+        pp.evaluate(DEL, ['contas/u-velhotestecom'])
+        # CT-KAN-116-12: tema escuro com contraste AA
+        pp.evaluate("localStorage.setItem('nj-tema','dark')"); pp.reload()
+        try: pp.wait_for_selector('li.cli', timeout=8000)
+        except Exception: pass
+        pp.wait_for_timeout(300)
+        ok(pp.evaluate("document.documentElement.dataset.theme") == 'dark' and pp.locator('li.cli').count() >= 2, 'CT-KAN-116-12: portal abre no tema escuro')
+        contraste(pp, 'portal no tema escuro (CT-KAN-116-12)'); pp.screenshot(path=f'{OUT}/23-portal-escuro.png')
+        pp.evaluate("localStorage.removeItem('nj-tema')"); pp.reload()
+        try: pp.wait_for_selector('li.cli', timeout=8000)
+        except Exception: pass
+        pp.fill('#ptq', 'org@'); pp.wait_for_timeout(200)
+        vis = pp.evaluate("[...document.querySelectorAll('#ptlist li.cli')].filter(l=>!l.hidden).map(l=>l.innerText.split('\\n')[0])")
+        ok(len(vis) == 1 and 'org@teste.com' in vis[0], f'CT-KAN-116-04: a busca por e-mail mostra só o cliente procurado ({vis})')
+        pp.fill('#ptq', ''); pp.wait_for_timeout(100)
+        pp.evaluate("(()=>{const K='pelada-demo-v2',s=JSON.parse(localStorage.getItem(K));const c=s['contas/u-orgtestecom']||{};c.plano='A';c.planoAte=Date.now()+864e5;s['contas/u-orgtestecom']=c;localStorage.setItem(K,JSON.stringify(s))})()")
+        pp.reload()
+        try: pp.wait_for_selector('li.cli', timeout=8000)
+        except Exception: pass
+        pp.select_option('#ptf', 'vence7'); pp.wait_for_timeout(300)
+        v7 = pp.locator('li.cli').all_inner_texts()
+        ok(len(v7) == 1 and 'org@teste.com' in v7[0] and 'Plano A' in v7[0] and 'até' in v7[0], f'CT-KAN-116-04: o filtro "vence em até 7 dias" mostra a conta com plano A até amanhã ({len(v7)})')
+        pp.select_option('#ptf', 'plano:gratis'); pp.wait_for_timeout(300)
+        ok(all('org@teste.com' not in x for x in pp.locator('li.cli').all_inner_texts()), 'CT-KAN-116-04: o filtro por plano separa Grátis de Plano A')
+        pp.evaluate("(()=>{const K='pelada-demo-v2',s=JSON.parse(localStorage.getItem(K));s['contas/u-orgtestecom'].planoAte=Date.now()-1000;localStorage.setItem(K,JSON.stringify(s))})()")
+        pp.reload()
+        try: pp.wait_for_selector('li.cli', timeout=8000)
+        except Exception: pass
+        oi = pp.locator('li.cli', has_text='org@teste.com').inner_text()
+        ok('Grátis' in oi and 'vencido' in oi, 'CT-KAN-115-05: plano com validade vencida aparece como Grátis, com o aviso de vencido')
+        pp.evaluate("(()=>{const K='pelada-demo-v2',s=JSON.parse(localStorage.getItem(K));const c=s['contas/u-orgtestecom'];delete c.plano;delete c.planoAte;localStorage.setItem(K,JSON.stringify(s))})()")
+        pp.click('#ptopo [data-p=sair]'); pp.wait_for_timeout(1200)
+        ok(pp.locator('[data-p=google]').count() == 1, 'CT-KAN-116-07: Sair no portal volta para "Entrar com o Google"')
+        pp.close()
     # Desfaz o caixa do CT-KAN-79-03 (valores e chave Pix de teste)
     pg.evaluate(PUT, {PCK: pc0}) if pc0 else pg.evaluate(DEL, [PCK])
 
@@ -1902,7 +1929,7 @@ with sync_playwright() as pw:
     for aba, sinal in (('caixa', '[data-a=addLan]'), ('historico', '[data-a=histModo]'), ('ranking', '#rankAno,[data-c=rankAno],.tbl,.empty')):
         p13.click(f'[data-a=tab][data-v={aba}]'); p13.wait_for_timeout(1200)
         abriu[aba] = (pedaco(aba), p13.locator(sinal).count() > 0)
-    ok(all(v == (True, True) for v in abriu.values()), f'CT-KAN-180-02: cada aba baixa a sua parte ao ser aberta e aparece normalmente ({abriu})')
+    okp(all(v == (True, True) for v in abriu.values()), f'CT-KAN-180-02: cada aba baixa a sua parte ao ser aberta e aparece normalmente ({abriu})')
     # Sem internet: as abas que já chegaram abrem; a que nunca foi aberta avisa e, com a internet de volta, abre
     ctx13.set_offline(True)
     p13.click('[data-a=tab][data-v=caixa]'); p13.wait_for_timeout(500)
@@ -1910,11 +1937,11 @@ with sync_playwright() as pw:
     p13.click('[data-a=tab][data-v=historico]'); p13.wait_for_timeout(500)
     ok(cx_off and p13.locator('[data-a=histModo]').count() > 0, 'CT-KAN-180-03: sem internet, Caixa e Histórico já usados abrem normalmente')
     p13.click('[data-a=tab][data-v=votacao]'); p13.wait_for_timeout(1500)
-    ok('Não foi possível carregar' in p13.inner_text('main'), 'CT-KAN-180-04: sem internet, aba que nunca chegou avisa que não carregou')
+    okp('Não foi possível carregar' in p13.inner_text('main'), 'CT-KAN-180-04: sem internet, aba que nunca chegou avisa que não carregou')
     # O navegador guarda a falha de um pedaço até recarregar; por isso o aviso pede para recarregar a página.
     ctx13.set_offline(False)
     p13.reload(); p13.wait_for_timeout(1500); p13.click('[data-a=tab][data-v=votacao]'); p13.wait_for_timeout(1500)
-    ok(pedaco('votacao') and p13.locator('[data-a=newVote]').count() > 0, 'CT-KAN-180-04: com a internet de volta, recarregando a página, a Votação abre')
+    okp(pedaco('votacao') and p13.locator('[data-a=newVote]').count() > 0, 'CT-KAN-180-04: com a internet de volta, recarregando a página, a Votação abre')
     ctx13.close()
 
     # ---------- v62 (KAN-184): link com internet ruim tenta de novo e nunca diz "não encontrado" por falha de rede
@@ -1956,7 +1983,7 @@ with sync_playwright() as pw:
     p15.on('pageerror', lambda e: errs.append(str(e)))
     p15.on('request', lambda r: ped15.append(r.url))
     p15.goto(URL + '#/criar'); p15.wait_for_timeout(800)
-    ok(any('/chunks/entrar-' in u for u in ped15) and p15.evaluate("document.activeElement && document.activeElement.id") == 'le',
+    okp(any('/chunks/entrar-' in u for u in ped15) and p15.evaluate("document.activeElement && document.activeElement.id") == 'le',
        'CT-KAN-183-02: a tela de criar conta baixa a parte "entrar" e abre com o cursor no e-mail')
     p15.fill('#le', 'link183@teste.com'); p15.fill('#lp', 'Jogo@2026'); p15.fill('#lp2', 'Jogo@2026'); p15.keyboard.press('Enter'); p15.wait_for_timeout(1300)
     p15.fill('#ngn', 'Link FC'); p15.click('[data-a=pickSport][data-v=futebol]'); p15.click('[data-a=createGroup]'); p15.wait_for_timeout(1500)
@@ -1971,6 +1998,124 @@ with sync_playwright() as pw:
     ok('Você vai?' in pj.inner_text('main') and not any(n in pedacos_j for n in ('entrar', 'publico', 'admin')),
        f'CT-KAN-183-01: o link do jogador abre sem baixar a tela de entrar, a votação nem a gestão ({pedacos_j})')
     ctxj.close(); ctx15.close()
+
+    # ---------- v64: casos "(automatizável)" que a Qualidade validou à mão na v63 (KAN-63, 179, 181, 182, 184) e KAN-185
+    ctx16 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
+    p16 = ctx16.new_page()
+    p16.on('pageerror', lambda e: errs.append(str(e)))
+    p16.goto(URL + '#/criar'); p16.wait_for_timeout(900)
+    p16.fill('#le', 'qa64@teste.com'); p16.fill('#lp', 'Jogo@2026'); p16.fill('#lp2', 'Jogo@2026'); p16.keyboard.press('Enter'); p16.wait_for_timeout(1300)
+    p16.fill('#ngn', 'QA FC'); p16.click('[data-a=pickSport][data-v=futebol]'); p16.click('[data-a=createGroup]'); p16.wait_for_timeout(1500)
+    elenco_e_presenca(p16, 11)
+    gid16 = p16.evaluate("S.gid"); rid16 = p16.evaluate("S.presRid")
+    def minimos(total='', gol=''):
+        p16.click('#porPosicao [data-a=abrirMinimos]'); p16.wait_for_timeout(400)
+        p16.fill('#minRaiz .minp[data-k="_total"]', str(total)); p16.fill('#minRaiz .minp[data-k="GOL"]', str(gol))
+        p16.click('#dlg [data-a=salvarMinimos]'); p16.wait_for_timeout(800)
+    # KAN-179-07: dados estranhos
+    minimos(-3, 99999)
+    mp = p16.evaluate("JSON.stringify(S.app.cfg.minPos||{})")
+    ok(mp == '{"GOL":99}', f'CT-KAN-179-07: total −3 não grava e GOL 99999 fica em 99 ({mp})')
+    minimos(14, 2)
+    # KAN-185 e KAN-179-08: contraste no tema escuro, na gestão e no link, com posição faltando; 360px sem rolagem
+    p16.evaluate("document.documentElement.dataset.theme='dark'"); p16.wait_for_timeout(200)
+    contraste(p16, 'Mínimo para o jogo no tema escuro (CT-KAN-185-01)')
+    cf = p16.evaluate("(()=>{const e=document.querySelector('#porPosicao .poschips span.falta');if(!e)return 0;const L=c=>{const m=c.match(/[\\d.]+/g).map(Number);const f=v=>{v/=255;return v<=.03928?v/12.92:((v+.055)/1.055)**2.4};return .2126*f(m[0])+.7152*f(m[1])+.0722*f(m[2])};const s=getComputedStyle(e),a=L(s.color),b=L(s.backgroundColor);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05)})()")
+    ok(cf >= 4.5, f'CT-KAN-185-01: no tema escuro, o selo da posição que falta tem contraste de pelo menos 4,5:1 ({cf:.2f})')
+    p16.set_viewport_size({'width': 360, 'height': 800}); p16.wait_for_timeout(200)
+    ok(p16.evaluate("document.documentElement.scrollWidth") <= 360, 'CT-KAN-179-08: em 360px, no tema escuro, o quadro cabe sem rolagem lateral')
+    p16.set_viewport_size({'width': 390, 'height': 844})
+    pl16 = ctx16.new_page(); pl16.emulate_media(color_scheme='dark'); pl16.goto(URL + '#/p/' + gid16 + '/r/' + rid16); pl16.wait_for_timeout(1500)
+    pl16.evaluate("document.documentElement.dataset.theme='dark'"); pl16.wait_for_timeout(200)
+    ok(pl16.locator('#porPosicao .falta').count() >= 1, 'CT-KAN-185-02: o link mostra o selo da posição que falta')
+    contraste(pl16, 'link com posição faltando no tema escuro (CT-KAN-185-02)')
+    pl16.screenshot(path=f'{OUT}/64-link-escuro.png')
+    # KAN-63-14: o link público não leva dados privados, nem com o controle de vagas ligado
+    p16.evaluate("document.documentElement.dataset.theme='light'")
+    p16.click('#porPosicao [data-a=abrirMinimos]'); p16.wait_for_timeout(400); p16.check('#vagasCtrl'); p16.click('#dlg [data-a=salvarMinimos]'); p16.wait_for_timeout(1200)
+    pl16.reload(); pl16.wait_for_timeout(1500)
+    priv = pl16.evaluate("[S.pc, S.rat, Object.keys(S.cont||{}).length, Object.keys(S.caixa||{}).length]")
+    corpo = pl16.inner_text('body').lower()
+    campos_jog = pl16.evaluate("[...new Set(Object.values(S.jog||{}).flatMap(j=>Object.keys(j||{})))].sort().join()")
+    ok(priv == [None, None, 0, 0] and not any(p in corpo for p in ('mensalista', 'isento', 'r$', 'pix')) and set(campos_jog.split(',')) <= {'name', 'pos', 'ativo', 'criado', 'vaga', ''},
+       f'CT-KAN-63-14: o link público não traz tipo, valores, notas, contatos nem caixa ({priv}; jogador: {campos_jog})')
+    # KAN-63-11 e 13: sugestão do que falta; valores estranhos; tocar fora pergunta; dois toques gravam uma vez
+    p16.click('[data-a=tab][data-v=rodada]'); p16.wait_for_timeout(500)
+    conf16 = p16.evaluate("S.pres?Object.values(S.pres).filter(x=>x&&x.s==='in').length:0")
+    p16.click('#vagasPainel [data-a=abrirVagas]'); p16.wait_for_timeout(400)
+    sug = p16.input_value('#vagasN')
+    ok(sug == str(14 - conf16), f'CT-KAN-63-11: "Abrir vagas" já sugere o que falta para o mínimo (14 − {conf16} = {sug})')
+    p16.fill('#vagasN', '7'); p16.mouse.click(8, 8); p16.wait_for_timeout(400)
+    perguntou = p16.locator('#dlg .conf').count() == 1
+    if perguntou: confirmar_app(p16, True)
+    ok(perguntou and not (p16.evaluate("(S.rod[S.presRid]||{}).vagas") or {}).get('aberta'), 'CT-KAN-63-13: tocar fora com 7 digitado pergunta e não abre vagas')
+    p16.click('#vagasPainel [data-a=abrirVagas]'); p16.wait_for_timeout(400); p16.fill('#vagasN', '-5'); p16.click('#dlg [data-a=salvarVagas]'); p16.wait_for_timeout(800)
+    v1 = p16.evaluate("JSON.stringify((S.rod[S.presRid]||{}).vagas)")
+    p16.click('#vagasPainel [data-a=abrirVagas]'); p16.wait_for_timeout(400); p16.fill('#vagasN', '5000')
+    btn = p16.locator('#dlg [data-a=salvarVagas]'); btn.click(); btn.click(force=True) if btn.count() else None; p16.wait_for_timeout(800)
+    v2 = p16.evaluate("JSON.stringify((S.rod[S.presRid]||{}).vagas)")
+    ok(v1 == '{"aberta":true,"max":0}' and v2 == '{"aberta":true,"max":99}', f'CT-KAN-63-13: −5 vira "sem limite" e 5000 vira 99 ({v1}, {v2})')
+    # KAN-182-02: lista de minutos
+    p16.click('[data-a=drawDlg]'); p16.wait_for_timeout(300); p16.click('#drawGo'); p16.wait_for_timeout(2500)
+    p16.click('[data-a=tab][data-v=partida]'); p16.wait_for_selector('#partidaRaiz .board', timeout=8000); p16.wait_for_timeout(300)
+    op = p16.evaluate("[...document.querySelectorAll('[data-c=dur] option')].map(o=>o.value)")
+    ok(op[:60] == [str(i) for i in range(1, 61)] and op[60:63] == ['70', '80', '90'] and '0' in op and len(op) == 64, f'CT-KAN-182-02: minutos de 1 a 60, 70, 80, 90 e "Sem tempo" ({len(op)} opções)')
+    # KAN-181-05: texto do WhatsApp com Time 1 e colete
+    p16.click('[data-a=tab][data-v=rodada]'); p16.wait_for_timeout(500)
+    p16.click('[data-a=shareTimes]'); p16.wait_for_timeout(400)
+    wt = p16.input_value('#shtxt') if p16.locator('#shtxt').count() else ''
+    ok('*Time 1* · colete ' in wt and '*Time 2* · colete ' in wt, f'CT-KAN-181-05: "Mandar times no WhatsApp" usa "Time 1 · colete …" ({wt[:60]!r})')
+    p16.click('#dlg [data-a=close]'); p16.wait_for_timeout(300)
+    # KAN-181-07, 179-06 e 63-12: colete, mínimo e vagas continuam depois de F5 e de sair e entrar de novo
+    trocar_colete(p16, '.team [data-a=color][data-v="0"]')
+    cor0 = p16.evaluate("(()=>{const r=S.rod[S.presRid];return (r.cores&&r.cores[0]!=null)?r.cores[0]:r.times[0].c})()")
+    def estado16():
+        r = p16.evaluate("(()=>{const r=S.rod[S.presRid]||{};return [(r.cores&&r.cores[0]!=null)?r.cores[0]:(r.times||[{}])[0].c, JSON.stringify(S.app.cfg.minPos), !!S.app.cfg.vagasCtrl, JSON.stringify(r.vagas)]})()")
+        return r
+    p16.reload(); p16.wait_for_timeout(1500); p16.click('[data-a=tab][data-v=rodada]'); p16.wait_for_timeout(600)
+    e1 = estado16()
+    sair(p16)
+    try: p16.wait_for_selector('.ld-nav', timeout=8000)
+    except Exception: pass
+    p16.goto(URL + '#/entrar'); p16.wait_for_timeout(900)
+    p16.fill('#le', 'qa64@teste.com'); p16.fill('#lp', 'Jogo@2026'); p16.keyboard.press('Enter'); p16.wait_for_timeout(1300)
+    p16.goto(URL + '#/g/' + gid16); p16.wait_for_timeout(1500); p16.click('[data-a=tab][data-v=rodada]'); p16.wait_for_timeout(800)
+    e2 = estado16()
+    esperado = [cor0, '{"GOL":2,"_total":14}', True, '{"aberta":true,"max":99}']
+    ok(e1 == esperado and e2 == esperado, f'CT-KAN-181-07, CT-KAN-179-06 e CT-KAN-63-12: colete, mínimo e vagas continuam depois de F5 e de sair e entrar ({e2})')
+    # KAN-181-08: nome com código num time aparece como texto, na gestão e no link
+    jid = p16.evaluate("S.rod[S.presRid].times[0].players[0]")
+    p16.evaluate("(id)=>{window.__xss=0}", jid)
+    p16.click('[data-a=tab][data-v=jogadores]'); p16.wait_for_timeout(400)
+    p16.click(f'[data-a=editPlayer][data-p="{jid}"]'); p16.wait_for_timeout(300)
+    p16.fill('#pnm', '<img src=x onerror="window.__xss=1">Zé'); p16.click('[data-a=savePlayer]'); p16.wait_for_timeout(800)
+    if p16.locator('#dlg .conf').count(): confirmar_app(p16, True); p16.wait_for_timeout(500)
+    p16.click('[data-a=tab][data-v=rodada]'); p16.wait_for_timeout(600)
+    pl16.reload(); pl16.wait_for_timeout(1500)
+    ok(p16.evaluate("!window.__xss && !document.querySelector('img[src=\"x\"]')") and pl16.evaluate("!window.__xss && !document.querySelector('img[src=\"x\"]')") and '<img' in p16.inner_text('main') and '<img' in pl16.inner_text('main'),
+       'CT-KAN-181-08: nome com código no time aparece como texto na gestão e no link, sem executar')
+    pl16.close(); ctx16.close()
+    # KAN-181-06: duplas continuam "Dupla 1", sem colete
+    ctx17 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+    p17 = ctx17.new_page(); p17.on('pageerror', lambda e: errs.append(str(e)))
+    p17.goto(URL + '#/criar'); p17.wait_for_timeout(900)
+    p17.fill('#le', 'duplas64@teste.com'); p17.fill('#lp', 'Jogo@2026'); p17.fill('#lp2', 'Jogo@2026'); p17.keyboard.press('Enter'); p17.wait_for_timeout(1300)
+    p17.fill('#ngn', 'Praia QA'); p17.click('[data-a=pickSport][data-v=beach_tennis]'); p17.click('[data-a=createGroup]'); p17.wait_for_timeout(1500)
+    elenco_e_presenca(p17, 4)
+    sortear(p17)
+    nd = p17.evaluate("[...document.querySelectorAll('.team .th b')].map(b=>b.textContent)")
+    ok(nd[:2] == ['Dupla 1', 'Dupla 2'] and p17.locator('.team [data-a=color]').count() == 0, f'CT-KAN-181-06: em duplas, continua "Dupla 1", sem colete ({nd})')
+    # KAN-184-05: depois de falhar, "Tentar de novo" com a internet de volta abre o grupo; KAN-184-06: votação inexistente avisa
+    gid17 = p17.evaluate("S.gid")
+    pf = ctx17.new_page()
+    pf.add_init_script("if(!sessionStorage.getItem('falhou184')){sessionStorage.setItem('falhou184','1');window.__njFalhar={" + json.dumps('grupos/' + gid17) + ":99}}")
+    pf.goto(URL + '#/p/' + gid17); pf.wait_for_timeout(9500)
+    falhou = pf.locator('#cargaFalhou').count() == 1
+    if falhou: pf.click('#cargaFalhou'); pf.wait_for_timeout(2500)
+    ok(falhou and pf.locator('.hero-r').count() == 1 and 'Não foi possível' not in pf.inner_text('main'), 'CT-KAN-184-05: depois da falha, "Tentar de novo" com a internet de volta abre o grupo')
+    pf.goto(URL + '#/p/' + gid17 + '/v/votacaoQueNaoExiste'); pf.reload(); pf.wait_for_timeout(2000)
+    ok('Votação não encontrada' in pf.inner_text('main'), 'CT-KAN-184-06: link de votação que não existe avisa "Votação não encontrada", sem travar')
+    ctx17.close()
 
     # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
     ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
@@ -2082,10 +2227,14 @@ with sync_playwright() as pw:
     b.close()
 
 errs = [e for e in errs if not re.search(r'ERR_TUNNEL|fonts\.g|icons/|favicon|ERR_NAME|ERR_INTERNET|net::', e)]
+# Sem a pasta icons/ (cópia do Project), o navegador anota "404" sem dizer o arquivo: não é erro do app.
+if not TEM_ICONES: errs = [e for e in errs if 'status of 404' not in e]
 ok(not sem_traducao, 'todos os textos têm tradução no dicionário' + ('' if not sem_traducao else ': ' + ' | '.join(sem_traducao[:5])))
 ok(not nativos, 'CT-KAN-128-05: nenhuma caixa do navegador (confirm ou alert) apareceu em todo o roteiro' + (f' ({nativos[:3]})' if nativos else ''))
 ok(not errs, 'nenhum erro de JavaScript' + ('' if not errs else ': ' + ' | '.join(errs[:5])))
+# No GitHub a montagem é completa: nada pode ser pulado.
+if os.environ.get('GITHUB_ACTIONS') and pulados: ok(False, 'no GitHub nenhuma verificação pode ser pulada: ' + ' | '.join(pulados[:3]))
 falhas = [r for r in res if not r['ok']]
-json.dump({'total': len(res), 'falhas': len(falhas), 'resultados': res}, open(f'{OUT}/resultado.json', 'w'), ensure_ascii=False, indent=1)
-print(f'\n{len(res) - len(falhas)} de {len(res)} verificações passaram.')
+json.dump({'total': len(res), 'falhas': len(falhas), 'pulados': pulados, 'resultados': res}, open(f'{OUT}/resultado.json', 'w'), ensure_ascii=False, indent=1)
+print(f'\n{len(res) - len(falhas)} de {len(res)} verificações passaram.' + (f' {len(pulados)} puladas por falta de arquivos nesta cópia.' if pulados else ''))
 sys.exit(1 if falhas else 0)

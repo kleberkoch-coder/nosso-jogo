@@ -4,6 +4,7 @@
    - PAIS: o do grupo (padrão do combo do telefone e da importação da planilha).
    - MOEDA: a do grupo (cfg.moeda), que nasce da moeda do país do organizador.
    - FUSO: o do grupo (cfg.fuso). Vazio (grupo antigo) = relógio do aparelho, como antes.
+   - RELÓGIO: 12h (8:00 PM) ou 24h (20:00), do formato do país do grupo (KAN-163). Gravado sempre em 24h.
    Quem muda é definirRegiao(), chamada quando o grupo carrega (rotas.js); fora de um grupo, vale o país da conta. */
 const LOCAL = 'pt-BR';
 let PAIS = 'BR',
@@ -48,6 +49,20 @@ function agora() {
   }
 }
 
+/* O país do grupo usa relógio de 12 horas (AM/PM)? Vem do navegador (padrão internacional), pelo formato do grupo. */
+const doze = {};
+function relogio12() {
+  if (!(FORMATO in doze)) {
+    try {
+      const o = new Intl.DateTimeFormat(FORMATO, { hour: 'numeric' }).resolvedOptions();
+      doze[FORMATO] = o.hourCycle ? o.hourCycle === 'h12' || o.hourCycle === 'h11' : !!o.hour12;
+    } catch (e) {
+      doze[FORMATO] = false;
+    }
+  }
+  return doze[FORMATO];
+}
+
 /* Símbolo da moeda do grupo (R$, US$, €…), para rótulos como "Valor (R$)". */
 function simboloMoeda() {
   try {
@@ -60,4 +75,4 @@ function simboloMoeda() {
   }
 }
 
-export { FORMATO, FUSO, LOCAL, MOEDA, PAIS, agora, definirRegiao, simboloMoeda };
+export { FORMATO, FUSO, LOCAL, MOEDA, PAIS, agora, definirRegiao, relogio12, simboloMoeda };

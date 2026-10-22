@@ -1,6 +1,9 @@
 /* Português do Brasil: idioma base do Nosso Jogo.
    Chaves agrupadas por tela. Texto novo entra aqui primeiro; os outros idiomas copiam as mesmas chaves. */
 export default {
+  // Relógio de 12 horas (KAN-163): antes e depois do meio-dia.
+  'relogio.am': 'AM',
+  'relogio.pm': 'PM',
   /* comum */
   'comum.carregando': 'Carregando…',
   'comum.versao': 'Nosso Jogo · versão {n}',

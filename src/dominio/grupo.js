@@ -4,6 +4,7 @@ import { S } from '../nucleo/estado.js';
 import { DIAS, esc } from '../nucleo/util.js';
 import { FORMATO, LOCAL, agora } from '../i18n/formatos.js';
 import { endTs, proximasFixas, virtualOf, ymd } from './rodadas-fixas.ts';
+import { faixaTexto } from './rodadas.js';
 
 function gname() {
   return (S.app && S.app.name) || 'Meu grupo';
@@ -61,7 +62,7 @@ function dupName(name, except) {
   );
 }
 const schedTxt = x =>
-  `${DIAS[x.dow]}, ${x.ini}${x.fim ? '–' + x.fim : ''}${x.place ? ' · <span class="corta" data-corta>' + esc(x.place) + '</span>' : ''}`;
+  `${DIAS[x.dow]}, ${faixaTexto(x.ini, x.fim)}${x.place ? ' · <span class="corta" data-corta>' + esc(x.place) + '</span>' : ''}`;
 /* Próxima data dos jogos fixos: regra em rodadas-fixas.ts, com teste próprio (D12). */
 function virtualFixos() {
   if (!grpAtivo()) return [];

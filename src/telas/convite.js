@@ -15,12 +15,12 @@ function renderInvite() {
   const logged = !!(S.user && !S.user.anon);
   if (!logged) {
     /* Mantém o que já foi digitado quando o nome do grupo chega depois. */
-    if ($('#le') && $('#invHead') && main.dataset.inv === S.authMode) {
-      $('#invHead').innerHTML = invHead();
-      return;
+    if (!($('#le') && $('#invHead') && main.dataset.inv === S.authMode)) {
+      main.dataset.inv = S.authMode;
+      main.innerHTML = entrarPronto().vAuth();
+      entrarPronto().montarAuth(true);
     }
-    main.dataset.inv = S.authMode;
-    main.innerHTML = entrarPronto().vAuth(`<div id="invHead">${invHead()}</div>`);
+    $('#invHead').innerHTML = invHead();
     return;
   }
   main.dataset.inv = '';

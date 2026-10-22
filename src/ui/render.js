@@ -128,6 +128,7 @@ function renderCore() {
   if (R.n === 'inv') return A.renderInvite();
   if (!logged) {
     main.innerHTML = entrarPronto().vAuth();
+    entrarPronto().montarAuth();
     return;
   }
   if (R.n === 'home') {

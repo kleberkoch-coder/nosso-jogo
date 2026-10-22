@@ -11,7 +11,7 @@ import { GB, S, clean, w } from '../nucleo/estado.js';
 import { linkConvite } from '../nucleo/links.js';
 import { $, cl, esc, toast, uid } from '../nucleo/util.js';
 import { upMyGroup } from '../rotas.js';
-import { groupForm, porTimeAjuda, readGroupForm, schedRow } from '../telas/grupo-form.js';
+import { formAberto, montarGrupoForm, readGroupForm } from '../telas/GrupoForm';
 import { closeDlg, confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
 import { changed } from '../ui/render.js';
 import { LOCAL } from '../i18n/formatos.js';
@@ -66,45 +66,21 @@ const acoes = {
   },
   newGroup: () => {
     openDlg(
-      `<h3>Novo grupo</h3>${groupForm({}, false)}<div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="createGroup">Criar grupo</button></div>`
+      `<h3>Novo grupo</h3><div id="ngRaiz"></div><div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="createGroup">Criar grupo</button></div>`
     );
+    montarGrupoForm({}, false);
     setTimeout(() => $('#ngn')?.focus(), 50);
   },
   editGroup: () => {
     openDlg(
-      `<h3>Editar grupo</h3><p class="small muted" style="margin-top:-6px">Criado em ${fdia(S.app.createdAt)}</p>${groupForm(S.app, true)}<div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveGroup">Salvar</button></div>`
+      `<h3>Editar grupo</h3><p class="small muted" style="margin-top:-6px">Criado em ${fdia(S.app.createdAt)}</p><div id="ngRaiz"></div><div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveGroup">Salvar</button></div>`
     );
+    montarGrupoForm(S.app, true);
   },
-  pickFreq: el => {
-    const box = $('#ngBox');
-    box.dataset.freq = el.dataset.v;
-    box.querySelectorAll('[data-a=pickFreq]').forEach(b => b.setAttribute('aria-pressed', b === el));
-    $('#schedW').hidden = el.dataset.v !== 'fixo';
-    $('#fqHelp').textContent = tx(el.dataset.v === 'fixo' ? 'grupo.frequenteAjuda' : 'grupo.esporadicoAjuda');
-  },
-  addSched: () => {
-    const rows = [...document.querySelectorAll('#sched .srow')],
-      last = rows[rows.length - 1];
-    const x = last
-      ? {
-          dow: (+last.querySelector('.sd').value + 2) % 7,
-          ini: last.querySelector('.si').value,
-          fim: last.querySelector('.sf').value,
-          place: last.querySelector('.sl').value,
-        }
-      : null;
-    $('#sched').insertAdjacentHTML('beforeend', schedRow(x));
-    const n = $('#sched').lastElementChild.querySelector('.sd');
-    n && n.focus();
-  },
-  rmSched: el => {
-    const rows = document.querySelectorAll('#sched .srow');
-    if (rows.length <= 1) {
-      toast('Deixe pelo menos um dia, ou marque o grupo como esporádico.');
-      return;
-    }
-    el.closest('.srow').remove();
-  },
+  /* Escolhas dentro do formulário do grupo (componente telas/GrupoForm.tsx). */
+  pickFreq: el => formAberto()?.freq(el.dataset.v),
+  addSched: () => formAberto()?.maisDia(),
+  rmSched: el => formAberto()?.menosDia(el),
   saveGroup: el => {
     const g = readGroupForm(S.gid);
     if (!g) return;
@@ -328,20 +304,7 @@ const acoes = {
     toast(on ? 'Grupo reativado.' : 'Grupo inativado.');
     return p;
   },
-  pickSport: el => {
-    const box = el.closest('[data-sp]');
-    box.dataset.sp = el.dataset.v;
-    box.querySelectorAll('[data-a=pickSport]').forEach(b => b.setAttribute('aria-pressed', b === el));
-    const o = box.querySelector('#ngoW,#csoW');
-    if (o) o.hidden = el.dataset.v !== 'outro';
-    const nt = box.querySelector('#ngt');
-    if (nt) {
-      const ant = box.dataset.spAnt || '';
-      if (!ant || +nt.value === porTimePadrao(ant)) nt.value = porTimePadrao(el.dataset.v);
-      box.dataset.spAnt = el.dataset.v;
-      $('#ngtHelp').textContent = porTimeAjuda(el.dataset.v);
-    }
-  },
+  pickSport: el => formAberto()?.esporte(el.dataset.v),
   createGroup: async el => {
     const g = readGroupForm(null);
     if (!g) return;

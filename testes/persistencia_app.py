@@ -50,6 +50,21 @@ def conf(pg):
     except Exception:
         pass
 
+def sair_e_esperar(pg):
+    """Sair pelo menu da conta. Com gravação ainda a caminho, o app pergunta antes (confirma); depois a página
+    recarrega: espera a recarga terminar antes de seguir, senão o que for digitado é apagado no meio."""
+    pg.click('#topright [data-a=contaMenu]'); pg.wait_for_timeout(300); pg.click('.theme-menu [data-a=logout]')
+    try:
+        pg.wait_for_selector('#dlg .conf [data-a=confSim]', timeout=2000)
+        pg.click('#dlg .conf [data-a=confSim]')
+    except Exception:
+        pass
+    try:
+        pg.wait_for_url('**#/', timeout=15000)
+    except Exception:
+        pass
+    pg.wait_for_load_state('load'); pg.wait_for_timeout(1000)
+
 EMAIL, SENHA = 'persistencia@teste.com', 'Jogo@2026'
 J = lambda pg, js, arg=None: pg.evaluate(js, arg) if arg is not None else pg.evaluate(js)
 
@@ -277,8 +292,7 @@ with sync_playwright() as pw:
     if EMU:
         ctx.close(); ctx2 = novo(); p2 = ctx2.new_page()
     else:
-        pg.click('#topright [data-a=contaMenu]'); pg.wait_for_timeout(300); pg.click('.theme-menu [data-a=logout]')
-        pg.wait_for_url('**#/', timeout=20000); pg.wait_for_load_state('load'); pg.wait_for_timeout(800)
+        sair_e_esperar(pg)
         p2 = pg
     p2.on('pageerror', lambda e: errs.append(str(e)))
     p2.goto(URL + '#/entrar'); p2.wait_for_selector('#le', timeout=20000); p2.wait_for_timeout(300)
@@ -314,9 +328,7 @@ with sync_playwright() as pw:
     d23, t23 = ver23(p23)
     ok(d23['f'].get('ini') == '19:00' and d23['f'].get('fim') == '21:00' and '19:30' in d23['t'] and '7:00–9:00 PM' in t23,
        f'CT-KAN-170-P23: grupo dos EUA guarda 19:00–21:00 e 19:30 e mostra 7:00–9:00 PM depois de recarregar ({d23})')
-    p23.click('#topright [data-a=contaMenu]'); p23.wait_for_timeout(300); p23.click('.theme-menu [data-a=logout]')
-    # Sair recarrega a página: espera a recarga terminar antes de digitar (senão os campos são esvaziados no meio)
-    p23.wait_for_url('**#/', timeout=20000); p23.wait_for_load_state('load'); p23.wait_for_timeout(800)
+    sair_e_esperar(p23)
     p23.goto(URL + '#/entrar'); p23.wait_for_selector('#le', timeout=20000); p23.wait_for_timeout(300)
     p23.fill('#le', E23); p23.fill('#lp', SENHA); p23.keyboard.press('Enter'); p23.wait_for_timeout(2500)
     p23.goto(URL + '#/g/' + g23); pronto(p23, 'grupo'); p23.wait_for_timeout(800)

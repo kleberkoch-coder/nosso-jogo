@@ -101,19 +101,37 @@ export function resumoDoCaixa<L extends Lancamento>(lancamentos: L[], mes: strin
   };
 }
 
-/* Meses do seletor: o mês atual, os meses com lançamento e os meses com rodada, do mais novo para o mais antigo. */
-export function mesesDoCaixa(hoje: string, lancamentos: Lancamento[], datasRodadas: string[]): string[] {
+/* Meses do seletor: o mês atual, os meses com lançamento e os meses com rodada, do mais novo para o mais antigo.
+   KAN-106: os meses com movimento na ficha de resumo também entram (os lançamentos antigos não são carregados). */
+export function mesesDoCaixa(
+  hoje: string,
+  lancamentos: Lancamento[],
+  datasRodadas: string[],
+  mesesComCaixa: string[] = []
+): string[] {
   return [
     ...new Set(
       [
         hoje.slice(0, 7),
         ...lancamentos.map(l => (l.d || '').slice(0, 7)),
         ...datasRodadas.map(d => (d || '').slice(0, 7)),
+        ...mesesComCaixa,
       ].filter(Boolean)
     ),
   ]
     .sort()
     .reverse();
+}
+
+/* Janela de lançamentos que o Caixa carrega (KAN-106): do 1º dia de 3 meses antes do mês escolhido em diante.
+   Cobre o pagamento de uma rodada feito depois dela (pagamento nunca vem antes do jogo), a mensalidade paga até
+   3 meses adiantada e a referência dos últimos 3 meses (KAN-161). Com alguém recebendo por jogo (KAN-172),
+   começa no "desde" mais antigo, se for antes. O saldo vem das fichas de resumo do mês (D11), não da soma. */
+export const MESES_ANTES = 3;
+export function inicioDaJanela(mes: string, desdeAPagar?: string | null): string {
+  const [a, m] = mes.slice(0, 7).split('-').map(Number),
+    ini = new Date(Date.UTC(a, m - 1 - MESES_ANTES, 1)).toISOString().slice(0, 10);
+  return desdeAPagar && desdeAPagar < ini ? desdeAPagar : ini;
 }
 
 /* Valor fora do padrão do grupo (KAN-161): o app pergunta antes de lançar, em vez de bloquear.

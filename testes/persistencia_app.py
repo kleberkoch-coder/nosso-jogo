@@ -277,10 +277,11 @@ with sync_playwright() as pw:
     if EMU:
         ctx.close(); ctx2 = novo(); p2 = ctx2.new_page()
     else:
-        pg.click('#topright [data-a=contaMenu]'); pg.wait_for_timeout(300); pg.click('.theme-menu [data-a=logout]'); pg.wait_for_timeout(1500)
+        pg.click('#topright [data-a=contaMenu]'); pg.wait_for_timeout(300); pg.click('.theme-menu [data-a=logout]')
+        pg.wait_for_url('**#/', timeout=20000); pg.wait_for_load_state('load'); pg.wait_for_timeout(800)
         p2 = pg
     p2.on('pageerror', lambda e: errs.append(str(e)))
-    p2.goto(URL + '#/entrar'); p2.wait_for_selector('#le', timeout=20000)
+    p2.goto(URL + '#/entrar'); p2.wait_for_selector('#le', timeout=20000); p2.wait_for_timeout(300)
     p2.fill('#le', EMAIL); p2.fill('#lp', SENHA); p2.keyboard.press('Enter'); p2.wait_for_timeout(2500)
     p2.goto(URL + '#/g/' + gid); pronto(p2); p2.wait_for_timeout(1500)
     tudo = J(p2, """(()=>({nome:S.app.name,pos:(S.app.posx||[]).some(p=>p[1]==='Volante'),moeda:S.app.cfg.moeda,
@@ -313,8 +314,10 @@ with sync_playwright() as pw:
     d23, t23 = ver23(p23)
     ok(d23['f'].get('ini') == '19:00' and d23['f'].get('fim') == '21:00' and '19:30' in d23['t'] and '7:00–9:00 PM' in t23,
        f'CT-KAN-170-P23: grupo dos EUA guarda 19:00–21:00 e 19:30 e mostra 7:00–9:00 PM depois de recarregar ({d23})')
-    p23.click('#topright [data-a=contaMenu]'); p23.wait_for_timeout(300); p23.click('.theme-menu [data-a=logout]'); p23.wait_for_timeout(1500)
-    p23.goto(URL + '#/entrar'); p23.wait_for_selector('#le', timeout=20000)
+    p23.click('#topright [data-a=contaMenu]'); p23.wait_for_timeout(300); p23.click('.theme-menu [data-a=logout]')
+    # Sair recarrega a página: espera a recarga terminar antes de digitar (senão os campos são esvaziados no meio)
+    p23.wait_for_url('**#/', timeout=20000); p23.wait_for_load_state('load'); p23.wait_for_timeout(800)
+    p23.goto(URL + '#/entrar'); p23.wait_for_selector('#le', timeout=20000); p23.wait_for_timeout(300)
     p23.fill('#le', E23); p23.fill('#lp', SENHA); p23.keyboard.press('Enter'); p23.wait_for_timeout(2500)
     p23.goto(URL + '#/g/' + g23); pronto(p23, 'grupo'); p23.wait_for_timeout(800)
     d23b, t23b = ver23(p23)

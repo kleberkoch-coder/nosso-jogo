@@ -147,6 +147,26 @@ function ensureExtras() {
     drop('rodMes');
     S.rodMesM = null;
   }
+  /* Lançamentos do caixa (KAN-106): só a janela recente (3 meses antes do mês escolhido em diante), nunca o histórico todo.
+     Fora da aba Caixa, a janela é a do mês atual (usada na referência de valor fora do padrão, KAN-161). */
+  const mesCx = S.tab === 'caixa' ? S.month : ymd(agora()).slice(0, 7),
+    deCx = A.inicioDaJanela(mesCx, S.tab === 'caixa' ? A.inicioAPagar() : null);
+  if (S.caixaDe !== deCx) {
+    S.caixaDe = deCx;
+    subQ('caixa', 'caixa', { campo: 'd', de: deCx, ordem: 'asc' }, d => {
+      S.caixa = d || {};
+    });
+  }
+  /* Saldo do caixa (KAN-106): soma das fichas de resumo de cada mês (D11), só com a aba aberta. */
+  if (S.tab === 'caixa') {
+    if (!SUBS.resCx)
+      subQ('resCx', 'resumos', { campo: 'mes', ordem: 'asc' }, d => {
+        S.resCx = d || {};
+      });
+  } else if (SUBS.resCx) {
+    drop('resCx');
+    S.resCx = null;
+  }
   /* A pagar por jogo (KAN-172): rodadas desde o primeiro dia em que alguém passou a receber, em qualquer mês. */
   const desde = S.tab === 'caixa' ? A.inicioAPagar() : null;
   if (desde) {
@@ -321,6 +341,9 @@ function setupRoute() {
     rodMesM: null,
     rodPag: {},
     rodPagDe: null,
+    caixa: {},
+    caixaDe: null,
+    resCx: null,
     rodX: {},
     rodXid: null,
     hist: null,
@@ -507,9 +530,6 @@ function startData() {
   });
   sub('migr', 'privado/migracao', d => {
     S.migr = d || { v: 0 };
-  });
-  sub('caixa', 'caixa', d => {
-    S.caixa = d || {};
   });
   sub('vot', 'votacoes', d => {
     S.vot = d || {};

@@ -127,6 +127,10 @@ function renderCore() {
   if ((R.n === 'inv' || !logged) && !entrarPronto()) return baixar(carregarEntrar());
   if (R.n === 'inv') return A.renderInvite();
   if (!logged) {
+    /* A tela de entrar já está aberta no mesmo modo: não desenha de novo, para não apagar o que a pessoa
+       está digitando (um aviso do login anônimo logo depois de sair redesenhava e esvaziava os campos). */
+    if ($('#authRaiz #le') && main.dataset.auth === S.authMode) return;
+    main.dataset.auth = S.authMode;
     main.innerHTML = entrarPronto().vAuth();
     entrarPronto().montarAuth();
     return;

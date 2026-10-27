@@ -3,7 +3,7 @@
 import { render } from 'preact';
 import { useState } from 'preact/hooks';
 import { cfg } from '../dominio/caixa.js';
-import { col, sport, timeDoJogo, tn, tnJogo } from '../dominio/esportes.js';
+import { artNome, col, sport, timeDoJogo, tn, tnJogo } from '../dominio/esportes.js';
 import { attendance, curRodada, pname } from '../dominio/grupo.js';
 import { desfazer, emQuadra, entrar, escVazia, podemEntrar, type Esc } from '../dominio/escalacao';
 import { tx } from '../i18n/index.js';
@@ -108,9 +108,12 @@ function Placar({ r }: { r: Rodada }) {
             </button>
           ))}
         </div>
-        <button class="btn sm" data-a="abrirEscalacao" data-v={t} style="margin:8px auto 4px">
-          {tx('partida.escalacao')}
-        </button>
+        {/* Em duplas não há troca no meio do jogo (KAN-192): sem Escalação. */}
+        {sport().pairs ? null : (
+          <button class="btn sm" data-a="abrirEscalacao" data-v={t} style="margin:8px auto 4px">
+            {tx('partida.escalacao')}
+          </button>
+        )}
         {(() => {
           const e = escDe(L, t),
             base = new Set(time.players),
@@ -171,13 +174,13 @@ function Ajustes({ r }: { r: Rodada }) {
     <div class="panel">
       <div class="row">
         <label class="f" style="margin:0;flex:1;min-width:120px">
-          <span>{tx('partida.timeA')}</span>
+          <span>{tx(sport().pairs ? 'partida.duplaA' : 'partida.timeA')}</span>
           <select class="sel" data-c="ta">
             {opcoes(L.a, L.b)}
           </select>
         </label>
         <label class="f" style="margin:0;flex:1;min-width:120px">
-          <span>{tx('partida.timeB')}</span>
+          <span>{tx(sport().pairs ? 'partida.duplaB' : 'partida.timeB')}</span>
           <select class="sel" data-c="tb">
             {opcoes(L.b, L.a)}
           </select>
@@ -284,7 +287,7 @@ function Artilharia({ r }: { r: Rodada }) {
   return (
     <div class="panel" id="artPainel">
       <div class="row between">
-        <h3 style="margin:0">{tx('partida.artTitulo')}</h3>
+        <h3 style="margin:0">{tx('partida.artTitulo', { nome: artNome() })}</h3>
         <button class="btn sm" data-a="abrirArtilharia">
           {tx(a ? 'partida.artEditar' : 'partida.artLancar')}
         </button>
@@ -306,7 +309,7 @@ function LancarArtilharia({ r }: { r: Rodada }) {
     temGolEmPartida = (partidasDe(r.id) as Partida[]).some(m => m.ga || m.gb);
   return (
     <>
-      <h3>{tx('partida.artTitulo')}</h3>
+      <h3>{tx('partida.artTitulo', { nome: artNome() })}</h3>
       <p class="small muted">{tx('partida.artTexto', { ponto: (sport() as { word: string }).word.toLowerCase() })}</p>
       {temGolEmPartida ? (
         <p class="small" style="color:var(--out)">
@@ -346,7 +349,7 @@ function LancarArtilharia({ r }: { r: Rodada }) {
           {tx('comum.cancelar')}
         </button>
         <button class="btn primary" data-a="salvarArtilharia">
-          {tx('partida.artSalvar')}
+          {tx('partida.artSalvar', { nome: artNome().toLowerCase() })}
         </button>
       </div>
     </>

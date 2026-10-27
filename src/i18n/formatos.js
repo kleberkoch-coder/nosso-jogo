@@ -49,18 +49,19 @@ function agora() {
   }
 }
 
-/* O país do grupo usa relógio de 12 horas (AM/PM)? Vem do navegador (padrão internacional), pelo formato do grupo. */
+/* O país do grupo usa relógio de 12 horas (AM/PM)? Vem do navegador (padrão internacional), pelo formato do grupo.
+   Com um formato dado (ex.: o país escolhido no formulário do grupo, ainda não salvo, KAN-186), vale o dele. */
 const doze = {};
-function relogio12() {
-  if (!(FORMATO in doze)) {
+function relogio12(formato = FORMATO) {
+  if (!(formato in doze)) {
     try {
-      const o = new Intl.DateTimeFormat(FORMATO, { hour: 'numeric' }).resolvedOptions();
-      doze[FORMATO] = o.hourCycle ? o.hourCycle === 'h12' || o.hourCycle === 'h11' : !!o.hour12;
+      const o = new Intl.DateTimeFormat(formato, { hour: 'numeric' }).resolvedOptions();
+      doze[formato] = o.hourCycle ? o.hourCycle === 'h12' || o.hourCycle === 'h11' : !!o.hour12;
     } catch (e) {
-      doze[FORMATO] = false;
+      doze[formato] = false;
     }
   }
-  return doze[FORMATO];
+  return doze[formato];
 }
 
 /* Símbolo da moeda do grupo (R$, US$, €…), para rótulos como "Valor (R$)". */

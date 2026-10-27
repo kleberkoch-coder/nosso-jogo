@@ -30,6 +30,7 @@ export default {
   'auth.senhaFalta': 'A senha precisa ter: {itens}.',
   'auth.credencial': 'E-mail ou senha incorretos.',
   'auth.emailInvalido': 'Esse e-mail não é válido.',
+  'auth.emailIncompleto': 'Confira o e-mail: falta a terminação (.com, .com.br…).',
   'auth.emailFaltando': 'Digite seu e-mail.',
   'auth.emailEmUso': 'Esse e-mail já tem conta. Use a aba Entrar.',
   'auth.senhaFraca': 'A senha não atende aos requisitos.',

@@ -220,6 +220,7 @@ Medido a cada versão, no celular de 390px:
 - **Privacidade:** para o link esconder o diarista, a marca `vaga` fica no documento público do jogador. O app a ajusta sozinho a partir do tipo (`privado/caixa`), só com o controle ligado (`sincronizarVagas`). Exceção à regra de que o tipo é privado, aprovada pelo Kleber em 21/10/2026.
 - **Sem abertura automática:** abrir num horário marcado precisaria de servidor (Blaze, KAN-174). O administrador abre na hora, com a sugestão do que falta para o mínimo (KAN-179).
 - **Tamanho:** para a gestão continuar abaixo de 95 KB, "Importar jogadores" (KAN-159) passou a baixar só quando a janela abre (parte sob demanda `ImportarJogadores`, 3,4 KB), guardada pelo service worker como as outras partes da gestão.
+- **v66 (KAN-197, auditoria de 27/10):** a descida do contador também exige o controle ligado e que o jogador precise de vaga, como a subida. Antes, a saída de um mensalista podia descer o contador e abrir vaga a mais.
 
 ### D18. Teste de carga no emulador e custo estimado (16 out. 2026, KAN-158)
 - **Contexto:** o app nunca tinha sido medido com muita gente ao mesmo tempo. Três pontos recebem gravações de várias pessoas no mesmo instante: o contador de avulsos da rodada (`limites/avulsos`), o documento da rodada e os votos.

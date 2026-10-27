@@ -8,7 +8,7 @@ import { SPORTS, porTimePadrao } from '../dominio/esportes.js';
 import { dupName, freq } from '../dominio/grupo.js';
 import { paisPor, regiaoNova } from '../dominio/paises.ts';
 import { ordemDias } from '../dominio/relogio';
-import { PAIS, relogio12 } from '../i18n/formatos.js';
+import { relogio12 } from '../i18n/formatos.js';
 import { tx } from '../i18n/index.js';
 import { S as estado } from '../nucleo/estado.js';
 import { $, DIAS, toast, uid } from '../nucleo/util.js';
@@ -97,10 +97,11 @@ function GrupoForm({ g, editing }: { g: Grupo; editing: boolean }) {
   const prox = useRef(linhas.length),
     caixa = useRef<HTMLDivElement>(null),
     focar = useRef(false);
-  const doze = relogio12(),
-    dias = ordemDias(PAIS),
-    paises = useMemo(listaPais, []),
-    p = paisPor(reg.pais);
+  // Relógio e semana do país escolhido no formulário, mesmo antes de salvar (KAN-186).
+  const p = paisPor(reg.pais),
+    doze = relogio12((p && p.formato) || 'pt-BR'),
+    dias = ordemDias(reg.pais),
+    paises = useMemo(listaPais, []);
 
   aberto = {
     freq: setFq,
@@ -144,6 +145,22 @@ function GrupoForm({ g, editing }: { g: Grupo; editing: boolean }) {
   const trocarPais = (iso: string) => {
     // Trocou o país: moeda e fuso voltam aos do país novo (a pessoa ainda pode mudar cada um).
     const r = regiaoNova(iso, fusoAparelho());
+    // KAN-186: os dias fixos já digitados são montados de novo no relógio e na semana do país novo, sem perder nada.
+    const de = (row: Element, s: string) => (row.querySelector(s) as HTMLInputElement).value;
+    const rows = caixa.current ? [...caixa.current.querySelectorAll('#sched .srow')] : [];
+    if (rows.length)
+      setLinhas(
+        rows.map(row => ({
+          k: prox.current++,
+          x: {
+            id: (row as HTMLElement).dataset.id || '',
+            dow: +de(row, '.sd'),
+            ini: de(row, '.si'),
+            fim: de(row, '.sf'),
+            place: de(row, '.sl'),
+          },
+        }))
+      );
     setReg({ pais: r.pais, moeda: r.moeda, fuso: r.fuso });
   };
   const fusos = listaFuso(reg.pais, reg.fuso);

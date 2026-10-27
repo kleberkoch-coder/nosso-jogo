@@ -3,6 +3,7 @@
      npx firebase emulators:exec --only firestore --project demo-nosso-jogo "node --test testes/regras-firebase/*.test.mjs"
    As regras vão ao ar sozinhas no Merge; se algum caso aqui falhar, a proposta fica vermelha. */
 import { after, before, beforeEach, describe, test } from 'node:test';
+import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import {
@@ -227,6 +228,20 @@ describe('votos pelo link (KAN-76)', () => {
     for (let i = 0; i < 31; i++) v['c' + i] = 'j1';
     await assertFails(setDoc(doc(db.anon(), V + '/votos/anon1'), { pid: 'j1', v, t: 1 }));
   });
+  test('KAN-198: voto normal em várias categorias, inclusive categoria criada pelo organizador, é aceito', async () => {
+    await assertSucceeds(
+      setDoc(doc(db.anon(), V + '/votos/anon1'), { pid: 'j1', v: { best: 'j2', gk: 'j3', xMvk3b2: 'av-1' }, t: 1 })
+    );
+    await assertSucceeds(setDoc(doc(db.anon(), V + '/votos/anon1'), { pid: 'j1', v: {}, t: 2 }));
+  });
+  test('KAN-198: voto com escolhido de mais de 64 letras, texto com código ou que não é texto é recusado', async () => {
+    await assertFails(setDoc(doc(db.anon(), V + '/votos/anon1'), { pid: 'j1', v: { best: 'x'.repeat(65) }, t: 1 }));
+    await assertFails(setDoc(doc(db.anon(), V + '/votos/anon1'), { pid: 'j1', v: { best: '<b>x' }, t: 1 }));
+    await assertFails(
+      setDoc(doc(db.anon(), V + '/votos/anon1'), { pid: 'j1', v: { best: { a: 'x'.repeat(5000) } }, t: 1 })
+    );
+    await assertFails(setDoc(doc(db.anon(), V + '/votos/anon1'), { pid: 'j1', v: { best: 'j2', mvp: 'j3|j4' }, t: 1 }));
+  });
 });
 
 describe('vagas para diaristas e avulsos (KAN-63)', () => {
@@ -248,6 +263,7 @@ describe('vagas para diaristas e avulsos (KAN-63)', () => {
       await setDoc(doc(f, G), { name: 'G1', owner: 'dono', ativo: true, createdAt: 1, cfg: { vagasCtrl: ctrl } });
       await setDoc(doc(f, G + '/jogadores/d1'), { name: 'Diarista', vaga: true });
       await setDoc(doc(f, G + '/jogadores/d2'), { name: 'Diarista 2', vaga: true });
+      await setDoc(doc(f, G + '/jogadores/m1'), { name: 'Mensalista' });
       await setDoc(doc(f, R), Object.assign({ date: '2026-10-05', locked: false }, vagas ? { vagas } : {}));
     });
 
@@ -295,6 +311,37 @@ describe('vagas para diaristas e avulsos (KAN-63)', () => {
     await preparar({ aberta: true, max: 2 });
     await assertFails(marcar(db.anon(), 'j1', 'in', 1));
     await assertFails(setDoc(doc(db.anon(), CV), { n: 0, ult: 'd1' }));
+  });
+  test('KAN-197: mensalista saindo não devolve vaga; diarista que estava dentro devolve', async () => {
+    await preparar({ aberta: true, max: 2 });
+    await assertSucceeds(marcar(db.anon(), 'd1', 'in', 1));
+    await assertSucceeds(marcar(db.anon(), 'd2', 'in', 1));
+    await assertSucceeds(marcar(db.anon(), 'm1', 'in', 0));
+    // Mensalista sai junto com a descida do contador: a gravação inteira é recusada
+    await assertFails(marcar(db.anon(), 'm1', 'out', -1));
+    await assertSucceeds(marcar(db.anon(), 'm1', 'out', 0));
+    // Vagas cheias (2 de 2): o avulso novo continua recusado
+    await assertFails(marcar(db.anon(), 'av9', 'in', 1, { nome: 'Avulso 9', avulso: true }));
+    // Diarista que estava dentro sai e devolve (2 → 1)
+    await assertSucceeds(marcar(db.anon(), 'd1', 'out', -1));
+    await semRegras(async f => {
+      const s = await getDoc(doc(f, CV));
+      assert.equal(s.data().n, 1);
+    });
+  });
+  test('KAN-197: com o controle desligado, ninguém mexe no contador pelo link', async () => {
+    await preparar({ aberta: true, max: 2 }, false);
+    await semRegras(f => setDoc(doc(f, CV), { n: 1, ult: 'x' }));
+    await semRegras(f =>
+      setDoc(doc(f, R + '/presencas/d1'), { s: 'in', t: Date.now() - 1000, by: 'anon1', dev: 'anon1' })
+    );
+    await assertFails(marcar(db.anon(), 'd1', 'out', -1));
+  });
+  test('KAN-198: marca de avulso só sim ou não', async () => {
+    await preparar(null, false);
+    await assertFails(marcar(db.anon(), 'av2', 'in', 0, { nome: 'Avulso 2', avulso: 'x'.repeat(5000) }));
+    await assertSucceeds(marcar(db.anon(), 'av3', 'in', 0, { nome: 'Avulso 3', avulso: true }));
+    await assertSucceeds(marcar(db.anon(), 'd1', 'in', 0));
   });
   test('administrador abre e zera as vagas; o jogador pelo link não', async () => {
     await preparar(null);

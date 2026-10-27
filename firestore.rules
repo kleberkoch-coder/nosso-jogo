@@ -42,6 +42,8 @@ service cloud.firestore {
         && request.resource.data.by == request.auth.uid
         && (!('nome' in request.resource.data) || (request.resource.data.nome is string && request.resource.data.nome.size() <= 40))
         && (!('pos' in request.resource.data) || (request.resource.data.pos is string && request.resource.data.pos.size() <= 4))
+        // KAN-198: a marca de avulso é só sim ou não (antes aceitava qualquer coisa, até quase 1 MB por presença).
+        && (!('avulso' in request.resource.data) || request.resource.data.avulso is bool)
         && request.resource.data.get('t', 0) is int;
     }
     // KAN-78: a ordem da lista vem da hora da confirmação (t), enviada pelo celular. Pelo link ela não pode
@@ -272,8 +274,11 @@ service cloud.firestore {
                 && getAfter(pres(gid, rid, request.resource.data.ult)).data.s == 'in'
                 && (!exists(pres(gid, rid, request.resource.data.ult))
                   || get(pres(gid, rid, request.resource.data.ult)).data.get('s', '') != 'in'))
+              // KAN-197: só devolve a vaga quem precisava dela (diarista ou avulso), com o controle ligado,
+              // como na subida. Antes, um mensalista saindo também descia o contador e abria vaga a mais.
               || (resource != null && resource.data.get('n', 0) > 0
                 && request.resource.data.n == resource.data.get('n', 0) - 1
+                && controleVagas(gid) && precisaVaga(gid, request.resource.data.ult)
                 && exists(pres(gid, rid, request.resource.data.ult))
                 && get(pres(gid, rid, request.resource.data.ult)).data.get('s', '') == 'in'
                 && getAfter(pres(gid, rid, request.resource.data.ult)).data.s != 'in'));
@@ -324,7 +329,12 @@ service cloud.firestore {
             && get(/databases/$(database)/documents/grupos/$(gid)/votacoes/$(vid)).data.open == true
             && request.resource.data.keys().hasOnly(['pid', 'v', 't'])
             && idValido(request.resource.data.get('pid', ''))
-            && request.resource.data.get('v', {}) is map && request.resource.data.get('v', {}).size() <= 30;
+            && request.resource.data.get('v', {}) is map && request.resource.data.get('v', {}).size() <= 30
+            // KAN-198: cada categoria e cada escolhido é um identificador curto (até 64 letras), nunca um texto enorme.
+            && (request.resource.data.get('v', {}).size() == 0
+              || (request.resource.data.v.keys().join('|').matches('[A-Za-z0-9_-]{1,64}([|][A-Za-z0-9_-]{1,64})*')
+                && request.resource.data.v.values().join('|').matches('[A-Za-z0-9_-]{1,64}([|][A-Za-z0-9_-]{1,64})*')))
+            && request.resource.data.get('t', 0) is int;
           allow delete: if isMember(gid);
         }
       }

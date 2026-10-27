@@ -6,5 +6,5 @@ import { acoes } from './acoes/entrar';
 
 juntarTextos(textosEntrar);
 
-export { AUTH_CANCEL, authMsg, avisoGoogle, checkPw, vAuth } from './telas/login.js';
+export { AUTH_CANCEL, authMsg, avisoGoogle, checkPw, montarAuth, vAuth } from './telas/Login';
 export const ACOES = acoes;

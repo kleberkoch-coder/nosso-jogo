@@ -17,7 +17,6 @@ export { guardarOrdemJogadores, montarJogadores, vJogadores } from './telas/Joga
 export { montarRodada, vRodada } from './telas/Rodada';
 export { migrar, verificarRodadas } from './nucleo/partidas.js';
 export { drawPreview } from './ui/dialogos-gestao.js';
-export { trocarPaisGrupo } from './telas/grupo-form.js';
 export { contaRegiao, listaPais, paisAparelho, preencher } from './ui/regiao.ts';
 export { trocarPaisTelefone } from './ui/contato-form';
 /* Os textos da gestão entram no dicionário assim que esta parte chega (KAN-159). */

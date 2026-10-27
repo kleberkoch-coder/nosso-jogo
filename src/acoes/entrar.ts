@@ -4,7 +4,7 @@ import { copyText } from '../eventos.js';
 import * as banco from '../nucleo/backend.js';
 import { S as estado } from '../nucleo/estado.js';
 import { $, inAppBrowser, toast } from '../nucleo/util.js';
-import { AUTH_CANCEL, authMsg, avisoGoogle, pwFalta, pwOk } from '../telas/login.js';
+import { AUTH_CANCEL, authMsg, avisoGoogle, pwFalta, pwOk } from '../telas/Login';
 import { openDlg, val } from '../ui/dialogos.js';
 import { render } from '../ui/render.js';
 

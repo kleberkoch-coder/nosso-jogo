@@ -1,4 +1,5 @@
 /* Ações: Rodada: datas, presença, avulsos, sorteio, times, lista × times e histórico. Fazem parte de ACT (src/acoes.js). */
+import { horaTexto } from '../dominio/rodadas.js';
 import { cfg } from '../dominio/caixa.js';
 import { COL, col, hasPos, porTime, posKeys, posLabel, posTag, sport, tn } from '../dominio/esportes.js';
 import {
@@ -144,8 +145,8 @@ const acoes = {
           .map(x =>
             tx(x.dow === 0 || x.dow === 6 ? 'fixos.diaTodo' : 'fixos.diaToda', {
               dia: DIAS[x.dow].toLowerCase(),
-              ini: x.ini,
-              fim: x.fim ? tx('fixos.ate', { fim: x.fim }) : '',
+              ini: horaTexto(x.ini),
+              fim: x.fim ? tx('fixos.ate', { fim: horaTexto(x.fim) }) : '',
               local: x.place ? ' — ' + x.place : '',
             })
           )

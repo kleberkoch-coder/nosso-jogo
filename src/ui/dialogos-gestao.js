@@ -1,14 +1,14 @@
 /* Janelas da gestão (KAN-149): jogador, rodada e prévia do sorteio. Vão na parte de gestão, que o link público não baixa. */
-import { horaCampo } from './hora.js';
+import { montarHoras } from './HoraCampo';
 import { cfg, ptipo, recebePorJogo } from '../dominio/caixa.js';
-import { simboloMoeda } from '../i18n/formatos.js';
+import { relogio12, simboloMoeda } from '../i18n/formatos.js';
 import { porTime, sport } from '../dominio/esportes.js';
 import { resumo } from '../dominio/times.ts';
 import { tp, tx } from '../i18n/index.js';
 import { fdia, lvl, lvlIn } from '../dominio/grupo.js';
 import { S } from '../nucleo/estado.js';
 import { $, esc, nextSat } from '../nucleo/util.js';
-import { openDlg, posField } from './dialogos.js';
+import { dlg, openDlg, posField } from './dialogos.js';
 import { campoTelefone } from './contato-form';
 
 const starIn = st =>
@@ -37,13 +37,17 @@ function playerDlg(id, prefill) {
   <div class="dlg-f">${p ? `<button class="btn ghost danger" data-a="delPlayer" data-p="${id}">Excluir</button><button class="btn" data-a="toggleJog" data-p="${id}">${p.ativo === false ? 'Reativar' : 'Inativar'}</button>` : ''}<button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="savePlayer" data-p="${id || ''}">Salvar jogador</button></div>`);
   setTimeout(() => $('#pnm')?.focus(), 50);
 }
+/* Lugar do campo de horário (componente HoraCampo, montado depois de abrir o diálogo). */
+const horaRaiz = (id, v, opcional, rotulo) =>
+  `<span data-hora-raiz="${id}" data-v="${esc(v || '')}" data-rotulo="${esc(rotulo)}"${opcional ? ' data-opcional' : ''}></span>`;
 function rodDlg(r) {
   const c = cfg();
   openDlg(`<h3>${r ? 'Editar rodada' : 'Nova rodada'}</h3>
-  <div class="row"><label class="f" style="flex:1 1 100%"><span>Data</span><input class="inp" type="date" id="rdt" value="${r?.date || nextSat()}"></label><label class="f" style="width:auto"><span>Início</span>${horaCampo('rtm', '', r?.time || c.time, false, 'Início')}</label><label class="f" style="width:auto"><span>Término</span>${horaCampo('rfm', '', r?.fim || '', true, 'Término')}</label></div>
+  <div class="row"><label class="f" style="flex:1 1 100%"><span>Data</span><input class="inp" type="date" id="rdt" value="${r?.date || nextSat()}"></label><label class="f" style="width:auto"><span>Início</span>${horaRaiz('rtm', r?.time || c.time, false, 'Início')}</label><label class="f" style="width:auto"><span>Término</span>${horaRaiz('rfm', r?.fim || '', true, 'Término')}</label></div>
   <label class="f"><span>Local</span><input class="inp" id="rpl" value="${esc(r?.place ?? c.place)}" maxlength="200" placeholder="Ex.: Society do Zé, Av. Brasil 100, Jundiaí"></label>
   <p class="small muted">Quantidade de times e jogadores é definida na hora do sorteio.</p>
   <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveRod" data-v="${r ? r.id : ''}">${r ? 'Salvar' : 'Criar rodada'}</button></div>`);
+  montarHoras(dlg, relogio12());
 }
 function drawPreview() {
   const box = $('#drawBox');

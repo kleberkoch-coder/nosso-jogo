@@ -1,13 +1,13 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v64 (22/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v65 (22/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
 - Só organizador e administradores têm conta: e-mail com senha forte ou Google.
 - "Continuar com o Google" entra ou cria a conta em qualquer aba; se a aba não bater, o app avisa (KAN-142).
-- Senha: 8+ caracteres, maiúscula, minúscula, número e um especial da lista do Firebase (`^ $ * . [ ] { } ( ) ? " ! @ # % & / \ , > < ' : ; | _ ~`). Vale no app (`telas/login.js`) e na política de senha do Firebase, em modo Exigir; as duas mudam juntas (KAN-10).
+- Senha: 8+ caracteres, maiúscula, minúscula, número e um especial da lista do Firebase (`^ $ * . [ ] { } ( ) ? " ! @ # % & / \ , > < ' : ; | _ ~`). Vale no app (`telas/Login.tsx`) e na política de senha do Firebase, em modo Exigir; as duas mudam juntas (KAN-10).
 - Cada grupo é independente: elenco, rodadas, caixa, votações e administradores.
 - Nada específico de esporte no código: posições, pontuação, duplas e textos vêm do catálogo `SPORTS`. Emoji do convite, exemplos da votação (posição-chave só se o esporte tiver) e o nome do ponto ("+2 pontos", "Gol", "TD (+6)") também (KAN-75).
 - Celular primeiro, funciona com sinal fraco (grava no aparelho e envia depois).
@@ -37,7 +37,10 @@ Atualizado na pelada-v64 (22/10/2026). Toda entrega que mudar uma regra atualiza
 - **Trocar a moeda** pede confirmação. Os valores já lançados não são convertidos: o número fica igual, só o símbolo muda.
 - **O fuso do grupo decide a hora do jogo:** quando a rodada termina e vira para a próxima, e o "hoje", para quem abre de qualquer fuso.
 - **Grupo antigo, sem país:** Brasil, Real e o relógio do aparelho, sem mudança.
-- **Ainda não fazem parte:** relógio de 12h/24h e primeiro dia da semana (KAN-163), e o app em inglês (KAN-164).
+- **Relógio de 12h ou 24h pelo país do grupo (KAN-163, pelada-v65; regra em `dominio/relogio.ts`, com teste):** no país que usa 12h (EUA, por exemplo), os horários aparecem como "8:00 PM" na gestão, no link do jogador e no convite do WhatsApp; faixa no mesmo período mostra o período uma vez ("7:00–9:00 PM"), e jogo que passa da meia-noite mostra os dois ("11:00 PM–1:00 AM"). O campo de horário ganha o botão AM/PM (44px). Segue o país do grupo, nunca o celular de quem abre. Quem usa 12h vem do navegador (padrão internacional CLDR): hoje, além dos EUA, Canadá, México, Índia, Nova Zelândia, Emirados e os países de língua espanhola das Américas.
+- **Gravado sempre em 24h** ("20:00"): trocar o país do grupo só muda a exibição; grupo do Brasil e grupo antigo, sem país, ficam em 24h, como antes.
+- **Primeiro dia da semana pelo país do grupo (KAN-163):** a lista de dias fixos começa no domingo no Brasil, nos EUA e nos outros países que começam no domingo (lista em `dominio/relogio.ts`); nos demais, na segunda. Os nomes dos dias continuam no idioma do app.
+- **Ainda não faz parte:** o app em inglês (KAN-164).
 
 ## Grupos e papéis
 - Ao criar: nome, frequência (Frequente com dias fixos ou Esporádico), dias e horários (só Frequente), esporte, país, moeda e fuso (KAN-162).
@@ -143,7 +146,7 @@ Atualizado na pelada-v64 (22/10/2026). Toda entrega que mudar uma regra atualiza
 - Janela de formulário com algo preenchido: tocar fora ou Esc pergunta "Descartar o que você preencheu?" antes de fechar (KAN-140).
 - Confirmações na janela do app (nunca `confirm` ou `alert`): pergunta curta, consequência, botão com o verbo; coral quando apaga (KAN-128).
 - Local e outros textos longos: numa linha só com "…" (sublinhado pontilhado quando corta); passar o mouse mostra o texto inteiro e tocar abre ou fecha. O seletor de rodadas e o cabeçalho não mostram o local. Nada pode criar rolagem lateral (KAN-144, KAN-146).
-- Horário (início e término): campo do app com hora (00–23) e minutos (00–59), setas ▲▼ e digitação; qualquer minuto vale (ex.: 10:03); nunca o relógio do celular, que corta botões no Android com letra grande (KAN-151).
+- Horário (início e término): campo do app com hora (00–23) e minutos (00–59), setas ▲▼ e digitação; qualquer minuto vale (ex.: 10:03); nunca o relógio do celular, que corta botões no Android com letra grande (KAN-151). No país de 12h, a hora vai de 1 a 12 com o botão AM/PM; ▲ em 11 PM vira 12 AM e em 11 AM vira 12 PM (KAN-163). Componente `HoraCampo` (`ui/HoraCampo.tsx`, comportamento em `ui/hora.ts`).
 - Menu da conta (KAN-166): quem tem conta vê, no canto do cabeçalho de todas as telas, um botão redondo com a inicial do e-mail. Ele abre o e-mail, "País e formatos", "Tema" e "Sair" (o Sair não fica mais solto no cabeçalho). Funciona como o menu do tema: setas, Esc e tocar fora.
 - Tema (KAN-169): com conta, fica no menu da conta ("Tema: Automático", que abre Automático, Claro e Escuro) e o botão 🌓 sai do cabeçalho. Sem conta (link do jogador, votação, login, apresentação), o botão 🌓 continua. A aba Grupo segue com o painel Aparência. Vale só para o aparelho.
 - Dias fixos do grupo: cada horário tem o rótulo em cima, "Início" e "Término (opcional)" (KAN-166).
@@ -178,11 +181,12 @@ Atualizado na pelada-v64 (22/10/2026). Toda entrega que mudar uma regra atualiza
 | Sorteio e times | `telas/Rodada.tsx` | `acoes/rodada.js` | `dominio/sorteio.js`, `times.ts`, `divergencia.ts` | `rodadas/{rid}` (times, cores, base) | `regras/times`, `lista-sorteio` |
 | Partida e ranking | `telas/Partida.tsx` (placar em `ui/placar.js`; janela Editar; baixa sob demanda por `src/partida.ts`), `ranking.js` | `acoes/partida.js` (saveMatch, editarPartida, salvarEdicao), `acoes/recalcular.ts` | `nucleo/partidas.js` (addMatch, editMatch, delMatch, salvarArtilharia), `dominio/resumos.ts` (camposPartida, camposEdicao, camposArtilharia), `dominio/fila.ts` (próximo jogo), `dominio/escalacao.ts` (empréstimo e troca) | `rodadas/{rid}/partidas` (com `ver`), `resumos/{mês}` | `regras/ranking`, `regras/editar-partida`, `regras/fila`, `regras-firebase` (partidas), `regras/escalacao`, `regras/artilharia`, `testes_app.py` (CT-KAN-175 a CT-KAN-178), `persistencia_app.py` (P13, P13b, P13c) |
 | Importar elenco | `ui/ImportarJogadores.tsx`, `telas/Jogadores.tsx` | `acoes/jogadores.js` (importarJogadores) | `dominio/planilha.ts`, `ui/arquivo-planilha.ts` | `jogadores/{id}`, `privado/caixa`, `privado/ratings`, `privado/contatos` | `regras/planilha`, `testes_app.py` (CT-KAN-159) |
-| País, moeda e fuso | `ui/menu-conta.ts` (menu da conta, KAN-166), `grupo-form.js`, `login.js` (cadastro), `ui/regiao.ts` (combos), `ui/contato-form.ts` (telefone) | `acoes/grupo.js` (contaPais, createGroup, saveGroup) | `dominio/paises.ts`, `regiao.ts`, `telefone.ts`, `i18n/formatos.js` (formato, moeda, `agora()`) | `usuarios/{uid}` (pais, formato), `grupos/{gid}` (cfg.pais, moeda, fuso, formato) | `regras/paises`, `regras/contato`, `testes_app.py` (CT-KAN-162) |
+| País, moeda e fuso | `ui/menu-conta.ts` (menu da conta, KAN-166), `telas/GrupoForm.tsx`, `telas/Login.tsx` (cadastro), `ui/regiao.ts` (combos), `ui/contato-form.ts` (telefone) | `acoes/grupo.js` (contaPais, createGroup, saveGroup) | `dominio/paises.ts`, `regiao.ts`, `telefone.ts`, `i18n/formatos.js` (formato, moeda, `agora()`) | `usuarios/{uid}` (pais, formato), `grupos/{gid}` (cfg.pais, moeda, fuso, formato) | `regras/paises`, `regras/contato`, `testes_app.py` (CT-KAN-162) |
+| Relógio 12h/24h e semana | `ui/HoraCampo.tsx` (campo com AM/PM), `telas/GrupoForm.tsx` (dias fixos), `ui/dialogos-gestao.js` (Nova rodada) | `acoes/rodada.js` (convite dos dias fixos) | `dominio/relogio.ts` (exibição e ordem dos dias), `dominio/rodadas.js` (hora), `i18n/formatos.js` (relogio12) | nada novo: horários em 24h | `regras/relogio`, `testes_app.py` (CT-KAN-163), `persistencia_app.py` (P23) |
 | Votação | `telas/votacao.js`, `publico-voto.js` | `acoes/votacao.js` | `telas/votacao.js` (tally) | `votacoes/{vid}`, `votos` | `testes_app.py` (votação) |
 | Caixa | `telas/Caixa.tsx` | `acoes/caixa.js` (com a conferência de valor fora do padrão) | `dominio/caixa-regras.ts` (pendências, foraDoPadrao), `caixa.js` | `caixa/{id}`, `privado/caixa`, `resumos` | `regras/caixa`, `regras/fora-do-padrao`, `testes_app.py` (CT-KAN-161) |
 | Isento e A pagar por jogo | `ui/dialogos-gestao.js` (ficha), `telas/Caixa.tsx` (A pagar, janela Pagar) | `acoes/jogadores.js` (savePlayer), `acoes/caixa.js` (abrirPagar, pagarJogos) | `dominio/caixa-regras.ts` (aPagar), `caixa.js` (recebePorJogo, inicioAPagar); rodadas desde o início em `rotas.js` (rodPag) | `privado/caixa` (tipos, porJogo), `caixa/{id}` (refs) | `regras/a-pagar`, `testes_app.py` (CT-KAN-172), `persistencia_app.py` (P20) |
-| Grupo e convite | `telas/grupo.js`, `grupo-form.js`, `convite.js` | `acoes/grupo.js` | `dominio/limites.ts` | `grupos/{gid}`, `membros`, `privado/convite`, `contas/{uid}` | `regras/limites`, `regras-firebase` |
+| Grupo e convite | `telas/grupo.js`, `telas/GrupoForm.tsx` (componente, KAN-165), `convite.js` (usa a tela de entrar, `telas/Login.tsx`) | `acoes/grupo.js` | `dominio/limites.ts` | `grupos/{gid}`, `membros`, `privado/convite`, `contas/{uid}` | `regras/limites`, `regras-firebase` |
 | Planos e portal | `portal/` | `portal/tela.js` | `dominio/planos.ts` | `contas/{uid}`, `sistema/planos` | `regras/planos`, portal em `testes_app.py` |
 | Janelas e avisos | `ui/dialogos.js`, `nucleo/util.js` (toast) | `acoes/conta.js` (confSim) | — | — | `testes_app.py` (CT-KAN-128) |
 | Tamanho e carga | `ui/render.js` (espera a gestão e as abas sob demanda) | `acoes.js` (só públicas) | `admin.js` (carregarPartida, carregarAba), `abas/*.ts` (Caixa, Histórico, Votação, Ranking), `entrar.ts` e `nucleo/carga-entrar.ts` (tela de entrar), `nucleo/carga-admin.js`, `build.mjs` | — | `testes_app.py` (CT-KAN-149, CT-KAN-180, CT-KAN-183) |

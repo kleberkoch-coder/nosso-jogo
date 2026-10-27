@@ -289,6 +289,38 @@ with sync_playwright() as pw:
        and tudo['pix'] == 'pix-persistencia@teste.com' and tudo['pais'] == 'US',
        f'CT-KAN-170-P19: em outro navegador, depois de entrar de novo, tudo vem do banco ({tudo})')
 
+    # P23 relógio de 12h (KAN-163): grupo dos EUA com dia fixo 7:00–9:00 PM e rodada às 7:30 PM. O banco guarda 24h
+    # (19:00, 21:00, 19:30); a tela mostra 12h depois de recarregar e depois de sair e entrar de novo (config/app, rodadas)
+    c23 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block', timezone_id='America/New_York'); p23 = c23.new_page()
+    p23.on('pageerror', lambda e: errs.append(str(e)))
+    E23 = 'relogio12@teste.com'
+    p23.goto(URL + '#/criar'); p23.wait_for_function("document.querySelector('#lpais') && document.querySelector('#lpais').options.length > 10", timeout=20000)
+    p23.select_option('#lpais', 'US'); p23.fill('#le', E23); p23.fill('#lp', SENHA); p23.fill('#lp2', SENHA); p23.wait_for_timeout(200)
+    p23.click('[data-a=signup]'); p23.wait_for_selector('#ngn', timeout=20000)
+    r23 = '#sched .srow:nth-child(1)'
+    p23.fill(f'{r23} [data-hora]:has(.si) .hh', '7'); p23.fill(f'{r23} [data-hora]:has(.sf) .hh', '9')
+    p23.fill('#ngn', 'Relógio FC'); p23.click('[data-a=createGroup]')
+    p23.wait_for_function("location.hash.startsWith('#/g/')", timeout=20000)
+    g23 = p23.url.split('#/g/')[1].split('/')[0]
+    pronto(p23); p23.click('[data-a=newRod]'); p23.wait_for_timeout(400)
+    h23 = '#dlg [data-hora]:has(#rtm)'
+    p23.fill('#rdt', '2031-06-07'); p23.fill(h23 + ' .hh', '7'); p23.fill(h23 + ' .hm', '30')
+    if p23.inner_text(h23 + ' .hap') != 'PM': p23.click(h23 + ' .hap')
+    p23.click('#dlg [data-a=saveRod]'); p23.wait_for_timeout(800)
+    gravou(p23); pronto(p23, 'grupo')
+    def ver23(pg_):
+        return J(pg_, "(()=>({f:(S.app.cfg.fixos||[])[0]||{},t:Object.values(S.rod||{}).map(r=>r.time)}))()"), pg_.inner_text('main')
+    d23, t23 = ver23(p23)
+    ok(d23['f'].get('ini') == '19:00' and d23['f'].get('fim') == '21:00' and '19:30' in d23['t'] and '7:00–9:00 PM' in t23,
+       f'CT-KAN-170-P23: grupo dos EUA guarda 19:00–21:00 e 19:30 e mostra 7:00–9:00 PM depois de recarregar ({d23})')
+    p23.click('#topright [data-a=contaMenu]'); p23.wait_for_timeout(300); p23.click('.theme-menu [data-a=logout]'); p23.wait_for_timeout(1500)
+    p23.goto(URL + '#/entrar'); p23.wait_for_selector('#le', timeout=20000)
+    p23.fill('#le', E23); p23.fill('#lp', SENHA); p23.keyboard.press('Enter'); p23.wait_for_timeout(2500)
+    p23.goto(URL + '#/g/' + g23); pronto(p23, 'grupo'); p23.wait_for_timeout(800)
+    d23b, t23b = ver23(p23)
+    ok(d23b['f'].get('ini') == '19:00' and '7:00–9:00 PM' in t23b, 'CT-KAN-170-P23: depois de sair e entrar de novo, continua 7:00–9:00 PM (19:00 no banco)')
+    c23.close()
+
     ok(not errs, 'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))
     b.close()
 

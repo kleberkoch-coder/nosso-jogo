@@ -240,7 +240,9 @@ describe('votos pelo link (KAN-76)', () => {
     await assertFails(
       setDoc(doc(db.anon(), V + '/votos/anon1'), { pid: 'j1', v: { best: { a: 'x'.repeat(5000) } }, t: 1 })
     );
-    await assertFails(setDoc(doc(db.anon(), V + '/votos/anon1'), { pid: 'j1', v: { best: 'j2', mvp: 'j3|j4' }, t: 1 }));
+    await assertFails(
+      setDoc(doc(db.anon(), V + '/votos/anon1'), { pid: 'j1', v: { best: 'j2', mvp: 'a|'.repeat(1100) + 'a' }, t: 1 })
+    );
   });
 });
 

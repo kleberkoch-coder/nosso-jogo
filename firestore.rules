@@ -331,8 +331,11 @@ service cloud.firestore {
             && idValido(request.resource.data.get('pid', ''))
             && request.resource.data.get('v', {}) is map && request.resource.data.get('v', {}).size() <= 30
             // KAN-198: cada categoria e cada escolhido é um identificador curto (até 64 letras), nunca um texto enorme.
+            // Juntos, não passam de 2.000 letras (30 categorias de até 64 letras, com folga).
             && (request.resource.data.get('v', {}).size() == 0
-              || (request.resource.data.v.keys().join('|').matches('[A-Za-z0-9_-]{1,64}([|][A-Za-z0-9_-]{1,64})*')
+              || (request.resource.data.v.keys().join('|').size() <= 2000
+                && request.resource.data.v.values().join('|').size() <= 2000
+                && request.resource.data.v.keys().join('|').matches('[A-Za-z0-9_-]{1,64}([|][A-Za-z0-9_-]{1,64})*')
                 && request.resource.data.v.values().join('|').matches('[A-Za-z0-9_-]{1,64}([|][A-Za-z0-9_-]{1,64})*')))
             && request.resource.data.get('t', 0) is int;
           allow delete: if isMember(gid);

@@ -1,11 +1,10 @@
 # Teste de carga no emulador do Firebase (KAN-158): muita gente confirmando, se adicionando e votando ao mesmo tempo.
-# Roda toda segunda de manhã, à mão (Actions → Teste de carga → Run workflow) e em proposta que mexe nas regras ou no teste.
+# Roda à mão (Actions → Teste de carga → Run workflow) e em proposta que mexe nas regras ou no teste.
+# Economia de minutos (27/10/2026): deixou de rodar toda segunda; sem mudança nas regras, o resultado é o mesmo.
 # Não toca nos dados reais. O resultado aparece no resumo da execução e fica guardado como arquivo.
 name: Teste de carga
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "17 9 * * 1" # segunda, 6h17 em Brasília
   pull_request:
     paths: ['testes/carga/**', 'firestore.rules', '.github/workflows/carga.yml']
 

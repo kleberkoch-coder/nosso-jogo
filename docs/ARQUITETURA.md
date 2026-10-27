@@ -196,6 +196,11 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D22. Menos minutos no GitHub e conferência da origem do código (27 out. 2026)
+- **Problema:** em 22/10 o GitHub Actions parou por falta de minutos na conta (repositório privado). Cada versão rodava o roteiro completo duas vezes (na proposta e de novo depois do Merge), e o teste de carga rodava toda segunda.
+- **Decisão:** "Testes do app" roda só na proposta (e à mão), e uma atualização da proposta cancela a rodada velha. O teste de carga roda só quando as regras do Firebase ou o próprio teste mudam (e à mão). "Publicar o site" continua conferindo a versão no ar depois do Merge.
+- **Conferência da origem** (`testes/conferir-main.mjs`): antes de cada versão nova, confere que cada mudança da main veio de uma proposta com Merge do Kleber, verificada pelo GitHub. É a proteção para o caso de o repositório ficar público: quem é de fora pode sugerir mudanças, mas só entra na main o que o Kleber aprovar, e qualquer coisa fora disso aparece aqui.
+
 ### D20. Leitura confiável com internet ruim (21 out. 2026, pelada-v62, KAN-184)
 - **Problema:** com a cópia offline do Firestore ligada, quem abria o link pela primeira vez com internet lenta recebia antes a resposta da cópia do aparelho ("documento não existe") e via "Grupo não encontrado". Um erro de rede também marcava a leitura como pronta, sem nova tentativa.
 - **Decisão:**

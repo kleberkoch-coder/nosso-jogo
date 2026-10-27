@@ -2242,6 +2242,36 @@ with sync_playwright() as pw:
     ok(p18.evaluate("!!(S.user&&!S.user.anon)"), 'CT-KAN-165-01: Enter na tela de entrar (componente) entra na conta')
     ctx18.close()
 
+    # ---------- v66 (KAN-186): trocar o país no formulário do grupo já troca o relógio e a semana; KAN-187: Criar conta diz por que o botão está desligado
+    ctx19 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, service_workers='block', timezone_id='America/New_York')
+    p19 = ctx19.new_page(); p19.on('pageerror', lambda e: errs.append(str(e)))
+    p19.goto(URL + '#/criar'); p19.wait_for_timeout(900)
+    p19.fill('#le', 'ana@clube'); p19.fill('#lp', 'Jogo@2026'); p19.fill('#lp2', 'Jogo@2026'); p19.wait_for_timeout(100)
+    m187 = p19.inner_text('#lerr')
+    ok(p19.locator('#sgBtn').is_disabled() and 'terminação' in m187, f'CT-KAN-187-01: e-mail sem terminação com a senha certa: o botão fica desligado e o motivo aparece ({m187!r})')
+    p19.fill('#le', ''); p19.locator('#lp2').focus(); p19.keyboard.press('Enter'); p19.wait_for_timeout(100)
+    m187b = p19.inner_text('#lerr')
+    ok('Digite seu e-mail' in m187b, f'CT-KAN-187-02: Enter com o botão desligado diz o que falta ({m187b!r})')
+    p19.fill('#le', 'ana@clube.com'); p19.wait_for_timeout(100)
+    ok(not p19.locator('#sgBtn').is_disabled() and p19.inner_text('#lerr') == '', 'CT-KAN-187-03: com o e-mail completo, o aviso some e o botão liga')
+    p19.keyboard.press('Enter'); p19.wait_for_selector('#ngBox', timeout=5000)
+    r19 = '#sched .srow:nth-child(1)'
+    p19.fill(f'{r19} [data-hora]:has(.si) .hh', '7'); p19.fill('#sched .srow:nth-child(1) .sl', 'Quadra 1')
+    ok(p19.locator(f'{r19} .hap').count() == 2 and p19.input_value(f'{r19} .si') == '19:00', 'CT-KAN-186-01: conta dos EUA abre o Novo grupo em 12h (7 PM = 19:00)')
+    p19.select_option('#ngp', 'DE'); p19.wait_for_timeout(200)
+    d19 = (p19.locator(f'{r19} .hap').count(), p19.input_value(f'{r19} [data-hora]:has(.si) .hh'), p19.input_value(f'{r19} .si'),
+           p19.evaluate("document.querySelector('#sched .srow .sd option').textContent"), p19.input_value(f'{r19} .sl'))
+    ok(d19 == (0, '19', '19:00', 'Segunda', 'Quadra 1'), f'CT-KAN-186-01: trocar para Alemanha passa na hora para 24h e semana na segunda, sem perder o horário e o local ({d19})')
+    p19.select_option('#ngp', 'US'); p19.wait_for_timeout(200)
+    d19b = (p19.locator(f'{r19} .hap').count(), p19.input_value(f'{r19} [data-hora]:has(.si) .hh'), p19.input_value(f'{r19} .si'),
+            p19.evaluate("document.querySelector('#sched .srow .sd option').textContent"))
+    ok(d19b == (2, '7', '19:00', 'Domingo'), f'CT-KAN-186-02: voltar para os EUA volta para 12h e semana no domingo ({d19b})')
+    p19.select_option('#ngp', 'DE'); p19.fill('#ngn', 'Berlin FC'); p19.click('[data-a=createGroup]'); p19.wait_for_timeout(1500)
+    g19 = p19.url.split('#/g/')[1]
+    fx19 = ((p19.evaluate(LER, 'grupos/' + g19) or {}).get('cfg') or {}).get('fixos') or [{}]
+    ok(fx19[0].get('ini') == '19:00' and fx19[0].get('place') == 'Quadra 1', f'CT-KAN-186-03: o grupo é criado com o horário e o local digitados ({fx19[0]})')
+    ctx19.close()
+
     # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
     ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
     p7 = ctx7.new_page()

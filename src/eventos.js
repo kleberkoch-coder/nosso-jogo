@@ -219,6 +219,7 @@ document.addEventListener('keydown', e => {
     if (S.authMode === 'signup') {
       const b = $('#sgBtn');
       if (b && !b.disabled) b.click();
+      else entrarPronto()?.checkPw(true); // KAN-187: Enter com o botão desligado diz o que falta
     } else $('[data-a=login]')?.click();
   } else if (id === 'ngn') {
     e.preventDefault();

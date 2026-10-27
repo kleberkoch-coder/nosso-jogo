@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v65 (22/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v66 (27/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -22,6 +22,7 @@ Atualizado na pelada-v65 (22/10/2026). Toda entrega que mudar uma regra atualiza
 - Identificador vindo do link só com letras, números, `_` e `-` (KAN-76). Todo texto do banco é escapado antes da tela.
 - Pelo link: ninguém fura a ordem, troca o nome, a posição ou a marca de avulso de outro (KAN-78); presença só em jogos de ontem até 15 dias à frente (KAN-77).
 - Limites: 30 avulsos novos pelo link por rodada e 20 grupos criados por conta, por contadores nas regras; os números ficam em `sistema/limites` (KAN-89, KAN-134).
+- Tamanho do que o link grava (KAN-198, v66): na presença, nome até 40 letras, posição até 4 e a marca de avulso só sim ou não; no voto, cada categoria e cada escolhido é um identificador de até 64 letras (até 30 categorias). O resto o Firebase recusa.
 - Qualquer um lê um grupo pelo link; só o portal lista todos os grupos (KAN-133).
 - Sair apaga a cópia local dos dados; com algo sem enviar, pergunta antes (KAN-80).
 - App Check em observação, com a chave "Nosso Jogo web 2" desde a v42. Só ligar o bloqueio (Aplicar) com mais de 99% de chamadas verificadas por 7 dias; ligado antes, ele derrubou o login em 15/10 (KAN-88, lembrete em 20/10).
@@ -37,7 +38,7 @@ Atualizado na pelada-v65 (22/10/2026). Toda entrega que mudar uma regra atualiza
 - **Trocar a moeda** pede confirmação. Os valores já lançados não são convertidos: o número fica igual, só o símbolo muda.
 - **O fuso do grupo decide a hora do jogo:** quando a rodada termina e vira para a próxima, e o "hoje", para quem abre de qualquer fuso.
 - **Grupo antigo, sem país:** Brasil, Real e o relógio do aparelho, sem mudança.
-- **Relógio de 12h ou 24h pelo país do grupo (KAN-163, pelada-v65; regra em `dominio/relogio.ts`, com teste):** no país que usa 12h (EUA, por exemplo), os horários aparecem como "8:00 PM" na gestão, no link do jogador e no convite do WhatsApp; faixa no mesmo período mostra o período uma vez ("7:00–9:00 PM"), e jogo que passa da meia-noite mostra os dois ("11:00 PM–1:00 AM"). O campo de horário ganha o botão AM/PM (44px). Segue o país do grupo, nunca o celular de quem abre. Quem usa 12h vem do navegador (padrão internacional CLDR): hoje, além dos EUA, Canadá, México, Índia, Nova Zelândia, Emirados e os países de língua espanhola das Américas.
+- **Relógio de 12h ou 24h pelo país do grupo (KAN-163, pelada-v65; regra em `dominio/relogio.ts`, com teste):** no país que usa 12h (EUA, por exemplo), os horários aparecem como "8:00 PM" na gestão, no link do jogador e no convite do WhatsApp; faixa no mesmo período mostra o período uma vez ("7:00–9:00 PM"), e jogo que passa da meia-noite mostra os dois ("11:00 PM–1:00 AM"). O campo de horário ganha o botão AM/PM (44px). Segue o país do grupo, nunca o celular de quem abre. Quem usa 12h vem do navegador (padrão internacional CLDR): hoje, além dos EUA, Canadá, México, Índia, Nova Zelândia, Emirados e os países de língua espanhola das Américas. No formulário do grupo, trocar o país já troca o relógio e a semana dos dias fixos, sem perder o que foi digitado (KAN-186).
 - **Gravado sempre em 24h** ("20:00"): trocar o país do grupo só muda a exibição; grupo do Brasil e grupo antigo, sem país, ficam em 24h, como antes.
 - **Primeiro dia da semana pelo país do grupo (KAN-163):** a lista de dias fixos começa no domingo no Brasil, nos EUA e nos outros países que começam no domingo (lista em `dominio/relogio.ts`); nos demais, na segunda. Os nomes dos dias continuam no idioma do app.
 - **Ainda não faz parte:** o app em inglês (KAN-164).
@@ -103,7 +104,7 @@ Atualizado na pelada-v65 (22/10/2026). Toda entrega que mudar uma regra atualiza
   - **Quem precisa de vaga:** avulso (fora do elenco) e diarista (marca `vaga` no jogador, ajustada sozinha pelo app a partir do tipo). Mensalista e isento confirmam sempre.
   - **Na rodada:** quadro "Vagas para diaristas e avulsos" com "Fechadas", "Abertas · 1 de 3 preenchidas" ou "Esgotadas". "Abrir vagas" pergunta "Quantas vagas?", já com o que falta para o mínimo; vazio = sem limite. Abrir zera o contador; "Mudar vagas" mantém quem já entrou; "Fechar vagas" fecha.
   - **No link, fechadas ou esgotadas:** quem precisa de vaga some (a não ser que já esteja confirmado), "Adicionar meu nome" some e aparece o aviso. Abertas: "Restam N vagas".
-  - **Contador** (`rodadas/{rid}/limites/vagas`): entrar pelo link soma 1, quem estava dentro e sai devolve 1, na mesma gravação da presença. Passou do máximo, o Firebase recusa.
+  - **Contador** (`rodadas/{rid}/limites/vagas`): entrar pelo link soma 1, quem estava dentro e sai devolve 1, na mesma gravação da presença. Passou do máximo, o Firebase recusa. Só devolve vaga quem precisava dela (diarista ou avulso), com o controle ligado: mensalista saindo não abre vaga (KAN-197, v66).
   - O administrador continua pondo qualquer pessoa pela gestão, aberto ou fechado.
 
 ## Partida, ranking e votação
@@ -142,7 +143,7 @@ Atualizado na pelada-v65 (22/10/2026). Toda entrega que mudar uma regra atualiza
 
 ## Padrões de tela
 - Todo botão que grava, cria, exclui, abre ou faz login mostra loading; janelas só fecham depois de gravar.
-- Login e cadastro: cursor no e-mail; Enter envia em toda janela.
+- Login e cadastro: cursor no e-mail; Enter envia em toda janela. Em "Criar conta", o botão desligado diz o motivo embaixo (e-mail sem terminação, e-mail faltando, senha incompleta ou senhas diferentes); Enter com o botão desligado mostra o que falta (KAN-187).
 - Janela de formulário com algo preenchido: tocar fora ou Esc pergunta "Descartar o que você preencheu?" antes de fechar (KAN-140).
 - Confirmações na janela do app (nunca `confirm` ou `alert`): pergunta curta, consequência, botão com o verbo; coral quando apaga (KAN-128).
 - Local e outros textos longos: numa linha só com "…" (sublinhado pontilhado quando corta); passar o mouse mostra o texto inteiro e tocar abre ou fecha. O seletor de rodadas e o cabeçalho não mostram o local. Nada pode criar rolagem lateral (KAN-144, KAN-146).

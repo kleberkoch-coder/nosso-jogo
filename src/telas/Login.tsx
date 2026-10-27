@@ -177,7 +177,7 @@ function CriarConta() {
         <span>{tx('login.confirmeSenha')}</span>
         <CampoSenha id="lp2" ac="new-password" />
       </label>
-      <div class="err" id="lerr"></div>
+      <div class="err" id="lerr" aria-live="polite"></div>
       <button class="btn primary" style="width:100%;justify-content:center" data-a="signup" id="sgBtn" disabled>
         {tx('login.criarConta')}
       </button>
@@ -201,7 +201,7 @@ function Entrar() {
         <span>{tx('login.senha')}</span>
         <CampoSenha id="lp" ac="current-password" />
       </label>
-      <div class="err" id="lerr"></div>
+      <div class="err" id="lerr" aria-live="polite"></div>
       <button class="btn primary" style="width:100%;justify-content:center" data-a="login">
         {tx('login.entrar')}
       </button>
@@ -255,7 +255,10 @@ function montarAuth(convite?: boolean) {
   if (S.authMode === 'signup') preencherPais();
 }
 
-function checkPw() {
+/* Liga o botão "Criar conta" só com tudo certo e, desligado, diz o motivo (KAN-187: nunca só cinza).
+   Com `enter` (a pessoa apertou Enter com o botão desligado), diz o que falta mesmo no que ela ainda não terminou. */
+const emailOk = (e: string) => /\S+@\S+\.\S+/.test(e);
+function checkPw(enter?: boolean) {
   const p = $('#lp') as HTMLInputElement | null,
     p2 = $('#lp2') as HTMLInputElement | null,
     b = $('#sgBtn') as HTMLButtonElement | null;
@@ -263,8 +266,16 @@ function checkPw() {
   document
     .querySelectorAll<HTMLElement>('#pwr li')
     .forEach(li => li.classList.toggle('ok', PWR[+li.dataset.i!][0](p.value)));
-  b.disabled = !(pwOk(p.value) && p.value === p2.value && /\S+@\S+\.\S+/.test(val('le')));
-  ($('#lerr') as HTMLElement).textContent = p2.value && p.value !== p2.value ? tx('senha.naoConferem') : '';
+  const email = val('le'),
+    senhaPronta = pwOk(p.value) && p.value === p2.value;
+  b.disabled = !(senhaPronta && emailOk(email));
+  let motivo = '';
+  if (p2.value && p.value !== p2.value) motivo = tx('senha.naoConferem');
+  else if ((senhaPronta || enter) && !emailOk(email))
+    motivo = tx(email ? 'auth.emailIncompleto' : 'auth.emailFaltando');
+  else if (enter && !pwOk(p.value)) motivo = tx('auth.senhaFalta', { itens: pwFalta(p.value).join(', ') });
+  else if (enter && p.value !== p2.value) motivo = tx('senha.naoConferem');
+  ($('#lerr') as HTMLElement).textContent = motivo;
 }
 
 export { AUTH_CANCEL, ESPECIAIS, authMsg, avisoGoogle, checkPw, montarAuth, pwFalta, pwOk, vAuth };

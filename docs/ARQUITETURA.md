@@ -196,6 +196,11 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D22. Menos minutos no GitHub e conferência da origem do código (27 out. 2026)
+- **Problema:** em 22/10 o GitHub Actions parou por falta de minutos na conta (repositório privado). Cada versão rodava o roteiro completo duas vezes (na proposta e de novo depois do Merge), e o teste de carga rodava toda segunda.
+- **Decisão:** "Testes do app" roda só na proposta (e à mão), e uma atualização da proposta cancela a rodada velha. O teste de carga roda só quando as regras do Firebase ou o próprio teste mudam (e à mão). "Publicar o site" continua conferindo a versão no ar depois do Merge.
+- **Conferência da origem** (`testes/conferir-main.mjs`): antes de cada versão nova, confere que cada mudança da main veio de uma proposta com Merge do Kleber, verificada pelo GitHub. É a proteção para o caso de o repositório ficar público: quem é de fora pode sugerir mudanças, mas só entra na main o que o Kleber aprovar, e qualquer coisa fora disso aparece aqui. Desde 27/10/2026 o repositório é público (decisão do Kleber, enquanto o app não é cobrado): o GitHub Actions fica sem limite de minutos.
+
 ### D21. Relógio de 12h/24h e semana pelo país do grupo (22 out. 2026, pelada-v65, KAN-163)
 - **Decisão:** o horário continua gravado em 24h ("20:00"); só a exibição e o campo mudam. Se o país usa 12h vem do navegador (`Intl.DateTimeFormat(formato).resolvedOptions().hourCycle`, padrão CLDR), pelo formato que o grupo já guarda: sem biblioteca e sem a tabela de países no link do jogador. As contas (12h ↔ 24h, faixa com o período uma vez, ordem dos dias) ficam em `dominio/relogio.ts`, com teste.
 - **Primeiro dia da semana:** lista curta de países que começam no domingo em `dominio/relogio.ts`, porque o Firefox não informa isso (`Intl.Locale.weekInfo`).

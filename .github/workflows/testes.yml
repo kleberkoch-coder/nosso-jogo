@@ -1,13 +1,17 @@
 # Monta o site e roda o roteiro de testes em modo demonstração a cada proposta de mudança.
 name: Testes do app
 # Proposta só de documentos (arquivos .md e a pasta docs/) não roda os testes: nada no app mudou.
+# Economia de minutos (27/10/2026): não roda de novo depois do Merge, porque a proposta já passou com o mesmo código
+# (a automação "Publicar o site" confere a versão no ar). Para rodar à mão: Actions → Testes do app → Run workflow.
+# Proposta atualizada cancela a rodada anterior da mesma proposta, que ficou velha.
 on:
   pull_request:
     paths-ignore: ['**.md', 'docs/**']
-  push:
-    branches: [main]
-    paths-ignore: ['**.md', 'docs/**']
   workflow_dispatch:
+
+concurrency:
+  group: testes-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   montar:

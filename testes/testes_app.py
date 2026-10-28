@@ -10,7 +10,7 @@ Saída: uma linha por verificação (OK ou FALHOU), fotos das telas e um resumo 
 Termina com código 1 se alguma verificação falhar.
 Erros das fontes do Google e dos ícones são ignorados (o ambiente de teste pode bloquear a internet).
 """
-import sys, os, re, json
+import sys, os, re, json, time
 from playwright.sync_api import sync_playwright
 
 URL = sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:8765/index.html'
@@ -205,6 +205,9 @@ with sync_playwright() as pw:
     pg.fill('#ngn', 'Futebol de Segunda'); pg.click('[data-a=createGroup]'); pg.wait_for_timeout(1500)
     ok('#/g/' in pg.url, 'grupo de futebol criado')
     gid_fut = pg.url.split('#/g/')[1]
+    # Planos (KAN-119): a conta principal do roteiro cria vários grupos; recebe o Plano B como se fosse pelo portal.
+    # Antes do portal (KAN-116), o plano sai, para a conta voltar a aparecer como Grátis.
+    pg.evaluate(PUT, {'contas/u-orgtestecom': {**(pg.evaluate(LER, 'contas/u-orgtestecom') or {}), 'plano': 'B'}}); pg.reload(); pg.wait_for_timeout(1200)
     elenco_e_presenca(pg, 10)
     ok(pg.evaluate("document.querySelector('#tabs').getAttribute('role')") == 'tablist', 'abas com role=tablist')
     ok(pg.locator('.mk button.on-in').count() >= 10, '10 presenças marcadas')
@@ -1341,6 +1344,7 @@ with sync_playwright() as pw:
     pg.evaluate(TRAVA, [gid_fut, rid_main, True]); pg.reload(); pg.wait_for_timeout(800)
 
     # ---------- KAN-116: área administrativa do portal (e KAN-115: plano por conta)
+    pg.evaluate(PUT, {'contas/u-orgtestecom': {k: v for k, v in (pg.evaluate(LER, 'contas/u-orgtestecom') or {}).items() if k != 'plano'}}); pg.reload(); pg.wait_for_timeout(1200)
     conta_org = pg.evaluate("(()=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2')||'{}');return s['contas/u-orgtestecom']||null})()")
     ok(bool(conta_org) and conta_org.get('email') == 'org@teste.com' and isinstance(conta_org.get('acesso'), (int, float)) and conta_org.get('criada'),
        f'CT-KAN-116-03: ao entrar, a conta registra o último acesso, o e-mail e a data de registro ({conta_org and sorted(conta_org.keys())})')
@@ -2450,6 +2454,95 @@ with sync_playwright() as pw:
     p22.click('[data-a=tab][data-v=jogadores]'); p22.wait_for_timeout(600)
     ok(p22.locator('[data-a=addPlayer]').count() == 1 and p22.locator('main .lvl-tag').count() > 0, 'CT-KAN-201-11: administrador de antes (sem permissões gravadas) continua podendo tudo')
     ctx22.close()
+
+    # ---------- v70 (KAN-119): planos no app (transição, Grátis com cadeados, teste grátis, limite de grupos)
+    ctx23 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+    p23 = ctx23.new_page(); p23.on('pageerror', lambda e: errs.append(str(e)))
+    p23.goto(URL + '#/criar'); p23.wait_for_timeout(900)
+    p23.fill('#le', 'planos70@teste.com'); p23.fill('#lp', 'Jogo@2026'); p23.fill('#lp2', 'Jogo@2026'); p23.keyboard.press('Enter'); p23.wait_for_timeout(1400)
+    p23.fill('#ngn', 'Planos FC'); p23.click('[data-a=pickSport][data-v=futebol]'); p23.click('[data-a=createGroup]'); p23.wait_for_timeout(1600)
+    g23 = p23.url.split('#/g/')[1]
+    u23 = p23.evaluate("S.user.uid")
+    p23.click('[data-a=tab][data-v=jogadores]'); p23.wait_for_timeout(300); p23.click('[data-a=seed]'); p23.wait_for_timeout(1500)
+    conta23 = p23.evaluate(LER, f'contas/{u23}') or {}
+    ok(conta23.get('ativos') == [g23], f'CT-KAN-119-01: o grupo novo entra na lista de grupos ativos da conta ({conta23.get("ativos")})')
+    p23.click('[data-a=tab][data-v=rodada]'); p23.wait_for_timeout(500)
+    ok(p23.locator('#avisoNovidade').count() == 1 and 'agora tem planos' in p23.inner_text('#avisoNovidade'), 'CT-KAN-119-02: na transição, o organizador vê o aviso da novidade com a data')
+    ok(p23.locator('.tab-trava').count() == 0, 'CT-KAN-119-02: na transição, nenhuma aba tem cadeado (Plano A)')
+    pl23 = p23.evaluate("S.app&&S.app.pl")
+    ok(bool(pl23) and pl23.get('id') == 'A' and pl23.get('o') == 'transicao', f'CT-KAN-119-03: o espelho do plano fica no grupo para os convidados ({pl23})')
+    p23.click('#avisoNovidade [data-a=lerAvisoPlano]'); p23.wait_for_timeout(300); p23.reload(); p23.wait_for_timeout(1500)
+    ok(p23.locator('#avisoNovidade').count() == 0, 'CT-KAN-119-02: "Entendi" esconde o aviso, e ele não volta ao recarregar')
+    # Fim da transição: Grátis
+    p23.evaluate(PUT, {'sistema/planos': {'transicaoAte': 1}}); p23.reload(); p23.wait_for_timeout(1500)
+    trav23 = p23.evaluate("[...document.querySelectorAll('[data-a=tab]')].filter(b=>b.querySelector('.tab-trava')).map(b=>b.dataset.v)")
+    ok(sorted(set(trav23)) == ['caixa', 'historico', 'votacao'], f'CT-KAN-119-04: no Grátis, Caixa, Votação e Histórico aparecem com cadeado, sem sumir ({trav23})')
+    p23.click('[data-a=tab][data-v=votacao]'); p23.wait_for_timeout(500)
+    tv23 = p23.inner_text('#trava') if p23.locator('#trava').count() else ''
+    ok('Faz parte do Plano A' in tv23 and p23.locator('#trava [data-a=testarPlano]').count() == 1 and p23.locator('[data-a=newVote]').count() == 0,
+       f'CT-KAN-119-04: Votação no Grátis mostra o cadeado e o convite "Testar o Plano A", sem criar votação ({tv23[:80]!r})')
+    p23.set_viewport_size({'width': 360, 'height': 740}); p23.wait_for_timeout(200)
+    ok(p23.evaluate("document.documentElement.scrollWidth<=innerWidth"), 'CT-KAN-119-05: cadeado sem rolagem lateral em 360px')
+    p23.screenshot(path=f'{OUT}/v70-cadeado-360.png'); contraste(p23, 'Cadeado do plano (v70)')
+    p23.set_viewport_size({'width': 390, 'height': 844})
+    p23.click('[data-a=tab][data-v=ranking]'); p23.wait_for_timeout(800)
+    ok(p23.locator('[data-c=rankAno]').count() == 0 and p23.locator('[data-trava=rankingAnual]').count() == 1, 'CT-KAN-119-06: no Grátis, o ranking mostra só os meses, com o cadeado do ranking do ano')
+    p23.click('[data-a=tab][data-v=rodada]'); p23.wait_for_timeout(600)
+    ok(p23.locator('#semResposta [data-trava=cobrarPendentes]').count() == 1 and p23.locator('[data-a=cobrarGrupo]').count() == 0, 'CT-KAN-119-06: cobrar quem não respondeu aparece com cadeado no Grátis')
+    p23.click('[data-a=abrirMinimos]'); p23.wait_for_timeout(400)
+    ok(p23.locator('#vagasCtrl').is_disabled() and p23.locator('#dlg [data-trava=listaEspera]').count() == 1, 'CT-KAN-119-06: o controle de vagas (lista de espera) fica travado no Grátis')
+    p23.click('#dlg [data-a=close]'); p23.wait_for_timeout(300)
+    # Grátis: só 1 grupo ativo
+    p23.click('[data-a=groupsDlg]'); p23.wait_for_timeout(400)
+    p23.click('#dlg [data-a=newGroup]'); p23.wait_for_timeout(900)
+    ok(p23.locator('#planoMotivo').count() == 1 and '1 grupo ativo' in p23.inner_text('#planoMotivo') and p23.locator('#ngn').count() == 0,
+       'CT-KAN-119-07: no Grátis com 1 grupo, "Novo grupo" explica o limite e mostra os planos, sem abrir o formulário (critério 1)')
+    ok(p23.locator('#planosRaiz table th.atual', has_text='Grátis').count() == 1, 'CT-KAN-119-08: a janela Planos marca o plano de agora (Grátis)')
+    p23.set_viewport_size({'width': 360, 'height': 740}); p23.wait_for_timeout(200)
+    ok(p23.evaluate("document.documentElement.scrollWidth<=innerWidth"), 'CT-KAN-119-08: janela Planos sem rolagem lateral em 360px')
+    p23.screenshot(path=f'{OUT}/v70-planos-360.png'); contraste(p23, 'Janela Planos (v70)')
+    p23.set_viewport_size({'width': 390, 'height': 844})
+    # Testar grátis
+    p23.click('#planosRaiz [data-a=testarPlano]'); p23.wait_for_timeout(300); confirmar_app(p23, True); p23.wait_for_timeout(900)
+    t23 = (p23.evaluate(LER, f'contas/{u23}') or {}).get('teste')
+    ok(isinstance(t23, (int, float)) and t23 > 0, 'CT-KAN-119-09: "Testar o Plano A" grava o início do teste na conta')
+    p23.goto(URL + '#/g/' + g23); p23.wait_for_timeout(1500)
+    ok(p23.locator('.tab-trava').count() == 0 and p23.evaluate("S.app.pl&&S.app.pl.o") == 'teste', 'CT-KAN-119-09: no teste, os cadeados somem e o espelho mostra o teste')
+    p23.click('[data-a=tab][data-v=caixa]'); p23.wait_for_timeout(900)
+    ok(p23.locator('#trava').count() == 0 and p23.locator('[data-a=addLan]').count() == 1, 'CT-KAN-119-09: no teste, o caixa abre normalmente')
+    # Teste perto do fim: aviso 3 dias antes; depois do fim, volta ao Grátis sem poder testar de novo
+    p23.evaluate(PUT, {f'contas/{u23}': dict(conta23, ativos=[g23], teste=int(time.time() * 1000) - 12 * 864e5)}); p23.reload(); p23.wait_for_timeout(1500)
+    fim23 = p23.inner_text('#avisoFimPlano') if p23.locator('#avisoFimPlano').count() else ''
+    ok('acaba em 2 dias' in fim23 and 'teste grátis' in fim23, f'CT-KAN-119-10: 3 dias antes do fim do teste, o organizador é avisado ({fim23[:90]!r}) (critério 3)')
+    p23.evaluate(PUT, {f'contas/{u23}': dict(conta23, ativos=[g23], teste=int(time.time() * 1000) - 15 * 864e5)}); p23.reload(); p23.wait_for_timeout(1500)
+    p23.click('[data-a=tab][data-v=caixa]'); p23.wait_for_timeout(600)
+    ok(p23.locator('#trava').count() == 1 and p23.locator('#trava [data-a=testarPlano]').count() == 0 and 'Contratação em breve' in p23.inner_text('#trava'),
+       'CT-KAN-119-10: depois do teste, volta ao Grátis, sem testar de novo: "Contratação em breve" (critério 3)')
+    # Rebaixado com 3 grupos: escolhe o que fica (critério 4)
+    for gx in ['gx1', 'gx2']:
+        p23.evaluate(PUT, {f'grupos/{gx}': {'name': 'Extra ' + gx, 'owner': u23, 'ativo': True, 'createdAt': 1, 'sport': 'futebol'},
+                           f'grupos/{gx}/membros/{u23}': {'uid': u23, 'role': 'owner'}})
+    me23 = p23.evaluate(LER, f'usuarios/{u23}') or {}
+    me23.setdefault('grupos', {})
+    for gx in ['gx1', 'gx2']: me23['grupos'][gx] = {'name': 'Extra ' + gx, 'role': 'owner', 'ativo': True, 'sport': 'futebol'}
+    p23.evaluate(PUT, {f'usuarios/{u23}': me23, f'contas/{u23}': dict(conta23, ativos=[g23, 'gx1', 'gx2'], teste=1)})
+    p23.goto(URL + '#/'); p23.reload(); p23.wait_for_timeout(1800)
+    ok(p23.locator('#avisoGrupos').count() == 1 and 'permite 1 grupo ativo' in p23.inner_text('#avisoGrupos'), 'CT-KAN-119-11: com 3 grupos no Grátis, Meus grupos pede para escolher quais continuam ativos')
+    p23.click('#avisoGrupos [data-a=escolherAtivos]'); p23.wait_for_timeout(700)
+    p23.locator('#escolherLista input').nth(1).check(); p23.click('#dlg [data-a=salvarAtivos]'); p23.wait_for_timeout(300)
+    ok('Marque até 1' in p23.inner_text('#escolherErr'), 'CT-KAN-119-11: marcar mais do que o plano permite avisa e não grava')
+    p23.locator('#escolherLista input').nth(1).uncheck(); p23.click('#dlg [data-a=salvarAtivos]'); p23.wait_for_timeout(300); confirmar_app(p23, True); p23.wait_for_timeout(1500)
+    c23 = p23.evaluate(LER, f'contas/{u23}') or {}
+    inat23 = [gx for gx in ['gx1', 'gx2'] if (p23.evaluate(LER, f'grupos/{gx}') or {}).get('ativo') is False]
+    ok(len(c23.get('ativos', [])) == 1 and len(inat23) == 2 and p23.locator('#avisoGrupos').count() == 0,
+       f'CT-KAN-119-11: os outros grupos ficam inativos (guardados), e a conta fica com 1 ativo ({c23.get("ativos")}, inativos: {inat23}) (critério 4)')
+    p23.goto(URL + '#/g/gx1'); p23.wait_for_timeout(1500)
+    p23.click('.inbar [data-a=toggleAtivo]'); p23.wait_for_timeout(800)
+    ok(p23.locator('#planoMotivo').count() == 1 and (p23.evaluate(LER, 'grupos/gx1') or {}).get('ativo') is False, 'CT-KAN-119-12: reativar um grupo além do limite do plano explica e não reativa')
+    p23.goto(URL + '#/'); p23.wait_for_timeout(1000)
+    p23.click('#topright [data-a=contaMenu]'); p23.wait_for_timeout(200)
+    ok(p23.locator('.theme-menu [data-a=planosDlg]').count() == 1, 'CT-KAN-119-08: o menu da conta tem "Plano e recursos"')
+    ctx23.close()
 
     # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
     ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')

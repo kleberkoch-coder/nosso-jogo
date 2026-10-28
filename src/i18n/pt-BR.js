@@ -173,6 +173,7 @@ export default {
   'conta.titulo': 'Minha conta',
   'conta.pais': 'País e formatos',
   'conta.tema': 'Tema',
+  'conta.plano': 'Plano e recursos',
   'conta.sair': 'Sair',
   /* país da conta, no cadastro (KAN-162); o resto do país, moeda e fuso fica nos textos da gestão */
   'comum.naoCarregouTitulo': 'Não foi possível carregar',

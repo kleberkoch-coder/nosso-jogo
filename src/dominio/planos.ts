@@ -6,7 +6,15 @@
 export type Plano = { nome: string; grupos: number | null; admins: number | null; recursos: string[] };
 export type Catalogo = Record<string, Plano>;
 export type Conta =
-  | { plano?: string; planoAte?: number | null; acesso?: number; email?: string; criada?: number; ng?: number }
+  | {
+      plano?: string;
+      planoAte?: number | null;
+      acesso?: number;
+      email?: string;
+      criada?: number;
+      ng?: number;
+      teste?: number;
+    }
   | null
   | undefined;
 
@@ -74,6 +82,7 @@ export type Cliente = {
   acesso: number | null;
   criada: number | null;
   ultimaRodada: string | null;
+  teste: number | null; // início do teste grátis (KAN-119)
 };
 const DIA = 864e5;
 
@@ -112,6 +121,7 @@ export function montarClientes(
         acesso: (c && c.acesso) || null,
         criada: (c && c.criada) || null,
         ultimaRodada: datas.length ? datas[datas.length - 1] : null,
+        teste: c && typeof (c as { teste?: unknown }).teste === 'number' ? (c as { teste: number }).teste : null,
       };
     })
     .sort((a, b) => (b.acesso || 0) - (a.acesso || 0) || a.email.localeCompare(b.email));

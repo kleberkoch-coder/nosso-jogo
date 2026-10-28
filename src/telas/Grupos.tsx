@@ -8,6 +8,7 @@ import { LOCAL } from '../i18n/formatos.js';
 import { tx } from '../i18n/index.js';
 import { S as estado } from '../nucleo/estado.js';
 import { numeroVersao } from '../nucleo/versao.js';
+import { AvisosPlano } from '../ui/Plano';
 
 type MeuGrupo = { name?: string; sport?: string; sportName?: string; role?: string; ativo?: boolean; criado?: number };
 const st = (): any => estado;
@@ -52,6 +53,7 @@ function GruposTela() {
     inativos = todos.filter(([, g]) => g.ativo === false);
   return (
     <div class="stack">
+      <AvisosPlano />
       <div class="row between">
         <h2>{tx('inicio.meusGrupos')}</h2>
         <button class="btn primary" data-a="newGroup">

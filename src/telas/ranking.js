@@ -1,6 +1,6 @@
 import { tx } from '../i18n/index.js';
 import { col, sport, tnJogo } from '../dominio/esportes.js';
-import { pname, rodById } from '../dominio/grupo.js';
+import { pname, recurso, rodById } from '../dominio/grupo.js';
 import { placares, ranking } from '../dominio/resumos.ts';
 import { S } from '../nucleo/estado.js';
 import { esc, fdate, fmonth, today } from '../nucleo/util.js';
@@ -8,16 +8,19 @@ import { esc, fdate, fmonth, today } from '../nucleo/util.js';
 /* ---------- Ranking (D11, KAN-87) ----------
    Soma as fichas de resumo do período: o ano lê até 12 fichas, o mês lê 1.
    Nada de ler todas as partidas do grupo. */
+/* KAN-119: sem o ranking do ano (Plano A), só os meses do ano atual, um de cada vez. */
+const anual = () => recurso('rankingAnual');
 function anoRank() {
-  return S.rankAno || today().slice(0, 4);
+  return (anual() && S.rankAno) || today().slice(0, 4);
 }
+const mesRank = () => S.rankMes || (anual() ? '' : today().slice(5, 7));
 function docsDoPeriodo() {
-  const m = S.rankMes || '';
+  const m = mesRank();
   return Object.values(S.res || {}).filter(d => d && d.mes && (!m || d.mes.slice(5, 7) === m));
 }
 function periodoRecalc() {
   const a = anoRank(),
-    m = S.rankMes || '';
+    m = mesRank();
   return a === 'todos' ? 'todos' : m ? a + '-' + m : a;
 }
 
@@ -25,20 +28,23 @@ function vRanking() {
   const a = anoRank(),
     anoAtual = +today().slice(0, 4),
     anos = [anoAtual, anoAtual - 1, anoAtual - 2].map(String);
-  const filtros = `<div class="row"><select class="sel" style="width:auto" data-c="rankAno" aria-label="${tx('rank.ano')}">${anos.map(x => `<option value="${x}" ${x === a ? 'selected' : ''}>${x}</option>`).join('')}<option value="todos" ${a === 'todos' ? 'selected' : ''}>${tx('rank.todosAnos')}</option></select>
+  const trava = anual()
+    ? ''
+    : `<div class="trava-linha small" data-trava="rankingAnual"><span aria-hidden="true">🔒</span> <span>${tx('plano.travaLinha', { recurso: tx('plano.rec.rankingAnual'), plano: tx('plano.planoA') })}</span> <button class="linkbtn" data-a="planosDlg">${tx('plano.verPlanos')}</button></div>`;
+  const filtros = `<div class="row">${anual() ? `<select class="sel" style="width:auto" data-c="rankAno" aria-label="${tx('rank.ano')}">${anos.map(x => `<option value="${x}" ${x === a ? 'selected' : ''}>${x}</option>`).join('')}<option value="todos" ${a === 'todos' ? 'selected' : ''}>${tx('rank.todosAnos')}</option></select>` : ''}
     ${
       a === 'todos'
         ? ''
-        : `<select class="sel" style="width:auto" data-c="rankMes" aria-label="${tx('rank.mes')}"><option value="">${tx('rank.anoInteiro')}</option>${Array.from(
+        : `<select class="sel" style="width:auto" data-c="rankMes" aria-label="${tx('rank.mes')}">${anual() ? `<option value="">${tx('rank.anoInteiro')}</option>` : ''}${Array.from(
             { length: 12 },
             (_, i) => String(i + 1).padStart(2, '0')
           )
             .map(
               m =>
-                `<option value="${m}" ${m === (S.rankMes || '') ? 'selected' : ''}>${esc(fmonth(a + '-' + m).replace(/\s*(de\s*)?\d{4}$/, ''))}</option>`
+                `<option value="${m}" ${m === mesRank() ? 'selected' : ''}>${esc(fmonth(a + '-' + m).replace(/\s*(de\s*)?\d{4}$/, ''))}</option>`
             )
             .join('')}</select>`
-    }</div>`;
+    }</div>${trava}`;
   const cols = [
     ['pts', 'Pts'],
     ['j', 'J'],

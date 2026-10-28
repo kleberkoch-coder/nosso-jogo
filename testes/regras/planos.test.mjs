@@ -100,6 +100,7 @@ test('clientes juntam conta, grupos do dono e última rodada; dono sem ficha apa
   assert.equal(caio.email, 'caio@x.com');
   assert.equal(caio.acesso, null);
   assert.equal(caio.plano, 'gratis');
+  assert.equal(caio.teste, null);
   assert.equal(cs[0].uid, 'u1', 'quem acessou por último vem primeiro');
 });
 

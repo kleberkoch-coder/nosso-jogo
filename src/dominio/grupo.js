@@ -161,6 +161,11 @@ function isAdmin() {
 function isOwnerMe() {
   return !!(S.app && S.user && S.app.owner === S.user.uid);
 }
+/* Recurso do plano do grupo (KAN-119): caixa, votação, histórico, ranking do ano, cobrar e controle de vagas.
+   A conta vem da gestão (nucleo/plano.ts), que registra aqui como responder; o link do jogador não usa. */
+let provedorRecurso = null;
+const definirRecursos = f => (provedorRecurso = f);
+const recurso = k => (provedorRecurso ? provedorRecurso(k) : true);
 /* Permissão do administrador aberto agora (KAN-201): caixa, notas, elenco ou config. O organizador pode tudo. */
 function posso(k) {
   if (!isAdmin()) return false;
@@ -224,6 +229,8 @@ export {
   rodadasTodas,
   schedTxt,
   posso,
+  definirRecursos,
+  recurso,
   setLvl,
   upcoming,
 };

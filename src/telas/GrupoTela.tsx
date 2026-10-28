@@ -5,7 +5,7 @@
 import { render } from 'preact';
 import { cfg } from '../dominio/caixa.js';
 import { basePos, porTime, sport, sportName } from '../dominio/esportes.js';
-import { fdia, fixos, freq, gname, grpAtivo, isOwnerMe, posso } from '../dominio/grupo.js';
+import { fdia, fixos, freq, gname, grpAtivo, isOwnerMe, posso, recurso } from '../dominio/grupo.js';
 import { faixaTexto } from '../dominio/rodadas.js';
 import { PERMISSOES, pode, type Membro } from '../dominio/permissoes';
 import { tx } from '../i18n/index.js';
@@ -292,7 +292,7 @@ function GrupoTela() {
         <div class="panel">
           <div class="row between">
             <h3 style="margin:0">{tx(caixa ? 'grupo.partidasCaixa' : 'grupo.partidas')}</h3>
-            {(config || caixa) && (
+            {(config || (caixa && recurso('caixa'))) && (
               <button class="btn sm" data-a="settings">
                 {tx('grupo.editarCurto')}
               </button>

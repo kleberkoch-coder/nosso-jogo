@@ -5,7 +5,7 @@ import { relogio12, simboloMoeda } from '../i18n/formatos.js';
 import { porTime, sport } from '../dominio/esportes.js';
 import { resumo } from '../dominio/times.ts';
 import { tp, tx } from '../i18n/index.js';
-import { fdia, lvl, lvlIn, posso } from '../dominio/grupo.js';
+import { fdia, lvl, lvlIn, posso, recurso } from '../dominio/grupo.js';
 import { S } from '../nucleo/estado.js';
 import { $, esc, nextSat } from '../nucleo/util.js';
 import { dlg, openDlg, posField } from './dialogos.js';
@@ -30,7 +30,7 @@ function playerDlg(id, prefill) {
     ct = (S.cont || {})[cid] || {};
   openDlg(`<h3>${p ? 'Editar jogador' : 'Novo jogador'}</h3><label class="f"><span>Nome ou apelido</span><input class="inp" id="pnm" value="${esc(p?.name || prefill?.name || '')}" maxlength="40"></label>
   ${posField('ppos', p?.pos || prefill?.pos)}${posso('notas') ? `<div class="f"><span class="lbl">Nota de 1 a 10 (só administradores veem)</span>${lvlIn(st)}</div>` : ''}
-  ${posso('caixa') ? campoTipo(p ? ptipo(id) : prefill?.tipo, cid ? recebePorJogo(cid) : null) : ''}
+  ${posso('caixa') && recurso('caixa') ? campoTipo(p ? ptipo(id) : prefill?.tipo, cid ? recebePorJogo(cid) : null) : ''}
   ${campoTelefone(ct.tel || '', tx('contato.telRotulo'))}
   <label class="f"><span>${tx('contato.emailRotulo')}</span><input class="inp" id="pmail" type="email" autocomplete="email" maxlength="100" value="${esc(ct.email || '')}" placeholder="${tx('contato.emailExemplo')}"></label>
   ${p ? `<p class="small muted" style="margin-top:-4px">Cadastrado em ${fdia(p.criado)} · ${p.ativo === false ? '<b style="color:var(--out)">inativo</b>' : 'ativo'}</p>` : ''}

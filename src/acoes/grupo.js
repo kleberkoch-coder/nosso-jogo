@@ -6,6 +6,7 @@ import { tp, tx } from '../i18n/index.js';
 import { shareDlg } from '../dominio/whatsapp.js';
 import { B, op } from '../nucleo/backend.js';
 import { gruposEsgotados, limite } from '../dominio/limites.ts';
+import { PERM_CONVIDADO, PERMISSOES, permLimpa } from '../dominio/permissoes';
 import { editApp } from '../nucleo/edicoes.js';
 import { GB, S, clean, w } from '../nucleo/estado.js';
 import { linkConvite } from '../nucleo/links.js';
@@ -369,7 +370,8 @@ const acoes = {
       await B.set(
         'grupos/' + R.gid + '/membros/' + uid,
         Object.assign(
-          { uid, email: S.user.email, role: 'admin', token: R.token, at: Date.now() },
+          // KAN-201: convidado novo entra só com o dia a dia; o organizador libera o resto.
+          { uid, email: S.user.email, role: 'admin', token: R.token, at: Date.now(), perm: { ...PERM_CONVIDADO } },
           S.user.via ? { via: S.user.via } : {}
         )
       );
@@ -430,6 +432,33 @@ const acoes = {
     return Promise.all([w(GB.del('membros/' + el.dataset.v)), w(GB.del('privado/convite'))]).then(() =>
       toast('Administrador removido. Para convidar alguém, gere um novo link.', 4500)
     );
+  },
+  /* Permissões de um administrador convidado (KAN-201): só o organizador abre e muda. Vale na hora para o convidado. */
+  abrirPerm: el => {
+    const u = el.dataset.v,
+      m = (S.membros || {})[u];
+    if (!m || m.role === 'owner') return;
+    const atual = m.perm === undefined || m.perm === null ? null : permLimpa(m.perm);
+    openDlg(`<h3 id="permTitulo">${tx('perm.titulo')}</h3><p class="small muted" style="margin-top:-6px">${tx('perm.ajuda', { email: esc(m.email || u) })}</p>
+    <ul class="perm-lista">${PERMISSOES.map(
+      k =>
+        `<li><label class="perm-item"><input type="checkbox" id="perm_${k}"${!atual || atual[k] ? ' checked' : ''}><span><b>${tx('perm.nome.' + k)}</b><br><span class="small muted">${tx('perm.desc.' + k)}</span></span></label></li>`
+    ).join('')}</ul>
+    <p class="small muted">${tx('perm.sempre')}</p>
+    <div class="dlg-f"><button class="btn" data-a="close">${tx('comum.cancelar')}</button><button class="btn primary" data-a="salvarPerm" data-v="${esc(u)}">${tx('perm.salvar')}</button></div>`);
+    dlg.setAttribute('aria-labelledby', 'permTitulo');
+  },
+  salvarPerm: el => {
+    const u = el.dataset.v,
+      m = (S.membros || {})[u];
+    if (!m) return;
+    const p = {};
+    PERMISSOES.forEach(k => (p[k] = !!$('#perm_' + k)?.checked));
+    const perm = permLimpa(p);
+    S.membros[u] = Object.assign({}, m, { perm });
+    changed();
+    closeDlg();
+    return w(GB.patch('membros/' + u, { perm })).then(() => toast(tx('perm.salvo')));
   },
   forgetGroup: () => {
     const me = cl(S.me) || { grupos: {} };

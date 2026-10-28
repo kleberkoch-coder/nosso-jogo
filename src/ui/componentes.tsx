@@ -4,7 +4,7 @@
    Os botões continuam com data-a: as ações, o carregando e o aviso de sem sinal são os mesmos do resto do app. */
 import type { ComponentChildren } from 'preact';
 import { hasPos, posKeys, posLabel, sport } from '../dominio/esportes.js';
-import { fmtL, lvl, ppos, rodadasJanela } from '../dominio/grupo.js';
+import { fmtL, lvl, posso, ppos, rodadasJanela } from '../dominio/grupo.js';
 import { faltaTotal, porPosicao } from '../dominio/posicoes';
 import { hora } from '../dominio/rodadas.js';
 import { fdate } from '../nucleo/util.js';
@@ -78,7 +78,9 @@ export function Pos({ id }: { id: string }) {
 }
 
 /* Nota de 1 a 10 do jogador (só a gestão mostra). */
+/* Sem a permissão de notas (KAN-201), a nota não aparece: o sorteio usa, mas a tela esconde. */
 export function Nota({ id }: { id: string }) {
+  if (!posso('notas')) return null;
   return (
     <span class="lvl-tag" title={tx('nota.titulo')}>
       {fmtL(lvl(id))}

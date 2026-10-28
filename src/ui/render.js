@@ -1,5 +1,5 @@
 import { APP, sport, sportName } from '../dominio/esportes.js';
-import { curRodada, fdia, gname, grpAtivo, isAdmin, isOwnerMe } from '../dominio/grupo.js';
+import { curRodada, fdia, gname, grpAtivo, isAdmin, isOwnerMe, posso } from '../dominio/grupo.js';
 import { hora } from '../dominio/rodadas.js';
 import { B, applyBusy } from '../nucleo/backend.js';
 import { S } from '../nucleo/estado.js';
@@ -158,10 +158,14 @@ function renderCore() {
     (r0 ? ' · ' : '') +
     (r0 ? `Próxima: ${fdate(r0.date)}${r0.time ? ' · ' + hora(r0) : ''}` : '');
   $('#tabsnav').hidden = false;
-  $('#tabs').innerHTML = TABS.map(
-    ([k, l]) =>
-      `<button class="tab" role="tab" aria-selected="${S.tab === k}" data-a="tab" data-v="${k}">${l.startsWith('abas.') ? tx(l) : l}</button>`
-  ).join('');
+  /* KAN-201: sem a permissão de caixa, a aba Caixa não aparece. */
+  if (S.tab === 'caixa' && !posso('caixa')) S.tab = 'rodada';
+  $('#tabs').innerHTML = TABS.filter(([k]) => k !== 'caixa' || posso('caixa'))
+    .map(
+      ([k, l]) =>
+        `<button class="tab" role="tab" aria-selected="${S.tab === k}" data-a="tab" data-v="${k}">${l.startsWith('abas.') ? tx(l) : l}</button>`
+    )
+    .join('');
   abasNoLugar();
   ensurePres();
   ensureVotos();
@@ -189,6 +193,7 @@ function renderCore() {
   }
   if (S.tab === 'rodada') A.montarRodada();
   if (S.tab === 'jogadores') A.montarJogadores();
+  if (S.tab === 'grupo') A.montarGrupo();
   if (S.tab === 'partida') {
     const P = A.partidaPronta();
     if (!P) return baixar(A.carregarPartida(), null, $('#partidaRaiz'));

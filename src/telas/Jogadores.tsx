@@ -2,7 +2,7 @@
    Por fora é a mesma tela de antes, mais o botão de importar. Os botões usam data-a (ações em acoes/jogadores.js). */
 import { render } from 'preact';
 import { ptipo } from '../dominio/caixa.js';
-import { fdia, lvl, players, pname, ppos, rat, rodadas } from '../dominio/grupo.js';
+import { fdia, lvl, players, pname, posso, ppos, rat, rodadas } from '../dominio/grupo.js';
 import { hasPos, posKeys } from '../dominio/esportes.js';
 import { ORDENS, ordemValida, ordenarJogadores, type Ordem } from '../dominio/ordem-jogadores.ts';
 import { rodadasComTimes, vezesJuntos, type Par, type RodadaComTimes } from '../dominio/juntos';
@@ -24,7 +24,8 @@ export function ordemJogadores(): Ordem {
   try {
     v = localStorage.getItem(ORDEM_K);
   } catch (e) {}
-  return ordemValida(v, hasPos());
+  const o = ordemValida(v, hasPos());
+  return ordemPermitida(o) ? o : 'nome';
 }
 export function guardarOrdemJogadores(v: string) {
   try {
@@ -44,13 +45,15 @@ function ordenar<T>(lista: T[], id: (x: T) => string, nome: (x: T) => string, cr
   return ordenarJogadores(itens, ordemJogadores(), { posicoes: posKeys() as string[], local: LOCAL }).map(i => i.x);
 }
 
+/* Ordenar por nota ou por tipo só para quem vê notas ou caixa (KAN-201). */
+const ordemPermitida = (o: Ordem) => (o !== 'nota' || posso('notas')) && (o !== 'tipo' || posso('caixa'));
 function SeletorOrdem() {
   const atual = ordemJogadores();
   return (
     <label class="row ordem-jog">
       <span class="small muted">{tx('jogadores.ordenarPor')}</span>
       <select class="sel" data-c="ordemJog" value={atual}>
-        {ORDENS.filter(o => o !== 'posicao' || hasPos()).map(o => (
+        {ORDENS.filter(o => (o !== 'posicao' || hasPos()) && ordemPermitida(o)).map(o => (
           <option key={o} value={o} selected={o === atual}>
             {tx('jogadores.ordem.' + o)}
           </option>
@@ -80,14 +83,17 @@ function LinhaJogador({ p }: { p: Jogador }) {
         {p.name}
         <br />
         <span class="tag">
-          {tx('tipo.' + ptipo(p.id))} · {tx('jogadores.desde', { data: fdia(p.criado) })}
+          {posso('caixa') ? tx('tipo.' + ptipo(p.id)) + ' · ' : ''}
+          {tx('jogadores.desde', { data: fdia(p.criado) })}
           <Contato id={p.id} />
         </span>
       </span>
       <Nota id={p.id} />
-      <button class="btn sm" data-a="editPlayer" data-p={p.id}>
-        {tx('rodada.editar')}
-      </button>
+      {posso('elenco') ? (
+        <button class="btn sm" data-a="editPlayer" data-p={p.id}>
+          {tx('rodada.editar')}
+        </button>
+      ) : null}
     </li>
   );
 }
@@ -95,6 +101,8 @@ function LinhaJogador({ p }: { p: Jogador }) {
 function JogadoresTela() {
   const S = st(),
     R = rat() as { sep?: [string, string][] },
+    notas = posso('notas'),
+    elenco = posso('elenco'),
     porJogador = (p: Jogador) => p.id,
     nomeJ = (p: Jogador) => p.name,
     criadoJ = (p: Jogador) => p.criado,
@@ -127,19 +135,21 @@ function JogadoresTela() {
     <div class="stack">
       <div class="row between">
         <h2>{tx('jogadores.total', { n: ps.length })}</h2>
-        <div class="row">
-          <button class="btn primary" data-a="addPlayer">
-            {tx('jogadores.adicionar')}
-          </button>
-          <button class="btn" data-a="importarDlg">
-            {tx('jogadores.importar')}
-          </button>
-          {!ps.length ? (
-            <button class="btn" data-a="seed">
-              {tx('jogadores.exemplo')}
+        {elenco ? (
+          <div class="row">
+            <button class="btn primary" data-a="addPlayer">
+              {tx('jogadores.adicionar')}
             </button>
-          ) : null}
-        </div>
+            <button class="btn" data-a="importarDlg">
+              {tx('jogadores.importar')}
+            </button>
+            {!ps.length ? (
+              <button class="btn" data-a="seed">
+                {tx('jogadores.exemplo')}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
       <div class="panel">
         {ps.length > 1 ? <SeletorOrdem /> : null}
@@ -183,9 +193,11 @@ function JogadoresTela() {
                 <button class="btn sm" data-a="editAvulso" data-p={id}>
                   {tx('rodada.editar')}
                 </button>
-                <button class="btn sm" data-a="promote" data-p={id}>
-                  {tx('jogadores.porNoElenco')}
-                </button>
+                {elenco ? (
+                  <button class="btn sm" data-a="promote" data-p={id}>
+                    {tx('jogadores.porNoElenco')}
+                  </button>
+                ) : null}
               </li>
             ))
           ) : (
@@ -193,32 +205,34 @@ function JogadoresTela() {
           )}
         </ul>
       </div>
-      <div class="grid2">
-        <div class="panel">
-          <h3>{tx('jogadores.separarTitulo')}</h3>
-          <p class="small muted" style="margin-top:-6px">
-            {tx('jogadores.separarAjuda')}
-          </p>
-          <ul class="plist">
-            {(R.sep || []).length ? (
-              (R.sep || []).map(([a, b], i) => (
-                <li key={i}>
-                  <span class="pn">
-                    {pname(a)} <span class="muted">{tx('jogadores.e')}</span> {pname(b)}
-                  </span>
-                  <button class="btn sm ghost danger" data-a="delSep" data-v={i}>
-                    {tx('jogadores.remover')}
-                  </button>
-                </li>
-              ))
-            ) : (
-              <li class="muted small">{tx('jogadores.separarVazio')}</li>
-            )}
-          </ul>
-          <button class="btn sm" style="margin-top:10px" data-a="addSep">
-            {tx('jogadores.adicionarPar')}
-          </button>
-        </div>
+      <div class={notas ? 'grid2' : 'stack'}>
+        {notas ? (
+          <div class="panel">
+            <h3>{tx('jogadores.separarTitulo')}</h3>
+            <p class="small muted" style="margin-top:-6px">
+              {tx('jogadores.separarAjuda')}
+            </p>
+            <ul class="plist">
+              {(R.sep || []).length ? (
+                (R.sep || []).map(([a, b], i) => (
+                  <li key={i}>
+                    <span class="pn">
+                      {pname(a)} <span class="muted">{tx('jogadores.e')}</span> {pname(b)}
+                    </span>
+                    <button class="btn sm ghost danger" data-a="delSep" data-v={i}>
+                      {tx('jogadores.remover')}
+                    </button>
+                  </li>
+                ))
+              ) : (
+                <li class="muted small">{tx('jogadores.separarVazio')}</li>
+              )}
+            </ul>
+            <button class="btn sm" style="margin-top:10px" data-a="addSep">
+              {tx('jogadores.adicionarPar')}
+            </button>
+          </div>
+        ) : null}
         <div class="panel" id="juntos">
           <h3>{tx('jogadores.juntosTitulo')}</h3>
           <p class="small muted" style="margin-top:-6px">

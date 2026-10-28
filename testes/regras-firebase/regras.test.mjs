@@ -593,3 +593,106 @@ describe('administradores (membros)', () => {
     await assertFails(setDoc(doc(db.anon(), G + '/membros/anon1'), { uid: 'anon1', role: 'admin' }));
   });
 });
+
+describe('permissões dos administradores convidados (KAN-201)', () => {
+  const NADA = { caixa: false, notas: false, elenco: false, config: false };
+  const conv = () => env.authenticatedContext('conv', senha).firestore();
+  const semRegras = fn => env.withSecurityRulesDisabled(async ctx => fn(ctx.firestore()));
+  const preparar = (perm = NADA) =>
+    semRegras(async f => {
+      await setDoc(doc(f, G + '/membros/conv'), { uid: 'conv', role: 'admin', email: 'c@x.com', perm });
+      await setDoc(doc(f, G + '/privado/caixa'), { pix: 'pix@x.com', tipos: {} });
+      await setDoc(doc(f, G + '/privado/contatos'), { j1: { tel: '+5511999999999' } });
+      await setDoc(doc(f, G + '/privado/ratings'), { nivel: { j1: 5 } });
+      await setDoc(doc(f, G + '/privado/convite'), { token: 'tok123' });
+      await setDoc(doc(f, G + '/jogadores/j1'), { name: 'Ana' });
+      await setDoc(doc(f, G + '/caixa/l1'), { k: 'mensal', v: 80, d: '2026-10-01' });
+      await setDoc(doc(f, G), {
+        name: 'G1',
+        owner: 'dono',
+        ativo: true,
+        createdAt: 1,
+        cfg: { place: 'A', minutes: 10 },
+      });
+    });
+
+  test('convite novo entra só com o dia a dia; pedir permissões ao entrar é recusado', async () => {
+    await semRegras(f => setDoc(doc(f, G + '/privado/convite'), { token: 'tok123' }));
+    const novo = env.authenticatedContext('novo', senha).firestore();
+    await assertFails(
+      setDoc(doc(novo, G + '/membros/novo'), {
+        uid: 'novo',
+        role: 'admin',
+        token: 'tok123',
+        perm: { ...NADA, caixa: true },
+      })
+    );
+    await assertFails(setDoc(doc(novo, G + '/membros/novo'), { uid: 'novo', role: 'admin', token: 'tok123' }));
+    await assertSucceeds(
+      setDoc(doc(novo, G + '/membros/novo'), { uid: 'novo', role: 'admin', token: 'tok123', perm: NADA })
+    );
+  });
+  test('sem caixa: não lê nem grava o caixa privado nem os lançamentos', async () => {
+    await preparar();
+    await assertFails(getDoc(doc(conv(), G + '/privado/caixa')));
+    await assertFails(setDoc(doc(conv(), G + '/privado/caixa'), { pix: 'meu@pix' }));
+    await assertFails(getDoc(doc(conv(), G + '/caixa/l1')));
+    await assertFails(setDoc(doc(conv(), G + '/caixa/l2'), { k: 'entrada', v: 10, d: '2026-10-02' }));
+  });
+  test('sem elenco: não lê contatos nem cadastra, edita ou apaga jogador', async () => {
+    await preparar();
+    await assertFails(getDoc(doc(conv(), G + '/privado/contatos')));
+    await assertFails(setDoc(doc(conv(), G + '/jogadores/j2'), { name: 'Beto' }));
+    await assertFails(updateDoc(doc(conv(), G + '/jogadores/j1'), { name: 'Ana Maria' }));
+    await assertFails(deleteDoc(doc(conv(), G + '/jogadores/j1')));
+  });
+  test('sem notas: lê as notas (o sorteio usa), mas não muda', async () => {
+    await preparar();
+    await assertSucceeds(getDoc(doc(conv(), G + '/privado/ratings')));
+    await assertFails(setDoc(doc(conv(), G + '/privado/ratings'), { nivel: { j1: 1 } }));
+  });
+  test('sem configurações: não edita o grupo nem o convite e não remove administrador; o dia a dia continua', async () => {
+    await preparar();
+    await assertFails(updateDoc(doc(conv(), G), { name: 'Outro nome' }));
+    await assertFails(updateDoc(doc(conv(), G), { 'cfg.minutes': 20 }));
+    await assertFails(getDoc(doc(conv(), G + '/privado/convite')));
+    await assertFails(deleteDoc(doc(conv(), G + '/membros/adm')));
+    await assertSucceeds(
+      updateDoc(doc(conv(), G), { 'cfg.place': 'Quadra B', 'cfg.time': '21:00', 'cfg.novelty': 0.5 })
+    );
+    await assertSucceeds(updateDoc(doc(conv(), G + '/rodadas/r1'), { locked: true }));
+  });
+  test('com as permissões ligadas, pode cada coisa; remover administrador continua só com o organizador', async () => {
+    await preparar({ caixa: true, notas: true, elenco: true, config: true });
+    await assertSucceeds(getDoc(doc(conv(), G + '/privado/caixa')));
+    await assertSucceeds(setDoc(doc(conv(), G + '/caixa/l2'), { k: 'entrada', v: 10, d: '2026-10-02' }));
+    await assertSucceeds(getDoc(doc(conv(), G + '/privado/contatos')));
+    await assertSucceeds(setDoc(doc(conv(), G + '/jogadores/j2'), { name: 'Beto' }));
+    await assertSucceeds(setDoc(doc(conv(), G + '/privado/ratings'), { nivel: { j1: 7 } }));
+    await assertSucceeds(updateDoc(doc(conv(), G), { name: 'Outro nome' }));
+    await assertFails(deleteDoc(doc(conv(), G + '/membros/adm')));
+    await assertFails(deleteDoc(doc(conv(), G + '/membros/dono')));
+  });
+  test('quem tem só caixa ajusta a marca de vaga do jogador, e nada mais nele', async () => {
+    await preparar({ ...NADA, caixa: true });
+    await assertSucceeds(updateDoc(doc(conv(), G + '/jogadores/j1'), { vaga: true }));
+    await assertFails(updateDoc(doc(conv(), G + '/jogadores/j1'), { vaga: true, name: 'X' }));
+  });
+  test('só o organizador muda as permissões; o convidado não se dá permissão', async () => {
+    await preparar();
+    await assertFails(updateDoc(doc(conv(), G + '/membros/conv'), { perm: { ...NADA, caixa: true } }));
+    await assertFails(updateDoc(doc(db.adm(), G + '/membros/conv'), { perm: { ...NADA, caixa: true } }));
+    await assertFails(updateDoc(doc(db.dono(), G + '/membros/conv'), { perm: { ...NADA, caixa: 'sim' } }));
+    await assertFails(updateDoc(doc(db.dono(), G + '/membros/conv'), { perm: { ...NADA, dono: true } }));
+    await assertFails(updateDoc(doc(db.dono(), G + '/membros/conv'), { perm: NADA, role: 'owner' }));
+    await assertSucceeds(updateDoc(doc(db.dono(), G + '/membros/conv'), { perm: { ...NADA, caixa: true } }));
+    await assertSucceeds(getDoc(doc(conv(), G + '/privado/caixa')));
+  });
+  test('administrador de antes das permissões (sem perm) continua com tudo', async () => {
+    await preparar();
+    await assertSucceeds(getDoc(doc(db.adm(), G + '/privado/caixa')));
+    await assertSucceeds(getDoc(doc(db.adm(), G + '/privado/contatos')));
+    await assertSucceeds(setDoc(doc(db.adm(), G + '/privado/ratings'), { nivel: { j1: 3 } }));
+    await assertSucceeds(updateDoc(doc(db.adm(), G), { name: 'Nome novo' }));
+  });
+});

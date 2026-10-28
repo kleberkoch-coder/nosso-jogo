@@ -1,4 +1,4 @@
-import { isAdmin } from './grupo.js';
+import { isAdmin, posso } from './grupo.js';
 import { B } from '../nucleo/backend.js';
 import { GB, S, clean, gp, w } from '../nucleo/estado.js';
 import { cl } from '../nucleo/util.js';
@@ -36,7 +36,9 @@ function inicioAPagar() {
     .sort();
   return ds[0] || null;
 }
+/* Sem a permissão de caixa (KAN-201), nada é gravado no caixa: as regras do Firebase recusariam. */
 function editPc(fn) {
+  if (!posso('caixa')) return Promise.resolve();
   const a = cl(S.pc) || {};
   a.tipos = a.tipos || {};
   fn(a);

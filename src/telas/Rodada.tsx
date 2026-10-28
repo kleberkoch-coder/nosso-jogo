@@ -19,6 +19,7 @@ import {
   lvl,
   players,
   pname,
+  posso,
   ppos,
   rodadasJanela,
 } from '../dominio/grupo.js';
@@ -168,7 +169,7 @@ function CartaoTime({ t, ti }: { t: Time; ti: number }) {
         ))}
       </ul>
       <div class="row between small muted" style="padding:0 14px 12px">
-        <span>{tx('times.media', { n: fmtL(Math.round(media * 10) / 10) })}</span>
+        <span>{posso('notas') ? tx('times.media', { n: fmtL(Math.round(media * 10) / 10) }) : ''}</span>
         {pares ? null : (
           <button class="btn sm ghost" data-a="porTime" data-v={ti}>
             {tx('porTime.botao')}
@@ -419,9 +420,11 @@ function Qualidade({ q }: { q: Qualidade }) {
   if (!q) return null;
   return (
     <div class="quality">
-      <span>
-        {tx('times.difMedia')} <b>{fmtL(Math.round(q.diff * 10) / 10)}</b>
-      </span>
+      {posso('notas') ? (
+        <span>
+          {tx('times.difMedia')} <b>{fmtL(Math.round(q.diff * 10) / 10)}</b>
+        </span>
+      ) : null}
       {q.gk ? (
         <span>
           {tx('times.posChave', { pos: posLabel(sport().key) })} <b>{q.gk.join(' × ')}</b>
@@ -556,9 +559,11 @@ function RodadaTela() {
             inn={a.inn}
             minimos={minimosDoGrupo()}
             acao={
-              <button class="btn sm ghost" data-a="abrirMinimos">
-                {tx('minimo.definir')}
-              </button>
+              posso('config') ? (
+                <button class="btn sm ghost" data-a="abrirMinimos">
+                  {tx('minimo.definir')}
+                </button>
+              ) : null
             }
           />
         ) : null}

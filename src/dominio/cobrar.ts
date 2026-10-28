@@ -11,3 +11,14 @@ export function semResposta(elenco: string[], pres: Pres): string[] {
 export function linkCobrar(linkWa: string, mensagem: string): string {
   return linkWa ? linkWa + '?text=' + encodeURIComponent(mensagem) : '';
 }
+
+/* Quem cobrar (correção do KAN-64 com o KAN-63): com o controle de vagas ligado e as vagas fechadas (ou esgotadas),
+   diarista não consegue confirmar pelo link; então não entra na cobrança. Com vaga aberta, entra. */
+export function quemCobrar(
+  elenco: string[],
+  pres: Pres,
+  jogadores: Record<string, { vaga?: boolean } | undefined>,
+  podeEntrarComVaga: boolean
+): string[] {
+  return semResposta(elenco, pres).filter(id => podeEntrarComVaga || !(jogadores[id] && jogadores[id]!.vaga === true));
+}

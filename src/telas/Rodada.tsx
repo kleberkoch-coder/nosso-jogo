@@ -2,7 +2,7 @@
    Por fora é a mesma tela de antes; os testes automáticos conferem. Os botões usam data-a (ações em acoes/rodada.js). */
 import { render } from 'preact';
 import { divergencia } from '../dominio/divergencia';
-import { linkCobrar, semResposta } from '../dominio/cobrar';
+import { linkCobrar, quemCobrar } from '../dominio/cobrar';
 import { linkWhatsApp } from '../dominio/contato';
 import { linkDaRodada } from '../dominio/whatsapp.js';
 import { COL, col, colete, hasPos, posIdx, posKeys, posLabel, sport, tn } from '../dominio/esportes.js';
@@ -248,9 +248,12 @@ function textoCobrarUm(r: Rodada, id: string) {
 }
 function Cobrar({ r }: { r: Rodada }) {
   const S = st(),
-    falta = semResposta(
+    /* Com as vagas fechadas, diarista não confirma pelo link: não entra na cobrança (KAN-63). */
+    falta = quemCobrar(
       (players() as { id: string }[]).map(p => p.id),
-      S.pres
+      S.pres,
+      S.jog || {},
+      situacao(controleVagas(), r.vagas, S.limVg).podeEntrar
     );
   if (!falta.length || r.locked) return null;
   /* KAN-119: cobrar faz parte do Plano A; sem ele, a lista aparece com o cadeado, sem os botões. */

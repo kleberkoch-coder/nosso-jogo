@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v71 (28/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v72 (28/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -100,6 +100,7 @@ Atualizado na pelada-v71 (28/10/2026). Toda entrega que mudar uma regra atualiza
 - Cobrar quem não respondeu (KAN-64; regra em `dominio/cobrar.ts`, com teste): na aba Rodada, logo depois do quadro da rodada, aparece o bloco "Ainda não responderam (N)" com os nomes do elenco ativo sem Vou nem Não vou. Ele tem dois caminhos:
   - **Cobrar no grupo:** monta a mensagem do WhatsApp com os nomes e o link de confirmar (o permanente, no jogo fixo).
   - **Cobrar um por um:** abre o WhatsApp de cada pessoa que tem telefone, com a mensagem e o link, pelo aparelho do administrador. Os telefones continuam só para administradores. Quem não tem telefone aparece como "sem telefone".
+  - Com o controle de vagas ligado e as vagas fechadas ou esgotadas, diarista (quem tem a marca de vaga) não entra na lista nem na cobrança, porque não consegue confirmar pelo link. Com vaga aberta, volta (pelada-v72, KAN-206).
   - O bloco some quando todos responderam ou a lista está fechada.
 - Mínimo para o jogo e confirmados por posição (KAN-179; regra em `dominio/posicoes.ts`, com teste):
   - Na aba Rodada e no link do jogador, o quadro da rodada mostra quantos confirmados há em cada posição (ex.: GOL 1 · DEF 4). Aparece só a posição com alguém confirmado ou com mínimo definido.

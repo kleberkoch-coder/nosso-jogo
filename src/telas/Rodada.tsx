@@ -55,7 +55,8 @@ const st = (): any => estado;
 const statusDe = (id: string): 'in' | 'out' | undefined => st().pres[id]?.s;
 
 /* Seletor da rodada (D10): as próximas e as últimas 4; as antigas ficam na aba Histórico. */
-/* Painel do link permanente (KAN-150): só o link; dia, hora e local ficam no cartão da rodada. */
+/* Painel do link permanente (KAN-150): só o link; dia, hora e local ficam no cartão da rodada.
+   KAN-194: vem depois do cartão da rodada, recolhido numa linha (Mandar no WhatsApp); o resto fica em "Como funciona". */
 function LinkPermanente() {
   if (!fixos().length) {
     return freq() === 'fixo' ? (
@@ -69,15 +70,18 @@ function LinkPermanente() {
   }
   return (
     <div class="panel fixos">
-      <div class="row between">
-        <div>
-          <h3 style="margin:0">{tx('fixos.titulo')}</h3>
-          <div class="small muted">{tx('fixos.ajuda')}</div>
-        </div>
+      <div class="fixos-linha">
+        <h3>{tx('fixos.titulo')}</h3>
+        <button class="btn sm primary" data-a="shareFixo">
+          {tx('fixos.mandar')}
+        </button>
+      </div>
+      <details class="small">
+        <summary>{tx('fixos.comoFunciona')}</summary>
+        <p class="muted" style="margin:6px 0 0">
+          {tx('fixos.ajuda')} {tx('fixos.comoFuncionaTexto')}
+        </p>
         <div class="row">
-          <button class="btn sm primary" data-a="shareFixo">
-            {tx('fixos.mandar')}
-          </button>
           <button class="btn sm" data-a="copyFixo">
             {tx('fixos.copiar')}
           </button>
@@ -85,12 +89,6 @@ function LinkPermanente() {
             {tx('fixos.editar')}
           </button>
         </div>
-      </div>
-      <details class="small" style="margin-top:8px">
-        <summary>{tx('fixos.comoFunciona')}</summary>
-        <p class="muted" style="margin:6px 0 0">
-          {tx('fixos.comoFuncionaTexto')}
-        </p>
       </details>
     </div>
   );
@@ -529,7 +527,6 @@ function RodadaTela() {
     return (
       <div class="stack">
         <SeletorRodada r={r} acoes />
-        <LinkPermanente />
         <div class="panel empty">
           <h2>{tx('rodada.cancelada', { data: fdate(r.date) })}</h2>
           <p class="muted">{tx('rodada.canceladaTexto')}</p>
@@ -537,6 +534,7 @@ function RodadaTela() {
             {tx('rodada.reativar')}
           </button>
         </div>
+        <LinkPermanente />
       </div>
     );
   }
@@ -548,13 +546,17 @@ function RodadaTela() {
   return (
     <div class="stack">
       <SeletorRodada r={r} acoes />
-      <LinkPermanente />
       <div class="panel">
         <div class="hero-r">
           <div>
             <h2>
               {fdate(r.date)}
-              {r.time ? ' · ' + hora(r) : ''}
+              {r.time ? (
+                <>
+                  {' · '}
+                  <span class="nw">{hora(r)}</span>
+                </>
+              ) : null}
             </h2>
             <div class="muted linha-local">
               <TextoCortado texto={r.place || tx('publico.localADefinir')} />
@@ -609,6 +611,7 @@ function RodadaTela() {
           )}
         </div>
       </div>
+      <LinkPermanente />
       {carregou ? <PainelVagas r={r} /> : null}
       {carregou ? <Cobrar r={r} /> : null}
       <Presenca r={r} inn={a.inn} carregou={carregou} avs={avs} />

@@ -2,8 +2,7 @@ import { col, colete, hasPos, posIdx, posLabel, sport, tn } from './esportes.js'
 import { attendance, gname, pname, ppos, upcoming } from './grupo.js';
 import { hora } from './rodadas.js';
 import { linkMaps, linkProxima, linkRodada } from '../nucleo/links.js';
-import { esc, fdate } from '../nucleo/util.js';
-import { openDlg } from '../ui/dialogos.js';
+import { fdate } from '../nucleo/util.js';
 
 /* =================== textos WhatsApp =================== */
 /* Link para confirmar: no jogo fixo, o permanente (sempre a próxima rodada); senão, o da rodada. */
@@ -36,10 +35,5 @@ function txtTimes(r) {
   });
   return t.trim() + `\n\nDetalhes: ${linkRodada(r.id)}`;
 }
-function shareDlg(title, text) {
-  openDlg(`<h3>${esc(title)}</h3><textarea class="inp" id="shtxt">${esc(text)}</textarea>
-  <div class="dlg-f"><button class="btn" data-a="close">Fechar</button><button class="btn" data-a="copy">Copiar texto</button>
-  <a class="btn primary" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(text)}">Abrir no WhatsApp</a></div>`);
-}
-
-export { linkDaRodada, shareDlg, txtConvite, txtTimes };
+/* A janela de compartilhar é um componente da gestão (KAN-131): ui/Compartilhar.tsx. */
+export { linkDaRodada, txtConvite, txtTimes };

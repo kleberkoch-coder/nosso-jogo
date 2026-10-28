@@ -1,29 +1,26 @@
 /* Ações: Votação: criar, encerrar e compartilhar. Fazem parte de ACT (src/acoes.js). */
-import { hasPos, posLabel, sport } from '../dominio/esportes.js';
+import { posLabel, sport } from '../dominio/esportes.js';
 import { pname, rodById, rodadas } from '../dominio/grupo.js';
-import { tx } from '../i18n/index.js';
-import { shareDlg } from '../dominio/whatsapp.js';
+import { shareDlg } from '../ui/Compartilhar';
 import { B } from '../nucleo/backend.js';
 import { gravarVotacao } from '../nucleo/partidas.js';
 import { GB, S, w } from '../nucleo/estado.js';
 import { linkVoto } from '../nucleo/links.js';
-import { $, cl, esc, fdate, toast, uid } from '../nucleo/util.js';
+import { $, cl, toast, uid } from '../nucleo/util.js';
 import { tally } from '../telas/votacao.js';
+import { montarNovaVotacao } from '../telas/Votacao';
 import { confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
 import { changed } from '../ui/render.js';
 import { ACT } from '../acoes.js';
 
 const acoes = {
+  /* KAN-195: a janela é um componente (telas/Votacao.tsx). */
   newVote: () => {
     const rs = rodadas().filter(r => r.times);
     if (!rs.length) return;
-    openDlg(`<h3>Nova votação</h3>
-    <label class="f"><span>Rodada</span><select class="sel" id="vr">${rs.map(r => `<option value="${r.id}">${fdate(r.date)}${r.place ? ' — ' + esc(r.place) : ''}</option>`).join('')}</select></label>
-    <label class="f"><span>Título</span><input class="inp" id="vt" value="Craque da rodada" maxlength="50"></label>
-    <div class="f"><span class="lbl">O que votar</span>${[['best', 'Melhor jogador'], ...(sport().key ? [['gk', 'Melhor ' + posLabel(sport().key).toLowerCase()]] : []), ...(hasPos() ? [['pos', 'Melhor de cada posição']] : []), ['worst', 'Pior jogador (bagre)']].map(([k, l], i) => `<label class="row small" style="margin-bottom:6px"><input type="checkbox" class="vc" value="${k}" ${i === 0 ? 'checked' : ''}> ${l}</label>`).join('')}
-    <input class="inp" id="vx" placeholder="${tx('votacao.outraCategoria')}" maxlength="40"></div>
-    <label class="row small" style="margin-bottom:12px"><input type="checkbox" id="vsf"> Pode votar em si mesmo</label>
-    <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveVote">Abrir votação</button></div>`);
+    openDlg('<div id="novaVotRaiz"></div>');
+    dlg.setAttribute('aria-labelledby', 'novaVotTitulo');
+    montarNovaVotacao(rs);
   },
   saveVote: () => {
     const sel = [...dlg.querySelectorAll('.vc:checked')].map(x => x.value),

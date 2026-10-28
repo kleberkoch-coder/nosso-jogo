@@ -2647,6 +2647,107 @@ with sync_playwright() as pw:
     ok(p24.locator('#adminsPainel .so-ve').count() == 0 and p24.evaluate("S.app.pl&&S.app.pl.id") == 'A', 'CT-KAN-204-05: com o Plano A (2 convidados), ninguém fica só vendo (critério 3)')
     ctx24.close()
 
+    # ---------- v75 (KAN-194): rodada e confirmados à vista no celular; (KAN-195) Nova votação; (KAN-131) rótulos para leitor de tela
+    ctx25 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+    p25 = ctx25.new_page(); p25.on('pageerror', lambda e: errs.append(str(e)))
+    p25.goto(URL + '#/criar'); p25.wait_for_selector('#le')
+    p25.fill('#le', 'ux75@teste.com'); p25.fill('#lp', 'Jogo@2026'); p25.fill('#lp2', 'Jogo@2026'); p25.keyboard.press('Enter'); p25.wait_for_selector('#ngBox', timeout=8000)
+    r25 = '#sched .srow:nth-child(1)'
+    p25.fill(f'{r25} [data-hora]:has(.si) .hh', '20'); p25.fill(f'{r25} [data-hora]:has(.sf) .hh', '22')
+    LOCAL100 = 'Society do Zé, Av. Prefeito Faria Lima 1234, Pinheiros, São Paulo, ao lado do posto, portão azul 3'
+    p25.fill(f'{r25} .sl', LOCAL100); p25.fill('#ngn', 'Futebol de Quinta da Firma')
+    p25.click('[data-a=createGroup]'); p25.wait_for_function("location.hash.startsWith('#/g/')"); p25.wait_for_timeout(1500)
+    def medir25():
+        p25.evaluate("document.getElementById('demo').hidden=true; scrollTo(0,0)"); p25.wait_for_timeout(150)
+        return p25.evaluate("""(()=>{const R=s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect();return {t:r.top,b:r.bottom,h:r.height}};
+          const g=document.getElementById('gname');
+          return {top:R('header.top'),h2:R('.hero-r h2'),count:R('.count'),barra:R('.acao-fixa'),hero:R('.hero-r'),fixos:R('.fixos'),
+            nomeLinhas:Math.round(g.getBoundingClientRect().height/parseFloat(getComputedStyle(g).lineHeight)),cortado:g.scrollWidth>g.clientWidth,
+            fonte:parseFloat(getComputedStyle(g).fontSize),hora:(()=>{const n=document.querySelector('.hero-r h2 .nw');return n?n.getClientRects().length:0})()}})()""")
+    for tema in ['light', 'dark']:
+        p25.emulate_media(color_scheme=tema); m25 = medir25()
+        ok(m25['count']['b'] <= 740 and m25['count']['b'] <= m25['barra']['t'] and m25['h2']['b'] <= m25['barra']['t'],
+           f'CT-KAN-194-01: em 360 × 740 ({tema}), a data da rodada e o número de confirmados aparecem sem rolar, acima da barra Sortear (confirmados até {m25["count"]["b"]:.0f}px, barra em {m25["barra"]["t"]:.0f}px)')
+        ok(m25['top']['h'] <= 120 and m25['nomeLinhas'] == 1 and m25['cortado'] and m25['fonte'] == 28,
+           f'CT-KAN-194-02: em 360px ({tema}), o cabeçalho verde tem até 120px ({m25["top"]["h"]:.0f}) e o nome longo fica numa linha, com "…", em 28px')
+        ok(m25['hora'] == 1, f'CT-KAN-194-04: em 360px ({tema}), "20:00–22:00" fica na mesma linha ({p25.inner_text(".hero-r h2")!r})')
+        ok(m25['fixos'] and m25['fixos']['t'] > m25['hero']['b'], f'CT-KAN-194-05: o painel do link permanente vem depois do cartão da rodada ({tema})')
+    p25.emulate_media(color_scheme='light')
+    p25.screenshot(path=f'{OUT}/v75-rodada-360.png')
+    p25.click('#gname'); p25.wait_for_timeout(200)
+    ab25 = p25.evaluate("[document.getElementById('gname').classList.contains('aberto'), document.getElementById('gname').getAttribute('aria-expanded'), document.getElementById('gname').title]")
+    ok(ab25[0] and ab25[1] == 'true' and ab25[2] == 'Futebol de Quinta da Firma', f'CT-KAN-194-02: tocar no nome do grupo mostra o nome inteiro ({ab25})')
+    p25.click('#gname'); p25.wait_for_timeout(200)
+    ok(p25.locator('main [data-a=tab][data-v=historico]').count() == 0 and p25.locator('#tabs [data-a=tab][data-v=historico]').count() == 1,
+       'CT-KAN-194-03: na aba Rodada, o Histórico tem um caminho só (a aba), sem o botão repetido')
+    fx25 = p25.inner_text('.fixos')
+    ok('Link permanente' in fx25 and not p25.locator('.fixos details p').is_visible() and not p25.locator('.fixos [data-a=copyFixo]').is_visible(),
+       f'CT-KAN-194-05: o link permanente fica recolhido numa linha ("Mandar no WhatsApp"); copiar e editar ficam em "Como funciona"')
+    p25.click('.fixos [data-a=shareFixo]'); p25.wait_for_timeout(500)
+    ok(p25.locator('#shtxt').is_visible() and 'Confirme sua presença sempre neste link' in p25.input_value('#shtxt'), 'CT-KAN-194-05: "Mandar no WhatsApp" do link permanente na nova posição abre a janela do WhatsApp como antes')
+    # KAN-131: a caixa de texto da janela de compartilhar tem rótulo
+    ok(p25.evaluate("(()=>{const t=document.getElementById('shtxt');return !!(t.labels&&t.labels.length&&t.labels[0].textContent.includes('Mensagem pronta para o WhatsApp'))})()"),
+       'CT-KAN-131-03: a caixa de texto da janela de compartilhar tem o rótulo "Mensagem pronta para o WhatsApp"')
+    p25.click('#dlg [data-a=close]'); p25.wait_for_timeout(300)
+    p25.set_viewport_size({'width': 1024, 'height': 800}); p25.wait_for_timeout(300)
+    d25 = p25.evaluate("(()=>{const g=document.getElementById('gname');return [parseFloat(getComputedStyle(g).fontSize), g.scrollWidth<=g.clientWidth]})()")
+    ok(d25[0] == 40 and d25[1], f'CT-KAN-194-06: no computador, o cabeçalho continua como antes (nome em 40px, inteiro) ({d25})')
+    p25.set_viewport_size({'width': 360, 'height': 740}); p25.wait_for_timeout(200)
+    # KAN-195: Nova votação com caixas de 44px e seletor de rodada sem o local
+    elenco_e_presenca(p25, 8); sortear(p25)
+    p25.click('[data-a=tab][data-v=votacao]'); p25.wait_for_timeout(900); p25.click('[data-a=newVote]'); p25.wait_for_timeout(300)
+    for tema in ['light', 'dark']:
+        p25.emulate_media(color_scheme=tema); p25.wait_for_timeout(150)
+        cx25 = p25.evaluate("[...document.querySelectorAll('#dlg .chk-linha')].filter(e=>e.offsetParent).map(e=>Math.round(e.getBoundingClientRect().height))")
+        ok(cx25 and min(cx25) >= 44, f'CT-KAN-195-01: na Nova votação ({tema}), cada linha de caixa de marcar tem pelo menos 44px ({cx25})')
+    p25.emulate_media(color_scheme='light')
+    antes25 = p25.evaluate("[...document.querySelectorAll('#dlg .vc')].map(x=>x.checked)")
+    p25.locator('#dlg .chk-linha:has(.vc[value=worst]) span').click(); p25.wait_for_timeout(100)
+    depois25 = p25.evaluate("[...document.querySelectorAll('#dlg .vc')].map(x=>x.checked)")
+    ok(antes25[-1] is False and depois25[-1] is True and antes25[:-1] == depois25[:-1], f'CT-KAN-195-01: tocar no texto da linha marca a caixa daquela linha ({antes25} → {depois25})')
+    p25.locator('#dlg .chk-linha:has(.vc[value=worst]) span').click()
+    opt25 = p25.evaluate("[...document.querySelectorAll('#vr option')].map(o=>o.textContent)")
+    ok(opt25 and all('Society' not in o and '20:00–22:00' in o and 'fixo' in o for o in opt25), f'CT-KAN-195-02: o seletor Rodada da Nova votação mostra data, hora e "fixo", sem o local ({opt25})')
+    v25 = p25.evaluate("(()=>{const d=document.getElementById('dlgBody');const b=[...d.querySelectorAll('.dlg-f .btn')].map(x=>x.getBoundingClientRect());return [document.documentElement.scrollWidth<=innerWidth, d.scrollWidth<=d.clientWidth+1, d.scrollHeight-d.clientHeight]})()")
+    ok(v25[0] and v25[1], f'CT-KAN-195-03: em 360px, a janela Nova votação não tem rolagem lateral ({v25})')
+    p25.screenshot(path=f'{OUT}/v75-nova-votacao-360.png')
+    # KAN-131: "Outra categoria" com rótulo visível que continua ao digitar
+    p25.fill('#vx', 'Jogada mais bonita')
+    lb25 = p25.evaluate("(()=>{const i=document.getElementById('vx');const l=i.labels&&i.labels[0];return l?[l.querySelector('span').textContent, l.querySelector('span').getBoundingClientRect().height>0]:null})()")
+    ok(lb25 and lb25[0] == 'Outra categoria (opcional)' and lb25[1], f'CT-KAN-131-05: "Outra categoria" tem rótulo visível acima do campo, que continua ao digitar ({lb25})')
+    for tema in ['light', 'dark']:
+        p25.emulate_media(color_scheme=tema); p25.wait_for_timeout(100); contraste(p25, f'Nova votação ({tema})')
+    p25.emulate_media(color_scheme='light')
+    p25.fill('#vx', '')
+    p25.click('[data-a=saveVote]'); p25.wait_for_timeout(800); p25.click('#dlg [data-a=close]'); p25.wait_for_timeout(400)
+    sem25 = p25.evaluate("""(()=>[...document.querySelectorAll('main input,main select,main textarea')].filter(e=>e.offsetParent&&e.type!=='hidden').filter(e=>!((e.labels&&e.labels.length)||e.getAttribute('aria-label')||e.getAttribute('aria-labelledby'))).map(e=>e.outerHTML.slice(0,60)))()""")
+    ok(p25.get_attribute('[data-c=vid]', 'aria-label') == 'Votação' and not sem25, f'CT-KAN-131-03: na aba Votação, nenhum campo sem rótulo ({sem25})')
+    ok('Craque da rodada' in p25.inner_text('main') and p25.locator('main [data-a=shareVote]').count() == 1, 'CT-KAN-195: a aba Votação (agora componente) mostra a votação criada e seus botões')
+    p25.click('[data-a=tab][data-v=caixa]'); p25.wait_for_timeout(900)
+    p25.click('[data-a=addLan]'); p25.wait_for_timeout(300); p25.select_option('#lk', 'despesa'); p25.fill('#lv', '80'); p25.click('#dlg [data-a=saveLan]'); p25.wait_for_timeout(700)
+    sem25c = p25.evaluate("""(()=>[...document.querySelectorAll('main input,main select,main textarea')].filter(e=>e.offsetParent&&e.type!=='hidden').filter(e=>!((e.labels&&e.labels.length)||e.getAttribute('aria-label')||e.getAttribute('aria-labelledby'))).map(e=>e.outerHTML.slice(0,60)))()""")
+    ok(not sem25c, f'CT-KAN-131-03: na aba Caixa, nenhum campo sem rótulo ({sem25c})')
+    xl25 = p25.get_attribute('main [data-a=delLan]', 'aria-label') or ''
+    ok('Despesa' in xl25 and 'R$' in xl25 and '80' in xl25, f'CT-KAN-131-04: o ✕ do lançamento diz o tipo e o valor ({xl25!r})')
+    # KAN-131: botão ⇄ com o nome do jogador
+    p25.click('[data-a=tab][data-v=rodada]'); p25.wait_for_timeout(500)
+    mv25 = p25.evaluate("(()=>{const b=document.querySelector('[data-a=move]');return b?[b.getAttribute('aria-label'), (S.jog[b.dataset.p]||{}).name]:null})()")
+    ok(mv25 and mv25[0] == 'Mover ' + mv25[1], f'CT-KAN-131-01: o botão ⇄ anuncia "Mover" e o nome do jogador ({mv25})')
+    # KAN-131: Meus grupos: "Abrir" com o nome do grupo, e o cartão inteiro abre o grupo
+    novo_grupo(p25, 'Basquete da Firma', 'basquete')
+    # KAN-195 CT-04: grupo de basquete: categorias do catálogo do esporte (sem goleiro), no novo formato
+    elenco_e_presenca(p25, 8); sortear(p25)
+    p25.click('[data-a=tab][data-v=votacao]'); p25.wait_for_timeout(900); p25.click('[data-a=newVote]'); p25.wait_for_timeout(300)
+    cb25 = p25.evaluate("[...document.querySelectorAll('#dlg .chk-linha')].map(e=>[e.textContent.trim(),Math.round(e.getBoundingClientRect().height)])")
+    ok(cb25 and not any('goleiro' in t.lower() for t, _ in cb25) and min(h for _, h in cb25) >= 44, f'CT-KAN-195-04: no basquete, as categorias seguem o esporte (sem goleiro) e com 44px ({cb25})')
+    p25.click('#dlg [data-a=close]'); p25.wait_for_timeout(300)
+    p25.goto(URL + '#/'); p25.wait_for_timeout(1200)
+    ab25b = p25.evaluate("[...document.querySelectorAll('#homeRaiz .grupo-linha .abrir-grupo')].map(a=>a.getAttribute('aria-label'))")
+    ok(sorted(ab25b) == ['Abrir Basquete da Firma', 'Abrir Futebol de Quinta da Firma'], f'CT-KAN-131-02: em Meus grupos, cada "Abrir" anuncia o nome do grupo ({ab25b})')
+    bx25 = p25.locator('#homeRaiz .grupo-linha:has-text("Basquete da Firma") .pn b').bounding_box()
+    p25.mouse.click(bx25['x'] + 10, bx25['y'] + bx25['height'] / 2); p25.wait_for_timeout(1200)
+    ok(p25.evaluate("location.hash.startsWith('#/g/') && S.app && S.app.name") == 'Basquete da Firma', 'CT-KAN-131-02: tocar no nome do grupo também abre o grupo')
+    ctx25.close()
     # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
     ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
     p7 = ctx7.new_page()

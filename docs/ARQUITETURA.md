@@ -199,6 +199,13 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D27. Votação e janela de compartilhar como componentes; cabeçalho compacto só no CSS (28 out. 2026, pelada-v75, KAN-194, KAN-195, KAN-131)
+- **Tela mexida, tela migrada:** a aba Votação e a janela Nova votação saíram de `telas/votacao-gestao.js` (HTML montado como texto) para `telas/Votacao.tsx` (TypeScript + Preact), com os mesmos `data-a` e `data-c`; a aba continua sob demanda (`abas/votacao.ts`, 2,9 KB). Os textos foram para `i18n/pt-BR-votacao.ts`, que chega com a parte.
+- **Janela de compartilhar:** saiu de `dominio/whatsapp.js` para `ui/Compartilhar.tsx`. As ações importam `shareDlg` direto de lá, e não pelo `whatsapp.js`, porque o `whatsapp.js` também entra no link do jogador: os textos da janela (só da gestão) iriam junto e a montagem barra (o link tem de ficar abaixo de 50 KB).
+- **Seletor de rodada:** o texto de cada opção (data, hora, "fixo") virou `textoRodada()` em `ui/componentes.tsx`, usado pelo seletor das abas e pela Nova votação; o local nunca entra (KAN-146).
+- **Cabeçalho compacto:** só CSS (`@media (max-width: 420px)` em `app.css`), sem mudar o HTML; o nome cortado reaproveita o mesmo "tocar para abrir" do subtítulo (`subtituloCompleto` em `ui/render.js` e o clique em `eventos.js`, agora também para `#gname`).
+- **Números:** gestão 91,3 → 91,9 KB; textos fora do dicionário 282 → 268; arquivos sem tipos 47 → 46; telas como componente 10 → 11.
+
 ### D26. Totais do caixa à parte do ranking (28 out. 2026, pelada-v74, KAN-207)
 - **Problema (auditoria de Segurança de 28/10):** os totais do caixa de cada mês ficavam no resumo do ranking (`resumos/{mês}.cx`), que todo administrador lê e grava; com as permissões da v69, quem não tem Caixa recebia e podia mudar esses totais.
 - **Decisão:** o Firestore não esconde um campo de um documento, então os totais foram para `resumosCaixa/{mês}` (`mes`, `at`, `cx`), com leitura `podeVer(caixa)` e gravação `pode(caixa)`. O lançamento grava o caixa e o total do mês no mesmo lote. O resumo do ranking não aceita mais `cx`; o `cx` antigo só sai com a permissão de Caixa.
@@ -350,7 +357,7 @@ As 5 regras de negócio com teste próprio previsto: sorteio, ranking, pendênci
 | `nucleo/` | `util.js` (utilidades, sem dependências), `links.js`, `estado.js` (estado e assinaturas do banco), `backend.js` (Firebase ou demonstração, carregando dos botões), `edicoes.js` (gravações otimistas e presença) |
 | `dominio/` | Regras de negócio sem tela: `esportes.js` (catálogo), `grupo.js`, `rodadas.js`, `caixa.js` (configuração do caixa), `caixa-regras.ts` (pendências do mês e totais, com teste próprio desde a pelada-v30), `sorteio.js`, `whatsapp.js` (textos para compartilhar), `limites.ts` (limites contra abuso) |
 | `ui/` | `render.js` (desenho da tela e abas), `tema.js`, `dialogos.js` (janelas; desde a pelada-v30 também a janela de confirmação do app, `confirmou()`, no lugar do `confirm()` do navegador) |
-| `telas/` | Uma tela por arquivo: `apresentacao`, `Login.tsx`, `convite`, `grupos`, `rodada`, `historico`, `GrupoForm.tsx`, `grupo`, `jogadores`, `partida`, `ranking`, `votacao`, `publico-voto` e os componentes `PublicoRodada.tsx` e `Caixa.tsx` (pelada-v30, KAN-135) (link do jogador; `publico-rodada.js` guarda o "quem sou eu" do aparelho) |
+| `telas/` | Uma tela por arquivo: `apresentacao`, `Login.tsx`, `convite`, `grupos`, `rodada`, `historico`, `GrupoForm.tsx`, `grupo`, `jogadores`, `partida`, `ranking`, `Votacao.tsx` (aba e Nova votação, v75), `votacao` (apuração), `publico-voto` e os componentes `PublicoRodada.tsx` e `Caixa.tsx` (pelada-v30, KAN-135) (link do jogador; `publico-rodada.js` guarda o "quem sou eu" do aparelho) |
 | `acoes.js` e `acoes/` | O que cada botão (`data-a`) faz, dividido por assunto desde a pelada-v28: `conta`, `grupo`, `rodada`, `jogadores`, `partida`, `caixa`, `votacao` e `publico` |
 | `portal/` | Portal do Nosso Jogo, site separado (`main.js`, `tela.js` e `textos.js`, com dicionário próprio) |
 | `eventos.js` | Cliques, teclas e campos: liga a tela às ações, com o carregando dos botões |

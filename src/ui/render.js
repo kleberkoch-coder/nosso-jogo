@@ -66,9 +66,9 @@ function render() {
   subtituloCompleto();
 }
 /* KAN-146: texto que pode ser longo (local, subtítulo) fica numa linha só, com "…". Quando corta, o texto inteiro aparece
-   ao passar o mouse (title) e ao tocar nele, que abre e fecha (no celular não existe "passar o mouse"). Vale para #gsub e [data-corta]. */
+   ao passar o mouse (title) e ao tocar nele, que abre e fecha (no celular não existe "passar o mouse"). Vale para #gsub, o nome do grupo no celular (#gname, KAN-194) e [data-corta]. */
 function subtituloCompleto() {
-  document.querySelectorAll('#gsub,[data-corta]').forEach(g => {
+  document.querySelectorAll('#gsub,#gname,[data-corta]').forEach(g => {
     const ab = g.classList.contains('aberto'),
       corta = ab || g.scrollWidth > g.clientWidth + 1;
     g.classList.toggle('cortado', corta && !ab);

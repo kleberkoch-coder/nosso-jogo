@@ -3,7 +3,7 @@ import { CAIXA_K, cfg, ptipo } from '../dominio/caixa.js';
 import { APP, SPORTS, porTime, porTimePadrao, sport } from '../dominio/esportes.js';
 import { dupName, fdia, fixos, freq, gname, grpAtivo, lvl, normName, players } from '../dominio/grupo.js';
 import { tp, tx } from '../i18n/index.js';
-import { shareDlg } from '../dominio/whatsapp.js';
+import { shareDlg } from '../ui/Compartilhar';
 import { B, op } from '../nucleo/backend.js';
 import { gruposEsgotados, limite } from '../dominio/limites.ts';
 import { PERM_CONVIDADO, PERMISSOES, permLimpa } from '../dominio/permissoes';

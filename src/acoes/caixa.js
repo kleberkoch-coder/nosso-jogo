@@ -4,7 +4,7 @@ import { foraDoPadrao, referenciaDoGrupo } from '../dominio/caixa-regras';
 import { gname, players, pname, rodadas } from '../dominio/grupo.js';
 import { tp, tx } from '../i18n/index.js';
 import { simboloMoeda } from '../i18n/formatos.js';
-import { shareDlg } from '../dominio/whatsapp.js';
+import { shareDlg } from '../ui/Compartilhar';
 import { B } from '../nucleo/backend.js';
 import { apagarLanc, salvarLanc } from '../nucleo/partidas.js';
 import { S } from '../nucleo/estado.js';

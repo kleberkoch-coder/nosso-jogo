@@ -3,7 +3,7 @@
 **Status:** versão 2 aprovada em 7 out. 2026 (direção pastel "Equilíbrio" e seletor de tema) e **aplicada no app na `pelada-v12`**.
 **Página completa:** https://claude.ai/artifact/1kwHVaqubL8kbgSTSUZg8W. Lá estão:
 - cores, tipografia, espaçamentos, raios e tamanhos de toque;
-- 16 componentes com prévia nos dois temas;
+- os componentes com prévia nos dois temas (todos os que existem no app; conferido na pelada-v75, KAN-196);
 - as seções Acessibilidade e Como evolui.
 
 **No app:** os tokens são variáveis CSS com o mesmo nome no começo de `src/estilos/app.css` (no app montado, ficam no `<style>` do `index.html`) (`--primary`, `--field-border`, `--in-fill`…). O tema escuro vale para `prefers-color-scheme: dark` (sem `data-theme="light"`) e para `[data-theme="dark"]`. `--pitch-2` continua só na página de apresentação (faixa de esportes e marca).
@@ -44,12 +44,13 @@ Campo e colete em tons suaves:
 
 Fixos nos dois temas: `key-bg` #FCE9C9, `key-border` #EDCB8E, `key-ink` #7A4B07 (posição-chave) e `net-bar` #7A4B07 (faixa Sem internet).
 
-Times em pastel, sempre com o nome da cor: laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, vermelho #EFA3A3, roxo #C3A8EE, branco #E3E6E1 (com borda), verde #9ED3B1, preto #4A4A4A. Os emojis dos textos de WhatsApp (🟧 🟦…) não mudam.
+Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, vermelho #EFA3A3, roxo #C3A8EE, branco #E3E6E1 (com borda), verde #9ED3B1, preto #4A4A4A. Desde a v60, o time se chama "Time 1", "Time 2" (em duplas, "Dupla 1") e a cor aparece como o colete, sempre com o texto ("colete laranja"). Os emojis dos textos de WhatsApp (🟧 🟦…) não mudam.
 
 ## Seletor de tema (como ficou no app)
 - **Opções:** 🌓 Automático (padrão, segue o celular), ☀️ Claro e 🌙 Escuro.
 - **Onde aparece:**
-  - chip no cabeçalho de todas as telas (`#themeBtn`), inclusive link público, votação, login e convite;
+  - sem conta (link público, votação, login, cadastro e convite): chip 🌓 no cabeçalho (`#themeBtn`);
+  - com conta (desde a v50, KAN-169): no menu da conta, item "🌓 Tema · Automático"; o chip sai do cabeçalho;
   - botão de ícone na barra da página de apresentação;
   - painel "Aparência" na aba Grupo.
 - **Comportamento:**
@@ -72,6 +73,29 @@ Times em pastel, sempre com o nome da cor: laranja #F4B183, azul #9DBBF0, amarel
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo; **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v75)
+Registrados na pelada-v75 (KAN-196, KAN-194, KAN-195, KAN-131); todos com prévia nos dois temas na página.
+
+- **Cabeçalho** (`top`, `top-in`, `page-title` no `#gname`, `sub` no `#gsub`, chips em `toprow`): fundo `pitch`, nome do grupo em 40px e a linha do esporte e da próxima rodada. Chips à direita: com conta, "⇄ Grupos" e o botão da conta (menu com País e formatos, Tema e Sair); sem conta, o 🌓.
+  - **Compacto no celular (até 420px, KAN-194):** nome em 28px numa linha só, com "…"; os chips na mesma linha do nome; cabeçalho de cerca de 80px (meta: até 120px). Tocar no nome cortado mostra o nome inteiro (sublinhado pontilhado, `role="button"`, `aria-expanded`, Enter e espaço). No computador, igual a antes.
+- **Cartão da rodada** (`hero-r`, `count`): data e hora em `h2` (24px até 420px); a faixa de horário ("20:00–22:00") nunca se separa (classe `nw`). Na aba Rodada é o primeiro cartão depois do seletor (KAN-194).
+- **Tabela do ranking** (`tbl`, `pts`, linha `lead`): colunas #, Jogador, Pts, J, V, E, D, Aprov., a palavra do esporte, Destaques e Bagre. Cabeçalho em `display` 700, 14px, `muted`; nome à esquerda, números à direita; Pts em negrito; o líder com fundo `surface-2`; divisórias `line`. No celular, rola na horizontal dentro do cartão. Embaixo, a regra dos pontos em `small muted`.
+- **Nota com escala** (`lvlin`, `lvlscale`; na lista, `lvl-tag`; estrelas antigas, `stars` e `starin`): controle deslizante de 1 a 10 (passo 0,5, cor `brand`, `aria-label="Nota de 1 a 10"`) com o número grande à direita (`display` 800, 28px) e a escala "1 · iniciante" / "10 · craque" em 12px `muted`. Na lista, a nota em `level-ink` sobre `gold` a 16%. Só quem tem a permissão de Notas vê.
+- **Mostrar senha** (`pwbox`, `pwver`; KAN-97): botão "Mostrar"/"Ocultar" dentro do campo, à direita, 36px, 13px, 600, fundo transparente (`line` ao passar o mouse); `aria-pressed` e `aria-label` "Mostrar senha". Não tira o cursor do campo.
+- **Versão do app** (`versao`; KAN-107): "Nosso Jogo · versão 75" em `small muted`, centralizado, no fim de Meus grupos e da tela de entrar; "versão 75" no rodapé da apresentação.
+- **Carregando** (gestão, KAN-149, e internet ruim, KAN-184): ver as linhas da pelada-v31 a v52; agora também na página.
+- **Caixas de marcar em lista** (`fieldset.chk-lista` com `chk-linha`; KAN-195): título no `legend` (estilo `lbl`), uma linha de 44px por opção (caixa de 22px em `brand`), divisória `line` entre as linhas; tocar em qualquer ponto da linha marca. Usado na janela **Nova votação** (categorias do catálogo do esporte e "Pode votar em si mesmo").
+- **Janela Nova votação** (`telas/Votacao.tsx`, KAN-195): "Rodada" com o mesmo texto do Seletor de rodada (data, hora e "fixo", sem o local), "Título", "O que votar" (Caixas de marcar em lista), "Outra categoria (opcional)" com rótulo visível acima e o exemplo dentro, "Pode votar em si mesmo" e o rodapé "Cancelar" / "Abrir votação".
+- **Janela de compartilhar** (`ui/Compartilhar.tsx`, KAN-131): título, a caixa de texto com o rótulo "Mensagem pronta para o WhatsApp" e os botões "Fechar", "Copiar texto" e "Abrir no WhatsApp" (`primary`).
+- **Meus grupos** (`grupo-linha`, `abrir-grupo`; KAN-131): o cartão inteiro do grupo abre o grupo; o botão diz "Abrir Pelada de Quinta" ao leitor de tela.
+- **Outros nomes de classe em uso** (partes dos componentes acima; sem visual próprio além do descrito):
+  - **Placar e partida:** `goals` (gols de cada lado embaixo do placar, 13px), `over` (cronômetro esgotado, em `bib`), `bar` (barra de votos da Votação, em `brand`).
+  - **Listas e cartões:** `note` (observação com barra `line` à esquerda, 13px, `muted`), `stack` (cartões empilhados com 14px entre eles), `grid2` (duas colunas no computador), `me-row` (a sua linha no link, em `surface-2`), `via` (na lista de administradores, como a pessoa entrou da última vez: "G Google" ou "✉️ e-mail", em `tag`), `warn-alt` (aviso de lista diferente e respostas mudadas), `linha-local` e `extra` (local cortado com "· jogo fixo" ao lado), `mapa` (linha do Como chegar), `n` (contagem do seletor segmentado), `minpos` (campo do Mínimo para o jogo), `tab-trava` (🔒 na aba), `avisos-plano` (lugar dos avisos do plano).
+  - **Janelas e avisos:** `conf` e `conf-txt` (Janela de confirmação), `toast-btn` e `acao` (Aviso flutuante com ação), `bar-net` (faixa Sem internet, `net-bar`), `bar-upd` (barra Nova versão), `demo` (faixa do modo demonstração, `bib`).
+  - **Formulários:** `sgrid` (grade de esportes do Novo grupo, com `opt`), `sd` e `sl` (dia e local da linha de dia fixo), `gic` (o "G" do Google), `imp-*` (Importar jogadores).
+  - **Estrutura:** `toprow` (linha dos chips do cabeçalho), `chip-ic` (chip só com ícone, 36 × 36px), `auth` (cartão de entrar, até 400px), `foot` (rodapé com links em `muted`), `hero-land` (bloco de abertura centralizado, até 520px), `is-landing` (página de apresentação aberta), `mais-esq` e `mais-dir` (sombra das Abas), `ld` e `ld-*` (Página de apresentação).
+- **Página de apresentação** (`ld-*`): barra do topo (`ld-nav`, marca `ld-mark`), topo em `pitch` (`ld-hero`, `ld-eyebrow`, título `hero`, `ld-lead`, `ld-ctas`, `ld-note`, celular ilustrativo `ld-phone`), faixa de esportes (`ld-sports`, `ld-chips`), seções alternadas (`ld-sec`, `ld-h2`): dores (`ld-pains`, `ld-q`), recursos (`ld-feat`, `ld-card`, `ld-ic`), sorteio (`ld-split`, `ld-list`, `ld-demo`), grupos (`ld-groups`, `ld-g`), passos em `bib` (`ld-steps`), perguntas (`ld-faq`), final (`ld-final`) e rodapé (`ld-foot`). Usa os tokens do app; `pitch-2` só aqui.
+
 ## Componentes (pelada-v31 a v52)
 Registrados na pelada-v43 (KAN-152); os da v44 a v47 entraram na versão de cada um. Desde a v43, os componentes reaproveitáveis ficam em `src/ui/componentes.tsx` (TypeScript + Preact); tela nova ou migrada usa estes, não HTML montado à mão.
 
@@ -86,7 +110,7 @@ Registrados na pelada-v43 (KAN-152); os da v44 a v47 entraram na versão de cada
 - **Seletor segmentado com contagem** (`Segmentado`, classe `seg seg-filtro`; KAN-71): opções de 44px com o rótulo e a contagem embaixo; a escolhida usa `primary` e `aria-pressed`.
 - **Barra de ação fixa** (classe `acao-fixa`): ver pelada-v29.
 - **Ficha de dados** (classe `ficha`; KAN-150): lista de rótulo e valor (`dl`). Rótulo em `muted`, negrito. No computador, duas colunas; até 520px, o rótulo fica inteiro em cima do valor.
-- **Painel do link permanente** (KAN-150): título "Link permanente", uma linha de ajuda em `muted` e os botões "Mandar no WhatsApp" (`primary sm`) e "Copiar link" (`sm`). Não repete dia, hora nem local, que ficam no cartão da rodada.
+- **Painel do link permanente** (KAN-150; recolhido na v75, KAN-194; classes `fixos` e `fixos-linha`): fica **depois** do cartão da rodada. Recolhido numa linha: "Link permanente" (16px) e "Mandar no WhatsApp" (`btn sm primary`). Em "Como funciona" (Seção recolhível) ficam a explicação em `muted`, "Copiar link" e "Editar dias" (`btn sm`). Não repete dia, hora nem local, que ficam no cartão da rodada.
 - **Login com Google** (KAN-142): botão "Continuar com o Google" em `btn` na largura toda, com o "G" colorido oficial, acima do divisor "ou com e-mail e senha". Se a aba não bater (criar conta com Google que já existe, ou o contrário), entra mesmo assim e avisa num aviso flutuante.
 - **Criar conta com o botão desligado** (KAN-187, v66): o motivo aparece na linha de erro (`err`, avisada ao leitor de tela) acima do botão: "Confira o e-mail: falta a terminação (.com, .com.br…).", "Digite seu e-mail.", o que falta na senha ou "As senhas não conferem.". Enter com o botão desligado mostra o motivo. Segue a regra "desabilitado com motivo, nunca só cinza".
 - **Regras da senha** (KAN-10, classe `pwr`): lista em duas colunas, 13px, em `muted`, com "○" para o que falta e "✓" em `in` para o que já foi cumprido: 8 caracteres, maiúscula, minúscula, número e caractere especial.
@@ -111,7 +135,7 @@ Registrados na pelada-v43 (KAN-152); os da v44 a v47 entraram na versão de cada
   - O "Sair" não fica mais solto no cabeçalho.
   - Desde a v50 (KAN-169), o menu tem também "Tema", com o ícone e o nome do tema atual à direita ("🌓 Tema · Automático"). Ele abre as opções Automático, Claro e Escuro no mesmo lugar. Com conta, o botão 🌓 sai do cabeçalho; sem conta (link do jogador, login, apresentação), ele continua.
 - **Ordenar por** (KAN-168, classe `ordem-jog`): no topo da lista da aba Jogadores, o rótulo "Ordenar por" em `muted`, 13px, ao lado de um combo de 44px de altura (Nome (A–Z), Posição, Nota (maior primeiro), Tipo (mensalistas primeiro), Mais recentes). Só aparece com 2 ou mais jogadores. "Posição" some em esporte sem posição.
-- **Seletor de rodada** (`SeletorRodada`, classe `rsel`; KAN-160): lista das próximas rodadas e das últimas 4 (data, hora, "fixo" ou "(cancelada)"). Na aba Rodada vem com "Nova rodada" e "Histórico"; na aba Partida, só a lista, e aparece também quando a rodada escolhida ainda não tem times.
+- **Seletor de rodada** (`SeletorRodada`, classe `rsel`; KAN-160): lista das próximas rodadas e das últimas 4 (data, hora, "fixo" ou "(cancelada)"). Na aba Rodada vem com "Nova rodada" (desde a v75, sem o botão "Histórico": o caminho é a aba, KAN-194); na aba Partida, só a lista, e aparece também quando a rodada escolhida ainda não tem times.
 - **Importar jogadores** (`ImportarJogadores`, classes `imp-*`; KAN-159): janela com o campo "Colar da planilha" (cursor nele ao abrir), o botão "Escolher arquivo" (Excel .xlsx ou .csv) e a prévia.
   - **Prévia:** primeiro um resumo ("12 jogadores novos · 1 já está no elenco ou repetido · 2 com aviso"), depois uma linha por jogador. A linha começa com um sinal: "✓" em `in` (entra), "⚠" em `out` (entra, com aviso) ou "↺" em `muted` (fica de fora, com 60% de opacidade). Embaixo vêm os dados reconhecidos (posição · nota · tipo · telefone · e-mail) e o motivo de cada aviso em `out`.
   - A prévia rola dentro da janela (até 45% da altura da tela).
@@ -186,13 +210,13 @@ Registrados na pelada-v43 (KAN-152); os da v44 a v47 entraram na versão de cada
   - Carregando: o mesmo de todo botão.
   - Depois do sorteio a barra sai e "Sortear de novo" fica no painel dos times, para ninguém sortear outra vez sem querer. A tela rola até os times e o foco vai para o título "Times".
 - **Lista de presença com filtros** (KAN-71): uma lista só, com seletor segmentado de 4 opções (Todos · Vão · Não vão · Sem resposta), cada uma com a contagem embaixo. Em "Vão", a lista é numerada na ordem de chegada.
-- **Abas** (KAN-72): sombra de continuação (degradê de `surface` para transparente, 24px) do lado em que há mais abas; a aba aberta fica no centro da barra; espaço lateral de 12px.
+- **Abas** (KAN-72): 8 abas, nesta ordem: Rodada, Histórico, Jogadores, Partida, Ranking, Caixa (só com a permissão de Caixa), Votação e Grupo; aba fora do plano com 🔒. Sombra de continuação (degradê de `surface` para transparente, 24px) do lado em que há mais abas; a aba aberta fica no centro da barra; espaço lateral de 12px.
 - **Placar** (KAN-73): botões de pontuação sempre com 44px. Com 4 ou mais pontuações (futebol americano, rugby), viram uma grade de 2 colunas sob cada time. Quando o tempo acaba, o número pisca só 3 vezes (nunca abaixo de 60% de opacidade) e fica parado em `bib`, com o aviso "Tempo esgotado" fixo.
-- **Busca de nome no link público** (KAN-127): campo "Procure seu nome" com rótulo visível e 44px, que filtra enquanto digita, sem diferenciar acentos e maiúsculas. Sem resultado, orienta a tocar em "Adicionar meu nome" e leva o texto digitado para a janela. Com a lista aberta, os times ficam recolhidos em "Ver times"; os confirmados viram uma linha "10 confirmados · ver nomes".
+- **Busca de nome no link público** (KAN-127, classe `busca-nome`): campo "Procure seu nome" com rótulo visível e 44px, que filtra enquanto digita, sem diferenciar acentos e maiúsculas. Sem resultado, orienta a tocar em "Adicionar meu nome" e leva o texto digitado para a janela. Com a lista aberta, os times ficam recolhidos em "Ver times"; os confirmados viram uma linha "10 confirmados · ver nomes".
 - **Valores novos** entram primeiro no Design System, com contraste medido nos dois temas.
 
 ## Testes
-O roteiro automático (`testes/ROTEIRO-DE-TESTES.md`) confere o Design System em toda versão: tema (menu, Esc, toque fora, persistência e cor do navegador), alvos de toque de 44px e 36px, ✓ / ✕ no link público e contraste do texto (WCAG 2.2 AA) nos dois temas. Na pelada-v13: 49 de 49 verificações passaram.
+O roteiro automático (`testes/ROTEIRO-DE-TESTES.md`) confere o Design System em toda versão: tema (menu, Esc, toque fora, persistência e cor do navegador), alvos de toque de 44px e 36px, ✓ / ✕ no link público e contraste do texto (WCAG 2.2 AA) nos dois temas. Na pelada-v13: 49 de 49 verificações passaram. Desde a pelada-v75, o roteiro também procura campos sem rótulo nas abas Caixa e Votação e mede as caixas de marcar da Nova votação (44px).
 
 ## Manutenção
 O agente de UX/UI (tarefa agendada às segundas, 10h52) confere o app contra este sistema e abre cartões no épico **KAN-68 "Melhorias de UX/UI"** do Jira, com a etiqueta `ux-agente`.

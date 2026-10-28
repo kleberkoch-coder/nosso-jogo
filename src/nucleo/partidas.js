@@ -224,7 +224,7 @@ async function lerPartidas(rods) {
 /* Primeira abertura depois da atualização: move as partidas para a subpasta e monta os resumos.
    Pode rodar em dois aparelhos ao mesmo tempo sem problema: os ids são os mesmos e os resumos saem iguais. */
 async function migrar() {
-  if (S.migrandoDados || !S.dataOn || !S.loaded.migr || !S.loaded.caixa || !S.loaded.vot) return;
+  if (S.migrandoDados || !S.dataOn || !S.loaded.migr || !S.loaded.vot) return;
   if (((S.migr || {}).v || 0) >= VERSAO_DADOS) return;
   if (S.migrErro && Date.now() - S.migrErro < 60000) return; // se falhou, tenta de novo só depois de 1 minuto
   S.migrandoDados = true;
@@ -252,7 +252,9 @@ async function migrar() {
         o: { matches: op.remover((r.matches || []).map(cl)), np: partidas.filter(p => p.rid === rid).length },
       });
     });
-    const res = resumirTudo(partidas, Object.values(S.caixa || {}), Object.values(S.vot || {}));
+    /* Todos os lançamentos, lidos do servidor: o caixa carrega só a janela recente (KAN-106). */
+    const caixaTodo = (await B.getServidor(gp('caixa'))) || {};
+    const res = resumirTudo(partidas, Object.values(caixaTodo), Object.values(S.vot || {}));
     Object.values(res).forEach(d =>
       ops.push({ tipo: 'set', p: 'resumos/' + d.mes, o: clean(Object.assign({}, d, { at: Date.now() })) })
     );
@@ -308,7 +310,8 @@ async function recalcular(periodo) {
   const todas = (await B.getServidor(gp('rodadas'))) || {};
   const rods = Object.entries(todas).filter(([, r]) => dentro(mesDe(r.date)) && ((r.matches || []).length || r.np > 0));
   const partidas = await lerPartidas(rods);
-  const lanc = Object.values(S.caixa || {}).filter(l => dentro(mesDe(l.d)));
+  // Todos os lançamentos do servidor (o caixa na tela carrega só a janela recente, KAN-106).
+  const lanc = Object.values((await B.getServidor(gp('caixa'))) || {}).filter(l => dentro(mesDe(l.d)));
   const res = resumirTudo(partidas, lanc, Object.values(S.vot || {}));
   Object.keys(res).forEach(m => {
     if (!dentro(m)) delete res[m];

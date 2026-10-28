@@ -1,7 +1,7 @@
 /* Regra "pendências do caixa" (uma das 5 da D12; KAN-135). Roda com: npm run regras */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mesesDoCaixa, pendenciasDoMes, resumoDoCaixa } from '../../src/dominio/caixa-regras.ts';
+import { inicioDaJanela, mesesDoCaixa, pendenciasDoMes, resumoDoCaixa } from '../../src/dominio/caixa-regras.ts';
 
 const TIPOS = { ana: 'mensalista', beto: 'diarista', caio: 'mensalista', duda: 'mensalista' };
 const tipo = id => TIPOS[id] || 'avulso';
@@ -135,4 +135,16 @@ test('meses do seletor: atual, com lançamento e com rodada, sem repetir, do mai
     ),
     ['2026-11', '2026-10', '2026-09']
   );
+});
+
+test('KAN-106: janela do caixa começa 3 meses antes do mês escolhido, ou no "desde" do A pagar, se for antes', () => {
+  assert.equal(inicioDaJanela('2026-10'), '2026-07-01');
+  assert.equal(inicioDaJanela('2026-02'), '2025-11-01');
+  assert.equal(inicioDaJanela('2026-10', '2026-03-15'), '2026-03-15');
+  assert.equal(inicioDaJanela('2026-10', '2026-09-01'), '2026-07-01');
+  assert.equal(inicioDaJanela('2026-10', null), '2026-07-01');
+});
+
+test('KAN-106: meses do seletor incluem os meses com movimento na ficha de resumo', () => {
+  assert.deepEqual(mesesDoCaixa('2026-10-27', [], [], ['2025-12', '2026-01']), ['2026-10', '2026-01', '2025-12']);
 });

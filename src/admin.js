@@ -10,6 +10,7 @@ import { acoes as recalcular } from './acoes/recalcular';
 import { ACT } from './acoes.js';
 
 export { inicioAPagar } from './dominio/caixa.js';
+export { inicioDaJanela } from './dominio/caixa-regras';
 export { renderInvite } from './telas/convite.js';
 export { vGrupo } from './telas/grupo.js';
 export { montarHome, vHome } from './telas/Grupos';

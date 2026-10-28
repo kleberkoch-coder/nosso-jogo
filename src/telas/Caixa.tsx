@@ -17,6 +17,7 @@ import {
   type Tipo,
 } from '../dominio/caixa-regras';
 import { players, pname, rodadas, rodadasDoMes } from '../dominio/grupo.js';
+import { saldo as saldoDasFichas, type Resumo } from '../dominio/resumos';
 import { tp, tx } from '../i18n/index.js';
 import { simboloMoeda } from '../i18n/formatos.js';
 import { S as estado } from '../nucleo/estado.js';
@@ -127,8 +128,11 @@ function Caixa() {
   const S = st(),
     m: string = S.month;
   const lan: Lanc[] = Object.entries(S.caixa as Record<string, Lancamento>).map(([id, v]) => Object.assign({ id }, v));
-  /* Os lançamentos já estão todos carregados, então saldo, entradas e saídas saem deles, exatos.
-     A ficha do mês (resumos, cx) é mantida a cada lançamento para quando o caixa passar a carregar só o mês (D11, KAN-106). */
+  /* KAN-106: só os lançamentos recentes são carregados (janela do mês escolhido). Entradas, saídas e a lista do mês
+     saem deles; o saldo de todo o histórico sai das fichas de resumo de cada mês (D11), mantidas a cada lançamento. */
+  const fichas = S.resCx ? (Object.values(S.resCx) as Partial<Resumo>[]) : null,
+    saldoTotal = fichas ? saldoDasFichas(fichas) : null,
+    mesesComCaixa = (fichas || []).filter(f => f.cx && (f.cx.ent || f.cx.sai)).map(f => f.mes as string);
   const r = resumoDoCaixa(lan, m),
     pend = pendencias(m),
     apg = listaAPagar(),
@@ -136,7 +140,8 @@ function Caixa() {
   const meses = mesesDoCaixa(
     today(),
     lan,
-    rodadas().map((x: { date: string }) => x.date)
+    rodadas().map((x: { date: string }) => x.date),
+    mesesComCaixa
   );
   return (
     <div class="stack">
@@ -159,7 +164,7 @@ function Caixa() {
         <div class="kpis">
           <div>
             <div class="l">{tx('caixa.saldo')}</div>
-            <Dinheiro v={r.saldo} neg />
+            {saldoTotal == null ? <div class="money muted">…</div> : <Dinheiro v={saldoTotal} neg />}
           </div>
           <div>
             <div class="l">{tx('caixa.entradas')}</div>

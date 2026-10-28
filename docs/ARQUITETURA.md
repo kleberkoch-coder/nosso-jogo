@@ -155,6 +155,8 @@ Medido a cada versão, no celular de 390px:
   - a regra fica em `src/dominio/resumos.ts`, com teste próprio (`testes/regras/ranking.test.mjs`, compara com o cálculo antigo);
   - riscos aceitos: Recalcular ao mesmo tempo que outro administrador salva uma partida pode sobrescrever aquele incremento (basta recalcular de novo); aparelho com a v17 em cache que encerrar votação ou apagar rodada não ajusta as fichas até alguém usar Recalcular.
 
+- **pelada-v67 (KAN-106):** o Caixa deixou de carregar todos os lançamentos. Carrega de 3 meses antes do mês escolhido em diante (`inicioDaJanela`; antes, se o A pagar começa antes) e tira o saldo das fichas `resumos.cx`. Fora da aba Caixa, a janela é a do mês atual (referência de valor fora do padrão). Recalcular e a migração leem todos os lançamentos do servidor na hora.
+
 ### D16. Planos e área administrativa sem servidor (13 out. 2026, pelada-v26, KAN-115 e KAN-116)
 - **Decisão:** o plano é por conta (`contas/{uid}`: `plano`, `planoAte`), e o catálogo de planos fica em `sistema/planos`, com os padrões em `src/dominio/planos.ts`. O app pergunta pelo recurso (`temRecurso`), nunca pelo nome do plano. Validade vencida volta ao Grátis.
 - **Quem grava o plano:** só o administrador do portal. Regra `adminPortal()`: login com o Google **e** identificador (uid) na lista escrita nas regras. Não depende de e-mail nem de nenhum campo do banco: só muda com uma proposta aprovada no GitHub.

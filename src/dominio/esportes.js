@@ -17,6 +17,7 @@ const FUT = {
   og: true,
   word: 'Gols',
   unit: 'gol',
+  art: 'Artilharia',
   min: 10,
 };
 const SPORTS = {
@@ -40,6 +41,7 @@ const SPORTS = {
     ],
     word: 'Pontos',
     unit: 'ponto',
+    art: 'Cestinhas',
     min: 10,
   },
   volei: {
@@ -104,6 +106,7 @@ const SPORTS = {
     og: true,
     word: 'Gols',
     unit: 'gol',
+    art: 'Artilharia',
     min: 15,
   },
   fut_americano: {
@@ -201,6 +204,11 @@ function sport() {
     t = porTime();
   return Object.assign({}, b, { pos: x.length ? b.pos.concat(x) : b.pos, time: t, pairs: t === 2 });
 }
+/* Nome do painel de quem marcou na rodada (KAN-192): vem do catálogo (futebol e handebol: "Artilharia";
+   basquete: "Cestinhas"); sem nome no catálogo, inclusive nas duplas, "Pontos". */
+function artNome() {
+  return sport().art || 'Pontos';
+}
 function porTimePadrao(k) {
   return (SPORTS[k || 'futebol'] || SPORTS.futebol).time || 5;
 }
@@ -268,6 +276,7 @@ export {
   porTime,
   porTimePadrao,
   APP,
+  artNome,
   COL,
   SPORTS,
   basePos,

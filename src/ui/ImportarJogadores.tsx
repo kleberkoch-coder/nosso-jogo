@@ -6,10 +6,13 @@ import { posLabel, sport } from '../dominio/esportes.js';
 import { fmtL, normName } from '../dominio/grupo.js';
 import { excedentes, interpretar, LIMITE_IMPORTACAO, type Item } from '../dominio/planilha.ts';
 import { telefoneParaLer } from '../dominio/telefone.ts';
-import { tp, tx } from '../i18n/index.js';
+import { juntarTextos, tp, tx } from '../i18n/index.js';
+import textosImportar from '../i18n/pt-BR-importar';
 import { S as estado } from '../nucleo/estado.js';
 import { PAIS } from '../i18n/formatos.js';
 import { ErroPlanilha, lerArquivo } from './arquivo-planilha.ts';
+/* Os textos desta parte chegam com ela (KAN-205). */
+juntarTextos(textosImportar);
 import { lerTexto } from '../dominio/planilha.ts';
 
 const st = (): any => estado;

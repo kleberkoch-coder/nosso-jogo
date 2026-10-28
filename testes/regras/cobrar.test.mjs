@@ -19,3 +19,11 @@ test('link do WhatsApp leva a mensagem codificada; sem telefone, nada', () => {
   );
   assert.equal(linkCobrar('', 'x'), '');
 });
+
+import { quemCobrar } from '../../src/dominio/cobrar.ts';
+test('vagas fechadas: diarista (marca de vaga) não entra na cobrança; com vaga aberta, entra (KAN-206)', () => {
+  const jog = { a: {}, d: { vaga: true }, e: { vaga: false } };
+  assert.deepEqual(quemCobrar(['a', 'd', 'e'], {}, jog, false), ['a', 'e']);
+  assert.deepEqual(quemCobrar(['a', 'd', 'e'], {}, jog, true), ['a', 'd', 'e']);
+  assert.deepEqual(quemCobrar(['a', 'd'], { a: { s: 'in' } }, jog, true), ['d']);
+});

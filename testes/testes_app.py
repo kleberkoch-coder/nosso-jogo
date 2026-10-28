@@ -1831,6 +1831,10 @@ with sync_playwright() as pw:
     ok('Fechadas' in est and marc == ','.join(sorted(p11.evaluate("Object.keys(S.pc.tipos).filter(id=>S.pc.tipos[id]==='diarista'&&S.jog[id])"))),
        f'CT-KAN-63-02: ligado o controle, o quadro mostra "Fechadas" e só os diaristas ganham a marca ({est!r})')
     p11.locator('#vagasPainel').screenshot(path=f'{OUT}/59-vagas-fechadas.png'); contraste(p11, 'Vagas fechadas')
+    nomes_dia11 = p11.evaluate("(ids)=>ids.map(i=>S.jog[i].name)", dia11)
+    falta11 = [x.strip() for x in p11.inner_text('#semResposta > p').split(',')] if p11.locator('#semResposta > p').count() else []
+    ok(falta11 and not any(n in falta11 for n in nomes_dia11),
+       f'CT-KAN-206-01: com as vagas fechadas, diarista não aparece em "Ainda não responderam" nem na cobrança ({nomes_dia11})')
     gid11 = p11.evaluate("S.gid"); rid11 = p11.evaluate("S.presRid")
     pl11 = ctx11.new_page(); pl11.on('pageerror', lambda e: errs.append(str(e)))
     abrir_link = lambda: (pl11.goto(URL + '#/p/' + gid11 + '/r/' + rid11), pl11.reload(), pl11.wait_for_timeout(1500))
@@ -1850,6 +1854,8 @@ with sync_playwright() as pw:
     p11.fill('#vagasN', '1'); p11.locator('#vagasN').press('Enter'); p11.wait_for_timeout(900)
     est = p11.inner_text('#vagasEstado')
     ok(foco == 'vagasN' and 'Abertas · 0 de 1' in est and not p11.locator('#dlg[open]').count(), f'CT-KAN-63-04: "Abrir vagas" abre com o cursor na quantidade; Enter abre ({est!r})')
+    falta11 = [x.strip() for x in p11.inner_text('#semResposta > p').split(',')] if p11.locator('#semResposta > p').count() else []
+    ok(all(n in falta11 for n in nomes_dia11), 'CT-KAN-206-01: com vaga aberta, os diaristas voltam para "Ainda não responderam"')
     abrir_link()
     av = pl11.inner_text('#avisoVagas') if pl11.locator('#avisoVagas').count() else ''
     ok(all(vis(x) for x in dia11) and pl11.locator('[data-a=pubAdd]').count() == 1 and 'Resta 1 vaga' in av, f'CT-KAN-63-05: com vaga aberta, diaristas e "Adicionar meu nome" voltam ao link ({av!r})')

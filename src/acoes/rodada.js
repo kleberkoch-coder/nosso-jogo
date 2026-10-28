@@ -25,10 +25,10 @@ import { foraDosTimes } from '../dominio/divergencia.ts';
 import { reservas, sugerirTimes, titulares } from '../dominio/times.ts';
 import { tp, tx } from '../i18n/index.js';
 import { linkDaRodada, shareDlg, txtConvite, txtTimes } from '../dominio/whatsapp.js';
-import { semResposta } from '../dominio/cobrar';
+import { quemCobrar } from '../dominio/cobrar';
 import { limparMinimos } from '../dominio/posicoes';
 import { minimosDoGrupo, montarColetes, montarMinimos, montarVagas } from '../telas/Rodada';
-import { vagasValidas } from '../dominio/vagas';
+import { situacao, vagasValidas } from '../dominio/vagas';
 import { copyText } from '../eventos.js';
 import { B, setCAP, sleep } from '../nucleo/backend.js';
 import { campoTelefone, lerContato } from '../ui/contato-form';
@@ -242,10 +242,14 @@ const acoes = {
   /* KAN-64: mensagem pronta para o grupo do WhatsApp com quem ainda não respondeu. */
   cobrarGrupo: () => {
     const r = curRodada(),
-      falta = semResposta(
-        players().map(p => p.id),
-        S.pres
-      );
+      falta = r
+        ? quemCobrar(
+            players().map(p => p.id),
+            S.pres,
+            S.jog || {},
+            situacao(!!cfg().vagasCtrl, r.vagas, S.limVg).podeEntrar
+          )
+        : [];
     if (!r || !falta.length) return;
     shareDlg(
       tx('cobrar.noGrupo'),

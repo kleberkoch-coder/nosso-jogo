@@ -33,7 +33,11 @@ export function minhaSituacao(): Situacao {
 export function situacaoDoGrupo(): Situacao {
   const S = st();
   if (isOwnerMe() && S.loaded.conta) return minhaSituacao();
-  return situacaoDoEspelho(S.app && S.app.pl, cat(), Date.now());
+  const pl = S.app && S.app.pl;
+  /* Sem espelho ainda (grupo de antes da v70, ou a ficha do organizador ainda chegando): vale a transição,
+     para ninguém ver cadeado à toa; as regras do Firebase decidem de verdade. */
+  if (!pl) return situacao(null, cat(), Date.now(), transicaoAte(S.planosCfg));
+  return situacaoDoEspelho(pl, cat(), Date.now());
 }
 export const temNoGrupo = (k: string) => temRecurso(situacaoDoGrupo(), k);
 definirRecursos(temNoGrupo);

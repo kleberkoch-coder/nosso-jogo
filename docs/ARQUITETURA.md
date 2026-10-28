@@ -198,6 +198,15 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D24. Planos valendo no app, sem servidor (28 out. 2026, pelada-v70, KAN-119)
+- **Plano em vigor** (`dominio/planos.ts`, `situacao`, com teste): o pago do portal vale primeiro; sem ele, o teste (14 dias de `contas/{uid}.teste`) ou a transição (`sistema/planos.transicaoAte`) dão o Plano A até a data mais distante; sem nada, Grátis. As regras do Firebase repetem a conta (`planoPago`, `limiteGruposPlano`), com os limites 1/3/sem limite escritos nelas: mudar os limites no catálogo exige mudar as regras também.
+- **Quem garante:** as regras recusam lançar no caixa, mudar `privado/caixa`, criar votação e ligar o controle de vagas sem o Plano A; ler continua (nada é apagado). O teste só é gravado uma vez, com a hora de agora.
+- **Limite de grupos sem consulta:** as regras não contam documentos, então a conta guarda a lista dos grupos ativos (`contas/{uid}.ativos`). Criar e reativar só passam com o grupo entrando na lista, dentro do limite, na mesma gravação; sair da lista só com o grupo inativo. Conta de antes da v70 grava a lista uma vez (o app faz sozinho); essa primeira gravação não é conferida grupo a grupo, proteção mais fraca aceita.
+- **Convidados e o link não leem a ficha do organizador:** o app do organizador mantém um espelho no grupo (`grupos/{gid}.pl`, `{id, ate, o, t}`), só para a tela. Se o Kleber mudar o plano no portal, o espelho atualiza quando o organizador abrir o app; as regras já valem na hora.
+- **Recursos na tela:** `recurso(k)` em `dominio/grupo.js` responde pelo plano; quem calcula é a gestão (`nucleo/plano.ts`), que se registra ao carregar. O link do jogador não baixa nada dos planos.
+- **Custo:** gestão 89,5 → 94,0 KB (perto do limite de 95 KB; as janelas Planos e escolher grupos baixam sob demanda, 1,6 KB); link do jogador 46,7 → 47,1 KB. Leituras novas: a ficha da conta e `sistema/planos` (uma vez por sessão, ao vivo). Nas regras, até 3 leituras a mais nas gravações de caixa e votação.
+- **Fica para a v71:** limite de administradores convidados por plano (os mais novos só veem), que mexe em todas as regras de edição.
+
 ### D23. Permissões dos administradores convidados (27 out. 2026, pelada-v69, KAN-201)
 - **Decisão (Kleber):** quatro permissões por convidado (Caixa, Notas, Elenco e contatos, Configurações), gravadas em `membros/{uid}.perm`. Convidado novo entra com tudo desligado; administrador sem `perm` (de antes) continua com tudo. Só o organizador muda.
 - **Onde vale:** nas regras do Firebase (`pode(gid, k)` em `firestore.rules`), que são a proteção de verdade, e na tela (`posso(k)` em `dominio/grupo.js`, regra pura em `dominio/permissoes.ts`, com teste). Sem a permissão, o aparelho nem pede caixa, contatos ou convite (`syncPerm` em `rotas.js`), e ligar ou desligar vale na hora, porque o cadastro do administrador é acompanhado ao vivo.

@@ -1,9 +1,9 @@
 {
   "_leia": "KAN-170: cada tipo de dado que o app grava (lido do código por testes/tipos-gravados.mjs) aponta para os casos do roteiro de gravação (testes/persistencia_app.py) que gravam, recarregam e conferem. Tipo novo sem caso barra a proposta (testes/conferir-entrega.mjs). 'fora:' só com o motivo.",
   "usuarios": ["P01", "P17"],
-  "grupos": ["P02"],
+  "grupos": ["P02", "P24"],
   "grupos/membros": ["P02"],
-  "contas": ["P02"],
+  "contas": ["P02", "P24"],
   "config/app": ["P02", "P03", "P16", "P21", "P22", "P23"],
   "jogadores": ["P04", "P05", "P09", "P22"],
   "privado/ratings": ["P04", "P05", "P06", "P07"],

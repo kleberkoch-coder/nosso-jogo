@@ -339,6 +339,8 @@ function setupRoute() {
     limAv: null,
     limVg: null,
     limCfg: null,
+    conta: null,
+    planosCfg: null,
     votosVid: undefined,
     dataOn: false,
     rod: {},
@@ -392,6 +394,15 @@ function setupRoute() {
           }, 250);
       }
     });
+  if (logged) {
+    /* Planos (KAN-119): a ficha da própria conta (plano, teste, grupos ativos) e o catálogo com a data da transição. */
+    subRaw('conta', 'contas/' + S.user.uid, d => {
+      S.conta = d;
+    });
+    subRaw('planosCfg', 'sistema/planos', d => {
+      S.planosCfg = d;
+    });
+  }
   if (logged) registrarAcesso();
   if (S.gid)
     sub('app', 'config/app', d => {

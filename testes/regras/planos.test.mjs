@@ -100,6 +100,7 @@ test('clientes juntam conta, grupos do dono e última rodada; dono sem ficha apa
   assert.equal(caio.email, 'caio@x.com');
   assert.equal(caio.acesso, null);
   assert.equal(caio.plano, 'gratis');
+  assert.equal(caio.teste, null);
   assert.equal(cs[0].uid, 'u1', 'quem acessou por último vem primeiro');
 });
 
@@ -134,4 +135,113 @@ test('os planos padrão seguem a proposta do Kleber (PLANOS-E-CONCORRENTES.md)',
   assert.ok(!PLANOS_PADRAO.gratis.recursos.includes('caixa'));
   assert.ok(PLANOS_PADRAO.A.recursos.includes('listaEspera'));
   assert.ok(PLANOS_PADRAO.B.recursos.includes('painelCaixa'));
+});
+
+/* ---------- KAN-119 (pelada-v70): plano em vigor, teste grátis, transição e limites ---------- */
+import {
+  TESTE_DIAS,
+  TRANSICAO_PADRAO,
+  diasParaAcabar,
+  espelho,
+  gruposAcima,
+  mesmoEspelho,
+  planoComRecurso,
+  situacao,
+  situacaoDoEspelho,
+  transicaoAte,
+} from '../../src/dominio/planos.ts';
+
+const CAT = PLANOS_PADRAO,
+  DEPOIS = AGORA + 60 * DIA; // transição já acabou
+
+test('KAN-119: sem plano, sem teste e depois da transição, a conta fica no Grátis e pode testar', () => {
+  const s = situacao({}, CAT, DEPOIS, AGORA);
+  assert.equal(s.id, 'gratis');
+  assert.equal(s.podeTestar, true);
+  assert.equal(temRecurso(s, 'caixa'), false);
+  assert.equal(temRecurso(s, 'presenca'), true);
+});
+
+test('KAN-119: durante a transição, toda conta tem o Plano A até a data da transição', () => {
+  const s = situacao(null, CAT, AGORA, AGORA + 10 * DIA);
+  assert.equal(s.id, 'A');
+  assert.equal(s.origem, 'transicao');
+  assert.equal(s.ate, AGORA + 10 * DIA);
+  assert.equal(s.podeTestar, false);
+});
+
+test('KAN-119: o teste dá 14 dias de Plano A, uma vez só; depois volta ao Grátis sem poder testar de novo', () => {
+  const ini = DEPOIS - 2 * DIA;
+  const s = situacao({ teste: ini }, CAT, DEPOIS, AGORA);
+  assert.equal(s.id, 'A');
+  assert.equal(s.origem, 'teste');
+  assert.equal(s.ate, ini + TESTE_DIAS * DIA);
+  const fim = situacao({ teste: ini }, CAT, ini + TESTE_DIAS * DIA + 1, AGORA);
+  assert.equal(fim.id, 'gratis');
+  assert.equal(fim.podeTestar, false);
+});
+
+test('KAN-119: teste e transição juntos valem até a data mais distante', () => {
+  const s = situacao({ teste: AGORA }, CAT, AGORA + DIA, AGORA + 30 * DIA);
+  assert.equal(s.origem, 'transicao');
+  assert.equal(s.ate, AGORA + 30 * DIA);
+});
+
+test('KAN-119: plano pago vale antes do teste e da transição; vencido, volta ao que sobrar', () => {
+  assert.equal(situacao({ plano: 'B' }, CAT, AGORA, AGORA + DIA).id, 'B');
+  assert.equal(situacao({ plano: 'B' }, CAT, AGORA, AGORA + DIA).origem, 'pago');
+  const venc = situacao({ plano: 'B', planoAte: AGORA - 1 }, CAT, AGORA, AGORA + DIA);
+  assert.equal(venc.id, 'A');
+  assert.equal(venc.origem, 'transicao');
+});
+
+test('KAN-119: aviso 3 dias antes de acabar; antes disso, nada', () => {
+  const s = situacao({ teste: DEPOIS - 11 * DIA }, CAT, DEPOIS, AGORA);
+  assert.equal(diasParaAcabar(s, DEPOIS), 3);
+  assert.equal(diasParaAcabar(s, DEPOIS - DIA), null);
+  assert.equal(diasParaAcabar(situacao({ plano: 'A' }, CAT, AGORA, 0), AGORA), null);
+  assert.equal(diasParaAcabar(situacao({}, CAT, DEPOIS, AGORA), DEPOIS), null);
+});
+
+test('KAN-119: data da transição vem do Firebase; sem ela, vale a padrão', () => {
+  assert.equal(transicaoAte(null), TRANSICAO_PADRAO);
+  assert.equal(transicaoAte({ transicaoAte: 'ontem' }), TRANSICAO_PADRAO);
+  assert.equal(transicaoAte({ transicaoAte: 123 }), 123);
+});
+
+test('KAN-119: espelho do grupo mostra o mesmo plano aos convidados e vence sozinho', () => {
+  const s = situacao({ teste: AGORA }, CAT, AGORA, 0),
+    e = espelho(s);
+  assert.equal(mesmoEspelho(e, espelho(s)), true);
+  assert.equal(mesmoEspelho({ ...e, ate: 1 }, e), false);
+  assert.equal(situacaoDoEspelho(e, CAT, AGORA).id, 'A');
+  assert.equal(situacaoDoEspelho(e, CAT, AGORA).origem, 'teste');
+  const depois = situacaoDoEspelho(e, CAT, AGORA + 15 * DIA);
+  assert.equal(depois.id, 'gratis');
+  assert.equal(depois.podeTestar, false);
+  assert.equal(situacaoDoEspelho(null, CAT, AGORA).id, 'gratis');
+  assert.equal(situacaoDoEspelho({ id: 'Z' }, CAT, AGORA).id, 'gratis');
+});
+
+test('KAN-119: limite de grupos ativos por plano e quantos passam do limite', () => {
+  const gratis = situacao({}, CAT, DEPOIS, AGORA),
+    b = situacao({ plano: 'B' }, CAT, AGORA, 0);
+  assert.equal(gruposAcima(3, gratis), 2);
+  assert.equal(gruposAcima(1, gratis), 0);
+  assert.equal(gruposAcima(50, b), 0);
+});
+
+test('KAN-119: o convite do cadeado diz o plano que tem o recurso', () => {
+  assert.equal(planoComRecurso(CAT, 'votacao'), 'Plano A');
+  assert.equal(planoComRecurso(CAT, 'iaCards'), 'Plano B');
+  assert.equal(planoComRecurso(CAT, 'nada'), null);
+});
+
+test('KAN-119: a data padrão da transição é a mesma no app e nas regras do Firebase', () => {
+  const regras = fs.readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8');
+  const m = regras.match(/'transicaoAte', 0\) : (\d+) \* (\d+);/);
+  assert.ok(m, 'data da transição não encontrada em firestore.rules');
+  assert.ok(Number(m[1]) < 2 ** 31 && Number(m[2]) < 2 ** 31, 'cada número das regras cabe em 32 bits');
+  assert.equal(Number(m[1]) * Number(m[2]), TRANSICAO_PADRAO);
+  assert.equal(new Date(TRANSICAO_PADRAO).toISOString(), '2026-11-29T03:00:00.000Z');
 });

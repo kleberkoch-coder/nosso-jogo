@@ -7,6 +7,9 @@ import { shareDlg } from '../dominio/whatsapp.js';
 import { B, op } from '../nucleo/backend.js';
 import { gruposEsgotados, limite } from '../dominio/limites.ts';
 import { PERM_CONVIDADO, PERMISSOES, permLimpa } from '../dominio/permissoes';
+import { temRecurso } from '../dominio/planos';
+import { minhaSituacao } from '../nucleo/plano';
+import { avisoLimiteGrupos, inativarGrupo, reativarGrupo } from './plano';
 import { editApp } from '../nucleo/edicoes.js';
 import { GB, S, clean, w } from '../nucleo/estado.js';
 import { linkConvite } from '../nucleo/links.js';
@@ -43,7 +46,7 @@ function avisoGrupos(sel, n) {
 const gravarGrupo = (gid, o) =>
   B.lote([
     { tipo: 'set', p: 'grupos/' + gid, o },
-    { tipo: 'patch', p: 'contas/' + S.user.uid, o: { ng: op.somar(1), ult: gid } },
+    { tipo: 'patch', p: 'contas/' + S.user.uid, o: { ng: op.somar(1), ult: gid, ativos: op.uniao([gid]) } },
   ]);
 const acoes = {
   /* País da conta (KAN-162): vale para os grupos novos; cada grupo tem o seu em Editar grupo. */
@@ -66,6 +69,7 @@ const acoes = {
     return p;
   },
   newGroup: () => {
+    if (avisoLimiteGrupos()) return; // KAN-119: o plano já está cheio de grupos ativos
     openDlg(
       `<h3>Novo grupo</h3><div id="ngRaiz"></div><div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="createGroup">Criar grupo</button></div>`
     );
@@ -170,6 +174,7 @@ const acoes = {
     });
   },
   dupGroup: () => {
+    if (avisoLimiteGrupos()) return;
     openDlg(`<h3>Duplicar grupo</h3><p class="small muted" style="margin-top:-6px">Cria um grupo novo e independente, com o mesmo esporte, frequência, dias e horários, posições e configurações de partidas e caixa. Você será o organizador dele.</p>
     <label class="f"><span>Nome do novo grupo</span><input class="inp" id="dgn" maxlength="40" value="${esc(gname() + ' (cópia)')}"></label><div class="err" id="dgErr" style="margin-top:-8px"></div>
     <label class="row small" style="margin-bottom:6px"><input type="checkbox" id="dgel" checked> Copiar o elenco (jogadores ativos, notas, contatos, avulsos e pares separados)</label>
@@ -205,6 +210,9 @@ const acoes = {
       nc = cl(a.cfg) || {},
       c0 = cfg();
     CAIXA_K.forEach(k => delete nc[k]);
+    // KAN-119: o grupo novo segue o plano da conta: sem a lista de espera, o controle de vagas não vai junto.
+    const sit = minhaSituacao();
+    if (!temRecurso(sit, 'listaEspera')) delete nc.vagasCtrl;
     try {
       await gravarGrupo(
         gid,
@@ -230,7 +238,7 @@ const acoes = {
         players().forEach(p => {
           pcN.tipos[p.id] = ptipo(p.id);
         });
-      await B.set(base + '/privado/caixa', clean(pcN));
+      if (temRecurso(sit, 'caixa')) await B.set(base + '/privado/caixa', clean(pcN));
       if (withEl) {
         const keep = new Set(
           players()
@@ -296,12 +304,9 @@ const acoes = {
       }) !== 'sim'
     )
       return;
-    const p = editApp(a => {
-      a.ativo = on;
-      if (on) delete a.inativadoEm;
-      else a.inativadoEm = Date.now();
-    });
-    upMyGroup(S.gid, { ativo: on });
+    // KAN-119: reativar só se couber no plano; o grupo entra e sai da lista de ativos da conta junto.
+    if (on && avisoLimiteGrupos()) return;
+    const p = w(on ? reativarGrupo(S.gid) : inativarGrupo(S.gid));
     toast(on ? 'Grupo reativado.' : 'Grupo inativado.');
     return p;
   },
@@ -309,6 +314,7 @@ const acoes = {
   createGroup: async el => {
     const g = readGroupForm(null);
     if (!g) return;
+    if (avisoLimiteGrupos()) return;
     const lg = await limiteGrupos();
     if (lg.cheio) {
       avisoGrupos('#ngErr', lg.n);

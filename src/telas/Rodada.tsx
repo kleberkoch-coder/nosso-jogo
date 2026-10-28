@@ -21,8 +21,10 @@ import {
   pname,
   posso,
   ppos,
+  recurso,
   rodadasJanela,
 } from '../dominio/grupo.js';
+import { Trava } from '../ui/Plano';
 import { avulsosEsgotados, limite } from '../dominio/limites';
 import { hora } from '../dominio/rodadas.js';
 import { quality } from '../dominio/sorteio.js';
@@ -251,6 +253,17 @@ function Cobrar({ r }: { r: Rodada }) {
       S.pres
     );
   if (!falta.length || r.locked) return null;
+  /* KAN-119: cobrar faz parte do Plano A; sem ele, a lista aparece com o cadeado, sem os botões. */
+  if (!recurso('cobrarPendentes'))
+    return (
+      <div class="panel" id="semResposta">
+        <h3 style="margin:0">{tx('cobrar.titulo', { n: falta.length })}</h3>
+        <p class="small muted" style="margin:6px 0 0">
+          {falta.map(pname).join(', ')}
+        </p>
+        <Trava r="cobrarPendentes" />
+      </div>
+    );
   return (
     <div class="panel" id="semResposta">
       <div class="row between">
@@ -638,9 +651,15 @@ function Minimos() {
         {tx('vagas.titulo')}
       </p>
       <label class="chk-linha">
-        <input type="checkbox" id="vagasCtrl" checked={controleVagas()} />
+        <input
+          type="checkbox"
+          id="vagasCtrl"
+          checked={controleVagas()}
+          disabled={!controleVagas() && !recurso('listaEspera')}
+        />
         <span>{tx('vagas.controle')}</span>
       </label>
+      {!controleVagas() && !recurso('listaEspera') ? <Trava r="listaEspera" /> : null}
       <div class="dlg-f">
         <button class="btn" data-a="close">
           {tx('comum.cancelar')}

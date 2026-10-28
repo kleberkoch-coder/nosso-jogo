@@ -139,9 +139,67 @@ service cloud.firestore {
     function camposMudados() {
       return resource == null ? request.resource.data.keys() : request.resource.data.diff(resource.data).affectedKeys();
     }
+    // ---------- Planos (KAN-119, pelada-v70). As mesmas contas de src/dominio/planos.ts. ----------
+    // Plano A para todos até o fim da transição (sistema/planos.transicaoAte; sem ela, 28/11/2026 no fim do dia).
+    function cfgPlanos() { return /databases/$(database)/documents/sistema/planos; }
+    // Data padrão: 17959212 × 100000 = 1795921200000 ms = 29/11/2026, 0h em Brasília (o teste de regras/planos confere).
+    function transicaoAte() {
+      let d = exists(cfgPlanos()) ? get(cfgPlanos()).data : {};
+      return d.get('transicaoAte', null) is int ? d.get('transicaoAte', 0) : 17959212 * 100000;
+    }
+    function fichaConta(uid) { return exists(conta(uid)) ? get(conta(uid)).data : {}; }
+    function agoraMs() { return request.time.toMillis(); }
+    // Plano pago gravado pelo portal (A ou B), sem validade ou dentro dela.
+    function pagoContratado(c) {
+      return c.get('plano', 'gratis') in ['A', 'B'] && (c.get('planoAte', null) == null || c.get('planoAte', 0) > agoraMs());
+    }
+    // Teste grátis: 14 dias (1.209.600.000 ms) a partir de contas/{uid}.teste.
+    function emTeste(c) { return c.get('teste', null) is int && agoraMs() < c.get('teste', 0) + 1209600000; }
+    function planoPago(uid) {
+      let c = fichaConta(uid);
+      return pagoContratado(c) || emTeste(c) || agoraMs() < transicaoAte();
+    }
+    // Grupos ativos do plano: Grátis 1, A 3, B sem limite do plano (vale o limite contra abuso).
+    function limiteGruposPlano(uid) {
+      let c = fichaConta(uid);
+      return pagoContratado(c) && c.get('plano', '') == 'B' ? limGrupos() : (planoPago(uid) ? 3 : 1);
+    }
+    // Recursos do Plano A (caixa, votação, controle de vagas) no grupo: valem pelo plano do organizador.
+    function pago(gid) { return planoPago(get(grp(gid)).data.owner); }
+    // Lista de grupos ativos da conta (contas/{uid}.ativos), que segue o plano: o grupo entra ao ser criado ou reativado.
+    function cabeNoPlano(gid, uid) {
+      let a = getAfter(conta(uid)).data.get('ativos', []);
+      return a.hasAny([gid]) && a.size() <= limiteGruposPlano(uid);
+    }
+    // Mudança na lista feita sozinha: a primeira vez (conta de antes da v70), sair um grupo inativo, ou entrar
+    // um grupo da própria conta, ativo e dentro do limite.
+    function ativosOk(uid) {
+      let novo = request.resource.data.get('ativos', []);
+      let velho = resource == null ? [] : resource.data.get('ativos', []);
+      let saiu = velho.removeAll(novo);
+      let entrou = novo.removeAll(velho);
+      return camposMudados().hasOnly(['ativos']) && novo is list && novo.size() <= limGrupos() && (
+        resource == null || !('ativos' in resource.data)
+        || (entrou.size() == 0 && saiu.size() == 1
+            && (!existsAfter(grp(saiu[0])) || getAfter(grp(saiu[0])).data.get('ativo', true) == false))
+        || (saiu.size() == 0 && entrou.size() == 1 && novo.size() <= limiteGruposPlano(uid)
+            && existsAfter(grp(entrou[0])) && getAfter(grp(entrou[0])).data.owner == uid
+            && getAfter(grp(entrou[0])).data.get('ativo', true) == true)
+      );
+    }
+    // Teste grátis: a própria conta grava o início uma vez só, com a hora de agora (folga de 10 minutos).
+    function testeOk() {
+      return camposMudados().hasOnly(['teste'])
+        && (resource == null || !('teste' in resource.data))
+        && request.resource.data.teste is int
+        && request.resource.data.teste <= agoraMs() + 60000
+        && request.resource.data.teste >= agoraMs() - 600000;
+    }
     // Contador de grupos (KAN-89): só sobe de 1 em 1, junto com a criação de um grupo da própria conta, até o limite.
+    // Desde a v70 (KAN-119), o grupo novo também entra na lista de grupos ativos.
     function contadorOk(uid) {
-      return camposMudados().hasOnly(['ng', 'ult'])
+      return camposMudados().hasOnly(['ng', 'ult', 'ativos'])
+        && (!('ativos' in camposMudados()) || request.resource.data.ativos.removeAll(resource == null ? [] : resource.data.get('ativos', [])) == [request.resource.data.ult])
         && idValido(request.resource.data.get('ult', ''))
         && request.resource.data.ng == (resource == null ? 0 : resource.data.get('ng', 0)) + 1
         && request.resource.data.ng <= limGrupos()
@@ -159,6 +217,11 @@ service cloud.firestore {
         && (resource == null || !('criada' in resource.data) || request.resource.data.criada == resource.data.criada)
         && (!('criada' in request.resource.data) || request.resource.data.criada is int);
     }
+    // Espelho do plano no grupo (pl), só para a tela: formato pequeno e conhecido.
+    function espelhoOk() {
+      return !('pl' in request.resource.data) || (request.resource.data.pl is map
+        && request.resource.data.pl.keys().hasOnly(['id', 'ate', 'o', 't']));
+    }
     function nomeOk(campo) {
       return !(campo in request.resource.data) || (request.resource.data[campo] is string && request.resource.data[campo].size() <= 40);
     }
@@ -174,7 +237,7 @@ service cloud.firestore {
       // Cada conta lê a própria ficha; o administrador do portal lê todas (KAN-116).
       allow read: if (realUser() && request.auth.uid == uid) || adminPortal();
       // A própria conta grava só o contador de grupos (KAN-89) ou o último acesso (KAN-116). Nunca o plano.
-      allow create, update: if realUser() && request.auth.uid == uid && (contadorOk(uid) || acessoOk());
+      allow create, update: if realUser() && request.auth.uid == uid && (contadorOk(uid) || acessoOk() || testeOk() || ativosOk(uid));
       // O plano (KAN-115) só é gravado pelo administrador do portal (e, no futuro, pelo servidor de pagamento).
       allow create, update: if adminPortal() && camposMudados().hasOnly(['plano', 'planoAte', 'obs'])
         && request.resource.data.get('plano', 'gratis') is string && request.resource.data.get('plano', 'gratis').size() <= 20
@@ -196,14 +259,22 @@ service cloud.firestore {
       // Grupo novo conta no limite de grupos por conta (KAN-89); nome com até 40 letras.
       // Grupo novo conta no limite de grupos por conta (KAN-89); obrigatório de novo desde a pelada-v28 (KAN-134).
       allow create: if realUser() && request.resource.data.owner == request.auth.uid && caixaOk()
-        && nomeOk('name') && grupoContado(gid);
+        && nomeOk('name') && grupoContado(gid) && cabeNoPlano(gid, request.auth.uid)
+        && (request.resource.data.get('cfg', {}).get('vagasCtrl', false) != true || planoPago(request.auth.uid));
       // Dono e data de criação não mudam; só o organizador ativa ou inativa o grupo.
       allow update: if isMember(gid)
         && request.resource.data.owner == resource.data.owner
         && request.resource.data.get('createdAt', 0) == resource.data.get('createdAt', 0)
         && (request.resource.data.get('ativo', true) == resource.data.get('ativo', true) || isOwner(gid))
         && (pode(gid, 'config') || soDiaADia())
-        && caixaOk();
+        && caixaOk()
+        // KAN-119: reativar só com o grupo de volta na lista de ativos, dentro do limite do plano;
+        // ligar o controle de vagas (lista de espera) só com o Plano A.
+        && (resource.data.get('ativo', true) == true || request.resource.data.get('ativo', true) == false
+            || cabeNoPlano(gid, resource.data.owner))
+        && (request.resource.data.get('cfg', {}).get('vagasCtrl', false) != true
+            || resource.data.get('cfg', {}).get('vagasCtrl', false) == true || pago(gid))
+        && espelhoOk();
       allow delete: if isOwner(gid);
 
       // Administradores do grupo.
@@ -239,7 +310,7 @@ service cloud.firestore {
         allow read: if (doc == 'caixa' && pode(gid, 'caixa')) || (doc == 'contatos' && pode(gid, 'elenco'))
           || (doc == 'convite' && pode(gid, 'config'))
           || (!(doc in ['caixa', 'contatos', 'convite']) && isMember(gid));
-        allow write: if (doc == 'caixa' && pode(gid, 'caixa')) || (doc == 'contatos' && pode(gid, 'elenco'))
+        allow write: if (doc == 'caixa' && pode(gid, 'caixa') && pago(gid)) || (doc == 'contatos' && pode(gid, 'elenco'))
           || (doc == 'convite' && pode(gid, 'config')) || (doc == 'ratings' && pode(gid, 'notas'))
           || (!(doc in ['caixa', 'contatos', 'convite', 'ratings']) && isMember(gid));
       }
@@ -348,14 +419,18 @@ service cloud.firestore {
       }
 
       match /caixa/{id} {
-        allow read, create, update: if pode(gid, 'caixa');
+        allow read: if pode(gid, 'caixa');
+        // KAN-119: lançar, mudar e apagar só com o Plano A (ver continua, nada é apagado ao mudar de plano).
+        allow create, update: if pode(gid, 'caixa') && pago(gid);
         // Apagar só o que existe: um lançamento apagado duas vezes não desconta o resumo em dobro (pelada-v18).
-        allow delete: if pode(gid, 'caixa') && resource != null;
+        allow delete: if pode(gid, 'caixa') && pago(gid) && resource != null;
       }
 
       match /votacoes/{vid} {
         allow read: if true;
-        allow write: if isMember(gid);
+        // KAN-119: criar votação só com o Plano A; encerrar ou apagar uma que já existe continua.
+        allow create: if isMember(gid) && pago(gid);
+        allow update, delete: if isMember(gid);
 
         // Um voto por aparelho, só enquanto a votação estiver aberta.
         // Cada aparelho lê só o próprio voto; a contagem é vista pelos administradores.

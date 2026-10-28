@@ -1,5 +1,5 @@
 import { APP, sport, sportName } from '../dominio/esportes.js';
-import { curRodada, fdia, gname, grpAtivo, isAdmin, isOwnerMe, posso } from '../dominio/grupo.js';
+import { curRodada, fdia, gname, grpAtivo, isAdmin, isOwnerMe, posso, recurso } from '../dominio/grupo.js';
 import { hora } from '../dominio/rodadas.js';
 import { B, applyBusy } from '../nucleo/backend.js';
 import { S } from '../nucleo/estado.js';
@@ -41,6 +41,8 @@ function changed() {
     render();
   });
 }
+/* Abas de recursos do Plano A (KAN-119): sem o recurso, a aba aparece com o cadeado e o convite. */
+const travada = k => (k === 'caixa' || k === 'votacao' || k === 'historico') && !recurso(k);
 const TABS = [
   ['rodada', 'Rodada'],
   ['historico', 'abas.historico'],
@@ -135,6 +137,7 @@ function renderCore() {
     entrarPronto().montarAuth();
     return;
   }
+  A.sincronizarPlano();
   if (R.n === 'home') {
     main.innerHTML = A.vHome();
     A.montarHome();
@@ -163,7 +166,7 @@ function renderCore() {
   $('#tabs').innerHTML = TABS.filter(([k]) => k !== 'caixa' || posso('caixa'))
     .map(
       ([k, l]) =>
-        `<button class="tab" role="tab" aria-selected="${S.tab === k}" data-a="tab" data-v="${k}">${l.startsWith('abas.') ? tx(l) : l}</button>`
+        `<button class="tab" role="tab" aria-selected="${S.tab === k}" data-a="tab" data-v="${k}">${l.startsWith('abas.') ? tx(l) : l}${travada(k) ? ' <span class="tab-trava" aria-hidden="true">🔒</span>' : ''}</button>`
     )
     .join('');
   abasNoLugar();
@@ -171,8 +174,9 @@ function renderCore() {
   ensureVotos();
   ensureExtras();
   /* Abas sob demanda (KAN-180): enquanto a parte não chegou, um lugar para o "Carregando…". */
-  const aba = k => (A.abaPronta(k) ? A.abaPronta(k).ver() : '<div id="abaRaiz"></div>');
+  const aba = k => (travada(k) ? A.vCadeado() : A.abaPronta(k) ? A.abaPronta(k).ver() : '<div id="abaRaiz"></div>');
   main.innerHTML =
+    '<div id="avisosPlanoRaiz"></div>' +
     (grpAtivo()
       ? ''
       : `<div class="inbar"><span>Grupo inativo desde ${fdia(S.app.inativadoEm)}. Os links públicos não aceitam confirmações nem votos.</span>${isOwnerMe() ? '<button class="btn sm" data-a="toggleAtivo">Reativar</button>' : ''}</div>`) +
@@ -186,6 +190,8 @@ function renderCore() {
       historico: () => aba('historico'),
       grupo: A.vGrupo,
     }[S.tab]();
+  A.montarAvisosPlano();
+  if (travada(S.tab)) return A.montarCadeado(S.tab);
   if (A.abaSobDemanda(S.tab)) {
     const M = A.abaPronta(S.tab);
     if (!M) return baixar(A.carregarAba(S.tab), null, $('#abaRaiz'));

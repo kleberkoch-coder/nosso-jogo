@@ -336,6 +336,32 @@ with sync_playwright() as pw:
     ok(d23b['f'].get('ini') == '19:00' and '7:00–9:00 PM' in t23b, 'CT-KAN-170-P23: depois de sair e entrar de novo, continua 7:00–9:00 PM (19:00 no banco)')
     c23.close()
 
+    # P24 planos (KAN-119): grupo novo entra na lista de grupos ativos da conta (contas/{uid}.ativos); inativar e
+    # reativar mudam o grupo e a lista na mesma gravação (as regras do Firebase conferem as duas juntas).
+    c24 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block'); p24 = c24.new_page()
+    p24.on('pageerror', lambda e: errs.append(str(e)))
+    E24 = 'planos24@teste.com'
+    p24.goto(URL + '#/criar'); p24.wait_for_selector('#le', timeout=20000); p24.wait_for_timeout(300)
+    p24.fill('#le', E24); p24.fill('#lp', SENHA); p24.fill('#lp2', SENHA); p24.wait_for_timeout(200)
+    p24.click('[data-a=signup]'); p24.wait_for_selector('#ngn', timeout=20000)
+    p24.fill('#ngn', 'Planos FC'); p24.click('[data-a=createGroup]')
+    p24.wait_for_function("location.hash.startsWith('#/g/')", timeout=20000)
+    g24 = p24.url.split('#/g/')[1].split('/')[0]
+    gravou(p24); pronto(p24)
+    p24.wait_for_function("S.loaded.conta", timeout=20000)
+    ok(J(p24, "(S.conta&&S.conta.ativos)||[]") == [g24], 'CT-KAN-170-P24: o grupo novo fica na lista de grupos ativos da conta, depois de recarregar')
+    pronto(p24, 'grupo')
+    p24.click('#grupoRaiz [data-a=toggleAtivo]'); conf(p24); p24.wait_for_timeout(800)
+    gravou(p24); pronto(p24); p24.wait_for_function("S.loaded.conta", timeout=20000)
+    ok(J(p24, "S.app.ativo") is False and J(p24, "(S.conta&&S.conta.ativos)||[]") == [], 'CT-KAN-170-P24: inativar grava o grupo inativo e tira da lista, depois de recarregar')
+    p24.click('.inbar [data-a=toggleAtivo]'); p24.wait_for_timeout(800)
+    sair_e_esperar(p24)
+    p24.goto(URL + '#/entrar'); p24.wait_for_selector('#le', timeout=20000); p24.wait_for_timeout(300)
+    p24.fill('#le', E24); p24.fill('#lp', SENHA); p24.keyboard.press('Enter'); p24.wait_for_timeout(2500)
+    p24.goto(URL + '#/g/' + g24); pronto(p24); p24.wait_for_function("S.loaded.conta", timeout=20000)
+    ok(J(p24, "S.app.ativo!==false") and J(p24, "(S.conta&&S.conta.ativos)||[]") == [g24], 'CT-KAN-170-P24: reativar volta o grupo para a lista, depois de sair e entrar de novo')
+    c24.close()
+
     ok(not errs, 'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))
     b.close()
 

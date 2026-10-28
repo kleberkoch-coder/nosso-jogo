@@ -7,6 +7,7 @@ import { acoes as grupo } from './acoes/grupo.js';
 import { acoes as rodada } from './acoes/rodada.js';
 import { acoes as jogadores } from './acoes/jogadores.js';
 import { acoes as recalcular } from './acoes/recalcular';
+import { acoes as plano } from './acoes/plano';
 import { ACT } from './acoes.js';
 
 export { inicioAPagar } from './dominio/caixa.js';
@@ -20,10 +21,13 @@ export { migrar, verificarRodadas } from './nucleo/partidas.js';
 export { drawPreview } from './ui/dialogos-gestao.js';
 export { contaRegiao, listaPais, paisAparelho, preencher } from './ui/regiao.ts';
 export { trocarPaisTelefone } from './ui/contato-form';
+/* Planos (KAN-119): quem tem cada recurso, avisos, cadeado das abas e o espelho do plano no grupo. */
+export { sincronizarPlano } from './nucleo/plano';
+export { montarAvisosPlano, montarCadeado, vCadeado } from './ui/Plano';
 /* Os textos da gestão entram no dicionário assim que esta parte chega (KAN-159). */
 juntarTextos(textosGestao);
 
-export const ACOES = Object.assign({}, grupo, rodada, jogadores, recalcular);
+export const ACOES = Object.assign({}, grupo, rodada, jogadores, recalcular, plano);
 
 /* Abas sob demanda (KAN-180): Caixa, Histórico, Votação e Ranking baixam na primeira vez que a aba é aberta, como a Partida.
    Cada uma traz a tela (ver, e montar quando é componente) e as próprias ações, que entram no ACT. */

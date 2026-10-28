@@ -2362,3 +2362,57 @@ label.f > span.dica {
   display: inline-block;
   margin-top: 2px;
 }
+/* Planos (KAN-119): cadeado dos recursos, avisos do plano e a tabela da janela Planos. */
+.inbar.info {
+  background: var(--in-soft);
+  border-color: var(--in);
+}
+.avisos-plano {
+  display: flex;
+  flex-direction: column;
+}
+.trava h2 {
+  margin-top: 0;
+}
+.trava-acoes {
+  align-items: center;
+  margin-top: 12px;
+}
+.trava-linha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  align-items: center;
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--key-bg);
+  border: 1px solid var(--key-border);
+  color: var(--key-ink);
+}
+.trava-linha .linkbtn {
+  color: var(--key-ink);
+}
+.tab-trava {
+  font-size: 12px;
+}
+.planos-tbl th.atual {
+  color: var(--in);
+}
+.planos-tbl td,
+.planos-tbl th {
+  padding: 7px 4px;
+  white-space: normal;
+}
+.planos-tbl td:first-child {
+  text-align: left;
+}
+.planos-tbl td:not(:first-child),
+.planos-tbl th:not(:first-child) {
+  text-align: center;
+  width: 4.2em;
+}
+.trava-linha > span:not([aria-hidden]) {
+  flex: 1 1 12em;
+  min-width: 0;
+}

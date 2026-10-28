@@ -69,6 +69,7 @@ export function abrirMenuConta(anchor: HTMLElement) {
       t,
       item('🌐', tx('conta.pais'), 'contaPais', bandeira(pais) + ' ' + nomePais(pais)),
       item(temaAtual()[1], tx('conta.tema'), 'temaConta', temaAtual()[2]),
+      item('⭐', tx('conta.plano'), 'planosDlg'),
       sep,
       item('↪', tx('conta.sair'), 'logout')
     );

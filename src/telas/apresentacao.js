@@ -61,7 +61,10 @@ function vLanding() {
       'Funciona no iPhone e no Android?',
       'Sim. Funciona em qualquer navegador e pode ser instalado na tela inicial como um app.',
     ],
-    ['Quanto custa?', 'Você pode criar sua conta e seus grupos gratuitamente.'],
+    [
+      'Quanto custa?',
+      'Criar a conta e um grupo é grátis, com presença, sorteio, placar e ranking do mês. O Plano A (até 3 grupos) traz caixa, votação, histórico e ranking do ano, e dá para testar grátis por 14 dias. Os jogadores nunca pagam nem precisam de conta.',
+    ],
   ];
   return `<div class="ld">
   <nav class="ld-nav"><div class="ld-wrap"><a class="ld-logo" href="#/" aria-label="${APP}"><span class="ld-mark" aria-hidden="true"></span><span class="ld-txt">${APP}</span></a>

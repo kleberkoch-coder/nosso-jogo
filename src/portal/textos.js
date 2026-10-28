@@ -26,6 +26,7 @@ const T = {
   'portal.semEmail': '(e-mail não registrado)',
   'portal.ate': 'até {d}',
   'portal.vencido': 'plano vencido, voltou ao Grátis',
+  'portal.teste': 'teste grátis do Plano A até {d}',
   'portal.grupos': '{a} ativo(s), {i} inativo(s)',
   'portal.acesso': 'Último acesso: {d}',
   'portal.ultimaRodada': 'última rodada gravada: {d}',

@@ -1,7 +1,7 @@
 /* Ações: Jogadores: elenco, notas, contatos, pares separados e configurações. Fazem parte de ACT (src/acoes.js). */
 import { CAIXA_K, cfg, editPc, ptipo, recebePorJogo } from '../dominio/caixa.js';
 import { posKeys } from '../dominio/esportes.js';
-import { normName, players, pname, posso, ppos, setLvl } from '../dominio/grupo.js';
+import { normName, players, pname, posso, ppos, recurso, setLvl } from '../dominio/grupo.js';
 import { tp, tx } from '../i18n/index.js';
 import { simboloMoeda } from '../i18n/formatos.js';
 import { B } from '../nucleo/backend.js';
@@ -184,7 +184,7 @@ const acoes = {
   /* Partidas e caixa (KAN-201): os minutos com a permissão de configurações; valores e Pix com a de caixa. */
   settings: () => {
     const c = cfg(),
-      comCaixa = posso('caixa'),
+      comCaixa = posso('caixa') && recurso('caixa'),
       comConfig = posso('config');
     const valores = `<div class="row"><label class="f" style="flex:1"><span>${tx('caixa.mensalidadeMoeda', { moeda: simboloMoeda() })}</span><input class="inp" type="number" min="0" id="cm" value="${c.mensal}"></label><label class="f" style="flex:1"><span>${tx('caixa.diariaMoeda', { moeda: simboloMoeda() })}</span><input class="inp" type="number" min="0" id="cd" value="${c.diaria}"></label></div>`;
     const minutos = `<label class="f" style="flex:1"><span>Minutos por partida</span><input class="inp" type="number" min="1" id="cmin" value="${c.minutes}"></label>`,

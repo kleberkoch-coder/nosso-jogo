@@ -1,4 +1,4 @@
-import { isAdmin, posso } from './grupo.js';
+import { isAdmin, posso, recurso } from './grupo.js';
 import { B } from '../nucleo/backend.js';
 import { GB, S, clean, gp, w } from '../nucleo/estado.js';
 import { cl } from '../nucleo/util.js';
@@ -38,7 +38,7 @@ function inicioAPagar() {
 }
 /* Sem a permissão de caixa (KAN-201), nada é gravado no caixa: as regras do Firebase recusariam. */
 function editPc(fn) {
-  if (!posso('caixa')) return Promise.resolve();
+  if (!posso('caixa') || !recurso('caixa')) return Promise.resolve(); // KAN-119: caixa só com o Plano A
   const a = cl(S.pc) || {};
   a.tipos = a.tipos || {};
   fn(a);

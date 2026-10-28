@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v70 (28/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v71 (28/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -49,7 +49,7 @@ Atualizado na pelada-v70 (28/10/2026). Toda entrega que mudar uma regra atualiza
 - Jogadores por time é do grupo (o esporte só dá o padrão); 2 = duplas.
 - Inativar só o organizador: some da lista, não aceita presença nem voto, não gera rodada fixa, mantém histórico.
 - Duplicar copia configuração e, se quiser, o elenco; não copia rodadas, caixa, votações nem administradores.
-- Administradores entram por link de convite; só o organizador remove, e remover invalida o link atual.
+- Administradores entram por link de convite (dentro do limite do plano, KAN-204); só o organizador remove, e remover invalida o link atual e libera a vaga.
 - **Permissões dos convidados (KAN-201, pelada-v69):** o organizador escolhe, para cada convidado, em Grupo > Administradores > Permissões:
   - **Caixa:** ver e lançar pagamentos, mensalidade, diária, Pix e tipo de cada jogador.
   - **Notas dos jogadores:** ver e mudar notas e pares que não jogam juntos. Sem ela, o sorteio continua equilibrado: as notas chegam ao aparelho, só não aparecem na tela (proteção mais fraca, aceita pelo Kleber).
@@ -158,7 +158,7 @@ Atualizado na pelada-v70 (28/10/2026). Toda entrega que mudar uma regra atualiza
   - **Grupos ativos:** Grátis 1, A 3, B sem limite do plano (o limite contra abuso, 20, continua). A conta guarda a lista (`contas/{uid}.ativos`); criar, duplicar ou reativar só cabe dentro do limite.
   - **Plano menor (rebaixado):** com mais grupos ativos que o plano permite, "Meus grupos" pede para escolher quais continuam ativos; os outros ficam inativos (guardados, só para consulta).
   - **Convidados** veem o plano do organizador por um espelho no grupo (`pl`); o link público funciona em qualquer plano.
-  - **Ainda não:** limite de administradores convidados por plano (os mais novos só veem; vai na v71).
+  - **Administradores convidados por plano (KAN-204, v71):** Grátis 1, A 2, B 5. O grupo guarda os convidados na ordem de entrada (`grupos/{gid}.adms`); os primeiros, até o limite, editam; os mais novos **só veem** (aviso no topo, nada que grave aparece, e as regras recusam). Voltam a editar sozinhos se o plano subir. Com o plano cheio, o convite explica e não deixa aceitar, e "Convidar" mostra os planos. Remover um convidado libera a vaga. Grupo de antes da v71 ganha a lista quando o organizador abre o app.
 - Plano só é gravado pelo portal (ou servidor de pagamento), nunca pelo app.
 - Portal em site separado (`nosso-jogo-portal.web.app`), só Google, acesso só pelo uid listado nas regras (`adminPortal()`); nunca mostra notas, caixa, Pix ou contatos.
 
@@ -209,9 +209,9 @@ Atualizado na pelada-v70 (28/10/2026). Toda entrega que mudar uma regra atualiza
 | Votação | `telas/votacao.js`, `publico-voto.js` | `acoes/votacao.js` | `telas/votacao.js` (tally) | `votacoes/{vid}`, `votos` | `testes_app.py` (votação) |
 | Caixa | `telas/Caixa.tsx` (saldo pelas fichas) | `acoes/caixa.js` (com a conferência de valor fora do padrão) | `dominio/caixa-regras.ts` (pendências, foraDoPadrao, inicioDaJanela), `caixa.js`; janela de lançamentos em `rotas.js` (caixa, resCx) | `caixa/{id}`, `privado/caixa`, `resumos` | `regras/caixa`, `regras/fora-do-padrao`, `testes_app.py` (CT-KAN-161, CT-KAN-106) |
 | Isento e A pagar por jogo | `ui/dialogos-gestao.js` (ficha), `telas/Caixa.tsx` (A pagar, janela Pagar) | `acoes/jogadores.js` (savePlayer), `acoes/caixa.js` (abrirPagar, pagarJogos) | `dominio/caixa-regras.ts` (aPagar), `caixa.js` (recebePorJogo, inicioAPagar); rodadas desde o início em `rotas.js` (rodPag) | `privado/caixa` (tipos, porJogo), `caixa/{id}` (refs) | `regras/a-pagar`, `testes_app.py` (CT-KAN-172), `persistencia_app.py` (P20) |
-| Grupo e convite | `telas/GrupoTela.tsx` (componente, KAN-201), `telas/GrupoForm.tsx` (componente, KAN-165), `convite.js` (usa a tela de entrar, `telas/Login.tsx`) | `acoes/grupo.js` | `dominio/limites.ts` | `grupos/{gid}`, `membros`, `privado/convite`, `contas/{uid}` | `regras/limites`, `regras-firebase` |
+| Grupo e convite | `telas/GrupoTela.tsx` (componente, KAN-201; sob demanda desde a v71, `abas/grupo.ts`), `telas/GrupoForm.tsx` (componente, KAN-165), `convite.js` (usa a tela de entrar, `telas/Login.tsx`) | `acoes/grupo.js` | `dominio/limites.ts` | `grupos/{gid}`, `membros`, `privado/convite`, `contas/{uid}` | `regras/limites`, `regras-firebase` |
 | Permissões dos convidados | `telas/GrupoTela.tsx` (Permissões), e cada tela esconde o que não pode (`posso(k)`) | `acoes/grupo.js` (abrirPerm, salvarPerm, acceptInv); `editPc`, `editRat` e `saveContato` não gravam sem a permissão | `dominio/permissoes.ts` (pode, permLimpa); `dominio/grupo.js` (posso); `rotas.js` (syncPerm: caixa, contatos e convite só com a permissão) | `membros/{uid}` (perm) | `regras/permissoes`, `regras-firebase` (KAN-201), `testes_app.py` (CT-KAN-201) |
-| Planos e portal | `portal/`; no app, `ui/Plano.tsx` (cadeado, avisos), `ui/PlanosJanela.tsx` (Planos, escolher grupos), cadeados em `ui/render.js`, `telas/ranking.js`, `telas/Rodada.tsx` | `portal/tela.js`; `acoes/plano.ts` (testarPlano, escolherAtivos), `acoes/grupo.js` (criar, duplicar, reativar) | `dominio/planos.ts` (situacao, espelho, limites); `nucleo/plano.ts` (plano da conta e do grupo, espelho, lista de ativos); `recurso(k)` em `dominio/grupo.js` | `contas/{uid}` (plano, teste, ativos), `sistema/planos` (transicaoAte), `grupos/{gid}` (pl) | `regras/planos`, `regras-firebase` (KAN-119), `testes_app.py` (CT-KAN-119), `persistencia_app.py` (P24) |
+| Planos e portal | `portal/`; no app, `ui/Plano.tsx` (cadeado, avisos), `ui/PlanosJanela.tsx` (Planos, escolher grupos), cadeados em `ui/render.js`, `telas/ranking.js`, `telas/Rodada.tsx` | `portal/tela.js`; `acoes/plano.ts` (testarPlano, escolherAtivos), `acoes/grupo.js` (criar, duplicar, reativar) | `dominio/planos.ts` (situacao, espelho, limites, soVe, listaDeConvidados); `nucleo/plano.ts` (plano da conta e do grupo, espelho, lista de ativos e de convidados, euSoVejo); `soVer()` em `dominio/grupo.js` e o bloqueio em `eventos.js`; `recurso(k)` em `dominio/grupo.js` | `contas/{uid}` (plano, teste, ativos), `sistema/planos` (transicaoAte), `grupos/{gid}` (pl, adms) | `regras/planos`, `regras-firebase` (KAN-119, KAN-204), `testes_app.py` (CT-KAN-119, CT-KAN-204), `persistencia_app.py` (P24, P25) |
 | Janelas e avisos | `ui/dialogos.js`, `nucleo/util.js` (toast) | `acoes/conta.js` (confSim) | — | — | `testes_app.py` (CT-KAN-128) |
 | Tamanho e carga | `ui/render.js` (espera a gestão e as abas sob demanda) | `acoes.js` (só públicas) | `admin.js` (carregarPartida, carregarAba), `abas/*.ts` (Caixa, Histórico, Votação, Ranking), `entrar.ts` e `nucleo/carga-entrar.ts` (tela de entrar), `nucleo/carga-admin.js`, `build.mjs` | — | `testes_app.py` (CT-KAN-149, CT-KAN-180, CT-KAN-183) |
 | Esportes | catálogo em `dominio/esportes.js` | — | — | `grupos/{gid}` (sport, posx) | `testes_app.py` (outros esportes, CT-KAN-75) |

@@ -10,6 +10,7 @@ import { tx } from '../i18n/index.js';
 import { S as estado } from '../nucleo/estado.js';
 import { artilhariaDe, partidasDe } from '../nucleo/partidas-lista.js';
 import { SeletorRodada } from '../ui/componentes';
+import { marcarAlterada } from '../ui/dialogos.js';
 import { rodadasProntas } from './rodada-partes.js';
 import { sumPts } from '../ui/placar.js';
 import { proximoJogo, type Proximo } from '../dominio/fila';
@@ -305,7 +306,10 @@ function LancarArtilharia({ r }: { r: Rodada }) {
   const [gols, setGols] = useState<Record<string, number>>({ ...((a && a.gols) || {}) });
   artEdicao = gols;
   const ids = [...new Set([...(r.times as Time[]).flatMap(x => x.players), ...Object.keys(gols)])],
-    somar = (id: string, d: number) => setGols({ ...gols, [id]: Math.max(0, (gols[id] || 0) + d) }),
+    somar = (id: string, d: number) => {
+      marcarAlterada(); // KAN-202: tocar fora pergunta antes de descartar
+      setGols({ ...gols, [id]: Math.max(0, (gols[id] || 0) + d) });
+    },
     temGolEmPartida = (partidasDe(r.id) as Partida[]).some(m => m.ga || m.gb);
   return (
     <>
@@ -537,7 +541,10 @@ function EditarPartida({ m }: { m: Partida }) {
   const [goals, setGoals] = useState<Gol[]>(m.goals.map(g => ({ ...g })));
   edicao = { mid: m.id, goals };
   const SP = sport() as unknown as { score: [string, number][]; og?: boolean },
-    mudar = (gs: Gol[]) => setGoals(gs);
+    mudar = (gs: Gol[]) => {
+      marcarAlterada(); // KAN-202
+      setGoals(gs);
+    };
   const lado = (t: 'a' | 'b') => {
     const meus = (t === 'a' ? m.pa : m.pb) || [],
       deles = (t === 'a' ? m.pb : m.pa) || [],

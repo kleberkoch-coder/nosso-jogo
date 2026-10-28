@@ -148,6 +148,19 @@ export default {
   'grupo.viaSenha': 'E-mail e senha',
   'grupo.viaTitulo': 'Entrou pela última vez com {via}',
   'rank.ano': 'Ano',
+  'rank.titulo': 'Ranking',
+  'rank.ordenar': 'Ordenar por',
+  'rank.jogador': 'Jogador',
+  'rank.col.pts': 'Pts',
+  'rank.col.j': 'J',
+  'rank.col.v': 'V',
+  'rank.col.e': 'E',
+  'rank.col.d': 'D',
+  'rank.col.ap': 'Aprov.',
+  'rank.col.mvp': 'Destaques',
+  'rank.col.bagre': 'Bagre',
+  'rank.pontos': 'Vitória 3 pts, empate 1. Destaques e bagres vêm das votações encerradas.',
+  'rank.historico': 'Histórico',
   'rank.mes': 'Mês',
   'rank.todosAnos': 'Todos os anos',
   'rank.anoInteiro': 'Ano inteiro',
@@ -534,4 +547,20 @@ export default {
     'Seu plano permite {grupos}, e você tem {tem}. Escolha quais continuam ativos; os outros ficam guardados, só para consulta.',
   'plano.escolher': 'Escolher grupos',
   'plano.limiteGrupos': 'Seu plano permite {grupos}. Para criar ou reativar outro, inative um grupo ou mude de plano.',
+  // Administradores convidados por plano (KAN-204)
+  'convite.cheioTitulo': 'Este grupo já tem todos os administradores do plano',
+  'convite.cheioTexto.um':
+    'O plano de {grupo} permite 1 administrador convidado, e a vaga já está ocupada. Peça ao organizador para liberar uma vaga.',
+  'convite.cheioTexto.outros':
+    'O plano de {grupo} permite {n} administradores convidados, e as vagas já estão ocupadas. Peça ao organizador para liberar uma vaga.',
+  'convite.meusGrupos': 'Meus grupos',
+  'convite.aoAceitar':
+    'Ao aceitar, você passa a cuidar da presença, do sorteio e do placar deste grupo junto com o organizador. Ele escolhe se você também cuida do caixa, das notas, do elenco e das configurações.',
+  'plano.limiteAdmins.um':
+    'Seu plano permite 1 administrador convidado. Para convidar outro, remova um administrador ou mude de plano.',
+  'plano.limiteAdmins.outros':
+    'Seu plano permite {n} administradores convidados. Para convidar outro, remova um administrador ou mude de plano.',
+  'grupo.soVe': 'só vê',
+  'grupo.soVeAjuda.um': 'Seu plano permite 1 administrador convidado: quem entrou depois só vê o grupo.',
+  'grupo.soVeAjuda.outros': 'Seu plano permite {n} administradores convidados: quem entrou depois só vê o grupo.',
 };

@@ -8,7 +8,8 @@ import { basePos, porTime, sport, sportName } from '../dominio/esportes.js';
 import { fdia, fixos, freq, gname, grpAtivo, isOwnerMe, posso, recurso } from '../dominio/grupo.js';
 import { faixaTexto } from '../dominio/rodadas.js';
 import { PERMISSOES, pode, type Membro } from '../dominio/permissoes';
-import { tx } from '../i18n/index.js';
+import { tp, tx } from '../i18n/index.js';
+import { limiteAdmins, quemSoVe } from '../nucleo/plano';
 import { S as estado } from '../nucleo/estado.js';
 import { DIAS, brl } from '../nucleo/util.js';
 import { numeroVersao } from '../nucleo/versao.js';
@@ -70,7 +71,9 @@ function resumoPerm(m: MembroDoc) {
 function Administradores() {
   const S = st(),
     dono = isOwnerMe(),
-    config = posso('config');
+    config = posso('config'),
+    soVem = quemSoVe(),
+    n = limiteAdmins();
   const lista = (Object.entries(S.membros || {}) as [string, MembroDoc][]).sort(
     (x, y) => (x[1].role === 'owner' ? -1 : 1) - (y[1].role === 'owner' ? -1 : 1)
   );
@@ -99,6 +102,7 @@ function Administradores() {
               )}
             </span>
             <span class="tag">{tx(m.role === 'owner' ? 'grupo.organizador' : 'grupo.admin')}</span>
+            {soVem.includes(u) && <span class="tag alt so-ve">{tx('grupo.soVe')}</span>}
             {dono && m.role !== 'owner' && (
               <button class="btn sm" data-a="abrirPerm" data-v={u}>
                 {tx('perm.botao')}
@@ -112,6 +116,11 @@ function Administradores() {
           </li>
         ))}
       </ul>
+      {soVem.length > 0 && n !== null && (
+        <p class="small muted" id="soVeAjuda" style="margin-top:8px">
+          {tp('grupo.soVeAjuda', n)}
+        </p>
+      )}
       {config && (
         <p class="small muted" style="margin-top:8px">
           {tx('grupo.conviteAjuda')}{' '}

@@ -9,6 +9,7 @@ const dlg = $('#dlg');
 /* KAN-74: com botão principal no rodapé, o teclado do celular mostra "Concluir" e o Enter envia (ver eventos.js). */
 function openDlg(h) {
   conf = null;
+  alterada = false;
   dlg.removeAttribute('aria-labelledby');
   const b = $('#dlgBody');
   b.innerHTML = h;
@@ -39,6 +40,12 @@ function closeDlg() {
 /* KAN-140: tocar fora ou Esc numa janela com algo já preenchido não joga o trabalho fora: pergunta antes.
    "Preenchido" = algum campo diferente de quando a janela abriu. Sem mudança, fecha direto como antes. */
 let fotoForm = '';
+/* KAN-202: janelas que guardam o que foi feito fora dos campos (os + e − da artilharia, os gols de Editar partida)
+   avisam que mudaram; assim tocar fora também pergunta antes de descartar. */
+let alterada = false;
+const marcarAlterada = () => {
+  alterada = true;
+};
 function valoresForm() {
   return [
     ...document.querySelectorAll(
@@ -62,7 +69,7 @@ function fecharPerguntando() {
     naoConfirmar();
     return;
   }
-  if (!$('#dlgBody .dlg-f .btn.primary,#dlgBody .dlg-f .btn.bib') || valoresForm() === fotoForm) {
+  if (!$('#dlgBody .dlg-f .btn.primary,#dlgBody .dlg-f .btn.bib') || (valoresForm() === fotoForm && !alterada)) {
     closeDlgNow();
     return;
   }
@@ -194,4 +201,16 @@ const posSel = (id, v) =>
     .join('')}</select>`;
 const posField = (id, v) => (hasPos() ? `<label class="f"><span>Posição</span>${posSel(id, v)}</label>` : '');
 
-export { avisar, closeDlg, closeDlgNow, confirmou, dlg, naoConfirmar, openDlg, posField, responder, val };
+export {
+  avisar,
+  closeDlg,
+  closeDlgNow,
+  confirmou,
+  dlg,
+  marcarAlterada,
+  naoConfirmar,
+  openDlg,
+  posField,
+  responder,
+  val,
+};

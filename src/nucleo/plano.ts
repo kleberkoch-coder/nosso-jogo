@@ -5,6 +5,10 @@
    As contas puras ficam em dominio/planos.ts, com teste. */
 import {
   catalogo,
+  conviteCheio,
+  listaDeConvidados,
+  mesmaLista,
+  soVe,
   espelho,
   gruposAcima,
   limiteDeGrupos,
@@ -40,7 +44,24 @@ export function situacaoDoGrupo(): Situacao {
   return situacaoDoEspelho(pl, cat(), Date.now());
 }
 export const temNoGrupo = (k: string) => temRecurso(situacaoDoGrupo(), k);
-definirRecursos(temNoGrupo);
+
+/* Administradores convidados que o plano do grupo permite (KAN-204); null: sem limite. */
+export const limiteAdmins = (): number | null => situacaoDoGrupo().plano.admins;
+/* Quem está usando é convidado além do limite (só vê)? */
+export function euSoVejo(): boolean {
+  const S = st();
+  if (!S.app || !S.user || isOwnerMe()) return false;
+  return soVe(S.user.uid, S.app.adms, limiteAdmins());
+}
+export const conviteDoGrupoCheio = () => conviteCheio(st().app && st().app.adms, limiteAdmins());
+/* Convidados que só veem, para o organizador marcar na lista. */
+export function quemSoVe(): string[] {
+  const S = st(),
+    a = (S.app && S.app.adms) || [],
+    n = limiteAdmins();
+  return Array.isArray(a) && n !== null ? a.slice(n) : [];
+}
+definirRecursos(temNoGrupo, euSoVejo);
 
 /* Grupos ativos de que a pessoa é organizadora (lista "Meus grupos"). */
 export function meusAtivos(): string[] {
@@ -56,7 +77,8 @@ export function cabeMaisUm(): boolean {
 }
 
 /* Mantém o espelho do plano no grupo e, para contas de antes da v70, grava a lista de grupos ativos uma vez. */
-let espelhoEnviado = '';
+let espelhoEnviado = '',
+  listaEnviada = '';
 export function sincronizarPlano() {
   const S = st();
   if (!S.user || S.user.anon || !S.loaded.conta || !S.loaded.planosCfg) return;
@@ -66,6 +88,15 @@ export function sincronizarPlano() {
     if (!mesmoEspelho(S.app.pl, e) && espelhoEnviado !== k) {
       espelhoEnviado = k;
       w(GB.patch('config/app', { pl: e })).catch(() => {});
+    }
+  }
+  /* KAN-204: o organizador mantém a lista de convidados do grupo (ordem de entrada). */
+  if (S.gid && S.app && isOwnerMe() && S.loaded.membros) {
+    const l = listaDeConvidados(S.membros),
+      k = S.gid + l.join(',');
+    if (!mesmaLista(S.app.adms, l) && listaEnviada !== k) {
+      listaEnviada = k;
+      w(GB.patch('config/app', { adms: l })).catch(() => {});
     }
   }
   if (S.loaded.me && !(S.conta && Array.isArray(S.conta.ativos)) && !S.ativosGravando) {

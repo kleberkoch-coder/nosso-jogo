@@ -8,7 +8,7 @@ import * as banco from '../nucleo/backend.js';
 const bk = (): any => (banco as any).B;
 const { op } = banco as any;
 import { S as estado, w } from '../nucleo/estado.js';
-import { cabeMaisUm, limiteGrupos, meusAtivos } from '../nucleo/plano';
+import { cabeMaisUm, conviteDoGrupoCheio, limiteAdmins, limiteGrupos, meusAtivos } from '../nucleo/plano';
 import { $, toast } from '../nucleo/util.js';
 import { upMyGroup } from '../rotas.js';
 import { closeDlg, confirmou, dlg, openDlg } from '../ui/dialogos.js';
@@ -35,6 +35,12 @@ function abrirPlanos(motivo?: string) {
 export function avisoLimiteGrupos(): boolean {
   if (cabeMaisUm()) return false;
   abrirPlanos(tx('plano.limiteGrupos', { grupos: tp('plano.nGrupos', limiteGrupos() as number) }));
+  return true;
+}
+/* Plano cheio de administradores convidados (KAN-204): explica e mostra os planos, no lugar do convite. */
+export function avisoLimiteAdmins(): boolean {
+  if (!conviteDoGrupoCheio()) return false;
+  abrirPlanos(tp('plano.limiteAdmins', limiteAdmins() as number));
   return true;
 }
 /* Inativa um grupo e tira da lista de ativos da conta, na mesma gravação (as regras conferem as duas juntas). */

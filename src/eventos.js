@@ -2,7 +2,7 @@ import { ACT } from './acoes.js';
 import { adm, carregarAdmin } from './nucleo/carga-admin.js';
 import { cfg } from './dominio/caixa.js';
 import { posTag } from './dominio/esportes.js';
-import { fmtL, normName } from './dominio/grupo.js';
+import { fmtL, normName, soVer } from './dominio/grupo.js';
 import { applyBusy, setBusy, setCAP, sleep } from './nucleo/backend.js';
 import { S } from './nucleo/estado.js';
 import { $, esc, toast } from './nucleo/util.js';
@@ -12,6 +12,12 @@ import { closeDlgNow } from './ui/dialogos.js';
 import { render, subtituloCompleto } from './ui/render.js';
 import { closeThemeMenu, themeMenuEl } from './ui/tema.js';
 import { tx } from './i18n/index.js';
+/* Ações que não gravam nada: valem para quem só vê (KAN-204). */
+const SO_VER = new Set(
+  'tab close contaMenu themeMenu temaConta setTheme contaPais salvarPaisConta groupsDlg planosDlg lerAvisoPlano copy copyLink copyHere copyFixo shareConvite shareFixo shareTimes shareVote histAbrir histBuscar histMais histModo histVoltar recarregar forgetGroup newGroup logout verSenha avisoAcao'.split(
+    ' '
+  )
+);
 
 function avisoPendente(pub) {
   toast(pub ? tx('comum.pendentePublico') : tx('comum.pendenteGestao'), 8000);
@@ -47,6 +53,12 @@ document.addEventListener('click', e => {
   }
   const el = e.target.closest('[data-a]');
   if (!el || el.disabled || el.classList.contains('busy')) return;
+  /* KAN-204: convidado além do limite do plano só vê; o que grava fica escondido e, se chegar aqui, é barrado. */
+  if (S.route && S.route.n === 'admin' && soVer() && !SO_VER.has(el.dataset.a)) {
+    e.preventDefault();
+    toast(tx('soVer.barrado'));
+    return;
+  }
   const f = ACT[el.dataset.a];
   if (!f) {
     /* KAN-149: ação de gestão antes de a parte de gestão chegar: carrega e toca de novo. */ if (!adm()) {

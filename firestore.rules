@@ -14,9 +14,47 @@ service cloud.firestore {
     // Permissões dos administradores convidados (KAN-201): caixa, notas, elenco e config. O organizador pode tudo;
     // administrador sem permissões gravadas (de antes da v69) também. Convidado novo começa com tudo desligado.
     function meuMembro(gid) { return get(/databases/$(database)/documents/grupos/$(gid)/membros/$(request.auth.uid)).data; }
-    function pode(gid, k) {
-      return isMember(gid) && (isOwner(gid) || meuMembro(gid).get('perm', null) == null
-        || meuMembro(gid).get('perm', {}).get(k, false) == true);
+    function temPerm(gid, k) {
+      return isOwner(gid) || meuMembro(gid).get('perm', null) == null || meuMembro(gid).get('perm', {}).get(k, false) == true;
+    }
+    // Ver: todo administrador com a permissão (KAN-204: inclusive o convidado além do limite do plano, que só vê).
+    function podeVer(gid, k) { return isMember(gid) && temPerm(gid, k); }
+    // Gravar: só o administrador dentro do limite do plano, com a permissão.
+    function pode(gid, k) { return adminAtivo(gid) && temPerm(gid, k); }
+    // Administradores convidados por plano (KAN-204, pelada-v71): Grátis 1, A 2, B 5. A lista grupos/{gid}.adms
+    // guarda os convidados na ordem de entrada; os primeiros, até o limite do plano do organizador, editam;
+    // os mais novos só veem. Sem a lista (grupo de antes da v71), todos editam até o app do organizador gravá-la.
+    function limiteAdminsPlano(uid) {
+      let c = fichaConta(uid);
+      return pagoContratado(c) && c.get('plano', '') == 'B' ? 5 : (planoPago(uid) ? 2 : 1);
+    }
+    function noTopo(a, dono) {
+      let n = limiteAdminsPlano(dono);
+      return a.size() <= n ? a.hasAny([request.auth.uid]) : a[0:n].hasAny([request.auth.uid]);
+    }
+    function dentroDoLimite(gid) {
+      let g = get(grp(gid)).data;
+      let a = g.get('adms', null);
+      return a == null || (a.hasAny([request.auth.uid]) && (a.size() <= 1 || noTopo(a, g.owner)));
+    }
+    // Administrador que pode gravar: o organizador, ou um convidado dentro do limite do plano.
+    function adminAtivo(gid) { return isMember(gid) && (isOwner(gid) || dentroDoLimite(gid)); }
+    // Convidado entrando pelo link: o mesmo lote cria o cadastro dele e o põe no fim da lista, dentro do limite.
+    function entrouNaLista(gid) {
+      let velho = resource.data.get('adms', []);
+      let novo = request.resource.data.get('adms', []);
+      let m = /databases/$(database)/documents/grupos/$(gid)/membros/$(request.auth.uid);
+      return realUser() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['adms'])
+        && !velho.hasAny([request.auth.uid]) && novo == velho.concat([request.auth.uid])
+        && novo.size() <= limiteAdminsPlano(resource.data.owner)
+        && !exists(m) && existsAfter(m) && getAfter(m).data.role == 'admin';
+    }
+    // Convidado saindo do grupo: o mesmo lote apaga o cadastro dele e o tira da lista.
+    function saiuDaLista(gid) {
+      let velho = resource.data.get('adms', []);
+      let m = /databases/$(database)/documents/grupos/$(gid)/membros/$(request.auth.uid);
+      return realUser() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['adms'])
+        && request.resource.data.adms == velho.removeAll([request.auth.uid]) && !existsAfter(m);
     }
     function permValida(p) {
       return p is map && p.keys().hasOnly(['caixa', 'notas', 'elenco', 'config'])
@@ -262,7 +300,7 @@ service cloud.firestore {
         && nomeOk('name') && grupoContado(gid) && cabeNoPlano(gid, request.auth.uid)
         && (request.resource.data.get('cfg', {}).get('vagasCtrl', false) != true || planoPago(request.auth.uid));
       // Dono e data de criação não mudam; só o organizador ativa ou inativa o grupo.
-      allow update: if isMember(gid)
+      allow update: if adminAtivo(gid)
         && request.resource.data.owner == resource.data.owner
         && request.resource.data.get('createdAt', 0) == resource.data.get('createdAt', 0)
         && (request.resource.data.get('ativo', true) == resource.data.get('ativo', true) || isOwner(gid))
@@ -274,7 +312,10 @@ service cloud.firestore {
             || cabeNoPlano(gid, resource.data.owner))
         && (request.resource.data.get('cfg', {}).get('vagasCtrl', false) != true
             || resource.data.get('cfg', {}).get('vagasCtrl', false) == true || pago(gid))
-        && espelhoOk();
+        && espelhoOk()
+        // KAN-204: a lista de convidados (adms) só o organizador arruma; quem entra ou sai pelo convite usa as regras abaixo.
+        && (!('adms' in request.resource.data.diff(resource.data).affectedKeys()) || isOwner(gid));
+      allow update: if entrouNaLista(gid) || saiuDaLista(gid);
       allow delete: if isOwner(gid);
 
       // Administradores do grupo.
@@ -288,7 +329,9 @@ service cloud.firestore {
               && exists(/databases/$(database)/documents/grupos/$(gid)/privado/convite)
               && request.resource.data.token == get(/databases/$(database)/documents/grupos/$(gid)/privado/convite).data.token
               // KAN-201: convidado novo entra só com o dia a dia
-              && request.resource.data.get('perm', null) == {'caixa': false, 'notas': false, 'elenco': false, 'config': false})
+              && request.resource.data.get('perm', null) == {'caixa': false, 'notas': false, 'elenco': false, 'config': false}
+              // KAN-204: e entra na lista de convidados do grupo, na mesma gravação (dentro do limite do plano)
+              && getAfter(grp(gid)).data.get('adms', []).hasAny([uid]))
         );
         // O próprio administrador grava só como entrou da última vez (Google ou e-mail e senha). Nada mais muda.
         allow update: if realUser() && request.auth.uid == uid
@@ -307,12 +350,12 @@ service cloud.firestore {
       // As notas (ratings) são lidas por todo administrador, porque o sorteio usa (decisão do Kleber: "sorteia com
       // notas escondidas"), mas só quem tem a permissão de notas muda. O resto (migração), todo administrador.
       match /privado/{doc} {
-        allow read: if (doc == 'caixa' && pode(gid, 'caixa')) || (doc == 'contatos' && pode(gid, 'elenco'))
-          || (doc == 'convite' && pode(gid, 'config'))
+        allow read: if (doc == 'caixa' && podeVer(gid, 'caixa')) || (doc == 'contatos' && podeVer(gid, 'elenco'))
+          || (doc == 'convite' && podeVer(gid, 'config'))
           || (!(doc in ['caixa', 'contatos', 'convite']) && isMember(gid));
         allow write: if (doc == 'caixa' && pode(gid, 'caixa') && pago(gid)) || (doc == 'contatos' && pode(gid, 'elenco'))
           || (doc == 'convite' && pode(gid, 'config')) || (doc == 'ratings' && pode(gid, 'notas'))
-          || (!(doc in ['caixa', 'contatos', 'convite', 'ratings']) && isMember(gid));
+          || (!(doc in ['caixa', 'contatos', 'convite', 'ratings']) && adminAtivo(gid));
       }
 
       // KAN-201: elenco só com a permissão de elenco. Quem tem a de caixa ajusta só a marca de vaga (KAN-63), que segue o tipo.
@@ -327,13 +370,13 @@ service cloud.firestore {
       // para quem volta não precisar se cadastrar de novo. Nota e contato ficam em /privado.
       match /avulsos/{id} {
         allow read: if true;
-        allow create, update: if isMember(gid) && nomeOk('nome');
-        allow delete: if isMember(gid);
+        allow create, update: if adminAtivo(gid) && nomeOk('nome');
+        allow delete: if adminAtivo(gid);
       }
 
       match /rodadas/{rid} {
         allow read: if true;
-        allow write: if isMember(gid);
+        allow write: if adminAtivo(gid);
 
         // Presença: qualquer pessoa com o link confirma (login anônimo automático).
         // 'dev' guarda o aparelho que respondeu primeiro e não pode ser trocado por outro aparelho.
@@ -342,20 +385,20 @@ service cloud.firestore {
         match /presencas/{pid} {
           allow read: if true;
           // Pelo link, nome que não é de jogador cadastrado entra como avulso novo e conta no limite da rodada (KAN-89).
-          allow create: if isMember(gid) || (
+          allow create: if adminAtivo(gid) || (
             idValido(pid) && presencaAberta(gid, rid) && presencaValida() && horaOk()
             && request.resource.data.get('dev', '') == request.auth.uid
             // Avulso novo pelo link conta no limite da rodada (KAN-89); obrigatório de novo desde a pelada-v28 (KAN-134).
             && (exists(/databases/$(database)/documents/grupos/$(gid)/jogadores/$(pid)) || avulsoContado(gid, rid, pid))
             && vagaOk(gid, rid, pid)
           );
-          allow update: if isMember(gid) || (
+          allow update: if adminAtivo(gid) || (
             idValido(pid) && presencaAberta(gid, rid) && presencaValida() && mudancaPeloLinkOk()
             && ((('dev' in resource.data) && request.resource.data.get('dev', '') == resource.data.dev)
               || (!('dev' in resource.data) && request.resource.data.get('dev', '') == request.auth.uid))
             && vagaOk(gid, rid, pid)
           );
-          allow delete: if isMember(gid);
+          allow delete: if adminAtivo(gid);
         }
 
         // Avulsos novos pelo link nesta rodada (KAN-89): o contador só sobe de 1 em 1, junto com a presença
@@ -390,8 +433,8 @@ service cloud.firestore {
                 && exists(pres(gid, rid, request.resource.data.ult))
                 && get(pres(gid, rid, request.resource.data.ult)).data.get('s', '') == 'in'
                 && getAfter(pres(gid, rid, request.resource.data.ult)).data.s != 'in'));
-          allow create, update: if isMember(gid) && doc == 'vagas';
-          allow delete: if isMember(gid);
+          allow create, update: if adminAtivo(gid) && doc == 'vagas';
+          allow delete: if adminAtivo(gid);
         }
 
         // Partidas da rodada (pelada-v18, KAN-86): placar e autor de cada ponto.
@@ -402,24 +445,24 @@ service cloud.firestore {
         // a mesma partida ao mesmo tempo, o segundo lote (partida + ajuste do ranking) é recusado inteiro.
         match /partidas/{mid} {
           allow read: if true;
-          allow create: if isMember(gid);
-          allow update: if isMember(gid)
+          allow create: if adminAtivo(gid);
+          allow update: if adminAtivo(gid)
             && request.resource.data.get('ver', 0) == resource.data.get('ver', 0) + 1;
-          allow delete: if isMember(gid) && resource != null;
+          allow delete: if adminAtivo(gid) && resource != null;
         }
       }
 
       // Totais prontos por mês (pelada-v18, KAN-87): ranking e caixa. Só administradores leem e gravam.
       match /resumos/{mes} {
         allow read: if isMember(gid);
-        allow write: if isMember(gid)
+        allow write: if adminAtivo(gid)
           && mes.matches('[0-9]{4}-[0-9]{2}')
           && request.resource.data.keys().hasOnly(['mes', 'at', 'jog', 'jogos', 'cx'])
           && request.resource.data.mes == mes;
       }
 
       match /caixa/{id} {
-        allow read: if pode(gid, 'caixa');
+        allow read: if podeVer(gid, 'caixa');
         // KAN-119: lançar, mudar e apagar só com o Plano A (ver continua, nada é apagado ao mudar de plano).
         allow create, update: if pode(gid, 'caixa') && pago(gid);
         // Apagar só o que existe: um lançamento apagado duas vezes não desconta o resumo em dobro (pelada-v18).
@@ -429,8 +472,8 @@ service cloud.firestore {
       match /votacoes/{vid} {
         allow read: if true;
         // KAN-119: criar votação só com o Plano A; encerrar ou apagar uma que já existe continua.
-        allow create: if isMember(gid) && pago(gid);
-        allow update, delete: if isMember(gid);
+        allow create: if adminAtivo(gid) && pago(gid);
+        allow update, delete: if adminAtivo(gid);
 
         // Um voto por aparelho, só enquanto a votação estiver aberta.
         // Cada aparelho lê só o próprio voto; a contagem é vista pelos administradores.
@@ -450,7 +493,7 @@ service cloud.firestore {
                 && request.resource.data.v.keys().join('|').matches('[A-Za-z0-9_-]{1,64}([|][A-Za-z0-9_-]{1,64})*')
                 && request.resource.data.v.values().join('|').matches('[A-Za-z0-9_-]{1,64}([|][A-Za-z0-9_-]{1,64})*')))
             && request.resource.data.get('t', 0) is int;
-          allow delete: if isMember(gid);
+          allow delete: if adminAtivo(gid);
         }
       }
     }

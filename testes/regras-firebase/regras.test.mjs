@@ -632,9 +632,14 @@ describe('permissões dos administradores convidados (KAN-201)', () => {
       })
     );
     await assertFails(setDoc(doc(novo, G + '/membros/novo'), { uid: 'novo', role: 'admin', token: 'tok123' }));
-    await assertSucceeds(
+    // KAN-204: entrar junto com o nome na lista de convidados do grupo
+    await assertFails(
       setDoc(doc(novo, G + '/membros/novo'), { uid: 'novo', role: 'admin', token: 'tok123', perm: NADA })
     );
+    const b = writeBatch(novo);
+    b.set(doc(novo, G + '/membros/novo'), { uid: 'novo', role: 'admin', token: 'tok123', perm: NADA });
+    b.update(doc(novo, G), { adms: arrayUnion('novo') });
+    await assertSucceeds(b.commit());
   });
   test('sem caixa: não lê nem grava o caixa privado nem os lançamentos', async () => {
     await preparar();
@@ -830,5 +835,71 @@ describe('planos no app (KAN-119)', () => {
   test('espelho do plano no grupo: só o formato conhecido', async () => {
     await assertSucceeds(updateDoc(doc(db.dono(), G), { pl: { id: 'A', ate: 1, o: 'teste', t: true } }));
     await assertFails(updateDoc(doc(db.dono(), G), { pl: { id: 'A', dono: 'x' } }));
+  });
+});
+
+describe('administradores convidados por plano (KAN-204)', () => {
+  const semRegras = fn => env.withSecurityRulesDisabled(async ctx => fn(ctx.firestore()));
+  const fimDaTransicao = () => semRegras(f => setDoc(doc(f, 'sistema/planos'), { transicaoAte: 1 }));
+  const adm2 = () => env.authenticatedContext('adm2', senha).firestore();
+  const lista = adms => semRegras(f => updateDoc(doc(f, G), { adms }));
+  const membro = uid =>
+    semRegras(f => setDoc(doc(f, G + '/membros/' + uid), { uid, role: 'admin', email: uid + '@x.com' }));
+  const gravar = f => updateDoc(doc(f, G + '/rodadas/r1'), { locked: true });
+  const entrar = (uid, extra = {}) => {
+    const f = env.authenticatedContext(uid, senha).firestore(),
+      b = writeBatch(f);
+    b.set(doc(f, G + '/membros/' + uid), { uid, role: 'admin', token: 'tok123', perm: NADA });
+    b.update(doc(f, G), Object.assign({ adms: arrayUnion(uid) }, extra));
+    return b.commit();
+  };
+  const NADA = { caixa: false, notas: false, elenco: false, config: false };
+
+  test('Grátis (1 convidado): o primeiro grava; o mais novo só vê', async () => {
+    await fimDaTransicao();
+    await membro('adm2');
+    await lista(['adm', 'adm2']);
+    await assertSucceeds(gravar(db.adm()));
+    await assertFails(gravar(adm2()));
+    await assertSucceeds(getDoc(doc(adm2(), G + '/privado/caixa')));
+    await assertSucceeds(getDoc(doc(adm2(), G + '/caixa/c1')));
+    await assertFails(setDoc(doc(adm2(), G + '/privado/ratings'), { nivel: {} }));
+  });
+  test('na transição (Plano A, 2 convidados), os dois gravam; o organizador sempre grava', async () => {
+    await membro('adm2');
+    await lista(['adm', 'adm2']);
+    await assertSucceeds(gravar(adm2()));
+    await fimDaTransicao();
+    await assertSucceeds(gravar(db.dono()));
+  });
+  test('convidado fora da lista não grava (a lista vale quando existe)', async () => {
+    await lista(['outro1']);
+    await assertFails(gravar(db.adm()));
+  });
+  test('convite com o plano cheio é recusado; com vaga, entra no fim da lista', async () => {
+    await semRegras(f => setDoc(doc(f, G + '/privado/convite'), { token: 'tok123' }));
+    await fimDaTransicao();
+    await lista(['adm']);
+    await assertFails(entrar('novo'));
+    await semRegras(f => setDoc(doc(f, 'sistema/planos'), { transicaoAte: Date.now() + 864e5 }));
+    await assertSucceeds(entrar('novo'));
+    await assertFails(entrar('novo2'));
+  });
+  test('quem entra só mexe no próprio nome da lista', async () => {
+    await semRegras(f => setDoc(doc(f, G + '/privado/convite'), { token: 'tok123' }));
+    await lista([]);
+    await assertFails(entrar('novo', { name: 'Outro nome' }));
+    const f = env.authenticatedContext('novo', senha).firestore();
+    await assertFails(updateDoc(doc(f, G), { adms: arrayUnion('novo') }));
+  });
+  test('só o organizador arruma a lista; o convidado sai junto com o próprio cadastro', async () => {
+    await lista(['adm']);
+    await assertFails(updateDoc(doc(db.adm(), G), { adms: ['adm', 'x'] }));
+    await assertSucceeds(updateDoc(doc(db.dono(), G), { adms: ['adm'] }));
+    const f = db.adm(),
+      b = writeBatch(f);
+    b.delete(doc(f, G + '/membros/adm'));
+    b.update(doc(f, G), { adms: arrayRemove('adm') });
+    await assertSucceeds(b.commit());
   });
 });

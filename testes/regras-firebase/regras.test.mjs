@@ -7,6 +7,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import {
+  arrayRemove,
+  arrayUnion,
   collection,
   deleteDoc,
   doc,
@@ -69,6 +71,8 @@ beforeEach(async () => {
   await env.withSecurityRulesDisabled(async ctx => {
     const f = ctx.firestore(),
       s = (p, o) => setDoc(doc(f, p), o);
+    // Planos (KAN-119): nos testes antigos, todos no Plano A (transição bem longe); os testes dos planos mudam a data.
+    await s('sistema/planos', { transicaoAte: Date.UTC(2100, 0, 1) });
     await s(G, { name: 'G1', owner: 'dono', ativo: true, createdAt: 1 });
     await s(G + '/membros/dono', { uid: 'dono', role: 'owner', email: 'dono@x.com' });
     await s(G + '/membros/adm', { uid: 'adm', role: 'admin', email: 'adm@x.com' });
@@ -426,7 +430,7 @@ describe('limites contra abuso (KAN-89)', () => {
   const criarGrupo = (f, uid, gid, extra = {}) => {
     const b = writeBatch(f);
     b.set(doc(f, 'grupos/' + gid), Object.assign({ name: 'Novo', owner: uid, ativo: true, createdAt: 1 }, extra));
-    b.set(doc(f, 'contas/' + uid), { ng: increment(1), ult: gid }, { merge: true });
+    b.set(doc(f, 'contas/' + uid), { ng: increment(1), ult: gid, ativos: arrayUnion(gid) }, { merge: true });
     return b.commit();
   };
   test('conta cria grupo somando 1 no contador', async () => {
@@ -549,7 +553,7 @@ describe('planos e portal (KAN-115, KAN-116)', () => {
     const f = db.adm(),
       b = writeBatch(f);
     b.set(doc(f, 'grupos/gnovo'), { name: 'Novo', owner: 'adm', ativo: true, createdAt: 1 });
-    b.set(doc(f, 'contas/adm'), { ng: increment(1), ult: 'gnovo' }, { merge: true });
+    b.set(doc(f, 'contas/adm'), { ng: increment(1), ult: 'gnovo', ativos: arrayUnion('gnovo') }, { merge: true });
     await assertSucceeds(b.commit());
   });
   test('o administrador do portal lista as contas e lê o e-mail dos organizadores', async () => {
@@ -694,5 +698,123 @@ describe('permissões dos administradores convidados (KAN-201)', () => {
     await assertSucceeds(getDoc(doc(db.adm(), G + '/privado/contatos')));
     await assertSucceeds(setDoc(doc(db.adm(), G + '/privado/ratings'), { nivel: { j1: 3 } }));
     await assertSucceeds(updateDoc(doc(db.adm(), G), { name: 'Nome novo' }));
+  });
+});
+
+describe('planos no app (KAN-119)', () => {
+  const semRegras = fn => env.withSecurityRulesDisabled(async ctx => fn(ctx.firestore()));
+  const fimDaTransicao = () => semRegras(f => setDoc(doc(f, 'sistema/planos'), { transicaoAte: 1 }));
+  const conta = (uid, o) => semRegras(f => setDoc(doc(f, 'contas/' + uid), o));
+  const lanc = f => setDoc(doc(f, G + '/caixa/c9'), { k: 'entrada', v: 10, d: '2026-10-20' });
+  const novoGrupo = (f, uid, gid) => {
+    const b = writeBatch(f);
+    b.set(doc(f, 'grupos/' + gid), { name: 'Novo', owner: uid, ativo: true, createdAt: 1 });
+    b.set(doc(f, 'contas/' + uid), { ng: increment(1), ult: gid, ativos: arrayUnion(gid) }, { merge: true });
+    return b.commit();
+  };
+  const inativar = (f, uid, gid) => {
+    const b = writeBatch(f);
+    b.update(doc(f, 'grupos/' + gid), { ativo: false, inativadoEm: 1 });
+    b.set(doc(f, 'contas/' + uid), { ativos: arrayRemove(gid) }, { merge: true });
+    return b.commit();
+  };
+  const reativar = (f, uid, gid) => {
+    const b = writeBatch(f);
+    b.update(doc(f, 'grupos/' + gid), { ativo: true });
+    b.set(doc(f, 'contas/' + uid), { ativos: arrayUnion(gid) }, { merge: true });
+    return b.commit();
+  };
+
+  test('Grátis: vê o caixa, mas não lança, não muda o Pix e não cria votação; encerrar a que existe continua', async () => {
+    await fimDaTransicao();
+    await semRegras(f => setDoc(doc(f, G + '/votacoes/v1'), { open: true }));
+    await assertSucceeds(getDoc(doc(db.dono(), G + '/caixa/c1')));
+    await assertFails(lanc(db.dono()));
+    await assertFails(deleteDoc(doc(db.dono(), G + '/caixa/c1')));
+    await assertFails(setDoc(doc(db.dono(), G + '/privado/caixa'), { pix: 'outra' }));
+    await assertFails(setDoc(doc(db.dono(), G + '/votacoes/v2'), { open: true }));
+    await assertSucceeds(updateDoc(doc(db.dono(), G + '/votacoes/v1'), { open: false }));
+  });
+  test('Grátis: o link público continua (presença do jogador) (critério 5)', async () => {
+    await fimDaTransicao();
+    await assertSucceeds(
+      setDoc(doc(db.anon(), G + '/rodadas/r1/presencas/j1'), { s: 'in', t: Date.now(), by: 'anon1', dev: 'anon1' })
+    );
+  });
+  test('durante a transição, quem já usa continua com caixa e votação (critério 6)', async () => {
+    await semRegras(f => setDoc(doc(f, 'sistema/planos'), { transicaoAte: Date.now() + 864e5 }));
+    await assertSucceeds(lanc(db.dono()));
+    await assertSucceeds(setDoc(doc(db.dono(), G + '/votacoes/v2'), { open: true }));
+  });
+  test('teste grátis: a conta grava o início uma vez só, com a hora de agora, e ganha o Plano A', async () => {
+    await fimDaTransicao();
+    await assertFails(setDoc(doc(db.dono(), 'contas/dono'), { teste: Date.now() - 864e5 }, { merge: true }));
+    await assertSucceeds(setDoc(doc(db.dono(), 'contas/dono'), { teste: Date.now() }, { merge: true }));
+    await assertSucceeds(lanc(db.dono()));
+    await assertFails(setDoc(doc(db.dono(), 'contas/dono'), { teste: Date.now() }, { merge: true }));
+    await assertFails(setDoc(doc(db.adm(), 'contas/dono'), { teste: Date.now() }, { merge: true }));
+  });
+  test('teste vencido volta ao Grátis sem apagar nada (critério 3)', async () => {
+    await fimDaTransicao();
+    await conta('dono', { teste: Date.now() - 15 * 864e5 });
+    await assertFails(lanc(db.dono()));
+    await assertSucceeds(getDoc(doc(db.dono(), G + '/caixa/c1')));
+  });
+  test('plano pago do portal vale; vencido, não', async () => {
+    await fimDaTransicao();
+    await conta('dono', { plano: 'A', planoAte: Date.now() + 864e5 });
+    await assertSucceeds(lanc(db.dono()));
+    await conta('dono', { plano: 'A', planoAte: Date.now() - 1 });
+    await assertFails(lanc(db.dono()));
+  });
+  test('Grátis cria 1 grupo; o segundo é recusado (critério 1); no teste, até 3', async () => {
+    await fimDaTransicao();
+    await assertSucceeds(novoGrupo(db.outro(), 'outro', 'gn1'));
+    await assertFails(novoGrupo(db.outro(), 'outro', 'gn2'));
+    await assertSucceeds(setDoc(doc(db.outro(), 'contas/outro'), { teste: Date.now() }, { merge: true }));
+    await assertSucceeds(novoGrupo(db.outro(), 'outro', 'gn2'));
+    await assertSucceeds(novoGrupo(db.outro(), 'outro', 'gn3'));
+    await assertFails(novoGrupo(db.outro(), 'outro', 'gn4'));
+  });
+  test('grupo novo sem entrar na lista de ativos é recusado', async () => {
+    const f = db.outro(),
+      b = writeBatch(f);
+    b.set(doc(f, 'grupos/gn1'), { name: 'Novo', owner: 'outro', ativo: true, createdAt: 1 });
+    b.set(doc(f, 'contas/outro'), { ng: increment(1), ult: 'gn1' }, { merge: true });
+    await assertFails(b.commit());
+  });
+  test('rebaixado: escolhe o grupo que fica; inativar sai da lista; reativar passa do limite e é recusado (critério 4)', async () => {
+    await fimDaTransicao();
+    await semRegras(async f => {
+      for (const g of ['ga', 'gb'])
+        await Promise.all([
+          setDoc(doc(f, 'grupos/' + g), { name: g, owner: 'outro', ativo: true, createdAt: 1 }),
+          setDoc(doc(f, 'grupos/' + g + '/membros/outro'), { uid: 'outro', role: 'owner' }),
+        ]);
+      await setDoc(doc(f, 'contas/outro'), { ng: 3, ativos: ['g2', 'ga', 'gb'] });
+    });
+    await assertFails(setDoc(doc(db.outro(), 'contas/outro'), { ativos: arrayRemove('ga') }, { merge: true }));
+    await assertSucceeds(inativar(db.outro(), 'outro', 'ga'));
+    await assertSucceeds(inativar(db.outro(), 'outro', 'gb'));
+    await assertFails(reativar(db.outro(), 'outro', 'ga'));
+    await assertFails(updateDoc(doc(db.outro(), 'grupos/ga'), { ativo: true }));
+    await assertSucceeds(inativar(db.outro(), 'outro', 'g2'));
+    await assertSucceeds(reativar(db.outro(), 'outro', 'ga'));
+  });
+  test('conta de antes da v70 grava a lista de ativos uma vez; depois, só uma mudança por vez', async () => {
+    await assertSucceeds(setDoc(doc(db.outro(), 'contas/outro'), { ativos: ['g2'] }, { merge: true }));
+    await assertFails(setDoc(doc(db.outro(), 'contas/outro'), { ativos: ['g2', 'g1'] }, { merge: true }));
+    await assertFails(setDoc(doc(db.outro(), 'contas/outro'), { ativos: [] }, { merge: true }));
+  });
+  test('controle de vagas (lista de espera): ligar só com o Plano A; ligado antes, continua', async () => {
+    await fimDaTransicao();
+    await assertFails(updateDoc(doc(db.dono(), G), { 'cfg.vagasCtrl': true }));
+    await semRegras(f => updateDoc(doc(f, G), { 'cfg.vagasCtrl': true }));
+    await assertSucceeds(updateDoc(doc(db.dono(), G), { 'cfg.place': 'Quadra B' }));
+    await assertSucceeds(updateDoc(doc(db.dono(), G), { 'cfg.vagasCtrl': false }));
+  });
+  test('espelho do plano no grupo: só o formato conhecido', async () => {
+    await assertSucceeds(updateDoc(doc(db.dono(), G), { pl: { id: 'A', ate: 1, o: 'teste', t: true } }));
+    await assertFails(updateDoc(doc(db.dono(), G), { pl: { id: 'A', dono: 'x' } }));
   });
 });

@@ -135,3 +135,84 @@ export function resumoPorPlano(cs: Cliente[]): Record<string, number> {
   });
   return r;
 }
+
+/* ---------- Planos no app (KAN-119, pelada-v70) ----------
+   Decisões do Kleber (27 e 28/10/2026):
+   - Teste grátis: 14 dias de Plano A, uma vez por conta, pelo botão "Testar grátis" (contas/{uid}.teste = início).
+   - Transição: todas as contas têm o Plano A até sistema/planos.transicaoAte (30 dias depois do Merge da v70).
+   - Sem pagamento ainda: "Contratação em breve"; o plano pago só é gravado pelo portal.
+   As regras do Firebase repetem estas contas (firestore.rules, planoPago e limiteGruposPlano). */
+export const TESTE_DIAS = 14;
+export const AVISO_DIAS = 3;
+/* Fim da transição se o Firebase não tiver outra data: fim do dia 28/11/2026 em Brasília (30 dias depois do Merge). */
+export const TRANSICAO_PADRAO = Date.UTC(2026, 10, 29, 3);
+
+export type ContaPlano = { plano?: string; planoAte?: number | null; teste?: number } | null | undefined;
+export type Origem = 'pago' | 'teste' | 'transicao' | 'gratis';
+export type Situacao = {
+  id: string;
+  plano: Plano;
+  origem: Origem;
+  ate: number | null; // quando este plano deixa de valer (null: sem data)
+  podeTestar: boolean;
+  testou: boolean;
+};
+
+export function transicaoAte(cfg: { transicaoAte?: unknown } | null | undefined): number {
+  const v = cfg && cfg.transicaoAte;
+  return typeof v === 'number' && Number.isFinite(v) ? v : TRANSICAO_PADRAO;
+}
+export const fimDoTeste = (inicio: number) => inicio + TESTE_DIAS * DIA;
+
+/* Plano em vigor de uma conta: o pago (portal) vale primeiro; sem ele, o teste ou a transição dão o Plano A
+   até a data mais distante das duas; sem nada disso, Grátis. */
+export function situacao(conta: ContaPlano, cat: Catalogo, agora: number, transicao: number): Situacao {
+  const pago = planoDaConta(conta, cat, agora);
+  const testou = !!(conta && typeof conta.teste === 'number');
+  if (pago.id !== 'gratis')
+    return { id: pago.id, plano: pago.plano, origem: 'pago', ate: pago.ate, podeTestar: false, testou };
+  const fimTeste = testou ? fimDoTeste((conta as { teste: number }).teste) : 0;
+  const candidatos: [Origem, number][] = [];
+  if (fimTeste > agora) candidatos.push(['teste', fimTeste]);
+  if (transicao > agora) candidatos.push(['transicao', transicao]);
+  if (candidatos.length) {
+    const [origem, ate] = candidatos.sort((a, b) => b[1] - a[1])[0];
+    return { id: 'A', plano: cat.A || PLANOS_PADRAO.A, origem, ate, podeTestar: false, testou };
+  }
+  return { id: 'gratis', plano: cat.gratis, origem: 'gratis', ate: null, podeTestar: !testou, testou };
+}
+
+/* Espelho no documento do grupo (pl): os administradores convidados e o link não leem a ficha do organizador.
+   É só para a tela; quem garante são as regras do Firebase, que leem a ficha de verdade. */
+export type Espelho = { id: string; ate: number | null; o: Origem; t: boolean };
+export const espelho = (s: Situacao): Espelho => ({ id: s.id, ate: s.ate, o: s.origem, t: s.testou });
+export const mesmoEspelho = (a: Partial<Espelho> | null | undefined, b: Espelho) =>
+  !!a && a.id === b.id && (a.ate ?? null) === b.ate && a.o === b.o && !!a.t === b.t;
+export function situacaoDoEspelho(e: Partial<Espelho> | null | undefined, cat: Catalogo, agora: number): Situacao {
+  const id = e && e.id && cat[e.id] ? e.id : 'gratis',
+    ate = e && typeof e.ate === 'number' ? e.ate : null,
+    venceu = id !== 'gratis' && ate !== null && ate <= agora,
+    t = !!(e && e.t);
+  if (venceu || id === 'gratis')
+    return { id: 'gratis', plano: cat.gratis, origem: 'gratis', ate: null, podeTestar: !t, testou: t };
+  return { id, plano: cat[id], origem: (e && e.o) || 'pago', ate, podeTestar: false, testou: t };
+}
+
+/* Aviso de que o plano vai acabar: AVISO_DIAS antes do fim do teste, da transição ou do plano pago com data. */
+export function diasParaAcabar(s: Situacao, agora: number): number | null {
+  if (s.id === 'gratis' || s.ate === null) return null;
+  const d = Math.ceil((s.ate - agora) / DIA);
+  return d <= AVISO_DIAS ? Math.max(d, 0) : null;
+}
+
+/* Grupos ativos que o plano permite (null: sem limite do plano; o limite contra abuso continua valendo). */
+export const limiteDeGrupos = (s: Situacao): number | null => s.plano.grupos;
+export function gruposAcima(ativos: number, s: Situacao): number {
+  const n = limiteDeGrupos(s);
+  return n === null ? 0 : Math.max(0, ativos - n);
+}
+/* Plano com o recurso, para o convite do cadeado ("Votação faz parte do Plano A"): o primeiro do catálogo que tem. */
+export function planoComRecurso(cat: Catalogo, r: string): string | null {
+  const id = Object.keys(cat).find(k => k !== 'gratis' && cat[k].recursos.includes(r));
+  return id ? cat[id].nome : null;
+}

@@ -346,6 +346,8 @@ service cloud.firestore {
       }
 
       // Notas, pares separados, contatos, link de convite e caixa (valores, Pix, tipo do jogador): só administradores.
+      // KAN-208: afastamentos (privado/afast: motivo e período) são lidos por todo administrador e mudados com a permissão
+      // de elenco; "não cobrar" a mensalidade do afastado fica no caixa (privado/caixa.afIsen), com a permissão de caixa.
       // KAN-201: caixa só com a permissão de caixa; contatos com a de elenco; convite com a de configurações.
       // As notas (ratings) são lidas por todo administrador, porque o sorteio usa (decisão do Kleber: "sorteia com
       // notas escondidas"), mas só quem tem a permissão de notas muda. O resto (migração), todo administrador.
@@ -355,7 +357,8 @@ service cloud.firestore {
           || (!(doc in ['caixa', 'contatos', 'convite']) && isMember(gid));
         allow write: if (doc == 'caixa' && pode(gid, 'caixa') && pago(gid)) || (doc == 'contatos' && pode(gid, 'elenco'))
           || (doc == 'convite' && pode(gid, 'config')) || (doc == 'ratings' && pode(gid, 'notas'))
-          || (!(doc in ['caixa', 'contatos', 'convite', 'ratings']) && adminAtivo(gid));
+          || (doc == 'afast' && pode(gid, 'elenco'))
+          || (!(doc in ['caixa', 'contatos', 'convite', 'ratings', 'afast']) && adminAtivo(gid));
       }
 
       // KAN-201: elenco só com a permissão de elenco. Quem tem a de caixa ajusta só a marca de vaga (KAN-63), que segue o tipo.

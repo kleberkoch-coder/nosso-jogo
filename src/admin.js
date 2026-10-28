@@ -8,6 +8,7 @@ import { acoes as rodada } from './acoes/rodada.js';
 import { acoes as jogadores } from './acoes/jogadores.js';
 import { acoes as recalcular } from './acoes/recalcular';
 import { acoes as plano } from './acoes/plano';
+import { acoes as afastamento } from './acoes/afastamento';
 import { ACT } from './acoes.js';
 
 export { inicioAPagar } from './dominio/caixa.js';
@@ -26,7 +27,7 @@ export { montarAvisosPlano, montarCadeado, vCadeado } from './ui/Plano';
 /* Os textos da gestão entram no dicionário assim que esta parte chega (KAN-159). */
 juntarTextos(textosGestao);
 
-export const ACOES = Object.assign({}, grupo, rodada, jogadores, recalcular, plano);
+export const ACOES = Object.assign({}, grupo, rodada, jogadores, recalcular, plano, afastamento);
 
 /* Abas sob demanda (KAN-180): Caixa, Histórico, Votação e Ranking baixam na primeira vez que a aba é aberta, como a Partida.
    Cada uma traz a tela (ver, e montar quando é componente) e as próprias ações, que entram no ACT. */

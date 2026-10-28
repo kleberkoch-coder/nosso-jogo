@@ -9,6 +9,7 @@ import { rodadasComTimes, vezesJuntos, type Par, type RodadaComTimes } from '../
 import { LOCAL } from '../i18n/formatos.js';
 import { tp, tx } from '../i18n/index.js';
 import { waUrl } from '../nucleo/edicoes.js';
+import { afastamentoDe, etiqueta } from '../nucleo/afast';
 import { S as estado } from '../nucleo/estado.js';
 import { Nota, Pos } from '../ui/componentes';
 
@@ -76,11 +77,19 @@ function Contato({ id }: { id: string }) {
 }
 
 function LinhaJogador({ p }: { p: Jogador }) {
+  const af = afastamentoDe(p.id);
   return (
     <li>
       <Pos id={p.id} />
       <span class="pn">
         {p.name}
+        {/* KAN-208: afastado continua no elenco, com a etiqueta. */}
+        {af ? (
+          <>
+            {' '}
+            <span class="tag alt afast-tag">{etiqueta(af[1])}</span>
+          </>
+        ) : null}
         <br />
         <span class="tag">
           {posso('caixa') ? tx('tipo.' + ptipo(p.id)) + ' · ' : ''}

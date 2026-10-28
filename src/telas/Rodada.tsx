@@ -29,6 +29,7 @@ import { avulsosEsgotados, limite } from '../dominio/limites';
 import { hora } from '../dominio/rodadas.js';
 import { quality } from '../dominio/sorteio.js';
 import { tp, tx } from '../i18n/index.js';
+import { afastadoEm, afastamentoDe, confirmaramAfastados } from '../nucleo/afast';
 import { presAlterada } from '../nucleo/edicoes.js';
 import { S as estado } from '../nucleo/estado.js';
 import { fdate } from '../nucleo/util.js';
@@ -53,6 +54,9 @@ type Qualidade = { diff: number; gk?: number[]; nsep?: number; viol?: number; ne
 // O estado do app ainda é JavaScript sem tipos; é lido sempre dentro das funções (regra de ordem, docs/ARQUITETURA.md).
 const st = (): any => estado;
 const statusDe = (id: string): 'in' | 'out' | undefined => st().pres[id]?.s;
+/* KAN-208: o elenco da rodada sem os afastados no mês da rodada (quem respondeu aparece mesmo afastado). */
+export const elencoDaRodada = (r: Rodada): string[] =>
+  (players() as { id: string }[]).map(p => p.id).filter(id => statusDe(id) || !afastadoEm(id, r.date.slice(0, 7)));
 
 /* Seletor da rodada (D10): as próximas e as últimas 4; as antigas ficam na aba Histórico. */
 /* Painel do link permanente (KAN-150): só o link; dia, hora e local ficam no cartão da rodada.
@@ -229,6 +233,34 @@ function RespostasMudadas({ alt }: { alt: string[] }) {
   );
 }
 
+/* KAN-208: afastado que respondeu "Vou" pelo link: o organizador decide se ele voltou. */
+function AfastadoConfirmou({ r }: { r: Rodada }) {
+  const lista = confirmaramAfastados(st().pres, r.date.slice(0, 7), r.id);
+  if (!lista.length) return null;
+  return (
+    <div class="warn-alt" role="status" id="afastConfirmou">
+      {lista.map(([pid, aid]) => {
+        const a = afastamentoDe(pid, r.date.slice(0, 7));
+        return (
+          <div key={pid} class="afast-aviso">
+            <span>{tx('afast.confirmou', { nome: pname(pid), motivo: a ? tx('afast.mot.' + a[1].mot) : '' })}</span>
+            {posso('elenco') ? (
+              <span class="row">
+                <button class="btn sm" data-a="afVoltou" data-v={aid}>
+                  {tx('afast.voltou')}
+                </button>
+                <button class="btn sm ghost" data-a="afManter" data-v={aid} data-r={r.id}>
+                  {tx('afast.manter')}
+                </button>
+              </span>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 const TAG_MUDADO = () => (
   <>
     {' '}
@@ -247,12 +279,7 @@ function textoCobrarUm(r: Rodada, id: string) {
 function Cobrar({ r }: { r: Rodada }) {
   const S = st(),
     /* Com as vagas fechadas, diarista não confirma pelo link: não entra na cobrança (KAN-63). */
-    falta = quemCobrar(
-      (players() as { id: string }[]).map(p => p.id),
-      S.pres,
-      S.jog || {},
-      situacao(controleVagas(), r.vagas, S.limVg).podeEntrar
-    );
+    falta = quemCobrar(elencoDaRodada(r), S.pres, S.jog || {}, situacao(controleVagas(), r.vagas, S.limVg).podeEntrar);
   if (!falta.length || r.locked) return null;
   /* KAN-119: cobrar faz parte do Plano A; sem ele, a lista aparece com o cadeado, sem os botões. */
   if (!recurso('cobrarPendentes'))
@@ -309,7 +336,7 @@ function Cobrar({ r }: { r: Rodada }) {
 
 function Presenca({ r, inn, carregou, avs }: { r: Rodada; inn: string[]; carregou: boolean; avs: string[] }) {
   const S = st();
-  const ids = [...new Set((players() as { id: string }[]).map(p => p.id).concat(avs))];
+  const ids = [...new Set(elencoDaRodada(r).concat(avs))];
   const f = FILTROS.includes(S.presFiltro) ? S.presFiltro : 'todos';
   const cont: Record<string, number> = {
     todos: ids.length,
@@ -587,6 +614,7 @@ function RodadaTela() {
         ) : null}
         {carregou ? <Divergencia r={r} /> : null}
         {carregou ? <RespostasMudadas alt={alt} /> : null}
+        {carregou ? <AfastadoConfirmou r={r} /> : null}
         <div class="row" style="margin-top:12px">
           <button class="btn sm primary" data-a="shareConvite">
             {tx('rodada.mandarLink')}

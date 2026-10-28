@@ -2513,3 +2513,28 @@ fieldset.chk-lista legend {
   position: absolute;
   inset: 0;
 }
+/* KAN-208: afastamento (ficha, aviso na Rodada e janela) */
+.afast-linha {
+  margin: 0 0 12px;
+  gap: 8px;
+}
+.afast-aviso {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.afast-aviso + .afast-aviso {
+  margin-top: 8px;
+}
+.af-meses {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 10px;
+}
+@media (max-width: 400px) {
+  .af-meses {
+    grid-template-columns: 1fr;
+  }
+}

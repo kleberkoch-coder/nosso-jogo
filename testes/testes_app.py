@@ -2748,6 +2748,99 @@ with sync_playwright() as pw:
     p25.mouse.click(bx25['x'] + 10, bx25['y'] + bx25['height'] / 2); p25.wait_for_timeout(1200)
     ok(p25.evaluate("location.hash.startsWith('#/g/') && S.app && S.app.name") == 'Basquete da Firma', 'CT-KAN-131-02: tocar no nome do grupo também abre o grupo')
     ctx25.close()
+    # ---------- v76 (KAN-208): afastamento de jogador por um período, com ou sem mensalidade
+    ctx26 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+    p26 = ctx26.new_page(); p26.on('pageerror', lambda e: errs.append(str(e)))
+    p26.goto(URL + '#/criar'); p26.wait_for_selector('#le')
+    p26.fill('#le', 'afast76@teste.com'); p26.fill('#lp', 'Jogo@2026'); p26.fill('#lp2', 'Jogo@2026'); p26.keyboard.press('Enter'); p26.wait_for_selector('#ngBox', timeout=8000)
+    p26.fill('#ngn', 'Afastados FC'); p26.click('[data-a=createGroup]'); p26.wait_for_function("location.hash.startsWith('#/g/')"); p26.wait_for_timeout(1500)
+    g26 = p26.url.split('#/g/')[1]
+    p26.click('[data-a=tab][data-v=jogadores]'); p26.wait_for_timeout(300); p26.click('[data-a=seed]'); p26.wait_for_timeout(1500)
+    mes = lambda n: p26.evaluate("(n)=>{const d=new Date();d.setDate(1);d.setMonth(d.getMonth()+n);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}", n)
+    M, M1, M2, P1 = mes(0), mes(-1), mes(-2), mes(1)
+    mens26 = p26.evaluate("Object.keys(S.jog).filter(id=>!['diarista','isento'].includes(((S.pc||{}).tipos||{})[id]||'mensalista')).sort((a,b)=>S.jog[a].name.localeCompare(S.jog[b].name))")
+    j1, j2, j3 = mens26[0], mens26[1], mens26[2]
+    n1, n2, n3 = [p26.evaluate("(i)=>S.jog[i].name", x) for x in (j1, j2, j3)]
+    # Janela pela ficha (critério 8: 360px, 44px, contraste)
+    p26.click(f'[data-a=editPlayer][data-p="{j1}"]'); p26.wait_for_timeout(400)
+    ok(p26.locator('#dlg .afast-linha [data-a=afastarDlg]').count() == 1, 'CT-KAN-208: a ficha do jogador tem o botão "Afastar"')
+    p26.click('#dlg [data-a=afastarDlg]'); p26.wait_for_selector('#afMot', timeout=8000); p26.wait_for_timeout(200)
+    for tema in ['light', 'dark']:
+        p26.emulate_media(color_scheme=tema); p26.wait_for_timeout(150)
+        v26 = p26.evaluate("(()=>{const d=document.getElementById('dlgBody');const r=[...d.querySelectorAll('.chk-linha')].map(e=>Math.round(e.getBoundingClientRect().height));return [document.documentElement.scrollWidth<=innerWidth, d.scrollWidth<=d.clientWidth+1, r, document.activeElement.id]})()")
+        ok(v26[0] and v26[1] and v26[2] and min(v26[2]) >= 44 and v26[3] == 'afMot', f'CT-KAN-208-08: em 360px ({tema}), a janela Afastar não tem rolagem lateral, as opções da mensalidade têm 44px e o cursor vem no motivo ({v26})')
+        contraste(p26, f'janela Afastar ({tema})')
+    p26.emulate_media(color_scheme='light')
+    p26.screenshot(path=f'{OUT}/v76-afastar-360.png')
+    p26.select_option('#afMot', 'lesao'); p26.fill('#afObs', 'cirurgia no joelho'); p26.select_option('#afDe', M1); p26.select_option('#afAte', P1)
+    ok(p26.is_checked('input[name=afCobra][value=nao]'), 'CT-KAN-208: "Não cobrar nesse período" vem marcado')
+    p26.click('#dlg [data-a=afSalvar]'); p26.wait_for_timeout(800)
+    a26 = p26.evaluate("(p)=>{const e=Object.entries(S.af||{}).find(([,a])=>a&&a.pid===p);return e?[e[0],e[1],((S.pc||{}).afIsen||{})[e[0]]||null]:null}", j1)
+    ok(a26 and a26[1]['de'] == M1 and a26[1]['ate'] == P1 and a26[1]['obs'] == 'cirurgia no joelho' and a26[2] == {'pid': j1, 'de': M1, 'ate': P1},
+       f'CT-KAN-208: o afastamento e o "não cobrar" ficam gravados ({a26})')
+    aid1 = a26[0] if a26 else ''
+    tag26 = p26.inner_text(f'#jogadoresRaiz li:has([data-p="{j1}"]) .afast-tag') if p26.locator(f'#jogadoresRaiz li:has([data-p="{j1}"]) .afast-tag').count() else ''
+    ok(tag26.startswith('afastado até '), f'CT-KAN-208: na lista do elenco, o afastado tem a etiqueta ({tag26!r})')
+    p26.click(f'[data-a=editPlayer][data-p="{j1}"]'); p26.wait_for_timeout(400)
+    fl26 = p26.inner_text('#dlg .afast-linha')
+    ok('Lesão' in fl26 and p26.locator('#dlg .afast-linha [data-a=afastarDlg][data-v]').count() == 1, f'CT-KAN-208: a ficha mostra o afastamento de agora e abre a janela para ver ou mudar ({fl26!r})')
+    p26.locator('#dlg .afast-linha').scroll_into_view_if_needed(); p26.screenshot(path=f'{OUT}/v76-ficha-afastado-360.png')
+    p26.click('#dlg [data-a=close]'); p26.wait_for_timeout(300)
+    # Mais dois pelo banco: j2 afastado nos 2 meses anteriores (sem mensalidade) e j3 "até voltar" com "cobrar normalmente"
+    p26.evaluate(PUT, {
+        f'grupos/{g26}/privado/afast': dict(p26.evaluate(LER, f'grupos/{g26}/privado/afast') or {}, **{
+            'a2': {'pid': j2, 'mot': 'ferias', 'de': M2, 'ate': M1, 'em': 2},
+            'a3': {'pid': j3, 'mot': 'viagem', 'de': M, 'ate': '', 'em': 3}}),
+        f'grupos/{g26}/privado/caixa': dict(p26.evaluate(LER, f'grupos/{g26}/privado/caixa') or {}, afIsen=dict(((p26.evaluate(LER, f'grupos/{g26}/privado/caixa') or {}).get('afIsen') or {}), a2={'pid': j2, 'de': M2, 'ate': M1}))})
+    p26.reload(); p26.wait_for_timeout(1800)
+    # Critérios 1 e 2: Caixa do mês
+    p26.click('[data-a=tab][data-v=caixa]'); p26.wait_for_timeout(1200)
+    pend26 = p26.inner_text('#pendLista') if p26.locator('#pendLista').count() else ''
+    ok(n1 not in pend26 and n2 in pend26, f'CT-KAN-208-01: o afastado sem mensalidade sai das pendências do mês, e quem voltou (afastamento já terminou) aparece de novo ({n1} fora, {n2} dentro)')
+    ok(n3 in pend26, f'CT-KAN-208-02: afastado com "Cobrar normalmente" continua com a mensalidade pendente ({n3})')
+    if p26.locator('[data-a=shareCob]').count():
+        p26.locator('[data-a=shareCob]').first.click(); p26.wait_for_timeout(500)
+        tz26 = p26.input_value('#shtxt') if p26.locator('#shtxt').count() else ''
+        ok(n1 not in tz26, f'CT-KAN-208-01: o texto de cobrança do WhatsApp não inclui o afastado sem mensalidade')
+        p26.click('#dlg [data-a=close]'); p26.wait_for_timeout(300)
+    # Critério 3: Rodada
+    p26.click('[data-a=tab][data-v=rodada]'); p26.wait_for_timeout(900)
+    lista26 = p26.inner_text('#presLista'); falta26 = p26.inner_text('#semResposta') if p26.locator('#semResposta').count() else ''
+    ativos26 = p26.evaluate("Object.values(S.jog).filter(p=>p.ativo!==false).length")
+    tot26 = p26.evaluate("+(document.querySelector('[data-a=presFiltro][data-v=todos] .n')||{}).textContent||0")
+    ok(n1 not in lista26 and n3 not in lista26 and n1 not in falta26 and n3 not in falta26 and n2 in lista26,
+       f'CT-KAN-208-03: afastados fora da lista de presença e de "Ainda não responderam"; quem voltou continua')
+    ok(tot26 == ativos26 - 2, f'CT-KAN-208-03: a contagem "Todos" não inclui os afastados ({tot26} de {ativos26} ativos)')
+    # Critério 4: afastado confirma pelo link → aviso com "Voltou" e "Manter afastado"
+    rid26 = p26.evaluate("S.rid || Object.keys(S.rod)[0]")
+    p26.evaluate(PUT, {pres_k(g26, rid26, j1): {'s': 'in', 'at': 1, 'nome': n1}, pres_k(g26, rid26, j3): {'s': 'in', 'at': 2, 'nome': n3}})
+    p26.reload(); p26.wait_for_timeout(1800); p26.click('[data-a=tab][data-v=rodada]'); p26.wait_for_timeout(900)
+    av26 = p26.inner_text('#afastConfirmou') if p26.locator('#afastConfirmou').count() else ''
+    ok(n1 in av26 and n3 in av26 and 'Lesão' in av26 and p26.locator('#afastConfirmou [data-a=afVoltou]').count() == 2 and p26.locator('#afastConfirmou [data-a=afManter]').count() == 2,
+       f'CT-KAN-208-04: afastado que confirmou aparece no aviso com "Voltou" e "Manter afastado" ({av26[:90]!r})')
+    p26.locator('#afastConfirmou').scroll_into_view_if_needed(); p26.wait_for_timeout(200)
+    p26.screenshot(path=f'{OUT}/v76-afastado-confirmou-360.png')
+    p26.click(f'#afastConfirmou [data-a=afVoltou][data-v="{aid1}"]'); p26.wait_for_timeout(1200)
+    ate26 = p26.evaluate("(a)=>[(S.af[a]||{}).ate, (((S.pc||{}).afIsen||{})[a]||{}).ate]", aid1)
+    ok(ate26 == [M1, M1], f'CT-KAN-208-04: "Voltou" encerra o afastamento (e o "não cobrar") no mês anterior ({ate26}, esperado {M1})')
+    p26.click('#afastConfirmou [data-a=afManter][data-v="a3"]'); p26.wait_for_timeout(1000)
+    ok(p26.locator('#afastConfirmou').count() == 0 and p26.evaluate("(S.af.a3||{}).ign") == rid26,
+       'CT-KAN-208-04: "Manter afastado" tira o aviso nesta rodada e mantém o afastamento')
+    # Critério 5: convidado sem Caixa não vê a opção da mensalidade
+    p26.evaluate("S.app.owner='outro'; S.app.adms=[S.user.uid]; S.mem=Object.assign({},S.mem,{role:'admin',perm:{caixa:false,notas:true,elenco:true,config:true}})")
+    p26.click('[data-a=tab][data-v=jogadores]'); p26.wait_for_timeout(500)
+    p26.click(f'[data-a=editPlayer][data-p="{j2}"]'); p26.wait_for_timeout(400); p26.click('#dlg [data-a=afastarDlg]'); p26.wait_for_selector('#afMot', timeout=8000)
+    ok(p26.locator('#afCobra').count() == 0 and p26.locator('#dlg .afast-hist, #dlg details').count() >= 1,
+       'CT-KAN-208-05: sem a permissão de Caixa, a janela não mostra a opção da mensalidade (o histórico continua)')
+    p26.click('#dlg [data-a=close]'); p26.wait_for_timeout(300)
+    if p26.locator('#dlg .conf').count(): confirmar_app(p26, True)
+    p26.reload(); p26.wait_for_timeout(1500)
+    # Critério 7: o link do jogador não mostra nada do afastamento
+    pl26 = ctx26.new_page(); pl26.goto(URL + '#/p/' + g26); pl26.wait_for_timeout(1800)
+    tl26 = pl26.inner_text('main')
+    ok(n3 in tl26 and 'afastad' not in tl26.lower() and 'Viagem' not in tl26 and 'Lesão' not in tl26,
+       'CT-KAN-208-07: o link do jogador não mostra afastamento nem motivo (o afastado continua na lista para confirmar)')
+    pl26.close(); ctx26.close()
     # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
     ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
     p7 = ctx7.new_page()

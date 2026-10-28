@@ -18,7 +18,8 @@ export type Pendencia = { pid: string; k: 'mensal' | 'diaria'; ref: string; v: n
 const num = (v: unknown) => +(v as number) || 0;
 
 /* Quem deve no mês:
-   - mensalidade: todo jogador do elenco que não é diarista nem isento e ainda não tem lançamento de mensalidade com referência no mês;
+   - mensalidade: todo jogador do elenco que não é diarista nem isento, nem afastado sem mensalidade naquele mês (KAN-208),
+     e ainda não tem lançamento de mensalidade com referência no mês;
    - diária: em cada rodada do mês com times sorteados, quem jogou e não é mensalista nem isento (diarista ou avulso)
      e ainda não tem lançamento de diária daquela rodada. */
 export function pendenciasDoMes(p: {
@@ -28,11 +29,14 @@ export function pendenciasDoMes(p: {
   tipo: (id: string) => Tipo;
   rodadas: RodadaDoMes[];
   valores: { mensal: number; diaria: number };
+  /* Afastado sem mensalidade no mês (KAN-208, dominio/afastamento.ts). */
+  semMensal?: (id: string) => boolean;
 }): Pendencia[] {
-  const { mes, lancamentos: lan, elenco, tipo, rodadas, valores } = p;
+  const { mes, lancamentos: lan, elenco, tipo, rodadas, valores } = p,
+    semMensal = p.semMensal || (() => false);
   const pago = (k: string, pid: string, ref: string) => lan.some(l => l.k === k && l.pid === pid && l.ref === ref);
   const mens: Pendencia[] = elenco
-    .filter(id => tipo(id) !== 'diarista' && tipo(id) !== 'isento' && !pago('mensal', id, mes))
+    .filter(id => tipo(id) !== 'diarista' && tipo(id) !== 'isento' && !semMensal(id) && !pago('mensal', id, mes))
     .map(pid => ({ pid, k: 'mensal', ref: mes, v: valores.mensal }));
   const dia: Pendencia[] = [];
   rodadas

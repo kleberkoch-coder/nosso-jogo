@@ -28,7 +28,7 @@ import { linkDaRodada, txtConvite, txtTimes } from '../dominio/whatsapp.js';
 import { shareDlg } from '../ui/Compartilhar';
 import { quemCobrar } from '../dominio/cobrar';
 import { limparMinimos } from '../dominio/posicoes';
-import { minimosDoGrupo, montarColetes, montarMinimos, montarVagas } from '../telas/Rodada';
+import { elencoDaRodada, minimosDoGrupo, montarColetes, montarMinimos, montarVagas } from '../telas/Rodada';
 import { situacao, vagasValidas } from '../dominio/vagas';
 import { copyText } from '../eventos.js';
 import { B, setCAP, sleep } from '../nucleo/backend.js';
@@ -244,12 +244,7 @@ const acoes = {
   cobrarGrupo: () => {
     const r = curRodada(),
       falta = r
-        ? quemCobrar(
-            players().map(p => p.id),
-            S.pres,
-            S.jog || {},
-            situacao(!!cfg().vagasCtrl, r.vagas, S.limVg).podeEntrar
-          )
+        ? quemCobrar(elencoDaRodada(r), S.pres, S.jog || {}, situacao(!!cfg().vagasCtrl, r.vagas, S.limVg).podeEntrar)
         : [];
     if (!r || !falta.length) return;
     shareDlg(

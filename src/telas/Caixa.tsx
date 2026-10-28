@@ -20,6 +20,7 @@ import { players, pname, rodadas, rodadasDoMes } from '../dominio/grupo.js';
 import { saldo as saldoDasFichas, type Resumo } from '../dominio/resumos';
 import { tp, tx } from '../i18n/index.js';
 import { simboloMoeda } from '../i18n/formatos.js';
+import { semMensalNoMes } from '../nucleo/afast';
 import { S as estado } from '../nucleo/estado.js';
 import { brl, fdate, fmonth, today } from '../nucleo/util.js';
 
@@ -38,6 +39,7 @@ function pendencias(month: string) {
     tipo,
     rodadas: rodadasDoMes(month),
     valores: { mensal: c.mensal, diaria: c.diaria },
+    semMensal: semMensalNoMes(month),
   }).map(p =>
     Object.assign(p, {
       label: p.k === 'mensal' ? tx('caixa.mensalidade') : tx('caixa.diariaDe', { data: fdate(p.data) }),

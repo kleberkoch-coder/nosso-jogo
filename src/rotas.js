@@ -328,6 +328,7 @@ function setupRoute() {
   }
   Object.assign(S, {
     avul: {},
+    af: {},
     cont: {},
     pc: null,
     migrando: false,
@@ -551,6 +552,10 @@ function startData() {
   });
   sub('migr', 'privado/migracao', d => {
     S.migr = d || { v: 0 };
+  });
+  /* KAN-208: afastamentos (motivo e período), para todo administrador; o link do jogador não lê. */
+  sub('af', 'privado/afast', d => {
+    S.af = d || {};
   });
   sub('vot', 'votacoes', d => {
     S.vot = d || {};

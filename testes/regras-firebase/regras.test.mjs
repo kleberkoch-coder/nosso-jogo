@@ -953,3 +953,56 @@ describe('totais do caixa fora do resumo do ranking (KAN-207)', () => {
     await assertSucceeds(updateDoc(doc(db.dono(), G + '/resumos/2026-09'), { cx: deleteField() }));
   });
 });
+
+describe('afastamento de jogador (KAN-208)', () => {
+  const semRegras = fn => env.withSecurityRulesDisabled(async ctx => fn(ctx.firestore()));
+  const NADA = { caixa: false, notas: false, elenco: false, config: false };
+  const conv = () => env.authenticatedContext('conv', senha).firestore();
+  const AF = G + '/privado/afast';
+  const af1 = { pid: 'j1', mot: 'lesao', obs: 'joelho', de: '2026-06', ate: '2026-09', em: 1 };
+  const preparar = perm =>
+    semRegras(async f => {
+      await setDoc(doc(f, G + '/membros/conv'), { uid: 'conv', role: 'admin', perm });
+      await setDoc(doc(f, G + '/privado/caixa'), { pix: 'pix@x.com', tipos: {} });
+      await setDoc(doc(f, AF), { a1: af1 });
+    });
+
+  test('todo administrador lê os afastamentos; o link do jogador (anônimo) não lê (critério 7)', async () => {
+    await preparar(NADA);
+    await assertSucceeds(getDoc(doc(conv(), AF)));
+    await assertFails(getDoc(doc(db.anon(), AF)));
+    await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), AF)));
+  });
+  test('sem a permissão de Elenco não afasta ninguém; com ela, afasta, mas sem Caixa não mexe na isenção (critério 5)', async () => {
+    await preparar(NADA);
+    await assertFails(setDoc(doc(conv(), AF), { a2: { ...af1, pid: 'j2' } }, { merge: true }));
+    await preparar({ ...NADA, elenco: true });
+    await assertSucceeds(setDoc(doc(conv(), AF), { a2: { ...af1, pid: 'j2' } }, { merge: true }));
+    await assertFails(
+      setDoc(
+        doc(conv(), G + '/privado/caixa'),
+        { afIsen: { a2: { pid: 'j2', de: '2026-06', ate: '2026-09' } } },
+        { merge: true }
+      )
+    );
+    // Afastar e isentar no mesmo lote, sem Caixa: o lote inteiro é recusado
+    const f = conv(),
+      b = writeBatch(f);
+    b.set(doc(f, AF), { a3: { ...af1, pid: 'j3' } }, { merge: true });
+    b.set(doc(f, G + '/privado/caixa'), { afIsen: { a3: { pid: 'j3', de: '2026-06' } } }, { merge: true });
+    await assertFails(b.commit());
+  });
+  test('com Elenco e Caixa: afasta e isenta a mensalidade no mesmo lote', async () => {
+    await preparar({ ...NADA, elenco: true, caixa: true });
+    const f = conv(),
+      b = writeBatch(f);
+    b.set(doc(f, AF), { a4: { ...af1, pid: 'j4' } }, { merge: true });
+    b.set(
+      doc(f, G + '/privado/caixa'),
+      { afIsen: { a4: { pid: 'j4', de: '2026-06', ate: '2026-09' } } },
+      { merge: true }
+    );
+    await assertSucceeds(b.commit());
+    await assertSucceeds(updateDoc(doc(db.dono(), AF), { a4: deleteField() }));
+  });
+});

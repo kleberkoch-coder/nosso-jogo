@@ -2806,11 +2806,11 @@ with sync_playwright() as pw:
     # Critério 3: Rodada
     p26.click('[data-a=tab][data-v=rodada]'); p26.wait_for_timeout(900)
     lista26 = p26.inner_text('#presLista'); falta26 = p26.inner_text('#semResposta') if p26.locator('#semResposta').count() else ''
-    nativos = p26.evaluate("Object.values(S.jog).filter(p=>p.ativo!==false).length")
+    ativos26 = p26.evaluate("Object.values(S.jog).filter(p=>p.ativo!==false).length")
     tot26 = p26.evaluate("+(document.querySelector('[data-a=presFiltro][data-v=todos] .n')||{}).textContent||0")
     ok(n1 not in lista26 and n3 not in lista26 and n1 not in falta26 and n3 not in falta26 and n2 in lista26,
        f'CT-KAN-208-03: afastados fora da lista de presença e de "Ainda não responderam"; quem voltou continua')
-    ok(tot26 == nativos - 2, f'CT-KAN-208-03: a contagem "Todos" não inclui os afastados ({tot26} de {nativos} ativos)')
+    ok(tot26 == ativos26 - 2, f'CT-KAN-208-03: a contagem "Todos" não inclui os afastados ({tot26} de {ativos26} ativos)')
     # Critério 4: afastado confirma pelo link → aviso com "Voltou" e "Manter afastado"
     rid26 = p26.evaluate("S.rid || Object.keys(S.rod)[0]")
     p26.evaluate(PUT, {pres_k(g26, rid26, j1): {'s': 'in', 'at': 1, 'nome': n1}, pres_k(g26, rid26, j3): {'s': 'in', 'at': 2, 'nome': n3}})

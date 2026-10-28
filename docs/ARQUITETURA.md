@@ -199,6 +199,13 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D28. Afastamento: período em meses e isenção separada no caixa (28 out. 2026, pelada-v76, KAN-208)
+- **Onde fica:** `privado/afast` guarda os afastamentos (`{id: {pid, mot, obs, de, ate, em, ign}}`, meses "AAAA-MM", `ate` vazio = até voltar). Todo administrador lê, porque a lista de presença precisa saber quem está afastado; só quem tem a permissão de Elenco grava. O link do jogador não lê nada daqui: o afastado continua aparecendo e pode confirmar.
+- **"Não cobrar" no caixa:** a isenção fica em `privado/caixa.afIsen` (`{id: {pid, de, ate}}`), que só quem tem Caixa no Plano A grava. A mensalidade só deixa de ser cobrada nos meses que **os dois** cobrem (mesmo id). Assim, quem tem Elenco e não tem Caixa pode encurtar ou estender o afastamento, mas não estende a isenção; e "Voltou" ou apagar o afastamento encurta a isenção junto, mesmo sem a permissão de Caixa. Quando a pessoa tem as duas permissões, o app grava as duas fichas no mesmo lote.
+- **Mês inteiro:** a regra trabalha só com o mês da mensalidade. Quando o grupo puder escolher o dia em que o mês começa (KAN-209), o afastamento continua igual.
+- **Leve para a gestão:** as ações e a janela baixam juntas na primeira vez que alguém afasta (`acoes/afastamento-lote.ts` e `ui/AfastamentoJanela.tsx`, 2,6 KB); na gestão ficam só as regras, a etiqueta, a linha da ficha e o aviso da Rodada. Gestão 91,9 → 93,6 KB (folga de 1,4 KB do limite de 95).
+- **Ficha do jogador:** ainda é HTML montado como texto (dívida do KAN-173); entrou só a linha do afastamento, e a janela nova já nasce componente.
+
 ### D27. Votação e janela de compartilhar como componentes; cabeçalho compacto só no CSS (28 out. 2026, pelada-v75, KAN-194, KAN-195, KAN-131)
 - **Tela mexida, tela migrada:** a aba Votação e a janela Nova votação saíram de `telas/votacao-gestao.js` (HTML montado como texto) para `telas/Votacao.tsx` (TypeScript + Preact), com os mesmos `data-a` e `data-c`; a aba continua sob demanda (`abas/votacao.ts`, 2,9 KB). Os textos foram para `i18n/pt-BR-votacao.ts`, que chega com a parte.
 - **Janela de compartilhar:** saiu de `dominio/whatsapp.js` para `ui/Compartilhar.tsx`. As ações importam `shareDlg` direto de lá, e não pelo `whatsapp.js`, porque o `whatsapp.js` também entra no link do jogador: os textos da janela (só da gestão) iriam junto e a montagem barra (o link tem de ficar abaixo de 50 KB).

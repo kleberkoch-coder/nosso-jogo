@@ -73,6 +73,13 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo; **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v76)
+- **Afastamento** (KAN-208; `ui/AfastamentoJanela.tsx`, classes `afast-linha`, `afast-tag`, `afast-aviso`, `af-meses`):
+  - **Na ficha do jogador**, acima do rodapé: uma linha com a situação em `small` ("Afastado set.–nov. · Lesão"; sem afastamento agora, o último em `muted`) e o botão `btn sm` "Afastar" ou "Ver afastamento".
+  - **Janela "Afastar Alemão"** (ou "Afastamento de Alemão"): ajuda em `muted`, "Motivo" (combo, com o cursor nele), "Observação (opcional)", "A partir de" e "Até" (combos de mês, lado a lado; até 400px, um embaixo do outro; "Até voltar (sem data)" é a primeira opção do "Até"), "Mensalidade nesse período" como Caixas de marcar em lista com opção única ("Não cobrar nesse período", marcada, e "Cobrar normalmente"; só para quem tem Caixa no Plano A e só para mensalista), a linha "O motivo só aparece para administradores." e, se houver, a Seção recolhível "Afastamentos anteriores". Rodapé: "Apagar" (`ghost danger`, ao editar, com a Janela de confirmação), "Voltou" (ao editar um afastamento valendo), "Cancelar" e "Afastar"/"Salvar" (`primary`).
+  - **Na lista do elenco:** depois do nome, a etiqueta `tag alt` "afastado até nov." (ou "afastado", sem data).
+  - **Aviso na aba Rodada** (`warn-alt`, `role="status"`), dentro do cartão da rodada: "Alemão está afastado (Lesão) e confirmou presença." com "Voltou" (`btn sm`) e "Manter afastado" (`btn sm ghost`); um por pessoa, separados por 8px.
+
 ## Componentes (pelada-v75)
 Registrados na pelada-v75 (KAN-196, KAN-194, KAN-195, KAN-131); todos com prévia nos dois temas na página.
 

@@ -4,6 +4,7 @@ import { S } from '../nucleo/estado.js';
 import { DIAS, esc } from '../nucleo/util.js';
 import { FORMATO, LOCAL, agora } from '../i18n/formatos.js';
 import { endTs, proximasFixas, virtualOf, ymd } from './rodadas-fixas.ts';
+import { pode } from './permissoes';
 import { faixaTexto } from './rodadas.js';
 
 function gname() {
@@ -21,6 +22,7 @@ function lvl(id) {
 }
 const fmtL = v => (+v).toLocaleString(FORMATO, { minimumFractionDigits: +v % 1 ? 1 : 0, maximumFractionDigits: 1 });
 function lvlTag(id) {
+  if (!posso('notas')) return '';
   return `<span class="lvl-tag" title="Nota de 1 a 10">${fmtL(lvl(id))}</span>`;
 }
 const lvlIn = v =>
@@ -159,6 +161,12 @@ function isAdmin() {
 function isOwnerMe() {
   return !!(S.app && S.user && S.app.owner === S.user.uid);
 }
+/* Permissão do administrador aberto agora (KAN-201): caixa, notas, elenco ou config. O organizador pode tudo. */
+function posso(k) {
+  if (!isAdmin()) return false;
+  if (isOwnerMe()) return true;
+  return pode(S.mem, k);
+}
 function curRodada() {
   const rs = rodadas();
   if (!rs.length) return null;
@@ -215,6 +223,7 @@ export {
   rodadasJanela,
   rodadasTodas,
   schedTxt,
+  posso,
   setLvl,
   upcoming,
 };

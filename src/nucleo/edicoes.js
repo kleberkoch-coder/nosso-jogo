@@ -1,5 +1,5 @@
 import { linkWhatsApp } from '../dominio/contato';
-import { isAdmin, rodById } from '../dominio/grupo.js';
+import { isAdmin, posso, rodById } from '../dominio/grupo.js';
 import { GB, S, clean, w } from './estado.js';
 import { cl, toast } from './util.js';
 import { contaComoAvulso } from '../dominio/limites.ts';
@@ -63,6 +63,7 @@ function editApp(fn) {
   return w(GB.set('config/app', clean(a)));
 }
 function saveContato(id, tel, email) {
+  if (!posso('elenco')) return;
   const c = cl(S.cont) || {},
     o = c[id] || {};
   if ((o.tel || '') === (tel || '') && (o.email || '') === (email || '')) return;
@@ -73,7 +74,9 @@ function saveContato(id, tel, email) {
 }
 /* KAN-156: aceita número internacional (+código do país); os antigos sem "+" continuam brasileiros. */
 const waUrl = linkWhatsApp;
+/* Notas e pares separados só com a permissão de notas; contatos só com a de elenco (KAN-201). */
 function editRat(fn) {
+  if (!posso('notas')) return Promise.resolve();
   const a = cl(S.rat) || {};
   a.stars = a.stars || {};
   a.nivel = a.nivel || {};

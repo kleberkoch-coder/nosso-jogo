@@ -11,6 +11,25 @@ service cloud.firestore {
       return realUser() && exists(/databases/$(database)/documents/grupos/$(gid)/membros/$(request.auth.uid));
     }
     function isOwner(gid) { return realUser() && get(grp(gid)).data.owner == request.auth.uid; }
+    // Permissões dos administradores convidados (KAN-201): caixa, notas, elenco e config. O organizador pode tudo;
+    // administrador sem permissões gravadas (de antes da v69) também. Convidado novo começa com tudo desligado.
+    function meuMembro(gid) { return get(/databases/$(database)/documents/grupos/$(gid)/membros/$(request.auth.uid)).data; }
+    function pode(gid, k) {
+      return isMember(gid) && (isOwner(gid) || meuMembro(gid).get('perm', null) == null
+        || meuMembro(gid).get('perm', {}).get(k, false) == true);
+    }
+    function permValida(p) {
+      return p is map && p.keys().hasOnly(['caixa', 'notas', 'elenco', 'config'])
+        && p.get('caixa', false) is bool && p.get('notas', false) is bool
+        && p.get('elenco', false) is bool && p.get('config', false) is bool;
+    }
+    // Sem a permissão de configurações, o dia a dia só mexe no local e no horário padrão da rodada
+    // e nas opções do sorteio (variar times, posições fora do sorteio).
+    function soDiaADia() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cfg'])
+        && request.resource.data.get('cfg', {}).diff(resource.data.get('cfg', {})).affectedKeys()
+          .hasOnly(['place', 'time', 'novelty', 'foraPos']);
+    }
     function grpAtivo(gid) { return get(grp(gid)).data.get('ativo', true) == true; }
     // Caixa (chave Pix, mensalidade e diária) fica só em /privado/caixa (KAN-79). Desde 13/10/2026 nenhum grupo
     // tem mais esses valores no documento público (conferido no console), então eles não podem existir ali.
@@ -183,6 +202,7 @@ service cloud.firestore {
         && request.resource.data.owner == resource.data.owner
         && request.resource.data.get('createdAt', 0) == resource.data.get('createdAt', 0)
         && (request.resource.data.get('ativo', true) == resource.data.get('ativo', true) || isOwner(gid))
+        && (pode(gid, 'config') || soDiaADia())
         && caixaOk();
       allow delete: if isOwner(gid);
 
@@ -195,24 +215,41 @@ service cloud.firestore {
           // ou quem tem o link de convite válido vira administrador
           || (request.resource.data.role == 'admin'
               && exists(/databases/$(database)/documents/grupos/$(gid)/privado/convite)
-              && request.resource.data.token == get(/databases/$(database)/documents/grupos/$(gid)/privado/convite).data.token)
+              && request.resource.data.token == get(/databases/$(database)/documents/grupos/$(gid)/privado/convite).data.token
+              // KAN-201: convidado novo entra só com o dia a dia
+              && request.resource.data.get('perm', null) == {'caixa': false, 'notas': false, 'elenco': false, 'config': false})
         );
         // O próprio administrador grava só como entrou da última vez (Google ou e-mail e senha). Nada mais muda.
         allow update: if realUser() && request.auth.uid == uid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['via'])
           && request.resource.data.via in ['google', 'senha'];
+        // KAN-201: só o organizador muda as permissões de um convidado (nunca as dele mesmo, que tem tudo).
+        allow update: if isOwner(gid) && uid != request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['perm'])
+          && permValida(request.resource.data.perm);
+        // Remover: só o organizador (ou a própria pessoa saindo). A permissão de configurações não remove ninguém.
         allow delete: if isOwner(gid) || (realUser() && request.auth.uid == uid && get(grp(gid)).data.owner != uid);
       }
 
       // Notas, pares separados, contatos, link de convite e caixa (valores, Pix, tipo do jogador): só administradores.
+      // KAN-201: caixa só com a permissão de caixa; contatos com a de elenco; convite com a de configurações.
+      // As notas (ratings) são lidas por todo administrador, porque o sorteio usa (decisão do Kleber: "sorteia com
+      // notas escondidas"), mas só quem tem a permissão de notas muda. O resto (migração), todo administrador.
       match /privado/{doc} {
-        allow read, write: if isMember(gid);
+        allow read: if (doc == 'caixa' && pode(gid, 'caixa')) || (doc == 'contatos' && pode(gid, 'elenco'))
+          || (doc == 'convite' && pode(gid, 'config'))
+          || (!(doc in ['caixa', 'contatos', 'convite']) && isMember(gid));
+        allow write: if (doc == 'caixa' && pode(gid, 'caixa')) || (doc == 'contatos' && pode(gid, 'elenco'))
+          || (doc == 'convite' && pode(gid, 'config')) || (doc == 'ratings' && pode(gid, 'notas'))
+          || (!(doc in ['caixa', 'contatos', 'convite', 'ratings']) && isMember(gid));
       }
 
+      // KAN-201: elenco só com a permissão de elenco. Quem tem a de caixa ajusta só a marca de vaga (KAN-63), que segue o tipo.
       match /jogadores/{id} {
         allow read: if true;
-        allow create, update: if isMember(gid) && nomeOk('name');
-        allow delete: if isMember(gid);
+        allow create, update: if pode(gid, 'elenco') && nomeOk('name');
+        allow update: if pode(gid, 'caixa') && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['vaga']);
+        allow delete: if pode(gid, 'elenco');
       }
 
       // Avulsos que já jogaram: o nome e a posição aparecem no link público
@@ -311,9 +348,9 @@ service cloud.firestore {
       }
 
       match /caixa/{id} {
-        allow read, create, update: if isMember(gid);
+        allow read, create, update: if pode(gid, 'caixa');
         // Apagar só o que existe: um lançamento apagado duas vezes não desconta o resumo em dobro (pelada-v18).
-        allow delete: if isMember(gid) && resource != null;
+        allow delete: if pode(gid, 'caixa') && resource != null;
       }
 
       match /votacoes/{vid} {

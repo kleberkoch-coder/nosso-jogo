@@ -1,7 +1,7 @@
 /* Ações: Jogadores: elenco, notas, contatos, pares separados e configurações. Fazem parte de ACT (src/acoes.js). */
 import { CAIXA_K, cfg, editPc, ptipo, recebePorJogo } from '../dominio/caixa.js';
 import { posKeys } from '../dominio/esportes.js';
-import { normName, players, pname, ppos, setLvl } from '../dominio/grupo.js';
+import { normName, players, pname, posso, ppos, setLvl } from '../dominio/grupo.js';
 import { tp, tx } from '../i18n/index.js';
 import { simboloMoeda } from '../i18n/formatos.js';
 import { B } from '../nucleo/backend.js';
@@ -32,7 +32,8 @@ const acoes = {
     }
     const ct = lerContato('ptel', 'pmail');
     if (!ct) return;
-    const recebe = $('#prj')?.checked,
+    const comCaixa = !!$('#ptp'),
+      recebe = $('#prj')?.checked,
       vj = +val('prv');
     if (recebe && !(vj > 0)) {
       toast(tx('jogador.valorPorJogoFalta'));
@@ -41,7 +42,7 @@ const acoes = {
     }
     const nw = el.dataset.new,
       id = el.dataset.p || nw || B.newId(),
-      v = +$('#plv').value;
+      v = +($('#plv')?.value ?? 0);
     /* Uma pergunta só (KAN-161): nome repetido e/ou valor por jogo muito acima do padrão do grupo. */
     const dup = Object.entries(S.jog).some(([k, x]) => k !== id && normName(x.name) === normName(name)),
       c = cfg(),
@@ -94,14 +95,14 @@ const acoes = {
     w(GB.set('jogadores/' + id, clean(data)));
     const rj = recebePorJogo(id),
       mudouRecebe = recebe ? !rj || rj.v !== vj : !!rj;
-    if (ptipo(id) !== tp || !((S.pc || {}).tipos || {})[id] || mudouRecebe)
+    if (comCaixa && (ptipo(id) !== tp || !((S.pc || {}).tipos || {})[id] || mudouRecebe))
       editPc(a => {
         a.tipos[id] = tp;
         a.porJogo = a.porJogo || {};
         if (recebe) a.porJogo[id] = { v: vj, desde: (rj && rj.desde) || today() };
         else delete a.porJogo[id];
       });
-    editRat(a => setLvl(a, id, v));
+    if ($('#plv')) editRat(a => setLvl(a, id, v));
     saveContato(id, ct.tel, ct.email);
     if (nw && S.avul[nw]) {
       delete S.avul[nw];
@@ -146,7 +147,7 @@ const acoes = {
     delete S.jog[id];
     w(GB.del('jogadores/' + id));
     editRat(a => {
-      delete a.stars[id];
+      if (a.stars) delete a.stars[id];
       a.sep = a.sep.filter(s => !s.includes(id));
     });
     if (((S.pc || {}).tipos || {})[id] || recebePorJogo(id))
@@ -180,25 +181,30 @@ const acoes = {
     editRat(x => {
       x.sep.splice(+el.dataset.v, 1);
     }),
+  /* Partidas e caixa (KAN-201): os minutos com a permissão de configurações; valores e Pix com a de caixa. */
   settings: () => {
-    const c = cfg();
-    openDlg(`<h3>Partidas e caixa</h3>
-    <div class="row"><label class="f" style="flex:1"><span>${tx('caixa.mensalidadeMoeda', { moeda: simboloMoeda() })}</span><input class="inp" type="number" min="0" id="cm" value="${c.mensal}"></label><label class="f" style="flex:1"><span>${tx('caixa.diariaMoeda', { moeda: simboloMoeda() })}</span><input class="inp" type="number" min="0" id="cd" value="${c.diaria}"></label></div>
-    <div class="row"><label class="f" style="flex:1"><span>Minutos por partida</span><input class="inp" type="number" min="1" id="cmin" value="${c.minutes}"></label><label class="f" style="flex:1"><span>Chave Pix</span><input class="inp" id="cpx" value="${esc(c.pix)}"></label></div>
-    <p class="small muted" style="margin-top:-4px">Valores e chave Pix só aparecem para administradores.</p>
+    const c = cfg(),
+      comCaixa = posso('caixa'),
+      comConfig = posso('config');
+    const valores = `<div class="row"><label class="f" style="flex:1"><span>${tx('caixa.mensalidadeMoeda', { moeda: simboloMoeda() })}</span><input class="inp" type="number" min="0" id="cm" value="${c.mensal}"></label><label class="f" style="flex:1"><span>${tx('caixa.diariaMoeda', { moeda: simboloMoeda() })}</span><input class="inp" type="number" min="0" id="cd" value="${c.diaria}"></label></div>`;
+    const minutos = `<label class="f" style="flex:1"><span>Minutos por partida</span><input class="inp" type="number" min="1" id="cmin" value="${c.minutes}"></label>`,
+      pix = `<label class="f" style="flex:1"><span>Chave Pix</span><input class="inp" id="cpx" value="${esc(c.pix)}"></label>`;
+    openDlg(`<h3>${tx(comCaixa ? 'grupo.partidasCaixa' : 'grupo.partidas')}</h3>
+    ${comCaixa ? valores : ''}
+    <div class="row">${comConfig ? minutos : ''}${comCaixa ? pix : ''}</div>
+    ${comCaixa ? '<p class="small muted" style="margin-top:-4px">Valores e chave Pix só aparecem para administradores.</p>' : ''}
     <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveSettings">Salvar</button></div>`);
   },
   saveSettings: () => {
-    const m = +val('cm') || 0,
-      d = +val('cd') || 0,
-      px = val('cpx'),
-      mn = +val('cmin') || 10;
-    const ps = [
-      editPc(a => {
-        Object.assign(a, { mensal: m, diaria: d, pix: px });
-      }),
-    ];
-    if (cfg().minutes !== mn || CAIXA_K.some(k => k in ((S.app || {}).cfg || {})))
+    const ps = [];
+    if ($('#cm'))
+      ps.push(
+        editPc(a => {
+          Object.assign(a, { mensal: +val('cm') || 0, diaria: +val('cd') || 0, pix: val('cpx') });
+        })
+      );
+    const mn = $('#cmin') ? +val('cmin') || 10 : cfg().minutes;
+    if ($('#cmin') && (cfg().minutes !== mn || CAIXA_K.some(k => k in ((S.app || {}).cfg || {}))))
       ps.push(
         editApp(a => {
           a.cfg.minutes = mn;

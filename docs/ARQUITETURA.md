@@ -198,6 +198,14 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D23. Permissões dos administradores convidados (27 out. 2026, pelada-v69, KAN-201)
+- **Decisão (Kleber):** quatro permissões por convidado (Caixa, Notas, Elenco e contatos, Configurações), gravadas em `membros/{uid}.perm`. Convidado novo entra com tudo desligado; administrador sem `perm` (de antes) continua com tudo. Só o organizador muda.
+- **Onde vale:** nas regras do Firebase (`pode(gid, k)` em `firestore.rules`), que são a proteção de verdade, e na tela (`posso(k)` em `dominio/grupo.js`, regra pura em `dominio/permissoes.ts`, com teste). Sem a permissão, o aparelho nem pede caixa, contatos ou convite (`syncPerm` em `rotas.js`), e ligar ou desligar vale na hora, porque o cadastro do administrador é acompanhado ao vivo.
+- **Notas escondidas:** sem a permissão de notas, `privado/ratings` continua legível para o sorteio equilibrar; só gravar exige a permissão. Quem sabe abrir as ferramentas do navegador ainda vê as notas: proteção mais fraca, escolhida pelo Kleber para o sorteio continuar funcionando para todos.
+- **Dia a dia no documento do grupo:** sem Configurações, só `cfg.place`, `cfg.time`, `cfg.novelty` e `cfg.foraPos` mudam (função `soDiaADia`).
+- **Aba Grupo como componente:** `telas/grupo.js` virou `telas/GrupoTela.tsx` (mesmos `data-a`), com os textos no dicionário.
+- **Custo:** gestão 87,7 → 89,5 KB; link do jogador 46,5 → 46,7 KB. Nenhuma leitura a mais (cada regra lê o cadastro do administrador, que o Firebase já lia para `isMember`).
+
 ### D22. Menos minutos no GitHub e conferência da origem do código (27 out. 2026)
 - **Problema:** em 22/10 o GitHub Actions parou por falta de minutos na conta (repositório privado). Cada versão rodava o roteiro completo duas vezes (na proposta e de novo depois do Merge), e o teste de carga rodava toda segunda.
 - **Decisão:** "Testes do app" roda só na proposta (e à mão), e uma atualização da proposta cancela a rodada velha. O teste de carga roda só quando as regras do Firebase ou o próprio teste mudam (e à mão). "Publicar o site" continua conferindo a versão no ar depois do Merge.

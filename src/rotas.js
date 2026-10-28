@@ -1,7 +1,7 @@
 import { adm, carregarAdmin } from './nucleo/carga-admin.js';
 import { ACT } from './acoes.js';
 import { migrarPrivado, sincronizarVagas } from './dominio/caixa.js';
-import { curRodada, isAdmin, upcoming, ymd } from './dominio/grupo.js';
+import { curRodada, isAdmin, posso, upcoming, ymd } from './dominio/grupo.js';
 import { B } from './nucleo/backend.js';
 import { GB, S, SUBS, drop, dropAll, sub, subQ, subRaw, w } from './nucleo/estado.js';
 import { $, cl, toast } from './nucleo/util.js';
@@ -152,7 +152,11 @@ function ensureExtras() {
      Fora da aba Caixa, a janela é a do mês atual (usada na referência de valor fora do padrão, KAN-161). */
   const mesCx = S.tab === 'caixa' ? S.month : ymd(agora()).slice(0, 7),
     deCx = A.inicioDaJanela(mesCx, S.tab === 'caixa' ? A.inicioAPagar() : null);
-  if (S.caixaDe !== deCx) {
+  if (!posso('caixa')) {
+    if (SUBS.caixa) drop('caixa');
+    S.caixa = {};
+    S.caixaDe = null;
+  } else if (S.caixaDe !== deCx) {
     S.caixaDe = deCx;
     subQ('caixa', 'caixa', { campo: 'd', de: deCx, ordem: 'asc' }, d => {
       S.caixa = d || {};
@@ -169,7 +173,7 @@ function ensureExtras() {
     S.rodJunt = null;
   }
   /* Saldo do caixa (KAN-106): soma das fichas de resumo de cada mês (D11), só com a aba aberta. */
-  if (S.tab === 'caixa') {
+  if (S.tab === 'caixa' && posso('caixa')) {
     if (!SUBS.resCx)
       subQ('resCx', 'resumos', { campo: 'mes', ordem: 'asc' }, d => {
         S.resCx = d || {};
@@ -331,7 +335,6 @@ function setupRoute() {
     membros: {},
     convite: null,
     rat: null,
-    caixa: {},
     presRid: undefined,
     limAv: null,
     limVg: null,
@@ -459,6 +462,7 @@ function setupRoute() {
     sub('mem', 'membros/' + S.user.uid, d => {
       S.mem = d;
       if (d && R.n === 'admin') startData();
+      syncPerm();
       syncName();
       syncVia();
     });
@@ -515,9 +519,6 @@ function startData() {
   sub('rat', 'privado/ratings', d => {
     S.rat = d;
   });
-  sub('cont', 'privado/contatos', d => {
-    S.cont = d || {};
-  });
   sub('avul', 'avulsos', d => {
     S.avul = d || {};
     regAvulsos();
@@ -535,11 +536,6 @@ function startData() {
     S.rodP = d || {};
     juntarRod();
   });
-  sub('pc', 'privado/caixa', d => {
-    S.pc = d;
-    migrarPrivado();
-    sincronizarVagas();
-  });
   sub('migr', 'privado/migracao', d => {
     S.migr = d || { v: 0 };
   });
@@ -550,9 +546,55 @@ function startData() {
     S.membros = d || {};
   });
   subLimCfg();
-  sub('convite', 'privado/convite', d => {
-    S.convite = d;
-  });
+  syncPerm();
+}
+/* Dados que dependem das permissões do administrador (KAN-201): caixa, contatos e convite.
+   Roda ao começar e a cada mudança no cadastro do administrador, então liberar ou tirar vale na hora. */
+function liga(k, path, on, cb, off) {
+  if (on && !SUBS[k]) sub(k, path, cb);
+  else if (!on && SUBS[k]) {
+    drop(k);
+    off();
+  }
+}
+function syncPerm() {
+  if (!S.dataOn) return;
+  liga(
+    'pc',
+    'privado/caixa',
+    posso('caixa'),
+    d => {
+      S.pc = d;
+      migrarPrivado();
+      sincronizarVagas();
+    },
+    () => {
+      S.pc = null;
+    }
+  );
+  liga(
+    'cont',
+    'privado/contatos',
+    posso('elenco'),
+    d => {
+      S.cont = d || {};
+    },
+    () => {
+      S.cont = {};
+    }
+  );
+  liga(
+    'convite',
+    'privado/convite',
+    posso('config'),
+    d => {
+      S.convite = d;
+    },
+    () => {
+      S.convite = null;
+    }
+  );
+  if (S.tab === 'caixa' && !posso('caixa')) S.tab = 'rodada';
 }
 
 export { dia, ensureExtras, ensurePres, ensureVotos, setupRoute, upMyGroup };

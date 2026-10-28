@@ -12,7 +12,7 @@ import { ACT } from './acoes.js';
 export { inicioAPagar } from './dominio/caixa.js';
 export { inicioDaJanela } from './dominio/caixa-regras';
 export { renderInvite } from './telas/convite.js';
-export { vGrupo } from './telas/grupo.js';
+export { montarGrupo, vGrupo } from './telas/GrupoTela';
 export { montarHome, vHome } from './telas/Grupos';
 export { guardarOrdemJogadores, montarJogadores, vJogadores } from './telas/Jogadores';
 export { montarRodada, vRodada } from './telas/Rodada';

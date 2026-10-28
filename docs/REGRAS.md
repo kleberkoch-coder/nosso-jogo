@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v68 (27/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v69 (27/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -50,6 +50,14 @@ Atualizado na pelada-v68 (27/10/2026). Toda entrega que mudar uma regra atualiza
 - Inativar só o organizador: some da lista, não aceita presença nem voto, não gera rodada fixa, mantém histórico.
 - Duplicar copia configuração e, se quiser, o elenco; não copia rodadas, caixa, votações nem administradores.
 - Administradores entram por link de convite; só o organizador remove, e remover invalida o link atual.
+- **Permissões dos convidados (KAN-201, pelada-v69):** o organizador escolhe, para cada convidado, em Grupo > Administradores > Permissões:
+  - **Caixa:** ver e lançar pagamentos, mensalidade, diária, Pix e tipo de cada jogador.
+  - **Notas dos jogadores:** ver e mudar notas e pares que não jogam juntos. Sem ela, o sorteio continua equilibrado: as notas chegam ao aparelho, só não aparecem na tela (proteção mais fraca, aceita pelo Kleber).
+  - **Elenco e contatos:** cadastrar, editar, importar e pôr avulso no elenco; ver telefone e e-mail.
+  - **Configurações do grupo:** editar o grupo, posições, minutos da partida, mínimo e vagas, e convidar administradores.
+  - O dia a dia (rodada, presença, avulsos, sorteio, placar, votação, histórico e ranking) vale para todo administrador.
+  - Convidado novo começa só com o dia a dia. Quem já era administrador antes da v69 continua com tudo, até o organizador mudar.
+  - Só o organizador muda permissões, inativa o grupo e remove administradores. Duplicar o grupo pede as quatro permissões.
 
 ## Jogadores
 - Quem mais joga junto (KAN-200, v68; regra `vezesJuntos` em `dominio/juntos.ts`, com teste): na aba Jogadores, cada par mostra quantas vezes ficou no mesmo time nas últimas 20 rodadas com times sorteados (carregadas só com a aba aberta), em ordem do mais frequente; no empate, quem jogou junto mais recentemente. Os 6 primeiros aparecem direto; "Ver todos (N pares)" abre o resto. O sorteio continua usando o histórico com peso maior para as rodadas recentes.
@@ -190,7 +198,8 @@ Atualizado na pelada-v68 (27/10/2026). Toda entrega que mudar uma regra atualiza
 | Votação | `telas/votacao.js`, `publico-voto.js` | `acoes/votacao.js` | `telas/votacao.js` (tally) | `votacoes/{vid}`, `votos` | `testes_app.py` (votação) |
 | Caixa | `telas/Caixa.tsx` (saldo pelas fichas) | `acoes/caixa.js` (com a conferência de valor fora do padrão) | `dominio/caixa-regras.ts` (pendências, foraDoPadrao, inicioDaJanela), `caixa.js`; janela de lançamentos em `rotas.js` (caixa, resCx) | `caixa/{id}`, `privado/caixa`, `resumos` | `regras/caixa`, `regras/fora-do-padrao`, `testes_app.py` (CT-KAN-161, CT-KAN-106) |
 | Isento e A pagar por jogo | `ui/dialogos-gestao.js` (ficha), `telas/Caixa.tsx` (A pagar, janela Pagar) | `acoes/jogadores.js` (savePlayer), `acoes/caixa.js` (abrirPagar, pagarJogos) | `dominio/caixa-regras.ts` (aPagar), `caixa.js` (recebePorJogo, inicioAPagar); rodadas desde o início em `rotas.js` (rodPag) | `privado/caixa` (tipos, porJogo), `caixa/{id}` (refs) | `regras/a-pagar`, `testes_app.py` (CT-KAN-172), `persistencia_app.py` (P20) |
-| Grupo e convite | `telas/grupo.js`, `telas/GrupoForm.tsx` (componente, KAN-165), `convite.js` (usa a tela de entrar, `telas/Login.tsx`) | `acoes/grupo.js` | `dominio/limites.ts` | `grupos/{gid}`, `membros`, `privado/convite`, `contas/{uid}` | `regras/limites`, `regras-firebase` |
+| Grupo e convite | `telas/GrupoTela.tsx` (componente, KAN-201), `telas/GrupoForm.tsx` (componente, KAN-165), `convite.js` (usa a tela de entrar, `telas/Login.tsx`) | `acoes/grupo.js` | `dominio/limites.ts` | `grupos/{gid}`, `membros`, `privado/convite`, `contas/{uid}` | `regras/limites`, `regras-firebase` |
+| Permissões dos convidados | `telas/GrupoTela.tsx` (Permissões), e cada tela esconde o que não pode (`posso(k)`) | `acoes/grupo.js` (abrirPerm, salvarPerm, acceptInv); `editPc`, `editRat` e `saveContato` não gravam sem a permissão | `dominio/permissoes.ts` (pode, permLimpa); `dominio/grupo.js` (posso); `rotas.js` (syncPerm: caixa, contatos e convite só com a permissão) | `membros/{uid}` (perm) | `regras/permissoes`, `regras-firebase` (KAN-201), `testes_app.py` (CT-KAN-201) |
 | Planos e portal | `portal/` | `portal/tela.js` | `dominio/planos.ts` | `contas/{uid}`, `sistema/planos` | `regras/planos`, portal em `testes_app.py` |
 | Janelas e avisos | `ui/dialogos.js`, `nucleo/util.js` (toast) | `acoes/conta.js` (confSim) | — | — | `testes_app.py` (CT-KAN-128) |
 | Tamanho e carga | `ui/render.js` (espera a gestão e as abas sob demanda) | `acoes.js` (só públicas) | `admin.js` (carregarPartida, carregarAba), `abas/*.ts` (Caixa, Histórico, Votação, Ranking), `entrar.ts` e `nucleo/carga-entrar.ts` (tela de entrar), `nucleo/carga-admin.js`, `build.mjs` | — | `testes_app.py` (CT-KAN-149, CT-KAN-180, CT-KAN-183) |

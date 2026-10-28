@@ -81,11 +81,6 @@ function openThemeMenu(anchor) {
     m.innerHTML = '<p class="tm-t" aria-hidden="true">Tema</p>' + themeOpts();
   });
 }
-function vTemaPanel() {
-  const t = getTheme();
-  return `<div class="panel"><h3>Aparência</h3><div class="theme-seg" role="radiogroup" aria-label="Tema">${THEMES.map(([k, ic, l]) => `<button role="radio" aria-checked="${t === k}" data-a="setTheme" data-v="${k}"><span aria-hidden="true">${ic}</span> ${l}</button>`).join('')}</div>
-  <p class="small muted" style="margin:8px 0 0">${t === 'auto' ? 'Segue o tema do celular (agora: ' + (effTheme() === 'dark' ? 'escuro' : 'claro') + '). ' : ''}Vale só para este aparelho.</p></div>`;
-}
 /* Quando o celular troca entre claro e escuro, o modo Automático acompanha. */
 darkMQ.addEventListener('change', () => {
   applyTheme();
@@ -93,6 +88,9 @@ darkMQ.addEventListener('change', () => {
 });
 
 export {
+  THEMES,
+  effTheme,
+  getTheme,
   TEMA_K,
   abrirMenu,
   applyTheme,
@@ -102,5 +100,4 @@ export {
   themeDef,
   themeLabel,
   themeMenuEl,
-  vTemaPanel,
 };

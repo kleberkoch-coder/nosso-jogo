@@ -15,6 +15,7 @@ import {
   normName,
   players,
   pname,
+  posso,
   ppos,
   rodadas,
   setLvl,
@@ -292,12 +293,12 @@ const acoes = {
     openDlg(`<h3>Adicionar avulso</h3>${
       regs.length
         ? `<div class="f"><span class="lbl">Já jogou aqui? Escolha o nome</span>${regs.length > 8 ? '<input class="inp" id="avq" placeholder="Buscar nome" style="margin-bottom:8px">' : ''}
-      <div class="vgrid" id="avlist">${regs.map(([id, a]) => `<button class="opt" data-a="pickAvulso" data-p="${id}" data-n="${esc(normName(a.nome))}">${posTag(id)}<span>${esc(a.nome)}</span><span class="tag" style="margin-left:auto">${fmtL(lvl(id))}</span></button>`).join('')}</div></div>
+      <div class="vgrid" id="avlist">${regs.map(([id, a]) => `<button class="opt" data-a="pickAvulso" data-p="${id}" data-n="${esc(normName(a.nome))}">${posTag(id)}<span>${esc(a.nome)}</span>${posso('notas') ? `<span class="tag" style="margin-left:auto">${fmtL(lvl(id))}</span>` : ''}</button>`).join('')}</div></div>
       <p class="small muted" style="margin:4px 0 10px">Ou cadastre um avulso novo:</p>`
         : ''
     }
-    <label class="f"><span>Nome</span><input class="inp" id="anm" maxlength="40"></label>${posField('apos')}<div class="f"><span class="lbl">Nota de 1 a 10</span>${lvlIn(5)}</div>
-    ${campoTelefone('', tx('contato.telOpcional'))}
+    <label class="f"><span>Nome</span><input class="inp" id="anm" maxlength="40"></label>${posField('apos')}${posso('notas') ? `<div class="f"><span class="lbl">Nota de 1 a 10</span>${lvlIn(5)}</div>` : ''}
+    ${posso('elenco') ? campoTelefone('', tx('contato.telOpcional')) : ''}
     <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveAvulso">Adicionar confirmado</button></div>`);
   },
   pickAvulso: el => {
@@ -330,7 +331,7 @@ const acoes = {
       if (c === 'sim') return ACT.pickAvulso({ dataset: { p: same[0] } });
     }
     const id = B.newId(),
-      v = +$('#plv').value,
+      v = +($('#plv')?.value ?? 5),
       pos = val('apos'),
       o = { nome: n, pos, criado: Date.now() };
     S.avul[id] = o;
@@ -353,8 +354,8 @@ const acoes = {
       a = S.avul[id] || { nome: pname(id), pos: ppos(id) },
       ct = (S.cont || {})[id] || {};
     openDlg(`<h3>Avulso: ${esc(a.nome)}</h3><label class="f"><span>Nome</span><input class="inp" id="anm" maxlength="40" value="${esc(a.nome)}"></label>${posField('apos', a.pos)}
-    <div class="f"><span class="lbl">Nota de 1 a 10 (só administradores veem)</span>${lvlIn(lvl(id))}</div>
-    ${campoTelefone(ct.tel || '', tx('contato.telRotulo'))}
+    ${posso('notas') ? `<div class="f"><span class="lbl">Nota de 1 a 10 (só administradores veem)</span>${lvlIn(lvl(id))}</div>` : ''}
+    ${posso('elenco') ? campoTelefone(ct.tel || '', tx('contato.telRotulo')) : ''}
     <p class="small muted" style="margin-top:-4px">Registrado em ${fdia(a.criado)}</p>
     <div class="dlg-f"><button class="btn ghost danger" data-a="delAvulso" data-p="${id}">Esquecer avulso</button><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveAvEdit" data-p="${id}">Salvar</button></div>`);
   },
@@ -370,7 +371,7 @@ const acoes = {
     const o = Object.assign({ criado: Date.now() }, S.avul[id] || {}, { nome: n, pos: val('apos') || '' });
     S.avul[id] = o;
     changed();
-    const ps = [w(GB.set('avulsos/' + id, o)), editRat(a => setLvl(a, id, +$('#plv').value))];
+    const ps = [w(GB.set('avulsos/' + id, o)), $('#plv') ? editRat(a => setLvl(a, id, +$('#plv').value)) : null];
     const c = saveContato(id, ct.tel, '');
     if (c) ps.push(c);
     closeDlg();

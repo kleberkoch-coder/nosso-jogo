@@ -2336,3 +2336,29 @@ label.f > span.dica {
   font-size: 14px;
   font-variant-numeric: tabular-nums;
 }
+/* Permissões de um administrador convidado (KAN-201): uma linha por permissão, com o que ela libera. */
+.perm-lista {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+}
+.perm-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  min-height: var(--touch-min);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+.perm-item input[type='checkbox'] {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  margin: 2px 0 0;
+  accent-color: var(--primary);
+}
+.perm-resumo {
+  display: inline-block;
+  margin-top: 2px;
+}

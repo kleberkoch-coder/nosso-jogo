@@ -1,5 +1,5 @@
 import { APP, sport, sportName } from '../dominio/esportes.js';
-import { curRodada, fdia, gname, grpAtivo, isAdmin, isOwnerMe, posso, recurso } from '../dominio/grupo.js';
+import { curRodada, fdia, gname, grpAtivo, isAdmin, isOwnerMe, posso, recurso, soVer } from '../dominio/grupo.js';
 import { hora } from '../dominio/rodadas.js';
 import { B, applyBusy } from '../nucleo/backend.js';
 import { S } from '../nucleo/estado.js';
@@ -113,7 +113,7 @@ function renderCore() {
       ? '<a class="chip" href="#/">← Início</a>'
       : '';
   if (logged) $('#topright').append(botaoConta());
-  document.body.classList.remove('is-landing');
+  document.body.classList.remove('is-landing', 'so-ver');
   /* KAN-175: a apresentação (quem ainda não tem conta) baixa sozinha, sem esperar a gestão. */
   if (R.n === 'home' && !logged && !isStandalone()) {
     if (!apresentacao) return baixar(import('../telas/apresentacao.js'), m => (apresentacao = m));
@@ -175,8 +175,12 @@ function renderCore() {
   ensureExtras();
   /* Abas sob demanda (KAN-180): enquanto a parte não chegou, um lugar para o "Carregando…". */
   const aba = k => (travada(k) ? A.vCadeado() : A.abaPronta(k) ? A.abaPronta(k).ver() : '<div id="abaRaiz"></div>');
+  /* KAN-204: convidado além do limite do plano: tudo à vista, nada que grave. */
+  const soVe = soVer();
+  document.body.classList.toggle('so-ver', soVe);
   main.innerHTML =
     '<div id="avisosPlanoRaiz"></div>' +
+    (soVe ? `<div class="inbar info" id="avisoSoVer"><span>${tx('soVer.aviso')}</span></div>` : '') +
     (grpAtivo()
       ? ''
       : `<div class="inbar"><span>Grupo inativo desde ${fdia(S.app.inativadoEm)}. Os links públicos não aceitam confirmações nem votos.</span>${isOwnerMe() ? '<button class="btn sm" data-a="toggleAtivo">Reativar</button>' : ''}</div>`) +
@@ -188,7 +192,7 @@ function renderCore() {
       caixa: () => aba('caixa'),
       votacao: () => aba('votacao'),
       historico: () => aba('historico'),
-      grupo: A.vGrupo,
+      grupo: () => aba('grupo'),
     }[S.tab]();
   A.montarAvisosPlano();
   if (travada(S.tab)) return A.montarCadeado(S.tab);
@@ -199,7 +203,6 @@ function renderCore() {
   }
   if (S.tab === 'rodada') A.montarRodada();
   if (S.tab === 'jogadores') A.montarJogadores();
-  if (S.tab === 'grupo') A.montarGrupo();
   if (S.tab === 'partida') {
     const P = A.partidaPronta();
     if (!P) return baixar(A.carregarPartida(), null, $('#partidaRaiz'));

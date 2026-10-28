@@ -175,6 +175,9 @@ export default {
   'conta.tema': 'Tema',
   'conta.plano': 'Plano e recursos',
   'conta.sair': 'Sair',
+  'soVer.aviso':
+    'Você só pode ver este grupo: o plano dele permite menos administradores convidados, e você entrou depois. Para voltar a editar, fale com o organizador.',
+  'soVer.barrado': 'Você só pode ver este grupo. Fale com o organizador.',
   /* país da conta, no cadastro (KAN-162); o resto do país, moeda e fuso fica nos textos da gestão */
   'comum.naoCarregouTitulo': 'Não foi possível carregar',
   'comum.naoCarregou': 'Verifique sua conexão e recarregue a página.',

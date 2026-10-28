@@ -9,7 +9,7 @@ import { gruposEsgotados, limite } from '../dominio/limites.ts';
 import { PERM_CONVIDADO, PERMISSOES, permLimpa } from '../dominio/permissoes';
 import { temRecurso } from '../dominio/planos';
 import { minhaSituacao } from '../nucleo/plano';
-import { avisoLimiteGrupos, inativarGrupo, reativarGrupo } from './plano';
+import { avisoLimiteAdmins, avisoLimiteGrupos, inativarGrupo, reativarGrupo } from './plano';
 import { editApp } from '../nucleo/edicoes.js';
 import { GB, S, clean, w } from '../nucleo/estado.js';
 import { linkConvite } from '../nucleo/links.js';
@@ -373,14 +373,19 @@ const acoes = {
     const R = S.route,
       uid = S.user.uid;
     try {
-      await B.set(
-        'grupos/' + R.gid + '/membros/' + uid,
-        Object.assign(
-          // KAN-201: convidado novo entra só com o dia a dia; o organizador libera o resto.
-          { uid, email: S.user.email, role: 'admin', token: R.token, at: Date.now(), perm: { ...PERM_CONVIDADO } },
-          S.user.via ? { via: S.user.via } : {}
-        )
-      );
+      // KAN-204: o convidado entra no fim da lista de convidados do grupo, na mesma gravação (dentro do limite do plano).
+      await B.lote([
+        {
+          tipo: 'set',
+          p: 'grupos/' + R.gid + '/membros/' + uid,
+          o: Object.assign(
+            // KAN-201: convidado novo entra só com o dia a dia; o organizador libera o resto.
+            { uid, email: S.user.email, role: 'admin', token: R.token, at: Date.now(), perm: { ...PERM_CONVIDADO } },
+            S.user.via ? { via: S.user.via } : {}
+          ),
+        },
+        { tipo: 'patch', p: 'grupos/' + R.gid, o: { adms: op.uniao([uid]) } },
+      ]);
       await upMyGroup(R.gid, {
         name: gname(),
         role: 'admin',
@@ -397,6 +402,7 @@ const acoes = {
     }
   },
   inviteLink: () => {
+    if (avisoLimiteAdmins()) return; // KAN-204: o plano já tem todos os convidados que permite
     let t = S.convite?.token;
     if (!t) {
       t = B.newId() + B.newId();
@@ -432,10 +438,16 @@ const acoes = {
       }) !== 'sim'
     )
       return;
-    delete S.membros[el.dataset.v];
+    const u = el.dataset.v;
+    delete S.membros[u];
     S.convite = null;
     changed();
-    return Promise.all([w(GB.del('membros/' + el.dataset.v)), w(GB.del('privado/convite'))]).then(() =>
+    // KAN-204: sai também da lista de convidados, liberando a vaga do plano.
+    const fora = GB.lote([
+      { tipo: 'del', p: 'membros/' + u },
+      { tipo: 'patch', p: 'config/app', o: { adms: op.remover([u]) } },
+    ]);
+    return Promise.all([w(fora), w(GB.del('privado/convite'))]).then(() =>
       toast('Administrador removido. Para convidar alguém, gere um novo link.', 4500)
     );
   },

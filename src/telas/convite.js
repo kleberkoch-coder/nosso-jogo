@@ -1,5 +1,7 @@
 import { sport, sportName } from '../dominio/esportes.js';
 import { gname } from '../dominio/grupo.js';
+import { tp, tx } from '../i18n/index.js';
+import { conviteDoGrupoCheio, limiteAdmins } from '../nucleo/plano';
 import { S } from '../nucleo/estado.js';
 import { $, esc, main } from '../nucleo/util.js';
 import { entrarPronto } from '../nucleo/carga-entrar';
@@ -37,9 +39,14 @@ function renderInvite() {
     main.innerHTML = `<div class="panel empty auth"><h2>Você já administra ${esc(gname())}</h2><p class="muted">Não precisa aceitar de novo.</p><a class="btn primary" href="#/g/${esc(S.gid)}">Abrir o grupo</a></div>`;
     return;
   }
+  /* KAN-204: o plano do grupo já tem todos os administradores convidados que permite. */
+  if (conviteDoGrupoCheio()) {
+    main.innerHTML = `<div class="panel empty auth" id="conviteCheio"><h2>${esc(tx('convite.cheioTitulo'))}</h2><p class="muted">${esc(tp('convite.cheioTexto', limiteAdmins(), { grupo: gname() }))}</p><a class="btn" href="#/">${esc(tx('convite.meusGrupos'))}</a></div>`;
+    return;
+  }
   main.innerHTML = `<div class="auth"><div class="panel"><h2 style="margin:0">Administrar ${esc(gname())}</h2>
     <p class="muted small" style="margin:6px 0 0">${sport().e} ${esc(sportName())}</p>
-    <p style="margin:14px 0 0">Ao aceitar, você passa a cuidar da presença, do sorteio, do placar, do caixa e das notas deste grupo junto com o organizador.</p>
+    <p style="margin:14px 0 0">${esc(tx('convite.aoAceitar'))}</p>
     <p class="small muted" style="margin:10px 0 16px">Você está usando a conta ${esc(S.user.email)}.</p>
     <button class="btn primary" style="width:100%;justify-content:center" data-a="acceptInv">Aceitar convite</button>
     <p class="small muted" style="text-align:center;margin:12px 0 0">Não é você? <button class="linkbtn" data-a="invSwitch">Entrar com outra conta</button></p></div></div>`;

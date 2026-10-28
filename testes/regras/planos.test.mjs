@@ -245,3 +245,35 @@ test('KAN-119: a data padrão da transição é a mesma no app e nas regras do F
   assert.equal(Number(m[1]) * Number(m[2]), TRANSICAO_PADRAO);
   assert.equal(new Date(TRANSICAO_PADRAO).toISOString(), '2026-11-29T03:00:00.000Z');
 });
+
+/* ---------- KAN-204 (pelada-v71): administradores convidados por plano ---------- */
+import { conviteCheio, listaDeConvidados, mesmaLista, soVe } from '../../src/dominio/planos.ts';
+
+test('KAN-204: os primeiros convidados, até o limite do plano, editam; os mais novos só veem', () => {
+  assert.equal(soVe('a', ['a', 'b'], 1), false);
+  assert.equal(soVe('b', ['a', 'b'], 1), true);
+  assert.equal(soVe('b', ['a', 'b'], 2), false);
+  assert.equal(soVe('c', ['a', 'b'], 5), true, 'fora da lista só vê');
+  assert.equal(soVe('x', null, 1), false, 'sem lista (grupo antigo), todos editam');
+  assert.equal(soVe('b', ['a', 'b'], null), false, 'sem limite');
+});
+
+test('KAN-204: convite cheio quando a lista já tem o limite do plano', () => {
+  assert.equal(conviteCheio(['a'], 1), true);
+  assert.equal(conviteCheio(['a'], 2), false);
+  assert.equal(conviteCheio(null, 1), false);
+  assert.equal(conviteCheio(['a', 'b', 'c'], null), false);
+});
+
+test('KAN-204: a lista certa tem os convidados que existem, na ordem de entrada, sem o organizador', () => {
+  const l = listaDeConvidados({
+    d: { role: 'owner', at: 1 },
+    b: { role: 'admin', at: 30 },
+    a: { role: 'admin', at: 20 },
+    c: { role: 'admin' },
+  });
+  assert.deepEqual(l, ['c', 'a', 'b']);
+  assert.equal(mesmaLista(['c', 'a', 'b'], l), true);
+  assert.equal(mesmaLista(['a', 'c', 'b'], l), false);
+  assert.equal(mesmaLista(undefined, []), false);
+});

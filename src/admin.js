@@ -13,7 +13,6 @@ import { ACT } from './acoes.js';
 export { inicioAPagar } from './dominio/caixa.js';
 export { inicioDaJanela } from './dominio/caixa-regras';
 export { renderInvite } from './telas/convite.js';
-export { montarGrupo, vGrupo } from './telas/GrupoTela';
 export { montarHome, vHome } from './telas/Grupos';
 export { guardarOrdemJogadores, montarJogadores, vJogadores } from './telas/Jogadores';
 export { montarRodada, vRodada } from './telas/Rodada';
@@ -36,6 +35,7 @@ const ABAS = {
   historico: () => import('./abas/historico'),
   votacao: () => import('./abas/votacao'),
   ranking: () => import('./abas/ranking'),
+  grupo: () => import('./abas/grupo'),
 };
 const abas = {},
   baixandoAba = {};

@@ -163,12 +163,18 @@ function isOwnerMe() {
 }
 /* Recurso do plano do grupo (KAN-119): caixa, votação, histórico, ranking do ano, cobrar e controle de vagas.
    A conta vem da gestão (nucleo/plano.ts), que registra aqui como responder; o link do jogador não usa. */
-let provedorRecurso = null;
-const definirRecursos = f => (provedorRecurso = f);
+let provedorRecurso = null,
+  provedorSoVer = null;
+const definirRecursos = (f, soVer) => {
+  provedorRecurso = f;
+  provedorSoVer = soVer || null;
+};
 const recurso = k => (provedorRecurso ? provedorRecurso(k) : true);
+/* KAN-204: convidado além do limite de administradores do plano só vê o grupo (nada que grave). */
+const soVer = () => (provedorSoVer ? provedorSoVer() : false);
 /* Permissão do administrador aberto agora (KAN-201): caixa, notas, elenco ou config. O organizador pode tudo. */
 function posso(k) {
-  if (!isAdmin()) return false;
+  if (!isAdmin() || soVer()) return false;
   if (isOwnerMe()) return true;
   return pode(S.mem, k);
 }
@@ -231,6 +237,7 @@ export {
   posso,
   definirRecursos,
   recurso,
+  soVer,
   setLvl,
   upcoming,
 };

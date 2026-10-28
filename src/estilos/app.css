@@ -2416,3 +2416,11 @@ label.f > span.dica {
   flex: 1 1 12em;
   min-width: 0;
 }
+/* KAN-204: convidado além do limite do plano só vê. O que grava some da tela (o resto continua). */
+body.so-ver
+  main
+  [data-a]:not([data-a='planosDlg']):not([data-a='lerAvisoPlano']):not([data-a^='copy']):not([data-a^='share']):not(
+    [data-a^='hist']
+  ):not([data-a='recarregar']):not([data-a='forgetGroup']) {
+  display: none !important;
+}

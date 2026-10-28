@@ -226,3 +226,26 @@ export function planoComRecurso(cat: Catalogo, r: string): string | null {
   const id = Object.keys(cat).find(k => k !== 'gratis' && cat[k].recursos.includes(r));
   return id ? cat[id].nome : null;
 }
+
+/* ---------- Administradores convidados por plano (KAN-204, pelada-v71) ----------
+   O grupo guarda os convidados na ordem de entrada (grupos/{gid}.adms). Os primeiros, até o limite do plano
+   do organizador (Grátis 1, A 2, B 5), editam; os mais novos só veem. Sem a lista (grupo de antes da v71), todos editam.
+   As regras do Firebase repetem a conta (adminAtivo, dentroDoLimite). */
+export function soVe(uid: string, adms: string[] | null | undefined, limite: number | null): boolean {
+  if (!Array.isArray(adms)) return false;
+  const i = adms.indexOf(uid);
+  if (i < 0) return true;
+  return limite !== null && i >= limite;
+}
+export const conviteCheio = (adms: string[] | null | undefined, limite: number | null) =>
+  limite !== null && Array.isArray(adms) && adms.length >= limite;
+/* Lista certa: os convidados que existem, na ordem em que entraram. */
+type MembroLista = { role?: string; at?: number };
+export function listaDeConvidados(membros: Record<string, MembroLista> | null | undefined): string[] {
+  return Object.entries(membros || {})
+    .filter(([, m]) => m && m.role !== 'owner')
+    .sort((a, b) => (a[1].at || 0) - (b[1].at || 0) || a[0].localeCompare(b[0]))
+    .map(([u]) => u);
+}
+export const mesmaLista = (a: unknown, b: string[]) =>
+  Array.isArray(a) && a.length === b.length && a.every((x, i) => x === b[i]);

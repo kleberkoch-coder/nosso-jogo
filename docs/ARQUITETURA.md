@@ -198,6 +198,13 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D25. Administradores convidados por plano e quem só vê (28 out. 2026, pelada-v71, KAN-204)
+- **Sem contar documentos:** as regras não contam convidados, então o grupo guarda a lista (`grupos/{gid}.adms`), na ordem de entrada. Entrar pelo convite é um lote: o cadastro do convidado e o nome dele no fim da lista, dentro do limite do plano do organizador (`entrouNaLista`). Sair também (`saiuDaLista`). Só o organizador arruma a lista; o app dele a mantém igual aos convidados que existem (`listaDeConvidados`), e grava a primeira vez nos grupos de antes da v71.
+- **Quem grava:** toda regra de gravação que pedia `isMember` passou a pedir `adminAtivo`: o organizador, ou um convidado entre os primeiros da lista até o limite (`dentroDoLimite`). Ler continua com `isMember` e, para caixa, contatos e convite, `podeVer` (permissão sem o limite). Sem a lista (grupo antigo), todos gravam.
+- **Na tela:** `soVer()` em `dominio/grupo.js` (respondido pela gestão, `nucleo/plano.ts`) desliga as permissões, põe a classe `so-ver` no corpo da página (o CSS esconde o que grava) e o `eventos.js` barra com aviso qualquer ação fora de uma lista de ações que só leem.
+- **Aba Grupo sob demanda** (`abas/grupo.ts`), como Caixa e Ranking, para a gestão caber em 95 KB: 94,1 → 93,7 KB com tudo da v71.
+- **Custo nas regras:** cada gravação de convidado lê a ficha do organizador e `sistema/planos` (até 2 leituras a mais, que se repetem dentro de um lote).
+
 ### D24. Planos valendo no app, sem servidor (28 out. 2026, pelada-v70, KAN-119)
 - **Plano em vigor** (`dominio/planos.ts`, `situacao`, com teste): o pago do portal vale primeiro; sem ele, o teste (14 dias de `contas/{uid}.teste`) ou a transição (`sistema/planos.transicaoAte`) dão o Plano A até a data mais distante; sem nada, Grátis. As regras do Firebase repetem a conta (`planoPago`, `limiteGruposPlano`), com os limites 1/3/sem limite escritos nelas: mudar os limites no catálogo exige mudar as regras também.
 - **Quem garante:** as regras recusam lançar no caixa, mudar `privado/caixa`, criar votação e ligar o controle de vagas sem o Plano A; ler continua (nada é apagado). O teste só é gravado uma vez, com a hora de agora.

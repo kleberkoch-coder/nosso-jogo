@@ -362,6 +362,68 @@ with sync_playwright() as pw:
     ok(J(p24, "S.app.ativo!==false") and J(p24, "(S.conta&&S.conta.ativos)||[]") == [g24], 'CT-KAN-170-P24: reativar volta o grupo para a lista, depois de sair e entrar de novo')
     c24.close()
 
+    # P25 permissões e lista de convidados (KAN-201, KAN-204): o convidado entra na lista do grupo (grupos/{gid}.adms) com
+    # tudo desligado (membros/{uid}.perm); o organizador libera Notas e isso continua depois de recarregar.
+    # No emulador (dois aparelhos ao mesmo tempo), confere também que liberar e tirar vale NA HORA para o convidado.
+    c25 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block'); p25 = c25.new_page()
+    p25.on('pageerror', lambda e: errs.append(str(e)))
+    D25, C25 = 'dono25@teste.com', 'conv25@teste.com'
+    def entrar25(pg_, email, criar, url):
+        pg_.goto(url); pg_.wait_for_selector('#le', timeout=20000); pg_.wait_for_timeout(300)
+        modo = 'signup' if criar else 'login'
+        if pg_.locator(f'#authRaiz [data-a=authMode][data-v={modo}]').count():
+            pg_.click(f'#authRaiz [data-a=authMode][data-v={modo}]'); pg_.wait_for_timeout(200)
+        pg_.fill('#le', email); pg_.fill('#lp', SENHA)
+        if criar and pg_.locator('#lp2').count(): pg_.fill('#lp2', SENHA)
+        pg_.keyboard.press('Enter'); pg_.wait_for_timeout(2500)
+    entrar25(p25, D25, True, URL + '#/criar'); p25.wait_for_selector('#ngn', timeout=20000)
+    p25.fill('#ngn', 'Permissões FC'); p25.click('[data-a=createGroup]')
+    p25.wait_for_function("location.hash.startsWith('#/g/')", timeout=20000)
+    g25 = p25.url.split('#/g/')[1].split('/')[0]
+    pronto(p25, 'grupo'); p25.click('[data-a=inviteLink]'); p25.wait_for_timeout(800)
+    tk25 = J(p25, "S.convite&&S.convite.token"); p25.click('#dlg [data-a=close]'); p25.wait_for_timeout(200)
+    gravou(p25)
+    EMU = bool(J(p25, "!!window.FIREBASE_EMULADOR"))
+    if EMU:
+        c25b = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block'); q25 = c25b.new_page()
+        q25.on('pageerror', lambda e: errs.append(str(e)))
+    else:
+        sair_e_esperar(p25); q25 = p25
+    entrar25(q25, C25, True, URL + '#/convite/' + g25 + '/' + str(tk25))
+    q25.click('[data-a=acceptInv]'); q25.wait_for_function("location.hash.startsWith('#/g/')", timeout=20000)
+    gravou(q25); pronto(q25)
+    uc25 = J(q25, "S.user.uid")
+    ok(J(q25, "S.mem&&S.mem.perm") == {'caixa': False, 'notas': False, 'elenco': False, 'config': False} and J(q25, "S.app.adms") == [uc25],
+       'CT-KAN-170-P25: o convidado entra só com o dia a dia e na lista de convidados do grupo, depois de recarregar')
+    if not EMU:
+        sair_e_esperar(p25); entrar25(p25, D25, False, URL + '#/entrar')
+        p25.goto(URL + '#/g/' + g25); pronto(p25)
+    else:
+        p25.reload(); pronto(p25)
+    pronto(p25, 'grupo')
+    def perm25(liga):
+        p25.click(f'#grupoRaiz [data-a=abrirPerm][data-v="{uc25}"]'); p25.wait_for_timeout(500)
+        (p25.check if liga else p25.uncheck)('#perm_notas'); p25.click('#dlg [data-a=salvarPerm]'); p25.wait_for_timeout(1200)
+    perm25(True)
+    if EMU:
+        try:
+            q25.wait_for_function("S.mem&&S.mem.perm&&S.mem.perm.notas===true", timeout=10000); na_hora = True
+        except Exception:
+            na_hora = False
+        ok(na_hora, 'CT-KAN-201-06: liberar Notas vale na hora no aparelho do convidado, sem sair e entrar (emulador)')
+        perm25(False)
+        try:
+            q25.wait_for_function("S.mem&&S.mem.perm&&S.mem.perm.notas===false", timeout=10000); tirou = True
+        except Exception:
+            tirou = False
+        ok(tirou, 'CT-KAN-201-07: tirar Notas também vale na hora (emulador)')
+        perm25(True)
+    gravou(p25); pronto(p25)
+    ok(J(p25, "(u)=>S.membros[u]&&S.membros[u].perm", uc25) == {'caixa': False, 'notas': True, 'elenco': False, 'config': False},
+       'CT-KAN-170-P25: a permissão liberada pelo organizador continua depois de recarregar')
+    if EMU: c25b.close()
+    c25.close()
+
     ok(not errs, 'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))
     b.close()
 

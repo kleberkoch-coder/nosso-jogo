@@ -40,11 +40,9 @@ function renderInvite() {
     return;
   }
   /* KAN-204: o plano do grupo já tem todos os administradores convidados que permite. */
-  if (conviteDoGrupoCheio()) {
-    main.innerHTML = `<div class="panel empty auth" id="conviteCheio"><h2>${esc(tx('convite.cheioTitulo'))}</h2><p class="muted">${esc(tp('convite.cheioTexto', limiteAdmins(), { grupo: gname() }))}</p><a class="btn" href="#/">${esc(tx('convite.meusGrupos'))}</a></div>`;
-    return;
-  }
-  main.innerHTML = `<div class="auth"><div class="panel"><h2 style="margin:0">Administrar ${esc(gname())}</h2>
+  main.innerHTML = conviteDoGrupoCheio()
+    ? `<div class="panel empty auth" id="conviteCheio"><h2>${esc(tx('convite.cheioTitulo'))}</h2><p class="muted">${esc(tp('convite.cheioTexto', limiteAdmins(), { grupo: gname() }))}</p><a class="btn" href="#/">${esc(tx('convite.meusGrupos'))}</a></div>`
+    : `<div class="auth"><div class="panel"><h2 style="margin:0">Administrar ${esc(gname())}</h2>
     <p class="muted small" style="margin:6px 0 0">${sport().e} ${esc(sportName())}</p>
     <p style="margin:14px 0 0">${esc(tx('convite.aoAceitar'))}</p>
     <p class="small muted" style="margin:10px 0 16px">Você está usando a conta ${esc(S.user.email)}.</p>

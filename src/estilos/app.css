@@ -2424,3 +2424,92 @@ body.so-ver
   ):not([data-a='recarregar']):not([data-a='forgetGroup']) {
   display: none !important;
 }
+
+/* KAN-194: no celular (até 420px), cabeçalho compacto: nome do grupo em 28px numa linha só, com "…" (tocar abre o
+   nome inteiro), e os chips na mesma linha. No computador, continua como antes. */
+@media (max-width: 420px) {
+  .top {
+    padding: 14px 16px 12px;
+  }
+  .top-in {
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+  .top-in > div:first-child {
+    flex: 1 1 auto;
+  }
+  .top h1 {
+    font-size: 28px;
+    line-height: 1.05;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #gname.cortado {
+    text-decoration: underline dotted;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+  #gname.aberto {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  #gname[role='button'] {
+    cursor: pointer;
+  }
+  .top .sub {
+    margin-top: 4px;
+    font-size: 13px;
+  }
+  .toprow {
+    flex: none;
+    flex-wrap: nowrap;
+  }
+  .hero-r h2 {
+    font-size: 24px;
+  }
+}
+/* KAN-194: o horário da rodada ("20:00–22:00") não se separa no meio. */
+.nw {
+  white-space: nowrap;
+}
+/* KAN-194: link permanente recolhido numa linha, depois do cartão da rodada. */
+.fixos .fixos-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  flex-wrap: wrap;
+}
+.fixos .fixos-linha h3 {
+  margin: 0;
+  font-size: 16px;
+}
+.fixos details {
+  margin-top: 6px;
+}
+.fixos details .row {
+  margin-top: 8px;
+}
+/* KAN-195: lista de caixas de marcar (Nova votação): 44px por linha, com divisória. */
+fieldset.chk-lista {
+  border: 0;
+  padding: 0;
+  margin: 0 0 12px;
+  min-width: 0;
+}
+fieldset.chk-lista legend {
+  padding: 0;
+}
+.chk-lista .chk-linha + .chk-linha {
+  border-top: 1px solid var(--line);
+}
+/* KAN-131: o cartão inteiro do grupo abre o grupo (o botão "Abrir" cobre a linha). */
+.grupo-linha {
+  position: relative;
+}
+.grupo-linha .abrir-grupo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}

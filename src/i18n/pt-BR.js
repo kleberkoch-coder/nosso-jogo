@@ -87,7 +87,6 @@ export default {
   /* aba Histórico */
   'hist.titulo': 'Histórico de rodadas',
   'hist.ajuda': 'Encontre jogos antigos por mês ou por período. A aba Rodada mostra só as próximas e as últimas 4.',
-  'hist.atalho': 'Histórico',
   'hist.porMes': 'Por mês',
   'hist.porPeriodo': 'Por período',
   'hist.mes': 'Mês',

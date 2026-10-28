@@ -158,6 +158,14 @@ export function Tag({
 /* Seletor da rodada (D10): as próximas e as últimas 4; as antigas ficam na aba Histórico.
    Na aba Rodada vem com "Nova rodada" e "Histórico" (acoes); na aba Partida, só a lista (KAN-160). */
 type RodadaOpcao = { id: string; date: string; time?: string; fim?: string; cancelada?: boolean; fixo?: boolean };
+/* Texto de uma rodada nos seletores (KAN-146, KAN-195): data, hora e "fixo", sem o local. */
+export function textoRodada(x: RodadaOpcao): string {
+  return (
+    fdate(x.date) +
+    (x.time ? ' · ' + hora(x) : '') +
+    (x.cancelada ? ' ' + tx('rodada.canceladaOpcao') : x.fixo ? ' · ' + tx('rodada.fixoOpcao') : '')
+  );
+}
 export function SeletorRodada({ r, acoes }: { r: RodadaOpcao; acoes?: boolean }) {
   const rs = rodadasJanela() as RodadaOpcao[];
   if (!rs.some(x => x.id === r.id)) rs.push(r);
@@ -166,21 +174,15 @@ export function SeletorRodada({ r, acoes }: { r: RodadaOpcao; acoes?: boolean })
       <select class="sel" data-c="rid" aria-label={tx('rodada.seletor')} value={r.id}>
         {rs.map(x => (
           <option key={x.id} value={x.id} selected={x.id === r.id}>
-            {fdate(x.date)}
-            {x.time ? ' · ' + hora(x) : ''}
-            {x.cancelada ? ' ' + tx('rodada.canceladaOpcao') : x.fixo ? ' · ' + tx('rodada.fixoOpcao') : ''}
+            {textoRodada(x)}
           </option>
         ))}
       </select>
+      {/* KAN-194: o Histórico fica só na aba (sem o botão repetido aqui). */}
       {acoes ? (
-        <>
-          <button class="btn" data-a="newRod">
-            {tx('rodada.nova')}
-          </button>
-          <button class="btn ghost" data-a="tab" data-v="historico">
-            {tx('hist.atalho')}
-          </button>
-        </>
+        <button class="btn" data-a="newRod">
+          {tx('rodada.nova')}
+        </button>
       ) : null}
     </div>
   );

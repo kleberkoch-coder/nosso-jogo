@@ -16,7 +16,8 @@ const esporte = (k?: string) => (SPORTS as Record<string, { e: string; n: string
 
 function LinhaGrupo({ gid, g }: { gid: string; g: MeuGrupo }) {
   return (
-    <li>
+    /* KAN-131: o leitor diz "Abrir" com o nome do grupo, e tocar em qualquer ponto do cartão abre o grupo. */
+    <li class="grupo-linha">
       <span class="gem">{esporte(g.sport).e}</span>
       <span class="pn">
         <b>{g.name || tx('inicio.grupo')}</b>
@@ -26,7 +27,11 @@ function LinhaGrupo({ gid, g }: { gid: string; g: MeuGrupo }) {
           {g.criado ? ' · ' + tx('inicio.criadoEm', { data: fdia(g.criado) }) : ''}
         </span>
       </span>
-      <a class={'btn sm' + (g.ativo === false ? '' : ' primary')} href={'#/g/' + gid}>
+      <a
+        class={'btn sm abrir-grupo' + (g.ativo === false ? '' : ' primary')}
+        href={'#/g/' + gid}
+        aria-label={tx('inicio.abrirRotulo', { nome: g.name || tx('inicio.grupo') })}
+      >
         {tx('inicio.abrir')}
       </a>
     </li>

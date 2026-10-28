@@ -39,7 +39,7 @@ function copyText(s, ta) {
     });
 }
 document.addEventListener('click', e => {
-  const sub = e.target.closest('#gsub[role=button],[data-corta][role=button]');
+  const sub = e.target.closest('#gsub[role=button],#gname[role=button],[data-corta][role=button]');
   if (sub) {
     sub.classList.toggle('aberto');
     subtituloCompleto();
@@ -217,7 +217,7 @@ document.addEventListener('change', e => {
 document.addEventListener('keydown', e => {
   if (
     (e.key === 'Enter' || e.key === ' ') &&
-    (e.target.id === 'gsub' || e.target.hasAttribute('data-corta')) &&
+    (e.target.id === 'gsub' || e.target.id === 'gname' || e.target.hasAttribute('data-corta')) &&
     e.target.getAttribute('role') === 'button'
   ) {
     e.preventDefault();

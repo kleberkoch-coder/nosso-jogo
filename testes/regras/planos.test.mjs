@@ -239,8 +239,9 @@ test('KAN-119: o convite do cadeado diz o plano que tem o recurso', () => {
 
 test('KAN-119: a data padrão da transição é a mesma no app e nas regras do Firebase', () => {
   const regras = fs.readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8');
-  const m = regras.match(/'transicaoAte', 0\) : (\d+);/);
+  const m = regras.match(/'transicaoAte', 0\) : (\d+) \* (\d+);/);
   assert.ok(m, 'data da transição não encontrada em firestore.rules');
-  assert.equal(Number(m[1]), TRANSICAO_PADRAO);
+  assert.ok(Number(m[1]) < 2 ** 31 && Number(m[2]) < 2 ** 31, 'cada número das regras cabe em 32 bits');
+  assert.equal(Number(m[1]) * Number(m[2]), TRANSICAO_PADRAO);
   assert.equal(new Date(TRANSICAO_PADRAO).toISOString(), '2026-11-29T03:00:00.000Z');
 });

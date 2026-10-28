@@ -142,9 +142,11 @@ service cloud.firestore {
     // ---------- Planos (KAN-119, pelada-v70). As mesmas contas de src/dominio/planos.ts. ----------
     // Plano A para todos até o fim da transição (sistema/planos.transicaoAte; sem ela, 28/11/2026 no fim do dia).
     function cfgPlanos() { return /databases/$(database)/documents/sistema/planos; }
+    // A data padrão vai como conta (17959212 × 100000 = 1795921200000 ms = 29/11/2026 0h em Brasília): número grande
+    // escrito direto não vale nas regras.
     function transicaoAte() {
       let d = exists(cfgPlanos()) ? get(cfgPlanos()).data : {};
-      return d.get('transicaoAte', 0) is int ? d.get('transicaoAte', 0) : 1795921200000;
+      return d.get('transicaoAte', 0) is int ? d.get('transicaoAte', 0) : 17959212 * 100000;
     }
     function fichaConta(uid) { return exists(conta(uid)) ? get(conta(uid)).data : {}; }
     function agoraMs() { return request.time.toMillis(); }

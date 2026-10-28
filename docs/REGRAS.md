@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v72 (28/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v73 (28/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -187,7 +187,7 @@ Atualizado na pelada-v72 (28/10/2026). Toda entrega que mudar uma regra atualiza
 - O Merge publica o site e, se mudaram, as regras do Firebase; a automação confere a versão no ar.
 - Na mesma entrega: atualizar este arquivo, os docs afetados, a pasta `app/` do projeto e os cartões do Jira ([Entrega], Em análise).
 - Limite de tamanho (D7): o link do jogador até 50 KB comprimido; ao abrir a gestão, até 95 KB; cada parte sob demanda (Partida, Caixa, Histórico, Votação, Ranking, Importar, apresentação, tela de entrar e votação pública), até 15 KB. O link do jogador não traz a tela de entrar nem a votação (KAN-183, v63). Alvo: pelo menos 3 KB de folga; quando apertar, mover mais uma parte para sob demanda em vez de subir o limite (KAN-180, v61).
-- Textos da gestão ficam em `src/i18n/pt-BR-gestao.js` e chegam com a parte de gestão; os do link público e do login, em `src/i18n/pt-BR.js`. A montagem barra o link público usando texto da gestão.
+- Textos da gestão ficam em `src/i18n/pt-BR-gestao.js` e chegam com a parte de gestão; os do link público e do login, em `src/i18n/pt-BR.js`. A montagem barra o link público usando texto da gestão. Texto usado só por uma parte sob demanda (Caixa, Grupo, Ranking, Votação, Partida, Importar, Planos) mora no arquivo dela, `src/i18n/pt-BR-<parte>.ts` (KAN-205, v73).
 - Dívida técnica não piora (D12, KAN-154): a montagem falha se aumentar innerHTML, textos fora do dicionário ou arquivos sem tipos, ou se diminuírem as telas como componente (tetos em `docs/divida.json`).
 - O GitHub confere toda proposta (KAN-157, `testes/conferir-entrega.mjs`): app mudou → VERSION sobe; componente `.tsx` novo em `src/ui/` ou classe nova no CSS → `docs/DESIGN-SYSTEM.md` muda; tela ou ação mudou → `docs/REGRAS.md` muda (ou "sem mudança de regra" na proposta); `firestore.rules` mudou → a proposta avisa; checklist da proposta sem item em branco.
 - Tudo que grava tem caso no roteiro de gravação (KAN-170, `testes/persistencia_app.py`): grava, recarrega (F5), confere e, no fim, entra de novo num navegador limpo e confere tudo. No GitHub, a tarefa "persistencia" roda esse roteiro contra o emulador do Firebase (Firestore e login de verdade, com as regras). A conferência da entrega barra tipo de dado gravado sem caso (`testes/persistencia-cobertura.json`).

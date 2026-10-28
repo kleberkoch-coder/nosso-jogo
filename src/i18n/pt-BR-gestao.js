@@ -421,6 +421,12 @@ export default {
   'jogadores.separarVazio': 'Nenhum par cadastrado.',
   'jogadores.adicionarPar': 'Adicionar par',
   'jogadores.juntosTitulo': 'Quem mais joga junto',
-  'jogadores.juntosAjuda': 'Peso maior para rodadas recentes. O sorteio usa isso para variar os times.',
+  'jogadores.juntosAjuda.um':
+    'Vezes no mesmo time na última rodada com times sorteados. O sorteio usa isso para variar os times.',
+  'jogadores.juntosAjuda.outros':
+    'Vezes no mesmo time nas últimas {n} rodadas com times sorteados. O sorteio usa isso para variar os times.',
+  'jogadores.juntosVezes.um': '1 vez',
+  'jogadores.juntosVezes.outros': '{n} vezes',
+  'jogadores.juntosTodos': 'Ver todos ({n} pares)',
   'jogadores.juntosVazio': 'Aparece depois dos primeiros sorteios.',
 };

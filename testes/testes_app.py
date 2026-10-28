@@ -2344,6 +2344,38 @@ with sync_playwright() as pw:
     ok('37,00' in lista106 and p20.evaluate("(a)=>Object.values(S.caixa||{}).some(l=>l.d===a)", antigo), 'CT-KAN-106-03: escolhendo o mês antigo, o lançamento dele aparece (a janela acompanha o mês)')
     ctx20.close()
 
+    # ---------- v68 (KAN-200): quem mais joga junto com o número de vezes e "Ver todos"
+    ctx21 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+    p21 = ctx21.new_page(); p21.on('pageerror', lambda e: errs.append(str(e)))
+    p21.goto(URL + '#/criar'); p21.wait_for_timeout(900)
+    p21.fill('#le', 'juntos68@teste.com'); p21.fill('#lp', 'Jogo@2026'); p21.fill('#lp2', 'Jogo@2026'); p21.keyboard.press('Enter'); p21.wait_for_timeout(1300)
+    p21.fill('#ngn', 'Juntos FC'); p21.click('[data-a=pickSport][data-v=futebol]'); p21.click('[data-a=createGroup]'); p21.wait_for_timeout(1500)
+    g21 = p21.url.split('#/g/')[1]
+    p21.click('[data-a=tab][data-v=jogadores]'); p21.wait_for_timeout(300)
+    ok('Aparece depois dos primeiros sorteios' in p21.inner_text('#juntos'), 'CT-KAN-200-03: sem sorteio, aparece "Aparece depois dos primeiros sorteios."')
+    p21.click('[data-a=seed]'); p21.wait_for_timeout(1500)
+    ids21 = p21.evaluate("Object.keys(S.jog).sort()")
+    a1, a2 = ids21[0], ids21[1]
+    rods21 = {}
+    for i, d in enumerate(['2026-09-01', '2026-09-08', '2026-09-15']):
+        rods21[f'grupos/{g21}/rodadas/rj{i}'] = {'date': d, 'locked': True, 'times': [{'players': [a1, a2] + ids21[2 + i * 2:4 + i * 2], 'c': 0}, {'players': ids21[8:12], 'c': 1}]}
+    p21.evaluate(PUT, rods21); p21.reload(); p21.wait_for_timeout(1500)
+    p21.click('[data-a=tab][data-v=jogadores]'); p21.wait_for_timeout(1000)
+    j21 = p21.inner_text('#juntos')
+    nomes21 = p21.evaluate("(ids)=>ids.map(i=>S.jog[i].name)", [a1, a2])
+    primeira = p21.locator('#juntos ol.juntos li').first.inner_text()
+    ok(nomes21[0] in primeira and nomes21[1] in primeira and '3 vezes' in primeira, f'CT-KAN-200-01: o par que jogou junto 3 vezes aparece primeiro, com "3 vezes" ({primeira!r})')
+    ok('últimas 3 rodadas' in j21, f'CT-KAN-200-01: a ajuda diz quantas rodadas entraram na conta ({j21[:120]!r})')
+    ok(p21.locator('#juntos summary', has_text='Ver todos').count() == 1, 'CT-KAN-200-02: com mais de 6 pares, aparece "Ver todos (N pares)"')
+    p21.click('#juntos summary'); p21.wait_for_timeout(200)
+    tot = p21.locator('#juntos ol.juntos li').count()
+    ok(tot > 6 and p21.locator('#juntos ol.juntos li').last.inner_text().endswith('1 vez'), f'CT-KAN-200-02: "Ver todos" mostra todos os pares, do mais frequente ao menos ({tot})')
+    p21.set_viewport_size({'width': 360, 'height': 740}); p21.wait_for_timeout(200)
+    ok(p21.evaluate("document.documentElement.scrollWidth<=innerWidth"), 'CT-KAN-200-04: Quem mais joga junto sem rolagem lateral em 360px')
+    p21.locator('#juntos').screenshot(path=f'{OUT}/v68-juntos-360.png')
+    contraste(p21, 'Quem mais joga junto (v68)')
+    ctx21.close()
+
     # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
     ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
     p7 = ctx7.new_page()

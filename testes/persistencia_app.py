@@ -220,12 +220,13 @@ with sync_playwright() as pw:
     a13 = J(pg, "(id)=>[((S.parts.art||{}).gols||{})[id], (S.parts.art||{}).ver]", art)
     ok(g1 == 2 and a13 == [3, 1], f'CT-KAN-170-P13c: artilharia lançada e corrigida continua depois de recarregar ({g1} → {a13})')
 
-    # P14 lançamento no caixa (caixa/{id} e resumos do mês)
+    # P14 lançamento no caixa (caixa/{id} e resumosCaixa do mês, KAN-207)
     pronto(pg, 'caixa'); pg.click('[data-a=addLan]'); pg.wait_for_timeout(300)
     pg.select_option('#lp2', index=1); pg.click('#dlg [data-a=saveLan]')
     gravou(pg); pronto(pg, 'caixa'); pg.wait_for_timeout(800)
     n14 = J(pg, "Object.keys(S.caixa||{}).length")
     ok(n14 >= 1, f'CT-KAN-170-P14: lançamento do caixa continua depois de recarregar ({n14})')
+    ok(J(pg, "Object.values(S.resCx||{}).some(d=>d.cx&&(d.cx.ent||d.cx.sai))"), 'CT-KAN-170-P14: o total do caixa do mês (resumosCaixa) continua depois de recarregar')
 
     # P20 isento que recebe por jogo (privado/caixa: tipos e porJogo) e pagamento dos jogos (caixa/{id} com refs) (KAN-172)
     rid20, pid20 = J(pg, """(()=>{for(const [r,d] of Object.entries(S.rod)){if(!d.times)continue;const p=d.times.flatMap(t=>t.players).find(x=>S.jog[x]);if(p)return [r,p]}return [null,null]})()""")

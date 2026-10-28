@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import {
   arrayRemove,
+  deleteField,
   arrayUnion,
   collection,
   deleteDoc,
@@ -171,7 +172,11 @@ describe('resumos por mês (KAN-87)', () => {
   });
   test('administrador soma com incremento (gravação parcial)', async () => {
     await assertSucceeds(
-      setDoc(doc(db.adm(), G + '/resumos/2026-10'), { mes: '2026-10', cx: { ent: increment(8000) } }, { merge: true })
+      setDoc(
+        doc(db.adm(), G + '/resumos/2026-10'),
+        { mes: '2026-10', jog: { a: { j: increment(1) } } },
+        { merge: true }
+      )
     );
   });
   test('campo fora da lista, mês diferente do nome ou nome inválido são recusados', async () => {
@@ -901,5 +906,50 @@ describe('administradores convidados por plano (KAN-204)', () => {
     b.delete(doc(f, G + '/membros/adm'));
     b.update(doc(f, G), { adms: arrayRemove('adm') });
     await assertSucceeds(b.commit());
+  });
+});
+
+describe('totais do caixa fora do resumo do ranking (KAN-207)', () => {
+  const semRegras = fn => env.withSecurityRulesDisabled(async ctx => fn(ctx.firestore()));
+  const NADA = { caixa: false, notas: false, elenco: false, config: false };
+  const conv = () => env.authenticatedContext('conv', senha).firestore();
+  const RC = G + '/resumosCaixa/2026-10';
+  const preparar = perm =>
+    semRegras(async f => {
+      await setDoc(doc(f, G + '/membros/conv'), { uid: 'conv', role: 'admin', perm });
+      await setDoc(doc(f, RC), { mes: '2026-10', cx: { ent: 8000, sai: 0 } });
+    });
+
+  test('sem a permissão de Caixa: não lê nem grava os totais do caixa (critérios 1 e 2)', async () => {
+    await preparar(NADA);
+    await assertFails(getDoc(doc(conv(), RC)));
+    await assertFails(setDoc(doc(conv(), RC), { mes: '2026-10', cx: { ent: increment(1) } }, { merge: true }));
+    await assertFails(setDoc(doc(conv(), G + '/resumos/2026-10'), { mes: '2026-10', cx: { ent: 1 } }, { merge: true }));
+  });
+  test('com a permissão de Caixa: lança e soma no total do mês, no mesmo lote (critério 3)', async () => {
+    await preparar({ ...NADA, caixa: true });
+    await assertSucceeds(getDoc(doc(conv(), RC)));
+    const f = conv(),
+      b = writeBatch(f);
+    b.set(doc(f, G + '/caixa/c9'), { k: 'entrada', v: 10, d: '2026-10-20' });
+    b.set(doc(f, RC), { mes: '2026-10', at: 1, cx: { ent: increment(1000) } }, { merge: true });
+    await assertSucceeds(b.commit());
+    await assertFails(setDoc(doc(conv(), RC), { mes: '2026-10', extra: 1 }, { merge: true }));
+  });
+  test('ranking continua para todo administrador, e ninguém põe totais do caixa nele (critério 5)', async () => {
+    await preparar(NADA);
+    await assertSucceeds(getDoc(doc(conv(), G + '/resumos/2026-10')));
+    await assertSucceeds(
+      setDoc(doc(conv(), G + '/resumos/2026-10'), { mes: '2026-10', jog: { a: { j: increment(1) } } }, { merge: true })
+    );
+    await assertFails(setDoc(doc(db.dono(), G + '/resumos/2026-11'), { mes: '2026-11', cx: { ent: 1 } }));
+  });
+  test('grupo de antes da v74: só quem tem Caixa tira o cx antigo do resumo; quem não tem continua gravando o ranking (critério 4)', async () => {
+    await preparar(NADA);
+    await semRegras(f => setDoc(doc(f, G + '/resumos/2026-09'), { mes: '2026-09', cx: { ent: 500 }, jog: {} }));
+    await assertFails(updateDoc(doc(conv(), G + '/resumos/2026-09'), { cx: deleteField() }));
+    await assertSucceeds(updateDoc(doc(conv(), G + '/resumos/2026-09'), { 'jog.a.j': increment(1) }));
+    await assertFails(updateDoc(doc(db.dono(), G + '/resumos/2026-09'), { 'cx.ent': increment(1) }));
+    await assertSucceeds(updateDoc(doc(db.dono(), G + '/resumos/2026-09'), { cx: deleteField() }));
   });
 });

@@ -3,11 +3,14 @@ import {
   camposLancamento,
   camposPartida,
   camposVotacao,
+  caixaAntigo,
   mesDe,
   resumirTudo,
+  semCaixa,
+  soCaixa,
   vazio,
 } from '../dominio/resumos.ts';
-import { rodById } from '../dominio/grupo.js';
+import { isOwnerMe, posso, rodById } from '../dominio/grupo.js';
 import { B, op } from './backend.js';
 import { GB, S, clean, gp, w } from './estado.js';
 import { cl, toast } from './util.js';
@@ -77,6 +80,20 @@ function opResumo(c) {
   return { tipo: 'patch', p: 'resumos/' + c.mes, o: patchResumo(c) };
 }
 const sem = ops => ops.filter(Boolean);
+/* KAN-207: os totais do caixa vão para grupos/{gid}/resumosCaixa/{mês}, que só quem tem a permissão de Caixa lê. */
+function opResumoCaixa(c) {
+  if (!c.mes) return null;
+  if (S.resCx) {
+    const d = cl(S.resCx[c.mes]) || { mes: c.mes, cx: {} };
+    d.cx = d.cx || {};
+    Object.entries(c.somar).forEach(([k, n]) => {
+      const f = k.split('.').pop();
+      d.cx[f] = (d.cx[f] || 0) + n;
+    });
+    S.resCx[c.mes] = d;
+  }
+  return { tipo: 'patch', p: 'resumosCaixa/' + c.mes, o: patchResumo(c) };
+}
 
 /* Partidas da rodada aberta, na ordem em que foram salvas. */
 
@@ -165,7 +182,7 @@ function salvarArtilharia(rid, gols) {
 /* Caixa: lançamento junto com o resumo do mês. */
 function salvarLanc(id, o) {
   S.caixa[id] = o;
-  const ops = [{ tipo: 'set', p: 'caixa/' + id, o: clean(o) }, opResumo(camposLancamento(o, 1))];
+  const ops = [{ tipo: 'set', p: 'caixa/' + id, o: clean(o) }, opResumoCaixa(camposLancamento(o, 1))];
   changed();
   return w(GB.lote(sem(ops)));
 }
@@ -173,7 +190,7 @@ function apagarLanc(id) {
   const o = S.caixa[id];
   if (!o) return Promise.resolve();
   delete S.caixa[id];
-  const ops = [{ tipo: 'del', p: 'caixa/' + id }, opResumo(camposLancamento(o, -1))];
+  const ops = [{ tipo: 'del', p: 'caixa/' + id }, opResumoCaixa(camposLancamento(o, -1))];
   changed();
   return w(GB.lote(sem(ops)));
 }
@@ -252,12 +269,16 @@ async function migrar() {
         o: { matches: op.remover((r.matches || []).map(cl)), np: partidas.filter(p => p.rid === rid).length },
       });
     });
-    /* Todos os lançamentos, lidos do servidor: o caixa carrega só a janela recente (KAN-106). */
-    const caixaTodo = (await B.getServidor(gp('caixa'))) || {};
+    /* Todos os lançamentos, lidos do servidor: o caixa carrega só a janela recente (KAN-106).
+       Sem a permissão de Caixa, o caixa não é lido (KAN-207): os totais dele ficam para quem tem. */
+    const comCaixa = posso('caixa'),
+      caixaTodo = comCaixa ? (await B.getServidor(gp('caixa'))) || {} : {};
     const res = resumirTudo(partidas, Object.values(caixaTodo), Object.values(S.vot || {}));
-    Object.values(res).forEach(d =>
-      ops.push({ tipo: 'set', p: 'resumos/' + d.mes, o: clean(Object.assign({}, d, { at: Date.now() })) })
-    );
+    Object.values(res).forEach(d => {
+      ops.push({ tipo: 'set', p: 'resumos/' + d.mes, o: clean(Object.assign(semCaixa(d), { at: Date.now() })) });
+      if (comCaixa)
+        ops.push({ tipo: 'set', p: 'resumosCaixa/' + d.mes, o: clean(Object.assign(soCaixa(d), { at: Date.now() })) });
+    });
     ops.push({ tipo: 'set', p: 'privado/migracao', o: { v: VERSAO_DADOS, at: Date.now() } });
     await enviar(ops);
     S.migr = { v: VERSAO_DADOS };
@@ -303,6 +324,35 @@ function verificarRodadas() {
   });
 }
 
+/* KAN-207 (pelada-v74): grupo de antes da v74 tem os totais do caixa dentro do resumo do ranking. Uma vez, o app
+   do organizador soma esses totais aos de resumosCaixa e tira o cx do resumo do ranking, no mesmo lote. */
+let migrandoCaixa = false;
+async function migrarCaixa() {
+  if (migrandoCaixa || !S.dataOn || !isOwnerMe() || ((S.migr || {}).v || 0) < VERSAO_DADOS || (S.migr || {}).cx) return;
+  migrandoCaixa = true;
+  try {
+    const todos = (await B.getServidor(gp('resumos'))) || {},
+      ops = [];
+    Object.values(todos).forEach(d => {
+      const c = caixaAntigo(d);
+      if (!c) return;
+      ops.push({
+        tipo: 'patch',
+        p: 'resumosCaixa/' + c.mes,
+        o: { mes: c.mes, at: Date.now(), 'cx.ent': op.somar(c.cx.ent || 0), 'cx.sai': op.somar(c.cx.sai || 0) },
+      });
+      ops.push({ tipo: 'patch', p: 'resumos/' + c.mes, o: { cx: op.apagar(), at: Date.now() } });
+    });
+    ops.push({ tipo: 'patch', p: 'privado/migracao', o: { cx: 1 } });
+    await enviar(ops);
+    S.migr = Object.assign({}, S.migr, { cx: 1 });
+  } catch (e) {
+    console.warn('migração dos totais do caixa', e);
+  } finally {
+    migrandoCaixa = false;
+  }
+}
+
 /* Botão Recalcular: refaz as fichas do período a partir das partidas, do caixa e das votações.
    periodo: 'AAAA-MM' (um mês), 'AAAA' (ano) ou 'todos'. */
 async function recalcular(periodo) {
@@ -311,7 +361,9 @@ async function recalcular(periodo) {
   const rods = Object.entries(todas).filter(([, r]) => dentro(mesDe(r.date)) && ((r.matches || []).length || r.np > 0));
   const partidas = await lerPartidas(rods);
   // Todos os lançamentos do servidor (o caixa na tela carrega só a janela recente, KAN-106).
-  const lanc = Object.values((await B.getServidor(gp('caixa'))) || {}).filter(l => dentro(mesDe(l.d)));
+  // Sem a permissão de Caixa, os totais do caixa não são lidos nem refeitos (KAN-207).
+  const comCaixa = posso('caixa'),
+    lanc = comCaixa ? Object.values((await B.getServidor(gp('caixa'))) || {}).filter(l => dentro(mesDe(l.d))) : [];
   const res = resumirTudo(partidas, lanc, Object.values(S.vot || {}));
   Object.keys(res).forEach(m => {
     if (!dentro(m)) delete res[m];
@@ -320,14 +372,20 @@ async function recalcular(periodo) {
     if (dentro(m) && !res[m]) res[m] = vazio(m);
   });
   if (periodo.length === 7 && !res[periodo]) res[periodo] = vazio(periodo);
-  const ops = Object.values(res).map(d => ({
-    tipo: 'set',
-    p: 'resumos/' + d.mes,
-    o: clean(Object.assign({}, d, { at: Date.now() })),
-  }));
+  /* Grupo de antes da v74 com totais do caixa ainda no resumo do ranking: quem não tem Caixa os mantém como estão. */
+  const antigos = comCaixa ? {} : (await B.getServidor(gp('resumos'))) || {};
+  const ops = [];
+  Object.values(res).forEach(d => {
+    const r = semCaixa(d),
+      velho = caixaAntigo(antigos[d.mes]);
+    if (velho) r.cx = velho.cx;
+    ops.push({ tipo: 'set', p: 'resumos/' + d.mes, o: clean(Object.assign(r, { at: Date.now() })) });
+    if (comCaixa)
+      ops.push({ tipo: 'set', p: 'resumosCaixa/' + d.mes, o: clean(Object.assign(soCaixa(d), { at: Date.now() })) });
+  });
   if (S.res)
     Object.values(res).forEach(d => {
-      S.res[d.mes] = cl(d);
+      S.res[d.mes] = cl(semCaixa(d));
     });
   await enviar(ops);
   changed();
@@ -336,6 +394,7 @@ async function recalcular(periodo) {
 
 export {
   VERSAO_DADOS,
+  migrarCaixa,
   addMatch,
   apagarLanc,
   apagarPartidasDaRodada,

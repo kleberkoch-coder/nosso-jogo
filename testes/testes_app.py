@@ -370,8 +370,21 @@ with sync_playwright() as pw:
     ok(pg.locator('.money').first.inner_text().strip() != 'R$ 0,00', 'lançamento entra no caixa'); shot('05-caixa')
     kp = [x.strip().replace('\xa0', ' ') for x in pg.locator('.kpis .money').all_inner_texts()]
     ok(kp[0] == kp[1] and kp[2] == 'R$ 0,00', f'CT-KAN-87-05: saldo, entradas e saídas batem com os lançamentos ({kp})')
-    cx = pg.evaluate("(g)=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2')),m=S.month,d=s['grupos/'+g+'/resumos/'+m]||{};return (d.cx||{}).ent||0}", gid_fut)
-    ok(cx == 8000, f'CT-KAN-87-05: ficha do mês guarda as entradas do caixa em centavos ({cx})')
+    cx = pg.evaluate("(g)=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2')),m=S.month,d=s['grupos/'+g+'/resumosCaixa/'+m]||{};return (d.cx||{}).ent||0}", gid_fut)
+    cxr = pg.evaluate("(g)=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2')),m=S.month,d=s['grupos/'+g+'/resumos/'+m]||{};return 'cx' in d}", gid_fut)
+    ok(cx == 8000 and not cxr, f'CT-KAN-87-05 e CT-KAN-207-01: a ficha de caixa do mês guarda as entradas em centavos, fora do resumo do ranking ({cx})')
+    # KAN-207: grupo de antes da v74, com totais do caixa ainda no resumo do ranking: o app do organizador muda de lugar uma vez
+    mig0 = pg.evaluate(LER, f'grupos/{gid_fut}/privado/migracao') or {}
+    pg.evaluate(PUT, {f'grupos/{gid_fut}/resumos/2025-03': {'mes': '2025-03', 'jog': {}, 'jogos': {}, 'cx': {'ent': 5000, 'sai': 1200}},
+                      f'grupos/{gid_fut}/privado/migracao': {k: v for k, v in mig0.items() if k != 'cx'}})
+    pg.reload(); pg.wait_for_timeout(2500)
+    rc207 = pg.evaluate(LER, f'grupos/{gid_fut}/resumosCaixa/2025-03') or {}
+    r207 = pg.evaluate(LER, f'grupos/{gid_fut}/resumos/2025-03') or {}
+    ok(rc207.get('cx') == {'ent': 5000, 'sai': 1200} and 'cx' not in r207 and (pg.evaluate(LER, f'grupos/{gid_fut}/privado/migracao') or {}).get('cx') == 1,
+       f'CT-KAN-207-04: os totais antigos do caixa mudam de lugar uma vez, sem mudar o valor ({rc207.get("cx")}, resumo sem cx: {"cx" not in r207})')
+    pg.click('[data-a=tab][data-v=caixa]'); pg.wait_for_timeout(1200)
+    kp207 = [x.strip().replace('\xa0', ' ') for x in pg.locator('.kpis .money').all_inner_texts()]
+    ok(kp207 and kp207[0] != kp[0], f'CT-KAN-207-04: o saldo inclui os totais que mudaram de lugar ({kp[0]} → {kp207[0] if kp207 else None})')
     # ---------- v30 (KAN-135): Caixa como componente; nome com código aparece como texto
     ok(pg.locator('#caixaRaiz .kpis').count() == 1 and pg.locator('#pendLista li').count() >= 1, 'CT-KAN-135-01: aba Caixa (componente) mostra saldo, entradas, saídas e pendências')
     pid0 = pg.evaluate("Object.keys(S.jog)[0]"); nome0 = pg.evaluate("(id)=>S.jog[id].name", pid0)

@@ -168,3 +168,31 @@ test('histórico de placares: rodada mais recente primeiro, partidas na ordem', 
 test('Recalcular de um mês sem dados devolve ficha vazia', () => {
   assert.deepEqual(resumirTudo(PARTIDAS, [], [], '2026-11')['2026-11'], vazio('2026-11'));
 });
+
+/* ---------- KAN-207 (pelada-v74): totais do caixa fora do resumo do ranking ---------- */
+import {
+  caixaAntigo,
+  resumirTudo as resumir207,
+  saldo as saldo207,
+  semCaixa,
+  soCaixa,
+} from '../../src/dominio/resumos.ts';
+test('KAN-207: a ficha calculada se divide em ranking (sem caixa) e caixa (só os totais)', () => {
+  const res = resumir207(
+    [],
+    [
+      { k: 'mensal', v: 80, d: '2026-10-02' },
+      { k: 'despesa', v: 30, d: '2026-10-05' },
+    ],
+    []
+  );
+  const d = res['2026-10'];
+  assert.equal('cx' in semCaixa(d), false);
+  assert.deepEqual(soCaixa(d), { mes: '2026-10', cx: { ent: 8000, sai: 3000 } });
+  assert.equal(saldo207([soCaixa(d)]), 50);
+});
+test('KAN-207: totais antigos dentro do resumo do ranking são achados para mudar de lugar', () => {
+  assert.deepEqual(caixaAntigo({ mes: '2026-09', cx: { ent: 100 } }), { mes: '2026-09', cx: { ent: 100, sai: 0 } });
+  assert.equal(caixaAntigo({ mes: '2026-09', jog: {} }), null);
+  assert.equal(caixaAntigo(null), null);
+});

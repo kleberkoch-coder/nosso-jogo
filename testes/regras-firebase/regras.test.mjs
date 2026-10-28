@@ -746,12 +746,19 @@ describe('planos no app (KAN-119)', () => {
     await assertSucceeds(lanc(db.dono()));
     await assertSucceeds(setDoc(doc(db.dono(), G + '/votacoes/v2'), { open: true }));
   });
-  test('sem sistema/planos, vale a data padrão da transição (fim de 28/11/2026)', async () => {
+  test('com o Plano A, o organizador muda mensalidade e Pix (privado/caixa)', async () => {
+    await assertSucceeds(setDoc(doc(db.dono(), G + '/privado/caixa'), { pix: 'nova', mensal: 90 }));
+  });
+  const naTransicao = () => Date.now() < Date.UTC(2026, 10, 29, 3);
+  test('sem sistema/planos, vale a data padrão da transição: lançamento', async () => {
     await semRegras(f => deleteDoc(doc(f, 'sistema/planos')));
-    const naTransicao = Date.now() < Date.UTC(2026, 10, 29, 3);
+    const r = lanc(db.dono());
+    await (naTransicao() ? assertSucceeds(r) : assertFails(r));
+  });
+  test('sem sistema/planos, vale a data padrão da transição: mensalidade e Pix', async () => {
+    await semRegras(f => deleteDoc(doc(f, 'sistema/planos')));
     const r = setDoc(doc(db.dono(), G + '/privado/caixa'), { pix: 'nova', mensal: 90 });
-    await (naTransicao ? assertSucceeds(r) : assertFails(r));
-    await (naTransicao ? assertSucceeds(lanc(db.dono())) : assertFails(lanc(db.dono())));
+    await (naTransicao() ? assertSucceeds(r) : assertFails(r));
   });
   test('teste grátis: a conta grava o início uma vez só, com a hora de agora, e ganha o Plano A', async () => {
     await fimDaTransicao();

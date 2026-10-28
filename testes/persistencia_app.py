@@ -425,6 +425,42 @@ with sync_playwright() as pw:
     if EMU: c25b.close()
     c25.close()
 
+    # P26 afastamento (KAN-208): o afastamento fica em privado/afast e o "não cobrar" em privado/caixa.afIsen, gravados no
+    # mesmo lote; "Voltou" fecha o afastamento no mês anterior nos dois. Confere depois de recarregar e de sair e entrar.
+    c26 = novo(); p26 = c26.new_page()
+    p26.on('pageerror', lambda e: errs.append(str(e)))
+    E26 = 'afast26@teste.com'
+    p26.goto(URL + '#/criar'); p26.wait_for_selector('#le', timeout=20000); p26.wait_for_timeout(300)
+    p26.fill('#le', E26); p26.fill('#lp', SENHA); p26.fill('#lp2', SENHA); p26.wait_for_timeout(200)
+    p26.click('[data-a=signup]'); p26.wait_for_selector('#ngn', timeout=20000)
+    p26.fill('#ngn', 'Afastamento FC'); p26.click('[data-a=createGroup]')
+    p26.wait_for_function("location.hash.startsWith('#/g/')", timeout=20000)
+    g26 = p26.url.split('#/g/')[1].split('/')[0]
+    pronto(p26, 'jogadores'); p26.click('[data-a=seed]'); p26.wait_for_timeout(1500)
+    gravou(p26); pronto(p26, 'jogadores'); p26.wait_for_function("S.loaded.pc && S.loaded.af", timeout=20000)
+    j26 = J(p26, "Object.keys(S.jog).find(id=>!['diarista','isento'].includes(((S.pc||{}).tipos||{})[id]||'mensalista'))")
+    mes26 = J(p26, "(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')})()")
+    ant26 = J(p26, "(()=>{const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')})()")
+    p26.click(f'[data-a=editPlayer][data-p="{j26}"]'); p26.wait_for_timeout(400)
+    p26.click('#dlg [data-a=afastarDlg]'); p26.wait_for_selector('#afMot', timeout=10000)
+    p26.select_option('#afMot', 'lesao'); p26.fill('#afObs', 'cirurgia'); p26.select_option('#afDe', ant26); p26.select_option('#afAte', '')
+    p26.check('input[name=afCobra][value=nao]'); p26.click('#dlg [data-a=afSalvar]'); p26.wait_for_timeout(800)
+    gravou(p26); pronto(p26, 'jogadores'); p26.wait_for_function("S.loaded.pc && S.loaded.af", timeout=20000)
+    a26 = J(p26, "(p)=>{const e=Object.entries(S.af||{}).find(([,a])=>a&&a.pid===p);if(!e)return null;return {aid:e[0],a:e[1],i:((S.pc||{}).afIsen||{})[e[0]]||null}}", j26)
+    ok(bool(a26) and a26['a'].get('mot') == 'lesao' and a26['a'].get('obs') == 'cirurgia' and a26['a'].get('de') == ant26 and not a26['a'].get('ate')
+       and a26['i'] == {'pid': j26, 'de': ant26, 'ate': ''},
+       f'CT-KAN-170-P26: afastamento (motivo, início, até voltar) e "não cobrar" continuam depois de recarregar ({a26})')
+    p26.click(f'[data-a=editPlayer][data-p="{j26}"]'); p26.wait_for_timeout(400)
+    p26.click('#dlg [data-a=afastarDlg]'); p26.wait_for_selector('#afMot', timeout=10000)
+    p26.click('#dlg [data-a=afVoltou]'); p26.wait_for_timeout(800)
+    sair_e_esperar(p26)
+    p26.goto(URL + '#/entrar'); p26.wait_for_selector('#le', timeout=20000); p26.wait_for_timeout(300)
+    p26.fill('#le', E26); p26.fill('#lp', SENHA); p26.keyboard.press('Enter'); p26.wait_for_timeout(2500)
+    p26.goto(URL + '#/g/' + g26); pronto(p26, 'jogadores'); p26.wait_for_function("S.loaded.pc && S.loaded.af", timeout=20000)
+    b26 = J(p26, "(aid)=>[(S.af[aid]||{}).ate||null, (((S.pc||{}).afIsen||{})[aid]||{}).ate||null]", a26['aid'] if a26 else '')
+    ok(b26 == [ant26, ant26], f'CT-KAN-170-P26: "Voltou" fecha o afastamento e a isenção no mês anterior, depois de sair e entrar ({b26}, esperado {ant26})')
+    c26.close()
+
     ok(not errs, 'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))
     b.close()
 

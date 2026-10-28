@@ -8,6 +8,8 @@ import { tp, tx } from '../i18n/index.js';
 import { fdia, lvl, lvlIn, posso, recurso } from '../dominio/grupo.js';
 import { S } from '../nucleo/estado.js';
 import { $, esc, nextSat } from '../nucleo/util.js';
+import { doJogador } from '../dominio/afastamento';
+import { afastamentoDe, afs, mesCurto } from '../nucleo/afast';
 import { dlg, openDlg, posField } from './dialogos.js';
 import { campoTelefone } from './contato-form';
 
@@ -23,6 +25,18 @@ function campoTipo(tipo, recebe) {
   <label class="f" id="prvBox"${on ? '' : ' hidden'}><span>${tx('jogador.valorPorJogo', { moeda: simboloMoeda() })}</span><input class="inp" type="number" inputmode="decimal" min="0" step="0.01" id="prv" value="${on ? recebe.v : ''}"></label>
   <p class="small muted" style="margin-top:-4px">${tx('jogador.recebeDica')}</p>`;
 }
+/* KAN-208: afastamento do jogador na ficha (situação de agora ou o último) e o botão que abre a janela. */
+function linhaAfastamento(id) {
+  const ag = afastamentoDe(id),
+    ult = ag ? null : doJogador(afs(), id)[0],
+    quando = a => (a.ate ? `${mesCurto(a.de)}–${mesCurto(a.ate)}` : mesCurto(a.de) + '–');
+  const txt = ag
+    ? tx('afast.fichaAtual', { quando: quando(ag[1]), motivo: tx('afast.mot.' + ag[1].mot) })
+    : ult
+      ? tx('afast.fichaUltimo', { quando: quando(ult[1]) })
+      : '';
+  return `<div class="row between afast-linha"><span class="small${ag ? '' : ' muted'}">${esc(txt) || tx('afast.ficha')}</span><button class="btn sm" data-a="afastarDlg" data-p="${id}"${ag ? ` data-v="${ag[0]}"` : ''}>${tx(ag ? 'afast.verAfastamento' : 'afast.afastar')}</button></div>`;
+}
 function playerDlg(id, prefill) {
   const p = id ? S.jog[id] : null,
     cid = id || prefill?.id,
@@ -34,6 +48,7 @@ function playerDlg(id, prefill) {
   ${campoTelefone(ct.tel || '', tx('contato.telRotulo'))}
   <label class="f"><span>${tx('contato.emailRotulo')}</span><input class="inp" id="pmail" type="email" autocomplete="email" maxlength="100" value="${esc(ct.email || '')}" placeholder="${tx('contato.emailExemplo')}"></label>
   ${p ? `<p class="small muted" style="margin-top:-4px">Cadastrado em ${fdia(p.criado)} · ${p.ativo === false ? '<b style="color:var(--out)">inativo</b>' : 'ativo'}</p>` : ''}
+  ${p && p.ativo !== false ? linhaAfastamento(id) : ''}
   <div class="dlg-f">${p ? `<button class="btn ghost danger" data-a="delPlayer" data-p="${id}">Excluir</button><button class="btn" data-a="toggleJog" data-p="${id}">${p.ativo === false ? 'Reativar' : 'Inativar'}</button>` : ''}<button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="savePlayer" data-p="${id || ''}">Salvar jogador</button></div>`);
   setTimeout(() => $('#pnm')?.focus(), 50);
 }

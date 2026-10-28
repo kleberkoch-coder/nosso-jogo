@@ -5,7 +5,10 @@
      mes                       'AAAA-MM'
      jog.{pid}.{j,v,e,d,g,mvp,bagre}   jogos, vitórias, empates, derrotas, gols/pontos, destaques e bagres
      jogos.{idPartida}         {rid, date, ca, cb, ga, gb}  (placar, para o histórico do ranking)
-     cx.{ent,sai}              entradas e saídas do caixa no mês, em centavos (soma sem erro de arredondamento)
+     cx.{ent,sai}              (até a v73) entradas e saídas do caixa no mês, em centavos
+
+   Desde a pelada-v74 (KAN-207), os totais do caixa ficam à parte, em grupos/{gid}/resumosCaixa/{AAAA-MM}
+   ({mes, at, cx: {ent, sai}}), que só quem tem a permissão de Caixa lê e grava. O resumo do ranking não leva mais cx.
 
    Salvar ou apagar uma partida, um lançamento ou encerrar/reabrir uma votação gera "campos" (somar, gravar, apagar)
    que o app manda junto com a gravação. O mesmo cálculo refaz tudo do zero no botão Recalcular. */
@@ -46,8 +49,22 @@ export type Resumo = {
     string,
     { rid: string; date: string; ca: number; cb: number; ta?: number; tb?: number; ga: number; gb: number; at?: number }
   >;
-  cx: { ent?: number; sai?: number };
+  cx?: { ent?: number; sai?: number };
 };
+export type ResumoCaixa = { mes: string; cx: { ent?: number; sai?: number } };
+
+/* KAN-207: a ficha calculada se divide em duas, a do ranking (sem cx) e a do caixa (só cx). */
+export function semCaixa(d: Resumo): Resumo {
+  const o = { ...d };
+  delete o.cx;
+  return o;
+}
+export const soCaixa = (d: Resumo): ResumoCaixa => ({ mes: d.mes, cx: { ...(d.cx || {}) } });
+/* Totais de caixa que ainda estão no resumo do ranking (grupos de antes da v74), para mudar de lugar. */
+export function caixaAntigo(d: Partial<Resumo> | null | undefined): ResumoCaixa | null {
+  if (!d || !d.mes || !d.cx) return null;
+  return { mes: d.mes, cx: { ent: d.cx.ent || 0, sai: d.cx.sai || 0 } };
+}
 
 export const mesDe = (data?: string | null): string => String(data || '').slice(0, 7);
 
@@ -243,10 +260,10 @@ export function placares(docs: Partial<Resumo>[]) {
 }
 
 /* Caixa em reais (a ficha guarda centavos). */
-export function caixaDoMes(doc?: Partial<Resumo> | null) {
+export function caixaDoMes(doc?: Partial<Resumo> | Partial<ResumoCaixa> | null) {
   const cx = (doc && doc.cx) || {};
   return { ent: (cx.ent || 0) / 100, sai: (cx.sai || 0) / 100 };
 }
-export function saldo(docs: Partial<Resumo>[]) {
+export function saldo(docs: (Partial<Resumo> | Partial<ResumoCaixa>)[]) {
   return docs.reduce((s, d) => s + ((d.cx && d.cx.ent) || 0) - ((d.cx && d.cx.sai) || 0), 0) / 100;
 }

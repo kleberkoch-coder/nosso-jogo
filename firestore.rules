@@ -452,12 +452,25 @@ service cloud.firestore {
         }
       }
 
-      // Totais prontos por mês (pelada-v18, KAN-87): ranking e caixa. Só administradores leem e gravam.
+      // Totais prontos por mês (pelada-v18, KAN-87): ranking. Só administradores leem e gravam. O caixa saiu daqui na v74.
       match /resumos/{mes} {
         allow read: if isMember(gid);
         allow write: if adminAtivo(gid)
           && mes.matches('[0-9]{4}-[0-9]{2}')
           && request.resource.data.keys().hasOnly(['mes', 'at', 'jog', 'jogos', 'cx'])
+          && request.resource.data.mes == mes
+          // KAN-207: os totais do caixa (cx) não entram mais aqui; os de antes da v74 só saem com a permissão de Caixa.
+          && (resource == null ? !('cx' in request.resource.data)
+              : (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['cx'])
+                || (pode(gid, 'caixa') && !('cx' in request.resource.data))));
+      }
+
+      // Totais do caixa por mês (KAN-207, pelada-v74): entradas e saídas, só para quem tem a permissão de Caixa.
+      match /resumosCaixa/{mes} {
+        allow read: if podeVer(gid, 'caixa');
+        allow write: if pode(gid, 'caixa')
+          && mes.matches('[0-9]{4}-[0-9]{2}')
+          && request.resource.data.keys().hasOnly(['mes', 'at', 'cx'])
           && request.resource.data.mes == mes;
       }
 

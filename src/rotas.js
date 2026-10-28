@@ -94,6 +94,7 @@ function ensureExtras() {
   if (S.route.n !== 'admin' || !S.dataOn || !A) return;
   /* Partidas e totais por mês (pelada-v18): move dados antigos uma vez e mantém tudo no lugar novo. */
   A.migrar();
+  A.migrarCaixa(); // KAN-207: totais do caixa saem do resumo do ranking (uma vez, pelo organizador)
   A.verificarRodadas();
   /* Fichas de resumo: o ranking lê só as do ano escolhido (até 12). */
   /* Ranking sob demanda (KAN-180): a ficha do ano carrega quando a aba já chegou. */
@@ -172,10 +173,11 @@ function ensureExtras() {
     drop('rodJunt');
     S.rodJunt = null;
   }
-  /* Saldo do caixa (KAN-106): soma das fichas de resumo de cada mês (D11), só com a aba aberta. */
+  /* Saldo do caixa (KAN-106): soma das fichas de caixa de cada mês (D11), só com a aba aberta.
+     Desde a v74 (KAN-207), as fichas do caixa ficam em resumosCaixa, que só quem tem a permissão de Caixa lê. */
   if (S.tab === 'caixa' && posso('caixa')) {
     if (!SUBS.resCx)
-      subQ('resCx', 'resumos', { campo: 'mes', ordem: 'asc' }, d => {
+      subQ('resCx', 'resumosCaixa', { campo: 'mes', ordem: 'asc' }, d => {
         S.resCx = d || {};
       });
   } else if (SUBS.resCx) {

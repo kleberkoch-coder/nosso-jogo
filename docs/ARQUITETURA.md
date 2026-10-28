@@ -199,6 +199,12 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D26. Totais do caixa à parte do ranking (28 out. 2026, pelada-v74, KAN-207)
+- **Problema (auditoria de Segurança de 28/10):** os totais do caixa de cada mês ficavam no resumo do ranking (`resumos/{mês}.cx`), que todo administrador lê e grava; com as permissões da v69, quem não tem Caixa recebia e podia mudar esses totais.
+- **Decisão:** o Firestore não esconde um campo de um documento, então os totais foram para `resumosCaixa/{mês}` (`mes`, `at`, `cx`), com leitura `podeVer(caixa)` e gravação `pode(caixa)`. O lançamento grava o caixa e o total do mês no mesmo lote. O resumo do ranking não aceita mais `cx`; o `cx` antigo só sai com a permissão de Caixa.
+- **Mudança de lugar:** uma vez por grupo, o app do organizador soma o `cx` antigo de cada mês ao `resumosCaixa` e tira o `cx` do resumo, no mesmo lote, e marca `privado/migracao.cx`. Até isso acontecer, o `cx` antigo continua legível por todo administrador (como antes da v74). Recalcular sem a permissão de Caixa não lê o caixa e mantém o `cx` antigo como está.
+- **Custo:** uma leitura a mais (todos os resumos) na primeira abertura do organizador; gestão 90,9 → 91,3 KB.
+
 ### D25. Administradores convidados por plano e quem só vê (28 out. 2026, pelada-v71, KAN-204)
 - **Sem contar documentos:** as regras não contam convidados, então o grupo guarda a lista (`grupos/{gid}.adms`), na ordem de entrada. Entrar pelo convite é um lote: o cadastro do convidado e o nome dele no fim da lista, dentro do limite do plano do organizador (`entrouNaLista`). Sair também (`saiuDaLista`). Só o organizador arruma a lista; o app dele a mantém igual aos convidados que existem (`listaDeConvidados`), e grava a primeira vez nos grupos de antes da v71.
 - **Quem grava:** toda regra de gravação que pedia `isMember` passou a pedir `adminAtivo`: o organizador, ou um convidado entre os primeiros da lista até o limite (`dentroDoLimite`). Ler continua com `isMember` e, para caixa, contatos e convite, `podeVer` (permissão sem o limite). Sem a lista (grupo antigo), todos gravam.

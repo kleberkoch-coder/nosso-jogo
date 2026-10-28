@@ -82,7 +82,8 @@ const dia = n => {
 /* Rodadas da janela da aba Rodada (D10): as próximas (a partir de ontem, para pegar o jogo que vira a meia-noite) e as recentes
    (até hoje: as últimas 4 mais uma folga para o jogo de hoje). */
 const Q_PROX = { campo: 'date', ordem: 'asc', limite: 12 },
-  Q_REC = { campo: 'date', ordem: 'desc', limite: 5 };
+  Q_REC = { campo: 'date', ordem: 'desc', limite: 5 },
+  JUNTOS_RODADAS = 20;
 function juntarRod() {
   S.rod = Object.assign({}, S.rodP || {}, S.rodF || {});
   regAvulsos();
@@ -156,6 +157,16 @@ function ensureExtras() {
     subQ('caixa', 'caixa', { campo: 'd', de: deCx, ordem: 'asc' }, d => {
       S.caixa = d || {};
     });
+  }
+  /* Quem mais joga junto (KAN-200): as últimas 20 rodadas, só com a aba Jogadores aberta. */
+  if (S.tab === 'jogadores') {
+    if (!SUBS.rodJunt)
+      subQ('rodJunt', 'rodadas', { campo: 'date', ate: dia(0), ordem: 'desc', limite: JUNTOS_RODADAS }, d => {
+        S.rodJunt = d || {};
+      });
+  } else if (SUBS.rodJunt) {
+    drop('rodJunt');
+    S.rodJunt = null;
   }
   /* Saldo do caixa (KAN-106): soma das fichas de resumo de cada mês (D11), só com a aba aberta. */
   if (S.tab === 'caixa') {
@@ -343,6 +354,7 @@ function setupRoute() {
     rodPagDe: null,
     caixa: {},
     caixaDe: null,
+    rodJunt: null,
     resCx: null,
     rodX: {},
     rodXid: null,

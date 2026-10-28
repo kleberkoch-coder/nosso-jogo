@@ -2,12 +2,12 @@
    Por fora é a mesma tela de antes, mais o botão de importar. Os botões usam data-a (ações em acoes/jogadores.js). */
 import { render } from 'preact';
 import { ptipo } from '../dominio/caixa.js';
-import { fdia, lvl, players, pname, ppos, rat } from '../dominio/grupo.js';
+import { fdia, lvl, players, pname, ppos, rat, rodadas } from '../dominio/grupo.js';
 import { hasPos, posKeys } from '../dominio/esportes.js';
 import { ORDENS, ordemValida, ordenarJogadores, type Ordem } from '../dominio/ordem-jogadores.ts';
-import { history } from '../dominio/sorteio.js';
+import { rodadasComTimes, vezesJuntos, type Par, type RodadaComTimes } from '../dominio/juntos';
 import { LOCAL } from '../i18n/formatos.js';
-import { tx } from '../i18n/index.js';
+import { tp, tx } from '../i18n/index.js';
 import { waUrl } from '../nucleo/edicoes.js';
 import { S as estado } from '../nucleo/estado.js';
 import { Nota, Pos } from '../ui/componentes';
@@ -113,7 +113,16 @@ function JogadoresTela() {
     a => a[1].nome || '',
     a => a[1].criado
   );
-  const top = (Object.entries(history(null)) as [string, number][]).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  /* Quem mais joga junto (KAN-200): quantas vezes, nas últimas rodadas com times (carregadas só nesta aba). */
+  const rodsJ = (
+    S.rodJunt
+      ? (Object.values(S.rodJunt) as (RodadaComTimes & { date?: string })[]).sort((a, b) =>
+          (b.date || '').localeCompare(a.date || '')
+        )
+      : rodadas()
+  ) as RodadaComTimes[];
+  const pares = vezesJuntos(rodsJ),
+    nRods = rodadasComTimes(rodsJ);
   return (
     <div class="stack">
       <div class="row between">
@@ -210,33 +219,38 @@ function JogadoresTela() {
             {tx('jogadores.adicionarPar')}
           </button>
         </div>
-        <div class="panel">
+        <div class="panel" id="juntos">
           <h3>{tx('jogadores.juntosTitulo')}</h3>
           <p class="small muted" style="margin-top:-6px">
-            {tx('jogadores.juntosAjuda')}
+            {pares.length ? tp('jogadores.juntosAjuda', nRods) : tx('jogadores.juntosVazio')}
           </p>
-          <ul class="plist">
-            {top.length ? (
-              top.map(([k, v]) => {
-                const [a, b] = k.split('|');
-                return (
-                  <li key={k}>
-                    <span class="pn">
-                      {pname(a)} + {pname(b)}
-                    </span>
-                    <span class="bar" style="max-width:120px">
-                      <i style={{ width: Math.min(100, (v / top[0][1]) * 100) + '%' }}></i>
-                    </span>
-                  </li>
-                );
-              })
-            ) : (
-              <li class="muted small">{tx('jogadores.juntosVazio')}</li>
-            )}
-          </ul>
+          {pares.length ? <ListaPares pares={pares.slice(0, 6)} /> : null}
+          {pares.length > 6 ? (
+            <details style="margin-top:6px">
+              <summary class="small">{tx('jogadores.juntosTodos', { n: pares.length })}</summary>
+              <ListaPares pares={pares.slice(6)} inicio={7} />
+            </details>
+          ) : null}
         </div>
       </div>
     </div>
+  );
+}
+
+/* Pares numerados com quantas vezes jogaram juntos (KAN-200). */
+function ListaPares({ pares, inicio = 1 }: { pares: Par[]; inicio?: number }) {
+  return (
+    <ol class="plist juntos" start={inicio}>
+      {pares.map((p, i) => (
+        <li key={p.a + '|' + p.b}>
+          <span class="num">{inicio + i}</span>
+          <span class="pn">
+            {pname(p.a)} + {pname(p.b)}
+          </span>
+          <b class="juntos-n">{tp('jogadores.juntosVezes', p.n)}</b>
+        </li>
+      ))}
+    </ol>
   );
 }
 

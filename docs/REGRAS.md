@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D16) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v67 (27/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v68 (27/10/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -52,6 +52,7 @@ Atualizado na pelada-v67 (27/10/2026). Toda entrega que mudar uma regra atualiza
 - Administradores entram por link de convite; só o organizador remove, e remover invalida o link atual.
 
 ## Jogadores
+- Quem mais joga junto (KAN-200, v68; regra `vezesJuntos` em `dominio/juntos.ts`, com teste): na aba Jogadores, cada par mostra quantas vezes ficou no mesmo time nas últimas 20 rodadas com times sorteados (carregadas só com a aba aberta), em ordem do mais frequente; no empate, quem jogou junto mais recentemente. Os 6 primeiros aparecem direto; "Ver todos (N pares)" abre o resto. O sorteio continua usando o histórico com peso maior para as rodadas recentes.
 - Ficha: nome, posição, nota de 1 a 10 (meio ponto), tipo (mensalista, diarista ou isento de pagamento), "Recebe por jogo" com o valor, contato. Inativar é diferente de excluir.
 - Isento de pagamento (KAN-172): continua no elenco, no sorteio, no ranking e na votação, mas nunca deve mensalidade nem diária. Importar elenco aceita "Isento" ou "Não paga"; em Ordenar por Tipo, os isentos vêm por último.
 - Telefone (KAN-156, KAN-162; regra em `dominio/telefone.ts` e `dominio/paises.ts`, com teste):

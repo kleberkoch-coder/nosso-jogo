@@ -2328,3 +2328,11 @@ label.f > span.dica {
   width: auto;
   min-height: 44px;
 }
+
+/* KAN-200: quem mais joga junto, com o número de vezes à direita */
+.juntos-n {
+  margin-left: auto;
+  white-space: nowrap;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}

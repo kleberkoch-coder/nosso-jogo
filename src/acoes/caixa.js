@@ -24,6 +24,17 @@ function refGrupo() {
     hoje: today(),
   });
 }
+/* "Recebi" grava na hora e o aviso oferece "Desfazer" por 6 segundos (KAN-129). */
+function receber(o) {
+  const id = B.newId(),
+    r = salvarLanc(id, o);
+  toastAcao(tx('caixa.recebido', { nome: pname(o.pid), valor: brl(o.v) }), tx('caixa.desfazer'), () => {
+    const d = apagarLanc(id);
+    toast(tx('caixa.pagamentoDesfeito'));
+    return d;
+  });
+  return r;
+}
 function valorConferido(el, v, ref, campo) {
   if (!foraDoPadrao(v, ref)) return true;
   return (
@@ -90,15 +101,14 @@ const acoes = {
   payPend: el => {
     const p = pendencias(S.month)[+el.dataset.v];
     if (!p) return;
-    const id = B.newId(),
-      o = { k: p.k, pid: p.pid, v: p.v, d: today(), ref: p.ref, note: '' };
-    const r = salvarLanc(id, o);
-    toastAcao(tx('caixa.recebido', { nome: pname(p.pid), valor: brl(p.v) }), tx('caixa.desfazer'), () => {
-      const d = apagarLanc(id);
-      toast(tx('caixa.pagamentoDesfeito'));
-      return d;
-    });
-    return r;
+    return receber({ k: p.k, pid: p.pid, v: p.v, d: today(), ref: p.ref, note: '' });
+  },
+  /* KAN-212: "Receber" no Quadro do ano lança a mensalidade daquela competência (valor do grupo, data de hoje). */
+  payMes: el => {
+    const pid = el.dataset.p,
+      ref = el.dataset.v;
+    if (!pid || !/^\d{4}-\d{2}$/.test(ref || '')) return;
+    return receber({ k: 'mensal', pid, v: cfg().mensal, d: today(), ref, note: '' });
   },
   /* A pagar por jogo (KAN-172): a janela lista os jogos acumulados; Paguei lança uma despesa com o total e as rodadas pagas. */
   abrirPagar: el => {

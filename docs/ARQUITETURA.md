@@ -199,6 +199,14 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D30. Mensalidade paga por jogador no resumo do caixa (29 out. 2026, pelada-v78, KAN-212)
+- **Problema:** o Quadro do ano precisa saber quem pagou cada competência do ano inteiro, mas o app só carrega 7 meses de lançamentos (D11, KAN-106). Ler o ano todo a cada abertura custaria leituras proporcionais ao histórico.
+- **Decisão:** o resumo do caixa de cada mês (`resumosCaixa/{mês}`) ganha `mens: {pid: centavos}`, somado pela **competência** (`ref`), não pela data do dinheiro. Cada lançamento ou exclusão de mensalidade soma ou subtrai no mesmo lote (`camposMensal` em `dominio/resumos.ts`); Recalcular refaz a partir de todos os lançamentos. Abrir o quadro lê só as fichas que o Caixa já lê para o saldo: nenhuma leitura a mais.
+- **Grupos antigos:** uma vez por grupo, quem tem a permissão de Caixa monta o `mens` de todos os meses com os lançamentos que existem e marca `privado/migracao.mens` (`migrarMensal`).
+- **Regras do Firebase:** `resumosCaixa` aceita o campo `mens` (um mapa), com a mesma permissão de Caixa de antes.
+- **Quadro:** fica dentro da parte sob demanda do Caixa (`telas/QuadroAno.tsx`, regra em `dominio/quadro.ts`, com teste), fechado por padrão; só desenha quando aberto. Gestão 93,7 → 94,4 KB (migração e CSS); Caixa 5,1 → 7,0 KB.
+- **Limite consciente:** o quadro mostra os mensalistas de hoje. Quem virou mensalista depois de ser diarista aparece "em aberto" nos meses de antes (desde a data de cadastro). A data do pagamento aparece só nos lançamentos carregados (7 meses); nos mais antigos, o valor.
+
 ### D29. Competência da mensalidade separada do fluxo de caixa (28 out. 2026, pelada-v77, KAN-209)
 - **O que já existia:** todo lançamento guarda `d` (data em que o dinheiro entrou, que manda no fluxo e nos totais do mês, `resumosCaixa`) e `ref` (para mensalidade, o mês a que se refere). As pendências usam `ref`.
 - **Ciclo:** `privado/caixa.ciclo` é uma lista `[{desde: competência, dia}]`. A competência de uma data é o mês dela, ou o anterior se a data vem antes do dia de início; o período vai do dia de início até a véspera do início da seguinte. Por isso mudar o dia "a partir da próxima" só estica a atual, e "já na atual" a muda, sem tocar em lançamentos. Fica no caixa (permissão de Caixa): quem não tem Caixa vê o mês do calendário, o que só muda o afastamento num grupo com ciclo diferente.

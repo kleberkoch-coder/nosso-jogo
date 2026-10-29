@@ -95,6 +95,7 @@ function ensureExtras() {
   /* Partidas e totais por mês (pelada-v18): move dados antigos uma vez e mantém tudo no lugar novo. */
   A.migrar();
   A.migrarCaixa(); // KAN-207: totais do caixa saem do resumo do ranking (uma vez, pelo organizador)
+  A.migrarMensal(); // KAN-212: mensalidades pagas por competência, para o Quadro do ano (uma vez, quem tem Caixa)
   A.verificarRodadas();
   /* Fichas de resumo: o ranking lê só as do ano escolhido (até 12). */
   /* Ranking sob demanda (KAN-180): a ficha do ano carrega quando a aba já chegou. */

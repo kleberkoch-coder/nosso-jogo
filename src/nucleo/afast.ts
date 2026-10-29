@@ -31,6 +31,7 @@ export const mesHoje = () => compDe(today());
 export const afastadoEm = (pid: string, mes = mesHoje()) => !!afastamentoNoMes(afs(), pid, mes);
 export const afastamentoDe = (pid: string, mes = mesHoje()) => afastamentoNoMes(afs(), pid, mes);
 export const semMensalNoMes = (mes: string) => (pid: string) => semMensalidade(afs(), isencoes(), pid, mes);
+export const semMensalidadeEm = (pid: string, mes: string) => semMensalidade(afs(), isencoes(), pid, mes);
 export const confirmaramAfastados = (pres: Record<string, { s?: string }>, mes: string, rid: string) =>
   afastadosQueConfirmaram(afs(), pres, mes, rid);
 

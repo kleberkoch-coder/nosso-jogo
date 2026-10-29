@@ -27,6 +27,8 @@ import { ciclo, fdm, mesHoje, periodoDe, semMensalNoMes } from '../nucleo/afast'
 import { S as estado } from '../nucleo/estado.js';
 import { brl, fdate, fmonth, today } from '../nucleo/util.js';
 import { QuadroAno } from './QuadroAno';
+import { SecaoRateios, rateios } from './Rateios';
+import { pendenciasDeRateio } from '../dominio/rateio';
 
 const st = (): any => estado;
 let quadroAberto = false;
@@ -35,7 +37,7 @@ type Lanc = Lancamento & { id: string };
 /* Pendências do mês com o texto de cada uma (usado pela tela, pelo "Recebi" e pela cobrança no WhatsApp).
    KAN-209: no mês de hoje, a mensalidade é a da competência atual (com o ciclo depois do dia 1, pode ser a do mês
    anterior) e entram as das 6 competências anteriores ainda em aberto ("Em atraso"). Diárias seguem as rodadas do mês. */
-type Pend = Pendencia & { label: string; cob?: string; atraso?: boolean };
+type Pend = Omit<Pendencia, 'k'> & { k: Pendencia['k'] | 'rateio'; label: string; cob?: string; atraso?: boolean };
 /* "jan. de 2026": cabe na linha do celular. */
 const mesAno = (m: string) => new Date(m + '-15T12:00').toLocaleDateString(LOCAL, { month: 'short', year: 'numeric' });
 const dataLocal = (ms?: number) => {
@@ -70,6 +72,10 @@ function pendencias(month: string): Pend[] {
     })
   );
   if (month !== today().slice(0, 7)) return doMes;
+  /* KAN-213: rateios abertos marcados para aparecer nas pendências (o rateio vai em ref). */
+  pendenciasDeRateio(rateios()).forEach(x =>
+    doMes.push({ pid: x.pid, k: 'rateio', ref: x.rid, v: x.v / 100, label: x.n, cob: x.n })
+  );
   /* Em atraso: quem entrou no elenco depois do período não deve aquele mês. */
   const atraso: Pend[] = [];
   anteriores(comp).forEach(m => {
@@ -166,6 +172,8 @@ function NovoLancamento() {
   const [meses, setMeses] = useState<string[]>([hoje]);
   const [valor, setValor] = useState(String(c.mensal));
   const [data, setData] = useState(today());
+  /* KAN-213: entrada ou despesa pode ficar ligada a um rateio aberto. */
+  const abertos = Object.entries(rateios()).filter(([, r]) => r && !r.fim);
   const valorDe = (t: string, n: number) =>
     t === 'mensal' ? String(Math.round(c.mensal * n * 100) / 100) : t === 'diaria' ? String(c.diaria) : '';
   const trocarMes = (m: string, on: boolean) => {
@@ -254,6 +262,19 @@ function NovoLancamento() {
         <p class="small muted" id="lanDivide">
           {tx('caixa.divideMeses', { n: meses.length, valor: brl((+valor || 0) / meses.length) })}
         </p>
+      ) : null}
+      {(k === 'entrada' || k === 'despesa') && abertos.length ? (
+        <label class="f">
+          <span>{tx('rateio.ligarLancamento')}</span>
+          <select class="sel" id="lrat">
+            <option value="">—</option>
+            {abertos.map(([rid, r]) => (
+              <option key={rid} value={rid}>
+                {r!.n}
+              </option>
+            ))}
+          </select>
+        </label>
       ) : null}
       <label class="f">
         <span>{tx('caixa.descricao')}</span>
@@ -473,6 +494,7 @@ function Caixa() {
           </ul>
         </div>
       </div>
+      <SecaoRateios />
       <details
         class="panel quadro-painel"
         id="quadroAno"

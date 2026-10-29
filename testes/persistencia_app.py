@@ -526,6 +526,41 @@ with sync_playwright() as pw:
        f'CT-KAN-170-P28: "Recebi" no Quadro do ano grava a mensalidade e o resumo por jogador, e a célula segue Paga depois de sair e entrar ({r28}, {l28}, {cel28})')
     c28.close()
 
+    # P29 rateio (KAN-213): criar um rateio, "Recebi" de um participante e "Encerrar". Confere depois de sair e entrar:
+    # o rateio (privado/caixa.rat), o pagamento (rat.pg) e a entrada ligada (caixa, com rat).
+    c29 = novo(); p29 = c29.new_page()
+    p29.on('pageerror', lambda e: errs.append(str(e)))
+    E29 = 'rateio29@teste.com'
+    p29.goto(URL + '#/criar'); p29.wait_for_selector('#le', timeout=20000); p29.wait_for_timeout(300)
+    p29.fill('#le', E29); p29.fill('#lp', SENHA); p29.fill('#lp2', SENHA); p29.wait_for_timeout(200)
+    p29.click('[data-a=signup]'); p29.wait_for_selector('#ngn', timeout=20000)
+    p29.fill('#ngn', 'Rateio FC'); p29.click('[data-a=createGroup]')
+    p29.wait_for_function("location.hash.startsWith('#/g/')", timeout=20000)
+    g29 = p29.url.split('#/g/')[1].split('/')[0]
+    pronto(p29, 'jogadores'); p29.click('[data-a=seed]'); p29.wait_for_timeout(1500)
+    gravou(p29); pronto(p29, 'caixa'); p29.wait_for_function("S.loaded.pc", timeout=20000)
+    p29.click('[data-a=ratNovo]'); p29.wait_for_selector('#rtn', timeout=10000)
+    p29.fill('#rtn', 'Bola nova'); p29.fill('#rtv', '300')
+    ids29 = J(p29, "[...document.querySelectorAll('#rtPart .rtp')].map(x=>x.value)")[:3]
+    for pid in ids29:
+        p29.locator(f'#rtPart .rat-linha:has(.rtp[value="{pid}"]) .chk-linha span').click(); p29.wait_for_timeout(60)
+    p29.click('#dlg [data-a=ratSalvar]'); p29.wait_for_timeout(1000)
+    rid29 = J(p29, "Object.keys((S.pc||{}).rat||{})[0]")
+    p29.click(f'#rat-{rid29} [data-a=ratRecebi][data-p="{ids29[0]}"]'); p29.wait_for_timeout(1000)
+    p29.click(f'#rat-{rid29} [data-a=ratEncerrar]'); p29.wait_for_timeout(300)
+    if p29.locator('#dlg .conf [data-a=confSim]').count(): p29.click('#dlg .conf [data-a=confSim]')
+    p29.wait_for_timeout(1000); gravou(p29)
+    sair_e_esperar(p29)
+    p29.goto(URL + '#/entrar'); p29.wait_for_selector('#le', timeout=20000); p29.wait_for_timeout(300)
+    p29.fill('#le', E29); p29.fill('#lp', SENHA); p29.keyboard.press('Enter'); p29.wait_for_timeout(2500)
+    p29.goto(URL + '#/g/' + g29); pronto(p29, 'caixa'); p29.wait_for_function("S.loaded.pc", timeout=20000); p29.wait_for_timeout(1200)
+    r29 = J(p29, "(r)=>{const x=((S.pc||{}).rat||{})[r];return x?[x.n,x.part,x.pg||{},!!x.fim,!!x.pend]:null}", rid29)
+    l29 = J(p29, "(r)=>Object.values(S.caixa||{}).filter(l=>l&&l.rat===r).map(l=>[l.k,l.pid,l.v])", rid29)
+    ok(r29 and r29[0] == 'Bola nova' and r29[1] == {ids29[0]: 10000, ids29[1]: 10000, ids29[2]: 10000} and r29[2] == {ids29[0]: 10000} and r29[3] and r29[4]
+       and l29 == [['entrada', ids29[0], 100]],
+       f'CT-KAN-170-P29: rateio, pagamento e encerramento continuam depois de sair e entrar ({r29}, {l29})')
+    c29.close()
+
     ok(not errs, 'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))
     b.close()
 

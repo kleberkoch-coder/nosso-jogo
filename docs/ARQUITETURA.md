@@ -199,6 +199,12 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D31. Rateio dentro de privado/caixa, com o pago somado no rateio (29 out. 2026, pelada-v79, KAN-213)
+- **Onde fica:** `privado/caixa.rat.{id}` = `{n, modo, base, part: {pid: centavos}, pg: {pid: centavos}, gasto, pend, em, fim}`. Mesmo documento e mesma permissão do caixa (Caixa no Plano A para gravar): sem coleção nova, sem leitura a mais e **sem mudança nas regras do Firebase**. Poucos rateios por ano cabem folgados no documento.
+- **Pagamento:** "Recebi" é uma entrada comum no Caixa (`caixa/{id}` com `pid`, `rat` e o nome em `note`), então entra no fluxo do mês do pagamento e no saldo como qualquer entrada. No mesmo lote, soma em `rat.{id}.pg.{pid}` (incremento do servidor); apagar ou "Desfazer" desconta. Assim o cartão não depende dos lançamentos carregados (7 meses). Despesa ligada soma em `gasto`.
+- **Gravação por campo:** criar, editar, encerrar e reabrir gravam só os campos do rateio (`patch`), para não apagar um pagamento que outro aparelho somou ao mesmo tempo. Ao tirar um participante, a chave dele é apagada.
+- **Leveza:** tudo vem com a parte sob demanda do Caixa (`telas/Rateios.tsx`, `acoes/rateio.ts`); o núcleo só ganhou um gancho (`aoLancar`) para somar no mesmo lote do lançamento. Gestão 94,4 → 94,6 KB; Caixa 7,0 → 10,6 KB.
+
 ### D30. Mensalidade paga por jogador no resumo do caixa (29 out. 2026, pelada-v78, KAN-212)
 - **Problema:** o Quadro do ano precisa saber quem pagou cada competência do ano inteiro, mas o app só carrega 7 meses de lançamentos (D11, KAN-106). Ler o ano todo a cada abertura custaria leituras proporcionais ao histórico.
 - **Decisão:** o resumo do caixa de cada mês (`resumosCaixa/{mês}`) ganha `mens: {pid: centavos}`, somado pela **competência** (`ref`), não pela data do dinheiro. Cada lançamento ou exclusão de mensalidade soma ou subtrai no mesmo lote (`camposMensal` em `dominio/resumos.ts`); Recalcular refaz a partir de todos os lançamentos. Abrir o quadro lê só as fichas que o Caixa já lê para o saldo: nenhuma leitura a mais.

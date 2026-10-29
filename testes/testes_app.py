@@ -2990,6 +2990,112 @@ with sync_playwright() as pw:
     p28.set_viewport_size({'width': 390, 'height': 844}); p28.wait_for_timeout(200)
     p28.locator('#quadroAno').screenshot(path=f'{OUT}/v78-quadro-390.png')
     ctx28.close()
+    # ---------- v79 (KAN-213): rateio (vaquinha) no Caixa
+    ctx29 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+    p29 = ctx29.new_page(); p29.on('pageerror', lambda e: errs.append(str(e)))
+    p29.clock.install(time=datetime.datetime(2026, 10, 29, 15, 0, 0, tzinfo=datetime.timezone(datetime.timedelta(hours=-3))))
+    p29.goto(URL + '#/criar'); p29.wait_for_selector('#le')
+    p29.fill('#le', 'rateio79@teste.com'); p29.fill('#lp', 'Jogo@2026'); p29.fill('#lp2', 'Jogo@2026'); p29.keyboard.press('Enter'); p29.wait_for_selector('#ngBox', timeout=8000)
+    p29.fill('#ngn', 'Rateio FC'); p29.click('[data-a=createGroup]'); p29.wait_for_function("location.hash.startsWith('#/g/')"); p29.wait_for_timeout(1500)
+    p29.click('[data-a=tab][data-v=jogadores]'); p29.wait_for_timeout(300); p29.click('[data-a=seed]'); p29.wait_for_timeout(1500)
+    p29.click('[data-a=tab][data-v=grupo]'); p29.wait_for_timeout(900); p29.click('[data-a=settings]'); p29.wait_for_selector('#cm')
+    p29.fill('#cm', '85'); p29.fill('#cpx', 'pix.rateio@teste.com'); p29.click('#dlg [data-a=saveSettings]'); p29.wait_for_timeout(800)
+    p29.click('[data-a=tab][data-v=caixa]'); p29.wait_for_timeout(1200)
+    ok(p29.locator('#rateios').count() == 1 and p29.locator('[data-a=ratNovo]').count() == 1, 'CT-KAN-213-01: o Caixa tem a seção Rateios com "Novo rateio"')
+    p29.click('[data-a=ratNovo]'); p29.wait_for_selector('#rtn'); p29.wait_for_timeout(200)
+    ok(p29.evaluate("document.activeElement && document.activeElement.id") == 'rtn', 'CT-KAN-213-01: a janela abre com o cursor no nome')
+    nmens29 = p29.evaluate("Object.keys(S.jog).filter(id=>(((S.pc||{}).tipos||{})[id]||'mensalista')==='mensalista').length")
+    p29.click('#rtMensalistas'); p29.wait_for_timeout(150)
+    ok(p29.locator('#rtPart .rtp:checked').count() == nmens29, f'CT-KAN-213-01: "Todos os mensalistas" marca os {nmens29} mensalistas')
+    p29.click('#rtLimpar'); p29.wait_for_timeout(150)
+    p29.fill('#rtn', 'Churrasco de dezembro'); p29.fill('#rtv', '505')
+    ids29 = p29.evaluate("[...document.querySelectorAll('#rtPart .rtp')].map(x=>x.value)")[:7]
+    for pid in ids29:
+        p29.locator(f'#rtPart .rat-linha:has(.rtp[value="{pid}"]) .chk-linha span').click(); p29.wait_for_timeout(60)
+    vals29 = p29.evaluate("[...document.querySelectorAll('#rtPart .rat-valor')].map(x=>x.value)")
+    soma29 = p29.inner_text('#rtSoma').replace('\xa0', ' ')
+    ok(vals29 == ['72.16'] + ['72.14'] * 6 and '7 participantes · soma R$ 505,00' in soma29,
+       f'CT-KAN-213-01: R$ 505 entre 7: R$ 72,14 cada, centavos acertados no primeiro, e o total confere ({vals29}, {soma29!r})')
+    for tema in ['light', 'dark']:
+        p29.emulate_media(color_scheme=tema); p29.wait_for_timeout(150)
+        v29 = p29.evaluate("(()=>{const d=document.getElementById('dlgBody');const alvos=[...d.querySelectorAll('.chk-linha,.rat-valor')].map(e=>e.getBoundingClientRect().height);const sm=[...d.querySelectorAll('#rtMensalistas,#rtLimpar')].map(e=>e.getBoundingClientRect().height);return [document.documentElement.scrollWidth<=innerWidth, d.scrollWidth<=d.clientWidth+1, Math.round(Math.min(...alvos)), Math.round(Math.min(...sm))]})()")
+        ok(v29[0] and v29[1] and v29[2] >= 44 and v29[3] >= 36, f'CT-KAN-213-04: em 360px ({tema}), Novo rateio sem rolagem lateral, opções e valores com 44px e atalhos compactos com 36px ({v29})')
+        contraste(p29, f'Novo rateio ({tema})')
+    p29.emulate_media(color_scheme='light'); p29.screenshot(path=f'{OUT}/v79-novo-rateio-360.png')
+    p29.click('#dlg [data-a=ratSalvar]'); p29.wait_for_timeout(900)
+    rid29 = p29.evaluate("Object.keys((S.pc||{}).rat||{})[0]")
+    r29 = p29.evaluate("(r)=>S.pc.rat[r]", rid29)
+    ok(r29 and r29['n'] == 'Churrasco de dezembro' and sum(r29['part'].values()) == 50500 and r29.get('pend') is True,
+       f'CT-KAN-213-01: o rateio é gravado com os 7 e o total de R$ 505 ({r29 and r29.get("part")})')
+    card = f'#rat-{rid29}'
+    ok(p29.locator(f'{card} .rat-faltam li').count() == 7 and 'falta R$ 505,00' in p29.inner_text(card).replace('\xa0', ' '),
+       'CT-KAN-213-02: o cartão mostra quanto falta e os 7 em "Falta pagar"')
+    # Critério 2: Recebi no cartão
+    n2 = p29.evaluate("(i)=>S.jog[i].name", ids29[1])
+    p29.click(f'{card} [data-a=ratRecebi][data-p="{ids29[1]}"]'); p29.wait_for_timeout(900)
+    l29 = p29.evaluate("(p)=>Object.values(S.caixa).filter(l=>l.pid===p).map(l=>[l.k,l.v,l.d,l.rat,l.note])", ids29[1])
+    ok(l29 == [['entrada', 72.14, '2026-10-29', rid29, 'Churrasco de dezembro']] and p29.evaluate("(a)=>S.pc.rat[a[0]].pg[a[1]]", [rid29, ids29[1]]) == 7214,
+       f'CT-KAN-213-02: "Recebi" lança uma entrada com o jogador e o rateio, com a data de hoje ({l29})')
+    falta29 = p29.inner_text(f'{card} .rat-faltam')
+    ok(n2 not in falta29 and p29.locator(f'{card} .rat-faltam li').count() == 6, f'CT-KAN-213-02: {n2} sai de "Falta pagar"')
+    ok('R$ 72,14' in p29.inner_text('#lanLista').replace('\xa0', ' '), 'CT-KAN-213-02: a entrada aparece no fluxo do mês do pagamento')
+    # Decisão do Kleber: o rateio pode aparecer nas pendências do Caixa ("Recebi" lá também baixa no rateio)
+    pend29 = p29.inner_text('#pendLista')
+    n3 = p29.evaluate("(i)=>S.jog[i].name", ids29[2])
+    ok('Churrasco de dezembro' in pend29 and n3 in pend29 and n2 not in [l for l in pend29.split('\n') if 'Churrasco' in l],
+       'CT-KAN-213-05: com "Mostrar nas pendências do Caixa", quem falta aparece nas pendências do mês')
+    idx29 = p29.evaluate("(n)=>{const li=[...document.querySelectorAll('#pendLista li')].find(x=>x.textContent.includes(n)&&x.textContent.includes('Churrasco'));return li?li.querySelector('[data-a=payPend]').dataset.v:null}", n3)
+    p29.click(f'#pendLista [data-a=payPend][data-v="{idx29}"]'); p29.wait_for_timeout(900)
+    ok(p29.evaluate("(a)=>S.pc.rat[a[0]].pg[a[1]]", [rid29, ids29[2]]) == 7214 and p29.locator(f'{card} .rat-faltam li').count() == 5,
+       'CT-KAN-213-05: "Recebi" nas pendências lança no rateio e o jogador sai de "Falta pagar"')
+    # Critério 3: cobrança só de quem falta, com o valor e o Pix
+    p29.click(f'{card} [data-a=ratCobrar]'); p29.wait_for_timeout(500)
+    tz29 = p29.input_value('#shtxt') if p29.locator('#shtxt').count() else ''
+    faltam_n = [p29.evaluate("(i)=>S.jog[i].name", x) for x in [ids29[0]] + ids29[3:7]]
+    ok('Churrasco de dezembro' in tz29 and all(n in tz29 for n in faltam_n) and n2 not in tz29 and n3 not in tz29
+       and 'R$ 72,14' in tz29.replace('\xa0', ' ') and 'R$ 72,16' in tz29.replace('\xa0', ' ') and 'Pix: pix.rateio@teste.com' in tz29,
+       f'CT-KAN-213-03: a cobrança lista só quem falta, com o valor de cada um e o Pix ({tz29!r})')
+    p29.click('#dlg [data-a=close]'); p29.wait_for_timeout(300)
+    # Despesa ligada ao rateio (fornecedor)
+    p29.click('[data-a=addLan]'); p29.wait_for_selector('#lk'); p29.select_option('#lk', 'despesa'); p29.wait_for_timeout(150)
+    p29.select_option('#lrat', rid29); p29.fill('#lv', '505'); p29.fill('#ln', 'Açougue')
+    p29.click('#dlg [data-a=saveLan]'); p29.wait_for_timeout(300)
+    if p29.locator('#dlg .conf').count(): confirmar_app(p29, True)
+    p29.wait_for_timeout(800)
+    ok('despesas R$ 505,00' in p29.inner_text(card).replace('\xa0', ' '), 'CT-KAN-213-06: despesa ligada ao rateio aparece no cartão')
+    # Segundo rateio: valor fixo, um ajustado (2 camisas), fora das pendências
+    p29.click('[data-a=ratNovo]'); p29.wait_for_selector('#rtn')
+    p29.fill('#rtn', 'Camisa'); p29.check('input[name=rtModo][value=fixo]'); p29.fill('#rtv', '85')
+    for pid in ids29[:3]:
+        p29.locator(f'#rtPart .rat-linha:has(.rtp[value="{pid}"]) .chk-linha span').click(); p29.wait_for_timeout(60)
+    p29.fill(f'#rtPart .rat-valor[data-p="{ids29[0]}"]', '170'); p29.wait_for_timeout(100)
+    p29.uncheck('#rtpend')
+    soma29b = p29.inner_text('#rtSoma').replace('\xa0', ' ')
+    ok('3 participantes · soma R$ 340,00' in soma29b, f'CT-KAN-213-01: valor por pessoa com um ajuste (2 camisas = R$ 170) soma certo ({soma29b!r})')
+    p29.click('#dlg [data-a=ratSalvar]'); p29.wait_for_timeout(900)
+    ok('Camisa' not in p29.inner_text('#pendLista'), 'CT-KAN-213-05: rateio sem "Mostrar nas pendências" fica só no cartão')
+    p29.emulate_media(color_scheme='light')
+    for tema in ['light', 'dark']:
+        p29.emulate_media(color_scheme=tema); p29.wait_for_timeout(150)
+        v29 = p29.evaluate("(()=>{const s=document.getElementById('rateios');const alvos=[...s.querySelectorAll('button')].map(e=>e.getBoundingClientRect().height);return [document.documentElement.scrollWidth<=innerWidth, Math.round(Math.min(...alvos))]})()")
+        ok(v29[0] and v29[1] >= 36, f'CT-KAN-213-04: em 360px ({tema}), os cartões de rateio sem rolagem lateral ({v29})')
+        contraste(p29, f'Rateios ({tema})')
+        p29.locator('#rateios').screenshot(path=f'{OUT}/v79-rateios-{tema}-360.png')
+    p29.emulate_media(color_scheme='light')
+    # Encerrar: quem não pagou fica registrado
+    p29.click(f'{card} [data-a=ratEncerrar]'); confirmar_app(p29, True); p29.wait_for_timeout(800)
+    ok(p29.evaluate("(r)=>!!S.pc.rat[r].fim", rid29) and 'Churrasco de dezembro' not in p29.inner_text('#pendLista'),
+       'CT-KAN-213-07: "Encerrar" grava a data e o rateio sai das pendências')
+    p29.click('.rat-fechados > summary'); p29.wait_for_timeout(300)
+    t29 = p29.inner_text(card)
+    ok('Não pagaram (5)' in t29 and 'encerrado' in t29 and p29.locator(f'{card} [data-a=ratRecebi]').count() == 0,
+       f'CT-KAN-213-07: encerrado, quem não pagou fica registrado em "Não pagaram (5)"')
+    # Critério 4 (no aparelho): continua depois de recarregar
+    p29.reload(); p29.wait_for_timeout(1800); p29.click('[data-a=tab][data-v=caixa]'); p29.wait_for_timeout(1200)
+    rr29 = p29.evaluate("(r)=>{const x=(S.pc.rat||{})[r];return x?[x.n, Object.keys(x.part).length, x.pg, !!x.fim]:null}", rid29)
+    ok(rr29 and rr29[1] == 7 and rr29[2] == {ids29[1]: 7214, ids29[2]: 7214} and rr29[3],
+       f'CT-KAN-213-04: o rateio, os pagamentos e o encerramento continuam depois de recarregar ({rr29})')
+    ctx29.close()
     # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
     ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
     p7 = ctx7.new_page()

@@ -12,6 +12,7 @@ import { listaAPagar, montarNovoLancamento, montarPagar, pendencias } from '../t
 import { dividir } from '../dominio/ciclo';
 import { closeDlg, confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
 import { ACT } from '../acoes.js';
+import { receberRateio } from './rateio';
 
 /* KAN-161: valor muito acima do padrão do grupo pergunta antes de gravar ("Corrigir valor" volta ao campo). */
 function refGrupo() {
@@ -81,6 +82,8 @@ const acoes = {
     if (!valorConferido(el, k === 'mensal' ? v / meses.length : v, refGrupo(), '#lv')) return;
     const d = val('ld') || today(),
       base = { k, pid: val('lp2') || null, d, note: val('ln') };
+    /* KAN-213: entrada ou despesa ligada a um rateio. */
+    if ((k === 'entrada' || k === 'despesa') && val('lrat')) base.rat = val('lrat');
     closeDlg();
     /* Mensalidade: um lançamento por mês escolhido (KAN-209), com o mês da mensalidade em ref e a data em d. */
     if (k === 'mensal') {
@@ -101,6 +104,7 @@ const acoes = {
   payPend: el => {
     const p = pendencias(S.month)[+el.dataset.v];
     if (!p) return;
+    if (p.k === 'rateio') return receberRateio(p.ref, p.pid, p.v);
     return receber({ k: p.k, pid: p.pid, v: p.v, d: today(), ref: p.ref, note: '' });
   },
   /* KAN-212: "Receber" no Quadro do ano lança a mensalidade daquela competência (valor do grupo, data de hoje). */

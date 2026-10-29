@@ -2687,3 +2687,55 @@ fieldset.chk-lista legend {
 .quadro-legenda {
   margin: 8px 0 0;
 }
+/* KAN-213: rateios (vaquinhas) no Caixa e a janela Novo rateio */
+.rat-nome {
+  margin: 0;
+}
+.rat-resumo {
+  margin: 4px 0 0;
+}
+.rat-falta {
+  color: var(--out);
+  white-space: nowrap;
+}
+.rat-sub {
+  margin: 12px 0 0;
+  font: 700 15px var(--display);
+}
+.rat-pagaram {
+  margin-top: 8px;
+}
+.rat-pagaram > summary,
+.rat-fechados > summary {
+  min-height: var(--touch-min);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.rat-acoes {
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.rat-atalhos {
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.rat-linha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.rat-linha .chk-linha {
+  flex: 1;
+  min-width: 0;
+}
+.rat-linha .chk-linha {
+  min-height: var(--touch-min);
+}
+.rat-linha .rat-valor {
+  width: 108px;
+  min-height: var(--touch-min);
+  flex: none;
+}

@@ -89,6 +89,10 @@ function opResumoCaixa(c) {
   return { tipo: 'patch', p: 'resumosCaixa/' + c.mes, o: patchResumo(c) };
 }
 
+/* KAN-213: outras partes (o rateio, sob demanda com o Caixa) somam no mesmo lote do lançamento. */
+const extrasLanc = [];
+const aoLancar = f => extrasLanc.push(f);
+
 /* Partidas da rodada aberta, na ordem em que foram salvas. */
 
 function addMatch(rid, m) {
@@ -180,6 +184,7 @@ function salvarLanc(id, o) {
     { tipo: 'set', p: 'caixa/' + id, o: clean(o) },
     opResumoCaixa(camposLancamento(o, 1)),
     opResumoCaixa(camposMensal(o, 1)),
+    ...extrasLanc.map(f => f(o, 1)),
   ];
   changed();
   return w(GB.lote(sem(ops)));
@@ -192,6 +197,7 @@ function apagarLanc(id) {
     { tipo: 'del', p: 'caixa/' + id },
     opResumoCaixa(camposLancamento(o, -1)),
     opResumoCaixa(camposMensal(o, -1)),
+    ...extrasLanc.map(f => f(o, -1)),
   ];
   changed();
   return w(GB.lote(sem(ops)));
@@ -440,6 +446,7 @@ export {
   migrarCaixa,
   migrarMensal,
   addMatch,
+  aoLancar,
   apagarLanc,
   apagarPartidasDaRodada,
   delMatch,

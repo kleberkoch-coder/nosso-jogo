@@ -73,6 +73,13 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo; **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v79)
+- **Rateios** (KAN-213; `telas/Rateios.tsx`; classes `rateio`, `rat-nome`, `rat-resumo`, `rat-falta`, `rat-sub`, `rat-pagaram`, `rat-acoes`, `rat-fechados`, `rat-part`, `rat-atalhos`, `rat-linha`, `rat-valor`):
+  - **Seção no Caixa**, depois de Pendentes e Do mês: título "Rateios" com "Novo rateio" (`btn sm`) e, sem nenhum aberto, uma linha `small muted` de exemplo. Encerrados numa Seção recolhível "Encerrados (n)" (resumo de 44px).
+  - **Cartão** (`panel`): nome (h3) e, se encerrado, `tag` "encerrado"; linha `small` "Entrou R$ 144,28 de R$ 505,00 · **falta R$ 360,72**" (falta em `out`, 700, sem quebrar) "· despesas R$ 505,00"; subtítulo "Falta pagar (5)" (`display` 700 15px; encerrado: "Não pagaram (5)") e a Lista de jogadores com o valor e "Recebi" (`btn sm`); "n pagaram" como Seção recolhível `small`; botões `btn sm` em linha que quebra (8px): "Cobrar no WhatsApp", "Editar" (`ghost`), "Encerrar"/"Reabrir" (`ghost`), "Apagar" (`ghost danger`, só sem pagamentos).
+  - **Janela "Novo rateio"/"Editar rateio"**: "Nome" (cursor nele), "Como dividir" (Caixas de marcar em lista com opção única), "Valor total"/"Valor por pessoa", "Quem participa (n)" com os atalhos "Todos os mensalistas" (`btn sm`) e "Limpar" (`btn sm ghost`), e o elenco em linhas de 44px com divisória: Caixa de marcar e, quando marcado, o campo do valor (108px, 44px) à direita. Embaixo, em `muted` e `aria-live`, "7 participantes · soma R$ 505,00" (e "diferente do total de R$ X" se os ajustes mudarem a soma); a Caixa de marcar "Mostrar nas pendências do Caixa" (marcada); rodapé "Cancelar" e "Criar rateio"/"Salvar" (`primary`).
+  - **No Lançar**, com Entrada ou Despesa e algum rateio aberto: o combo "Rateio (opcional)".
+
 ## Componentes (pelada-v78)
 - **Quadro do ano** (KAN-212; `telas/QuadroAno.tsx`; classes `quadro-painel`, `quadro-ano`, `quadro-rolar`, `quadro-tab`, `q-nome`, `q-conta`, `q-pago`, `q-btn`, `q-isento`, `q-antes`, `q-futuro`, `q-total`, `quadro-legenda`; utilitário `sr`, texto só para leitor de tela):
   - **Seção recolhível** no fim do Caixa (`details.panel`, fechada): título "Quadro do ano" e, ao lado, "Quem pagou cada mês" em `small muted`; a linha do resumo tem 44px.

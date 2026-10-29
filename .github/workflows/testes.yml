@@ -82,7 +82,7 @@ jobs:
   testes:
     needs: montar
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 28
     # Imagem oficial do Playwright: já vem com o navegador instalado.
     container: mcr.microsoft.com/playwright/python:v1.47.0-jammy
     steps:
@@ -113,7 +113,8 @@ jobs:
           PY
       - name: Rodar os testes
         # 16 min desde a v62: o roteiro passou de 500 verificações e já levava cerca de 9 min (KAN-184 soma ~30 s de espera de propósito).
-        timeout-minutes: 16
+        # 24 min desde a v79: com 758 verificações, a v78 já levou 15 min 51 s e a v79 passou dos 16.
+        timeout-minutes: 24
         run: |
           (cd /tmp/demo && python -m http.server 8765 >/dev/null 2>&1 &)
           sleep 2

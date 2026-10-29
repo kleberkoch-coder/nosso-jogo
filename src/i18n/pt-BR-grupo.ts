@@ -53,4 +53,13 @@ export default {
   'grupo.soVe': 'só vê',
   'grupo.soVeAjuda.um': 'Seu plano permite 1 administrador convidado: quem entrou depois só vê o grupo.',
   'grupo.soVeAjuda.outros': 'Seu plano permite {n} administradores convidados: quem entrou depois só vê o grupo.',
+  'pc.diaInicio': 'O mês da mensalidade começa no dia',
+  'pc.diaAjuda': 'Hoje vale a mensalidade de {mes}: {de} a {ate}. O mês leva o nome de quando começa.',
+  'pc.quando': 'A partir de quando',
+  'pc.aPartirProxima': 'A partir da próxima ({mes}: {de} a {ate}); {atual} vai até {fimAtual}',
+  'pc.jaNaAtual': 'Já na mensalidade atual ({mes}: {de} a {ate})',
+  'pc.minutos': 'Minutos por partida',
+  'pc.pix': 'Chave Pix',
+  'pc.soAdmins': 'Valores e chave Pix só aparecem para administradores.',
+  'pc.salvo': 'Configurações salvas.',
 };

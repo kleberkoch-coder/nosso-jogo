@@ -1,12 +1,11 @@
 /* Ações: Jogadores: elenco, notas, contatos, pares separados e configurações. Fazem parte de ACT (src/acoes.js). */
-import { CAIXA_K, cfg, editPc, ptipo, recebePorJogo } from '../dominio/caixa.js';
+import { cfg, editPc, ptipo, recebePorJogo } from '../dominio/caixa.js';
 import { posKeys } from '../dominio/esportes.js';
-import { normName, players, pname, posso, ppos, recurso, setLvl } from '../dominio/grupo.js';
+import { normName, players, pname, posso, ppos, setLvl } from '../dominio/grupo.js';
 import { tp, tx } from '../i18n/index.js';
-import { simboloMoeda } from '../i18n/formatos.js';
 import { B } from '../nucleo/backend.js';
 import { lerContato } from '../ui/contato-form';
-import { editApp, editRat, saveContato } from '../nucleo/edicoes.js';
+import { editRat, saveContato } from '../nucleo/edicoes.js';
 import { GB, S, clean, w } from '../nucleo/estado.js';
 import { $, brl, esc, key, toast, today } from '../nucleo/util.js';
 import { foraDoPadrao, referenciaDoGrupo } from '../dominio/caixa-regras';
@@ -181,40 +180,7 @@ const acoes = {
     editRat(x => {
       x.sep.splice(+el.dataset.v, 1);
     }),
-  /* Partidas e caixa (KAN-201): os minutos com a permissão de configurações; valores e Pix com a de caixa. */
-  settings: () => {
-    const c = cfg(),
-      comCaixa = posso('caixa') && recurso('caixa'),
-      comConfig = posso('config');
-    const valores = `<div class="row"><label class="f" style="flex:1"><span>${tx('caixa.mensalidadeMoeda', { moeda: simboloMoeda() })}</span><input class="inp" type="number" min="0" id="cm" value="${c.mensal}"></label><label class="f" style="flex:1"><span>${tx('caixa.diariaMoeda', { moeda: simboloMoeda() })}</span><input class="inp" type="number" min="0" id="cd" value="${c.diaria}"></label></div>`;
-    const minutos = `<label class="f" style="flex:1"><span>Minutos por partida</span><input class="inp" type="number" min="1" id="cmin" value="${c.minutes}"></label>`,
-      pix = `<label class="f" style="flex:1"><span>Chave Pix</span><input class="inp" id="cpx" value="${esc(c.pix)}"></label>`;
-    openDlg(`<h3>${tx(comCaixa ? 'grupo.partidasCaixa' : 'grupo.partidas')}</h3>
-    ${comCaixa ? valores : ''}
-    <div class="row">${comConfig ? minutos : ''}${comCaixa ? pix : ''}</div>
-    ${comCaixa ? '<p class="small muted" style="margin-top:-4px">Valores e chave Pix só aparecem para administradores.</p>' : ''}
-    <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveSettings">Salvar</button></div>`);
-  },
-  saveSettings: () => {
-    const ps = [];
-    if ($('#cm'))
-      ps.push(
-        editPc(a => {
-          Object.assign(a, { mensal: +val('cm') || 0, diaria: +val('cd') || 0, pix: val('cpx') });
-        })
-      );
-    const mn = $('#cmin') ? +val('cmin') || 10 : cfg().minutes;
-    if ($('#cmin') && (cfg().minutes !== mn || CAIXA_K.some(k => k in ((S.app || {}).cfg || {}))))
-      ps.push(
-        editApp(a => {
-          a.cfg.minutes = mn;
-          CAIXA_K.forEach(k => delete a.cfg[k]);
-        })
-      );
-    closeDlg();
-    toast('Configurações salvas.');
-    return Promise.all(ps);
-  },
+  /* Partidas e caixa: desde a v77 (KAN-209), em acoes/partidas-caixa.ts, que vem com a aba Grupo. */
   /* KAN-159: importar o elenco de uma planilha (colar ou arquivo), com prévia. */
   importarDlg: () =>
     carregarImportar().then(

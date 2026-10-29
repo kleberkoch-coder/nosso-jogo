@@ -2538,3 +2538,26 @@ fieldset.chk-lista legend {
     grid-template-columns: 1fr;
   }
 }
+/* KAN-209: ciclo da mensalidade, meses no Lançar e "Em atraso" no Caixa */
+.meses-grade {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 12px;
+}
+.meses-grade legend {
+  grid-column: 1 / -1;
+}
+.chk-lista.meses-grade .chk-linha + .chk-linha {
+  border-top: 0;
+}
+.meses-grade .chk-linha {
+  border-bottom: 1px solid var(--line);
+}
+.ciclo-linha {
+  margin: 4px 0 0;
+}
+.atraso-tit {
+  margin: 14px 0 0;
+  font: 700 15px var(--display);
+  color: var(--out);
+}

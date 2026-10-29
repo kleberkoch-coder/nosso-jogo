@@ -461,6 +461,39 @@ with sync_playwright() as pw:
     ok(b26 == [ant26, ant26], f'CT-KAN-170-P26: "Voltou" fecha o afastamento e a isenção no mês anterior, depois de sair e entrar ({b26}, esperado {ant26})')
     c26.close()
 
+    # P27 ciclo da mensalidade (KAN-209): o dia de início fica em privado/caixa.ciclo; "Mensalidade de qual mês" com dois
+    # meses grava dois lançamentos (ref de cada mês, mesma data). Confere depois de recarregar e de sair e entrar.
+    c27 = novo(); p27 = c27.new_page()
+    p27.on('pageerror', lambda e: errs.append(str(e)))
+    E27 = 'ciclo27@teste.com'
+    p27.goto(URL + '#/criar'); p27.wait_for_selector('#le', timeout=20000); p27.wait_for_timeout(300)
+    p27.fill('#le', E27); p27.fill('#lp', SENHA); p27.fill('#lp2', SENHA); p27.wait_for_timeout(200)
+    p27.click('[data-a=signup]'); p27.wait_for_selector('#ngn', timeout=20000)
+    p27.fill('#ngn', 'Ciclo FC'); p27.click('[data-a=createGroup]')
+    p27.wait_for_function("location.hash.startsWith('#/g/')", timeout=20000)
+    g27 = p27.url.split('#/g/')[1].split('/')[0]
+    pronto(p27, 'jogadores'); p27.click('[data-a=seed]'); p27.wait_for_timeout(1500)
+    pronto(p27, 'grupo'); p27.click('[data-a=settings]'); p27.wait_for_selector('#cdia', timeout=10000)
+    p27.fill('#cm', '85'); p27.select_option('#cdia', '20'); p27.wait_for_timeout(200)
+    p27.check('input[name=cdiaQuando][value=atual]'); p27.click('#dlg [data-a=saveSettings]'); p27.wait_for_timeout(800)
+    gravou(p27); pronto(p27, 'caixa'); p27.wait_for_function("S.loaded.pc", timeout=20000)
+    comp27 = J(p27, "(()=>{const d=new Date();if(d.getDate()<20)d.setMonth(d.getMonth()-1,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')})()")
+    ant27 = J(p27, "(c)=>{const [a,m]=c.split('-').map(Number);const d=new Date(a,m-2,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}", comp27)
+    cic27 = J(p27, "(S.pc&&S.pc.ciclo)||null")
+    ok(cic27 == [{'desde': comp27, 'dia': 20}] and J(p27, "S.pc.mensal") == 85,
+       f'CT-KAN-170-P27: o dia em que começa o mês da mensalidade (20, já na atual) continua depois de recarregar ({cic27})')
+    j27 = J(p27, "Object.keys(S.jog).find(id=>!['diarista','isento'].includes(((S.pc||{}).tipos||{})[id]||'mensalista'))")
+    p27.click('[data-a=addLan]'); p27.wait_for_selector('#lanMeses', timeout=10000)
+    p27.select_option('#lp2', j27); p27.locator(f'#lanMeses .chk-linha:has(.lm[value="{ant27}"]) span').click(); p27.wait_for_timeout(150)
+    p27.click('#dlg [data-a=saveLan]'); p27.wait_for_timeout(1000)
+    sair_e_esperar(p27)
+    p27.goto(URL + '#/entrar'); p27.wait_for_selector('#le', timeout=20000); p27.wait_for_timeout(300)
+    p27.fill('#le', E27); p27.fill('#lp', SENHA); p27.keyboard.press('Enter'); p27.wait_for_timeout(2500)
+    p27.goto(URL + '#/g/' + g27); pronto(p27, 'caixa'); p27.wait_for_function("S.loaded.pc", timeout=20000); p27.wait_for_timeout(1200)
+    l27 = J(p27, "(p)=>Object.values(S.caixa||{}).filter(l=>l&&l.pid===p&&l.k==='mensal').map(l=>[l.ref,l.v]).sort()", j27)
+    ok(l27 == sorted([[ant27, 85], [comp27, 85]]), f'CT-KAN-170-P27: dois meses de mensalidade num lançamento só viram dois lançamentos, depois de sair e entrar ({l27})')
+    c27.close()
+
     ok(not errs, 'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))
     b.close()
 

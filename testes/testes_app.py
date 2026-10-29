@@ -10,7 +10,7 @@ Saída: uma linha por verificação (OK ou FALHOU), fotos das telas e um resumo 
 Termina com código 1 se alguma verificação falhar.
 Erros das fontes do Google e dos ícones são ignorados (o ambiente de teste pode bloquear a internet).
 """
-import sys, os, re, json, time
+import sys, os, re, json, time, datetime
 from playwright.sync_api import sync_playwright
 
 URL = sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:8765/index.html'
@@ -2841,6 +2841,85 @@ with sync_playwright() as pw:
     ok(n3 in tl26 and 'afastad' not in tl26.lower() and 'Viagem' not in tl26 and 'Lesão' not in tl26,
        'CT-KAN-208-07: o link do jogador não mostra afastamento nem motivo (o afastado continua na lista para confirmar)')
     pl26.close(); ctx26.close()
+    # ---------- v77 (KAN-209): dia em que começa o mês da mensalidade, "Mensalidade de qual mês" e "Em atraso"
+    ctx27 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+    p27 = ctx27.new_page(); p27.on('pageerror', lambda e: errs.append(str(e)))
+    p27.clock.install(time=datetime.datetime(2026, 2, 10, 15, 0, 0, tzinfo=datetime.timezone(datetime.timedelta(hours=-3))))
+    p27.goto(URL + '#/criar'); p27.wait_for_selector('#le')
+    p27.fill('#le', 'ciclo77@teste.com'); p27.fill('#lp', 'Jogo@2026'); p27.fill('#lp2', 'Jogo@2026'); p27.keyboard.press('Enter'); p27.wait_for_selector('#ngBox', timeout=8000)
+    p27.fill('#ngn', 'Ciclo FC'); p27.click('[data-a=createGroup]'); p27.wait_for_function("location.hash.startsWith('#/g/')"); p27.wait_for_timeout(1500)
+    g27 = p27.url.split('#/g/')[1]
+    p27.click('[data-a=tab][data-v=jogadores]'); p27.wait_for_timeout(300); p27.click('[data-a=seed]'); p27.wait_for_timeout(1500)
+    def info27():
+        p27.click('[data-a=tab][data-v=caixa]'); p27.wait_for_timeout(1000)
+        return p27.inner_text('.ciclo-linha') if p27.locator('.ciclo-linha').count() else ''
+    def ciclo27(dia, quando):
+        p27.click('[data-a=tab][data-v=grupo]'); p27.wait_for_timeout(900); p27.click('[data-a=settings]'); p27.wait_for_selector('#cdia')
+        p27.fill('#cm', '85'); p27.select_option('#cdia', str(dia)); p27.wait_for_timeout(200)
+        if quando: p27.check(f'input[name=cdiaQuando][value={quando}]')
+        p27.click('#dlg [data-a=saveSettings]'); p27.wait_for_timeout(800)
+    # Critério 2: "A partir da próxima" não muda a mensalidade atual
+    p27.click('[data-a=tab][data-v=grupo]'); p27.wait_for_timeout(900); p27.click('[data-a=settings]'); p27.wait_for_selector('#cdia')
+    p27.select_option('#cdia', '20'); p27.wait_for_timeout(200)
+    q27 = p27.inner_text('#cdiaQuando') if p27.locator('#cdiaQuando').count() else ''
+    ok('fevereiro de 2026 vai até 19/03' in q27 and '(janeiro de 2026: 20/01 a 19/02)' in q27 and p27.is_checked('input[name=cdiaQuando][value=proxima]'),
+       f'CT-KAN-209-02: ao mudar o dia, a janela pergunta "a partir de quando", com "A partir da próxima" marcada ({q27!r})')
+    for tema in ['light', 'dark']:
+        p27.emulate_media(color_scheme=tema); p27.wait_for_timeout(150)
+        v27 = p27.evaluate("(()=>{const d=document.getElementById('dlgBody');return [document.documentElement.scrollWidth<=innerWidth, d.scrollWidth<=d.clientWidth+1, Math.min(...[...d.querySelectorAll('#cdiaQuando .chk-linha')].map(e=>e.getBoundingClientRect().height))]})()")
+        ok(v27[0] and v27[1] and v27[2] >= 44, f'CT-KAN-209-07: em 360px ({tema}), Partidas e caixa sem rolagem lateral e as opções com 44px ({v27})')
+        contraste(p27, f'Partidas e caixa ({tema})')
+    p27.emulate_media(color_scheme='light'); p27.screenshot(path=f'{OUT}/v77-partidas-caixa-360.png')
+    p27.click('#dlg [data-a=close]'); p27.wait_for_timeout(300)
+    if p27.locator('#dlg .conf').count(): confirmar_app(p27, True)
+    ciclo27(20, 'proxima')
+    i27 = info27()
+    ok(p27.evaluate("JSON.stringify(S.pc.ciclo)") == '[{"desde":"2026-03","dia":20}]' and 'fevereiro de 2026: 01/02 a 19/03' in i27,
+       f'CT-KAN-209-02: "A partir da próxima" mantém a mensalidade atual (fevereiro), que vai até a véspera da próxima ({i27!r})')
+    # Critério 1: "Já na atual" → em 10/02, com o ciclo no dia 20, a atual é janeiro (20/01 a 19/02)
+    ciclo27(20, 'atual')
+    i27 = info27()
+    ok('janeiro de 2026: 20/01 a 19/02' in i27, f'CT-KAN-209-01: com o ciclo no dia 20, em 10/02 a mensalidade atual é a de janeiro (20/01 a 19/02) ({i27!r})')
+    # Elenco antigo (desde 06/2025) e um novato (entrou hoje)
+    mens27 = p27.evaluate("Object.keys(S.jog).filter(id=>!['diarista','isento'].includes(((S.pc||{}).tipos||{})[id]||'mensalista')).sort((a,b)=>S.jog[a].name.localeCompare(S.jog[b].name))")
+    velho = int(datetime.datetime(2025, 6, 1).timestamp() * 1000)
+    o27 = {}
+    for id in mens27[:2]:
+        d = p27.evaluate(LER, f'grupos/{g27}/jogadores/{id}'); d['criado'] = velho; o27[f'grupos/{g27}/jogadores/{id}'] = d
+    p27.evaluate(PUT, o27); p27.reload(); p27.wait_for_timeout(1800)
+    a1, a2, novato = mens27[0], mens27[1], mens27[2]
+    n1, n2, nn = [p27.evaluate("(i)=>S.jog[i].name", x) for x in (a1, a2, novato)]
+    info27(); at27 = p27.inner_text('#atrasoLista') if p27.locator('#atrasoLista').count() else ''
+    linhas27 = [l for l in at27.split('\n') if 'de 20' in l]
+    ok(n1 in at27 and n2 in at27 and 'dez. de 2025' in at27 and 'jul. de 2025' in at27 and 'jun. de 2025' not in at27,
+       f'CT-KAN-209-04: "Em atraso" mostra as 6 mensalidades anteriores em aberto (dez./2025 a jul./2025), não a 7ª ({len(linhas27)} linhas)')
+    ok(nn not in at27, f'CT-KAN-209-05: quem entrou no elenco depois não aparece em atraso nos meses anteriores ({nn})')
+    # "Recebi" no atraso grava a mensalidade daquele mês com a data de hoje
+    idx27 = p27.evaluate("(n)=>{const b=[...document.querySelectorAll('#atrasoLista li')].find(li=>li.textContent.includes(n)&&li.textContent.includes('dez.'));return b?b.querySelector('[data-a=payPend]').dataset.v:null}", n2)
+    p27.click(f'#atrasoLista [data-a=payPend][data-v="{idx27}"]'); p27.wait_for_timeout(900)
+    rc27 = p27.evaluate("(p)=>Object.values(S.caixa).filter(l=>l.pid===p).map(l=>[l.k,l.ref,l.d,l.v])", a2)
+    ok(rc27 == [['mensal', '2025-12', '2026-02-10', 85]], f'CT-KAN-209-04: "Recebi" no atraso grava a mensalidade de dezembro com a data de hoje ({rc27})')
+    p27.screenshot(path=f'{OUT}/v77-caixa-atraso-360.png', full_page=True)
+    # Critério 3: Lançar vários meses de uma vez
+    p27.click('[data-a=addLan]'); p27.wait_for_selector('#lanMeses')
+    ok(p27.is_checked('#lanMeses .lm[value="2026-01"]'), 'CT-KAN-209-03: "Mensalidade de qual mês" já vem com a mensalidade atual (janeiro) marcada')
+    p27.select_option('#lp2', a1)
+    p27.locator('#lanMeses .chk-linha:has(.lm[value="2025-12"]) span').click(); p27.wait_for_timeout(150)
+    ok(p27.input_value('#lv') == '170' and 'R$ 85,00' in p27.inner_text('#lanDivide').replace('\xa0', ' '), f'CT-KAN-209-03: com dois meses, o valor vira R$ 170 e a janela avisa que são 2 lançamentos de R$ 85')
+    for tema in ['light', 'dark']:
+        p27.emulate_media(color_scheme=tema); p27.wait_for_timeout(150)
+        v27 = p27.evaluate("(()=>{const d=document.getElementById('dlgBody');return [document.documentElement.scrollWidth<=innerWidth, d.scrollWidth<=d.clientWidth+1, Math.min(...[...d.querySelectorAll('#lanMeses .chk-linha')].map(e=>e.getBoundingClientRect().height))]})()")
+        ok(v27[0] and v27[1] and v27[2] >= 44, f'CT-KAN-209-07: em 360px ({tema}), Novo lançamento sem rolagem lateral e os meses com 44px ({v27})')
+        contraste(p27, f'Novo lançamento ({tema})')
+    p27.emulate_media(color_scheme='light'); p27.screenshot(path=f'{OUT}/v77-lancar-360.png')
+    p27.click('#dlg [data-a=saveLan]'); p27.wait_for_timeout(1000)
+    l27 = p27.evaluate("(p)=>Object.values(S.caixa).filter(l=>l.pid===p).map(l=>[l.ref,l.d,l.v]).sort()", a1)
+    ok(l27 == [['2025-12', '2026-02-10', 85], ['2026-01', '2026-02-10', 85]], f'CT-KAN-209-03: dois lançamentos (dez. e jan., R$ 85 cada, com a data de hoje) ({l27})')
+    ent27 = p27.inner_text('#caixaRaiz').replace('\xa0', ' ')
+    pend27 = p27.inner_text('#pendLista'); at27b = p27.inner_text('#atrasoLista') if p27.locator('#atrasoLista').count() else ''
+    ok('R$ 255,00' in ent27 and n1 not in pend27 and not [l for l in at27b.split('Recebi') if n1 in l and 'dez.' in l],
+       'CT-KAN-209-03: os dois entram no fluxo do mês (R$ 255 com o Recebi) e saem das pendências (janeiro) e do atraso (dezembro)')
+    ctx27.close()
     # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
     ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
     p7 = ctx7.new_page()

@@ -137,12 +137,13 @@ test('meses do seletor: atual, com lançamento e com rodada, sem repetir, do mai
   );
 });
 
-test('KAN-106: janela do caixa começa 3 meses antes do mês escolhido, ou no "desde" do A pagar, se for antes', () => {
-  assert.equal(inicioDaJanela('2026-10'), '2026-07-01');
-  assert.equal(inicioDaJanela('2026-02'), '2025-11-01');
-  assert.equal(inicioDaJanela('2026-10', '2026-03-15'), '2026-03-15');
-  assert.equal(inicioDaJanela('2026-10', '2026-09-01'), '2026-07-01');
-  assert.equal(inicioDaJanela('2026-10', null), '2026-07-01');
+test('KAN-106 e KAN-209: janela do caixa começa 7 meses antes do mês escolhido, ou no "desde" do A pagar, se for antes', () => {
+  // KAN-209: 7 meses (as 6 mensalidades em atraso, com o ciclo podendo começar depois do dia 1)
+  assert.equal(inicioDaJanela('2026-10'), '2026-03-01');
+  assert.equal(inicioDaJanela('2026-02'), '2025-07-01');
+  assert.equal(inicioDaJanela('2026-10', '2026-01-15'), '2026-01-15');
+  assert.equal(inicioDaJanela('2026-10', '2026-09-01'), '2026-03-01');
+  assert.equal(inicioDaJanela('2026-10', null), '2026-03-01');
 });
 
 test('KAN-106: meses do seletor incluem os meses com movimento na ficha de resumo', () => {

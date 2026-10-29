@@ -1,15 +1,15 @@
 /* Ações: Caixa: lançamentos, pendências e cobrança. Fazem parte de ACT (src/acoes.js). */
 import { cfg } from '../dominio/caixa.js';
 import { foraDoPadrao, referenciaDoGrupo } from '../dominio/caixa-regras';
-import { gname, players, pname, rodadas } from '../dominio/grupo.js';
+import { gname, pname, rodadas } from '../dominio/grupo.js';
 import { tp, tx } from '../i18n/index.js';
-import { simboloMoeda } from '../i18n/formatos.js';
 import { shareDlg } from '../ui/Compartilhar';
 import { B } from '../nucleo/backend.js';
 import { apagarLanc, salvarLanc } from '../nucleo/partidas.js';
 import { S } from '../nucleo/estado.js';
-import { $, brl, esc, fmonth, toast, toastAcao, today, usarAvisoAcao } from '../nucleo/util.js';
-import { listaAPagar, montarPagar, pendencias } from '../telas/Caixa.tsx';
+import { $, brl, fmonth, toast, toastAcao, today, usarAvisoAcao } from '../nucleo/util.js';
+import { listaAPagar, montarNovoLancamento, montarPagar, pendencias } from '../telas/Caixa.tsx';
+import { dividir } from '../dominio/ciclo';
 import { closeDlg, confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
 import { ACT } from '../acoes.js';
 
@@ -45,40 +45,46 @@ function valorConferido(el, v, ref, campo) {
 }
 
 const acoes = {
+  /* KAN-209: a janela é um componente (telas/Caixa.tsx). */
   addLan: () => {
-    const o = players()
-      .map(p => `<option value="${p.id}">${esc(p.name)}</option>`)
-      .join('');
-    openDlg(`<h3>Novo lançamento</h3>
-    <label class="f"><span>Tipo</span><select class="sel" id="lk"><option value="mensal">Mensalidade</option><option value="diaria">Diária</option><option value="entrada">Outra entrada</option><option value="despesa">Despesa (quadra, bola, coletes…)</option></select></label>
-    <label class="f"><span>Jogador (opcional para despesa)</span><select class="sel" id="lp2"><option value="">—</option>${o}</select></label>
-    <div class="row"><label class="f" style="flex:1"><span>${tx('caixa.valorMoeda', { moeda: simboloMoeda() })}</span><input class="inp" type="number" min="0" step="0.01" id="lv" value="${cfg().mensal}"></label><label class="f" style="flex:1"><span>Data</span><input class="inp" type="date" id="ld" value="${today()}"></label></div>
-    <label class="f"><span>Descrição</span><input class="inp" id="ln" maxlength="60"></label>
-    <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveLan">Lançar</button></div>`);
+    openDlg('<div id="lanRaiz"></div>');
+    dlg.setAttribute('aria-labelledby', 'lanTitulo');
+    montarNovoLancamento();
   },
   saveLan: el => {
     const k = val('lk'),
-      v = +val('lv');
+      v = +val('lv'),
+      meses = k === 'mensal' ? [...document.querySelectorAll('#lanMeses .lm:checked')].map(x => x.value).sort() : [];
     if (!(v > 0)) {
-      toast('Informe um valor.');
+      toast(tx('caixa.informeValor'));
       return;
     }
     if ((k === 'mensal' || k === 'diaria') && !val('lp2')) {
-      toast('Escolha o jogador.');
+      toast(tx('caixa.escolhaJogador'));
       return;
     }
-    if (!valorConferido(el, v, refGrupo(), '#lv')) return;
-    const d = val('ld') || today();
+    if (k === 'mensal' && !meses.length) {
+      toast(tx('caixa.escolhaMes'));
+      return;
+    }
+    if (!valorConferido(el, k === 'mensal' ? v / meses.length : v, refGrupo(), '#lv')) return;
+    const d = val('ld') || today(),
+      base = { k, pid: val('lp2') || null, d, note: val('ln') };
+    closeDlg();
+    /* Mensalidade: um lançamento por mês escolhido (KAN-209), com o mês da mensalidade em ref e a data em d. */
+    if (k === 'mensal') {
+      toast(meses.length > 1 ? tx('caixa.lancamentosSalvos', { n: meses.length }) : tx('caixa.lancamentoSalvo'));
+      return Promise.all(
+        dividir(v, meses).map(([ref, vm]) => salvarLanc(B.newId(), Object.assign({}, base, { v: vm, ref })))
+      );
+    }
     let ref = d.slice(0, 7);
     if (k === 'diaria') {
       const r = rodadas().find(r => r.date === d);
       ref = r ? r.id : d;
     }
-    const id = B.newId(),
-      o = { k, pid: val('lp2') || null, v, d, ref, note: val('ln') };
-    closeDlg();
-    toast('Lançamento salvo.');
-    return salvarLanc(id, o);
+    toast(tx('caixa.lancamentoSalvo'));
+    return salvarLanc(B.newId(), Object.assign({}, base, { v, ref }));
   },
   /* KAN-129: "Recebi" grava na hora e o aviso oferece "Desfazer" por 6 segundos. */
   payPend: el => {
@@ -159,7 +165,8 @@ const acoes = {
       `💰 *${gname()} — pendências de ${fmonth(S.month).toLowerCase()}*\n\n` +
       Object.entries(by)
         .map(
-          ([pid, xs]) => `• ${pname(pid)}: ${brl(xs.reduce((s, x) => s + x.v, 0))} (${xs.map(x => x.label).join(', ')})`
+          ([pid, xs]) =>
+            `• ${pname(pid)}: ${brl(xs.reduce((s, x) => s + x.v, 0))} (${xs.map(x => x.cob || x.label).join(', ')})`
         )
         .join('\n');
     if (cfg().pix) t += `\n\nPix: ${cfg().pix}`;

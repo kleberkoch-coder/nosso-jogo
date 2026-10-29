@@ -14,37 +14,79 @@ import {
   type Lancamento,
   type Recebe,
   type RodadaDoMes,
+  type Pendencia,
   type Tipo,
 } from '../dominio/caixa-regras';
+import { somaMes } from '../dominio/afastamento';
+import { anteriores } from '../dominio/ciclo';
 import { players, pname, rodadas, rodadasDoMes } from '../dominio/grupo.js';
 import { saldo as saldoDasFichas, type Resumo } from '../dominio/resumos';
 import { tp, tx } from '../i18n/index.js';
-import { simboloMoeda } from '../i18n/formatos.js';
-import { semMensalNoMes } from '../nucleo/afast';
+import { LOCAL, simboloMoeda } from '../i18n/formatos.js';
+import { ciclo, fdm, mesHoje, periodoDe, semMensalNoMes } from '../nucleo/afast';
 import { S as estado } from '../nucleo/estado.js';
 import { brl, fdate, fmonth, today } from '../nucleo/util.js';
 
 const st = (): any => estado;
 type Lanc = Lancamento & { id: string };
 
-/* Pendências do mês com o texto de cada uma (usado pela tela, pelo "Recebi" e pela cobrança no WhatsApp). */
-function pendencias(month: string) {
+/* Pendências do mês com o texto de cada uma (usado pela tela, pelo "Recebi" e pela cobrança no WhatsApp).
+   KAN-209: no mês de hoje, a mensalidade é a da competência atual (com o ciclo depois do dia 1, pode ser a do mês
+   anterior) e entram as das 6 competências anteriores ainda em aberto ("Em atraso"). Diárias seguem as rodadas do mês. */
+type Pend = Pendencia & { label: string; cob?: string; atraso?: boolean };
+/* "jan. de 2026": cabe na linha do celular. */
+const mesAno = (m: string) => new Date(m + '-15T12:00').toLocaleDateString(LOCAL, { month: 'short', year: 'numeric' });
+const dataLocal = (ms?: number) => {
+  if (!ms) return '';
+  const d = new Date(ms);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+};
+const nomeComp = (comp: string) => fmonth(comp).toLowerCase();
+export function compDaVista(month: string) {
+  return month === today().slice(0, 7) ? mesHoje() : month;
+}
+function pendencias(month: string): Pend[] {
   const S = st(),
     c = cfg() as { mensal: number; diaria: number };
   const tipo = (id: string): Tipo => (S.jog[id] ? ptipo(id) : 'avulso') as Tipo;
-  return pendenciasDoMes({
-    mes: month,
-    lancamentos: Object.values(S.caixa) as Lancamento[],
-    elenco: players().map((p: { id: string }) => p.id),
+  const lancamentos = Object.values(S.caixa) as Lancamento[],
+    elenco: string[] = players().map((p: { id: string }) => p.id),
+    valores = { mensal: c.mensal, diaria: c.diaria },
+    comp = compDaVista(month);
+  const doMes: Pend[] = pendenciasDoMes({
+    mes: comp,
+    lancamentos,
+    elenco,
     tipo,
     rodadas: rodadasDoMes(month),
-    valores: { mensal: c.mensal, diaria: c.diaria },
-    semMensal: semMensalNoMes(month),
+    valores,
+    semMensal: semMensalNoMes(comp),
   }).map(p =>
     Object.assign(p, {
       label: p.k === 'mensal' ? tx('caixa.mensalidade') : tx('caixa.diariaDe', { data: fdate(p.data) }),
+      cob: p.k === 'mensal' ? tx('caixa.mensalidadeDe', { mes: nomeComp(comp) }) : undefined,
     })
   );
+  if (month !== today().slice(0, 7)) return doMes;
+  /* Em atraso: quem entrou no elenco depois do período não deve aquele mês. */
+  const atraso: Pend[] = [];
+  anteriores(comp).forEach(m => {
+    const fim = periodoDe(m).fim;
+    pendenciasDoMes({
+      mes: m,
+      lancamentos,
+      elenco: elenco.filter(id => !S.jog[id]?.criado || dataLocal(S.jog[id].criado) <= fim),
+      tipo,
+      rodadas: [],
+      valores,
+      semMensal: semMensalNoMes(m),
+    }).forEach(p =>
+      atraso.push(
+        Object.assign(p, { label: mesAno(m), cob: tx('caixa.mensalidadeDe', { mes: nomeComp(m) }), atraso: true })
+      )
+    );
+  });
+  return doMes.concat(atraso);
 }
 
 /* A pagar por jogo (KAN-172): rodadas carregadas desde o primeiro dia em que alguém passou a receber (S.rodPag). */
@@ -108,6 +150,128 @@ function Pagar({ a }: { a: APagar }) {
     </>
   );
 }
+/* Janela "Novo lançamento" (KAN-209: virou componente). Mensalidade escolhe o mês (ou vários meses de uma vez):
+   o valor acompanha a quantidade de meses, e o app grava um lançamento por mês, com a mesma data (acoes/caixa.js). */
+const TIPOS_LAN = ['mensal', 'diaria', 'entrada', 'despesa'];
+export const mesesParaLancar = () => {
+  const c = mesHoje();
+  return Array.from({ length: 10 }, (_, i) => somaMes(c, i - 6));
+};
+function NovoLancamento() {
+  const c = cfg() as { mensal: number; diaria: number },
+    hoje = mesHoje();
+  const [k, setK] = useState('mensal');
+  const [meses, setMeses] = useState<string[]>([hoje]);
+  const [valor, setValor] = useState(String(c.mensal));
+  const [data, setData] = useState(today());
+  const valorDe = (t: string, n: number) =>
+    t === 'mensal' ? String(Math.round(c.mensal * n * 100) / 100) : t === 'diaria' ? String(c.diaria) : '';
+  const trocarMes = (m: string, on: boolean) => {
+    const l = (on ? meses.concat(m) : meses.filter(x => x !== m)).sort();
+    setMeses(l);
+    setValor(valorDe('mensal', l.length));
+  };
+  return (
+    <>
+      <h3 id="lanTitulo">{tx('caixa.novoLanc')}</h3>
+      <label class="f">
+        <span>{tx('caixa.tipo')}</span>
+        <select
+          class="sel"
+          id="lk"
+          value={k}
+          onChange={e => {
+            const t = (e.currentTarget as HTMLSelectElement).value;
+            setK(t);
+            setValor(valorDe(t, meses.length || 1));
+          }}
+        >
+          {TIPOS_LAN.map(t => (
+            <option key={t} value={t}>
+              {tx('caixa.tipoLanc.' + t)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label class="f">
+        <span>{tx('caixa.jogadorOpcional')}</span>
+        <select class="sel" id="lp2">
+          <option value="">—</option>
+          {(players() as { id: string; name: string }[]).map(p => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      {k === 'mensal' ? (
+        <fieldset class="f chk-lista meses-grade" id="lanMeses">
+          <legend class="lbl">{tx('caixa.mensalidadeDeQual')}</legend>
+          {mesesParaLancar().map(m => (
+            <label class="chk-linha" key={m}>
+              <input
+                type="checkbox"
+                class="lm"
+                value={m}
+                checked={meses.includes(m)}
+                onChange={e => trocarMes(m, (e.currentTarget as HTMLInputElement).checked)}
+              />
+              <span>
+                {mesAno(m)}
+                {m === hoje ? ' · ' + tx('caixa.atual') : ''}
+              </span>
+            </label>
+          ))}
+        </fieldset>
+      ) : null}
+      <div class="row">
+        <label class="f" style="flex:1">
+          <span>{tx('caixa.valorMoeda', { moeda: simboloMoeda() })}</span>
+          <input
+            class="inp"
+            type="number"
+            min="0"
+            step="0.01"
+            id="lv"
+            value={valor}
+            onInput={e => setValor((e.currentTarget as HTMLInputElement).value)}
+          />
+        </label>
+        <label class="f" style="flex:1">
+          <span>{tx('caixa.data')}</span>
+          <input
+            class="inp"
+            type="date"
+            id="ld"
+            value={data}
+            onInput={e => setData((e.currentTarget as HTMLInputElement).value)}
+          />
+        </label>
+      </div>
+      {k === 'mensal' && meses.length > 1 ? (
+        <p class="small muted" id="lanDivide">
+          {tx('caixa.divideMeses', { n: meses.length, valor: brl((+valor || 0) / meses.length) })}
+        </p>
+      ) : null}
+      <label class="f">
+        <span>{tx('caixa.descricao')}</span>
+        <input class="inp" id="ln" maxLength={60} />
+      </label>
+      <div class="dlg-f">
+        <button class="btn" data-a="close">
+          {tx('comum.cancelar')}
+        </button>
+        <button class="btn primary" data-a="saveLan">
+          {tx('caixa.lancar')}
+        </button>
+      </div>
+    </>
+  );
+}
+function montarNovoLancamento() {
+  const el = document.getElementById('lanRaiz');
+  if (el) render(<NovoLancamento />, el);
+}
 function montarPagar(pid: string) {
   const a = listaAPagar().find(x => x.pid === pid),
     el = document.getElementById('apgRaiz');
@@ -137,6 +301,34 @@ function Caixa() {
     mesesComCaixa = (fichas || []).filter(f => f.cx && (f.cx.ent || f.cx.sai)).map(f => f.mes as string);
   const r = resumoDoCaixa(lan, m),
     pend = pendencias(m),
+    linhaPend = (p: Pend) => {
+      const i = pend.indexOf(p);
+      return (
+        <li key={p.k + p.pid + p.ref}>
+          <span class="pn">
+            {pname(p.pid)} <span class="tag">{p.label}</span>
+          </span>
+          <b>{brl(p.v)}</b>
+          <button
+            class="btn sm"
+            data-a="payPend"
+            data-v={String(i)}
+            aria-label={tx('caixa.recebiDe', { nome: pname(p.pid), valor: brl(p.v) }) + ' · ' + p.label}
+          >
+            {tx('caixa.recebi')}
+          </button>
+        </li>
+      );
+    },
+    pendMes = pend.filter(p => !p.atraso),
+    pendAtraso = pend.filter(p => p.atraso),
+    /* KAN-209: a mensalidade da vez e o período, quando não é o mês do calendário. */
+    compV = compDaVista(m),
+    pv = periodoDe(compV),
+    cicloInfo =
+      compV !== m || (ciclo() || []).length > 0
+        ? tx('caixa.cicloInfo', { mes: nomeComp(compV), de: fdm(pv.ini), ate: fdm(pv.fim) })
+        : '',
     apg = listaAPagar(),
     totalAPagar = apg.reduce((s, x) => s + x.total, 0);
   const meses = mesesDoCaixa(
@@ -218,28 +410,18 @@ function Caixa() {
               </button>
             )}
           </div>
+          {cicloInfo ? <p class="small muted ciclo-linha">{cicloInfo}</p> : null}
           <ul class="plist" style={{ marginTop: '6px' }} id="pendLista">
-            {pend.length ? (
-              pend.map((p, i) => (
-                <li key={p.k + p.pid + p.ref}>
-                  <span class="pn">
-                    {pname(p.pid)} <span class="tag">{p.label}</span>
-                  </span>
-                  <b>{brl(p.v)}</b>
-                  <button
-                    class="btn sm"
-                    data-a="payPend"
-                    data-v={String(i)}
-                    aria-label={tx('caixa.recebiDe', { nome: pname(p.pid), valor: brl(p.v) })}
-                  >
-                    {tx('caixa.recebi')}
-                  </button>
-                </li>
-              ))
-            ) : (
-              <li class="muted small">{tx('caixa.emDia')}</li>
-            )}
+            {pendMes.length ? pendMes.map(linhaPend) : <li class="muted small">{tx('caixa.emDia')}</li>}
           </ul>
+          {pendAtraso.length ? (
+            <>
+              <h4 class="atraso-tit">{tx('caixa.emAtraso', { n: pendAtraso.length })}</h4>
+              <ul class="plist" id="atrasoLista">
+                {pendAtraso.map(linhaPend)}
+              </ul>
+            </>
+          ) : null}
         </div>
         <div class="panel">
           <h3>{tx('caixa.doMes')}</h3>
@@ -293,4 +475,4 @@ function montarCaixa() {
   if (el) render(<Caixa />, el);
 }
 
-export { listaAPagar, montarCaixa, montarPagar, pendencias, vCaixa };
+export { listaAPagar, montarCaixa, montarNovoLancamento, montarPagar, pendencias, vCaixa };

@@ -4,7 +4,18 @@ import { render } from 'preact';
 import { useState } from 'preact/hooks';
 import { ptipo } from '../dominio/caixa.js';
 import { pname, players } from '../dominio/grupo.js';
-import { centavos, dividirRateio, situacao, soma, valorFixo, type Rateio, type Rateios } from '../dominio/rateio';
+import {
+  centavos,
+  dividirRateio,
+  eDeFora,
+  limparNome,
+  nomeNoRateio,
+  situacao,
+  soma,
+  valorFixo,
+  type Rateio,
+  type Rateios,
+} from '../dominio/rateio';
 import { tp, tx } from '../i18n/index.js';
 import { simboloMoeda } from '../i18n/formatos.js';
 import { S as estado } from '../nucleo/estado.js';
@@ -13,9 +24,28 @@ import { brl } from '../nucleo/util.js';
 const st = (): any => estado;
 export const rateios = (): Rateios => (st().pc || {}).rat || {};
 const reais = (c: number) => brl(c / 100);
+/* KAN-216: estilos só desta janela ficam aqui (vêm com o Caixa), para não pesar a gestão. */
+const FORA_NOME = {
+  flex: 1,
+  minWidth: 0,
+  minHeight: 'var(--touch-min)',
+  display: 'flex',
+  flexWrap: 'wrap' as const,
+  alignItems: 'center',
+  alignContent: 'center',
+  gap: '2px 6px',
+};
 
 /* O que a janela tem agora (a ação "Salvar" lê daqui). */
-type Rascunho = { n: string; modo: 'total' | 'fixo'; base: number; part: Record<string, number>; pend: boolean };
+type Rascunho = {
+  n: string;
+  modo: 'total' | 'fixo';
+  base: number;
+  part: Record<string, number>;
+  pend: boolean;
+  fora: Record<string, string>;
+};
+const novoIdFora = () => 'f_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 let atual: Rascunho | null = null;
 export const rascunho = () => atual;
 
@@ -28,6 +58,24 @@ function Janela({ rid }: { rid: string }) {
   const [base, setBase] = useState(r.base ? String(r.base / 100) : '');
   const [sel, setSel] = useState<string[]>(Object.keys(r.part || {}));
   const [pend, setPend] = useState(rid ? !!r.pend : true);
+  /* KAN-216: pessoas de fora do elenco, só neste rateio (só o nome). */
+  const [fora, setFora] = useState<Record<string, string>>(() => ({ ...(r.fora || {}) }));
+  const [novoFora, setNovoFora] = useState('');
+  const pagou = (id: string) => ((r.pg || {})[id] || 0) > 0;
+  const adicionarFora = () => {
+    const nome = limparNome(novoFora);
+    if (!nome) return;
+    const id = novoIdFora();
+    setFora({ ...fora, [id]: nome });
+    setSel(sel.concat(id));
+    setNovoFora('');
+  };
+  const tirarFora = (id: string) => {
+    const o = { ...fora };
+    delete o[id];
+    setFora(o);
+    setSel(sel.filter(x => x !== id));
+  };
   /* Ao editar, os valores gravados que fogem da conta automática ficam como ajustados. */
   const [ajust, setAjust] = useState<Record<string, string>>(() => {
     if (!r.part) return {};
@@ -43,11 +91,30 @@ function Janela({ rid }: { rid: string }) {
   Object.entries(ajust).forEach(([p, v]) => {
     if (sel.includes(p) && v !== '') ajustC[p] = centavos(v);
   });
-  const ordem = elenco.map(p => p.id).filter(id => sel.includes(id)),
+  const idsFora = Object.keys(fora).filter(id => sel.includes(id)),
+    ordem = elenco
+      .map(p => p.id)
+      .filter(id => sel.includes(id))
+      .concat(idsFora),
     part = modo === 'total' ? dividirRateio(centavos(base), ordem, ajustC) : valorFixo(centavos(base), ordem, ajustC),
     total = soma(part);
-  atual = { n: n.trim(), modo, base: centavos(base), part, pend };
+  const foraSel: Record<string, string> = {};
+  idsFora.forEach(id => (foraSel[id] = fora[id]!));
+  atual = { n: n.trim(), modo, base: centavos(base), part, pend, fora: foraSel };
   const marcar = (pid: string, on: boolean) => setSel(on ? sel.concat(pid) : sel.filter(x => x !== pid));
+  const valor = (id: string, nome: string) => (
+    <input
+      class="inp rat-valor"
+      type="number"
+      inputmode="decimal"
+      min="0"
+      step="0.01"
+      data-p={id}
+      aria-label={tx('rateio.valorDe', { nome })}
+      value={id in ajust ? ajust[id] : String((part[id] || 0) / 100)}
+      onInput={e => setAjust({ ...ajust, [id]: (e.currentTarget as HTMLInputElement).value })}
+    />
+  );
   return (
     <>
       <h3 id="ratTitulo">{tx(rid ? 'rateio.editar' : 'rateio.novo')}</h3>
@@ -108,22 +175,56 @@ function Janela({ rid }: { rid: string }) {
                 />
                 <span>{p.name}</span>
               </label>
-              {on ? (
-                <input
-                  class="inp rat-valor"
-                  type="number"
-                  inputmode="decimal"
-                  min="0"
-                  step="0.01"
-                  data-p={p.id}
-                  aria-label={tx('rateio.valorDe', { nome: p.name })}
-                  value={p.id in ajust ? ajust[p.id] : String((part[p.id] || 0) / 100)}
-                  onInput={e => setAjust({ ...ajust, [p.id]: (e.currentTarget as HTMLInputElement).value })}
-                />
-              ) : null}
+              {on ? valor(p.id, p.name) : null}
             </div>
           );
         })}
+        <h4 class="rat-sub" id="rtForaTit">
+          {tx('rateio.deFora')}
+        </h4>
+        {idsFora.map(id => (
+          <div class="rat-linha on rat-fora" key={id} data-fora={id}>
+            <span class="rat-fora-nome" style={FORA_NOME}>
+              {fora[id]}{' '}
+              <span class="tag" style={{ whiteSpace: 'nowrap' }}>
+                {tx('rateio.deForaTag')}
+              </span>
+            </span>
+            {valor(id, fora[id]!)}
+            {pagou(id) ? null : (
+              <button
+                type="button"
+                class="btn sm ghost danger rat-tirar"
+                aria-label={tx('rateio.tirar', { nome: fora[id] })}
+                onClick={() => tirarFora(id)}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        ))}
+        <div class="row rat-add-fora" style={{ gap: '8px', marginTop: '8px' }}>
+          <input
+            class="inp"
+            id="rtFora"
+            style={{ flex: 1, minWidth: 0, minHeight: 'var(--touch-min)' }}
+            maxLength={40}
+            value={novoFora}
+            placeholder={tx('rateio.deForaExemplo')}
+            aria-labelledby="rtForaTit"
+            onInput={e => setNovoFora((e.currentTarget as HTMLInputElement).value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                adicionarFora();
+              }
+            }}
+          />
+          <button type="button" class="btn sm" id="rtForaAdd" onClick={adicionarFora}>
+            {tx('rateio.adicionar')}
+          </button>
+        </div>
       </fieldset>
       <p class="small muted" id="rtSoma" aria-live="polite">
         {tx('rateio.soma', { n: ordem.length, valor: reais(total) })}
@@ -158,7 +259,21 @@ export function montarRateio(rid: string) {
 
 function Cartao({ rid, r }: { rid: string; r: Rateio }) {
   const s = situacao(r),
-    aberto = !r.fim;
+    aberto = !r.fim,
+    nome = (id: string) => nomeNoRateio(r, id, pname),
+    Nome = ({ id }: { id: string }) => (
+      <span class="pn">
+        {nome(id)}
+        {eDeFora(id) ? (
+          <>
+            {' '}
+            <span class="tag" style={{ whiteSpace: 'nowrap' }}>
+              {tx('rateio.deForaTag')}
+            </span>
+          </>
+        ) : null}
+      </span>
+    );
   return (
     <div class="panel rateio" id={'rat-' + rid} data-rid={rid}>
       <div class="row between">
@@ -181,7 +296,7 @@ function Cartao({ rid, r }: { rid: string; r: Rateio }) {
           <ul class="plist rat-faltam">
             {s.faltam.map(([pid, v]) => (
               <li key={pid}>
-                <span class="pn">{pname(pid)}</span>
+                <Nome id={pid} />
                 <b>{reais(v)}</b>
                 {aberto ? (
                   <button
@@ -189,7 +304,7 @@ function Cartao({ rid, r }: { rid: string; r: Rateio }) {
                     data-a="ratRecebi"
                     data-v={rid}
                     data-p={pid}
-                    aria-label={tx('caixa.recebiDe', { nome: pname(pid), valor: reais(v) }) + ' · ' + r.n}
+                    aria-label={tx('caixa.recebiDe', { nome: nome(pid), valor: reais(v) }) + ' · ' + r.n}
                   >
                     {tx('caixa.recebi')}
                   </button>
@@ -207,7 +322,7 @@ function Cartao({ rid, r }: { rid: string; r: Rateio }) {
           <ul class="plist">
             {s.pagaram.map(([pid, v]) => (
               <li key={pid}>
-                <span class="pn">{pname(pid)}</span>
+                <Nome id={pid} />
                 <b>{reais(v)}</b>
               </li>
             ))}

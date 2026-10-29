@@ -73,6 +73,12 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo; **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v81)
+- **Rateio → pessoa de fora do elenco** (KAN-216; `telas/Rateios.tsx`, classes `rat-fora`, `rat-fora-nome`, `rat-tirar`, `rat-add-fora`; os estilos ficam no componente):
+  - Na janela, depois do elenco: o subtítulo "De fora do elenco" (`rat-sub`), uma linha de 44px por pessoa com o nome e a `tag` "de fora" (que desce para baixo do nome quando não cabe), o campo do valor (108px) e "✕" (`btn sm ghost danger`, só enquanto não pagou).
+  - Embaixo, o campo "Nome (ex.: Primo do Bruno)" (44px, ocupa a linha) e "Adicionar" (`btn sm`); Enter também adiciona, sem fechar a janela.
+  - No cartão, na cobrança e nas pendências, o nome com a `tag` "de fora".
+
 ## Componentes (pelada-v80)
 - **Avaliação de notas** (KAN-214; `telas/PublicoAvaliacao.tsx`, `ui/NotasAvaliacao.tsx`, `ui/AvaliacaoJanela.tsx`; classes `aval-nota`, `aval-aplicar`, `aval-nova`; a tabela do resultado usa a do Quadro do ano, `quadro-rolar`/`quadro-tab`/`q-nome`; os botões em linha usam `rat-acoes`):
   - **Na aba Jogadores** (só com Notas): "Avaliação por link" (`btn sm`) e, ao lado, `small muted` "O time dá nota pelo link; só vocês veem o resultado.".

@@ -28,7 +28,7 @@ import { S as estado } from '../nucleo/estado.js';
 import { brl, fdate, fmonth, today } from '../nucleo/util.js';
 import { QuadroAno } from './QuadroAno';
 import { SecaoRateios, rateios } from './Rateios';
-import { pendenciasDeRateio } from '../dominio/rateio';
+import { nomeNoRateio, pendenciasDeRateio } from '../dominio/rateio';
 
 const st = (): any => estado;
 let quadroAberto = false;
@@ -37,7 +37,13 @@ type Lanc = Lancamento & { id: string };
 /* Pendências do mês com o texto de cada uma (usado pela tela, pelo "Recebi" e pela cobrança no WhatsApp).
    KAN-209: no mês de hoje, a mensalidade é a da competência atual (com o ciclo depois do dia 1, pode ser a do mês
    anterior) e entram as das 6 competências anteriores ainda em aberto ("Em atraso"). Diárias seguem as rodadas do mês. */
-type Pend = Omit<Pendencia, 'k'> & { k: Pendencia['k'] | 'rateio'; label: string; cob?: string; atraso?: boolean };
+type Pend = Omit<Pendencia, 'k'> & {
+  k: Pendencia['k'] | 'rateio';
+  label: string;
+  cob?: string;
+  atraso?: boolean;
+  nome?: string; // KAN-216: quem é de fora do elenco (no rateio)
+};
 /* "jan. de 2026": cabe na linha do celular. */
 const mesAno = (m: string) => new Date(m + '-15T12:00').toLocaleDateString(LOCAL, { month: 'short', year: 'numeric' });
 const dataLocal = (ms?: number) => {
@@ -74,7 +80,15 @@ function pendencias(month: string): Pend[] {
   if (month !== today().slice(0, 7)) return doMes;
   /* KAN-213: rateios abertos marcados para aparecer nas pendências (o rateio vai em ref). */
   pendenciasDeRateio(rateios()).forEach(x =>
-    doMes.push({ pid: x.pid, k: 'rateio', ref: x.rid, v: x.v / 100, label: x.n, cob: x.n })
+    doMes.push({
+      pid: x.pid,
+      k: 'rateio',
+      ref: x.rid,
+      v: x.v / 100,
+      label: x.n,
+      cob: x.n,
+      nome: nomeNoRateio(rateios()[x.rid] || {}, x.pid, pname),
+    })
   );
   /* Em atraso: quem entrou no elenco depois do período não deve aquele mês. */
   const atraso: Pend[] = [];
@@ -336,14 +350,14 @@ function Caixa() {
       return (
         <li key={p.k + p.pid + p.ref}>
           <span class="pn">
-            {pname(p.pid)} <span class="tag">{p.label}</span>
+            {p.nome || pname(p.pid)} <span class="tag">{p.label}</span>
           </span>
           <b>{brl(p.v)}</b>
           <button
             class="btn sm"
             data-a="payPend"
             data-v={String(i)}
-            aria-label={tx('caixa.recebiDe', { nome: pname(p.pid), valor: brl(p.v) }) + ' · ' + p.label}
+            aria-label={tx('caixa.recebiDe', { nome: p.nome || pname(p.pid), valor: brl(p.v) }) + ' · ' + p.label}
           >
             {tx('caixa.recebi')}
           </button>

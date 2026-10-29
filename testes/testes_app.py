@@ -3197,6 +3197,75 @@ with sync_playwright() as pw:
     p30.goto(URL + f'#/p/{g30}/a/{aid30}'); p30.wait_for_timeout(1500)
     ok('terminou' in p30.inner_text('main') and p30.locator('#avLista').count() == 0, 'CT-KAN-214-07: encerrada, o link avisa e não recebe mais notas')
     ctx30.close()
+    # ---------- v81 (KAN-216): pessoas de fora do elenco no rateio
+    ctx32 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+    p32 = ctx32.new_page(); p32.on('pageerror', lambda e: errs.append(str(e)))
+    p32.clock.install(time=datetime.datetime(2026, 10, 29, 15, 0, 0, tzinfo=datetime.timezone(datetime.timedelta(hours=-3))))
+    p32.goto(URL + '#/criar'); p32.wait_for_selector('#le')
+    p32.fill('#le', 'fora81@teste.com'); p32.fill('#lp', 'Jogo@2026'); p32.fill('#lp2', 'Jogo@2026'); p32.keyboard.press('Enter'); p32.wait_for_selector('#ngBox', timeout=8000)
+    p32.fill('#ngn', 'Fora FC'); p32.click('[data-a=createGroup]'); p32.wait_for_function("location.hash.startsWith('#/g/')"); p32.wait_for_timeout(1500)
+    p32.click('[data-a=tab][data-v=jogadores]'); p32.wait_for_timeout(300); p32.click('[data-a=seed]'); p32.wait_for_timeout(1500)
+    p32.click('[data-a=tab][data-v=grupo]'); p32.wait_for_timeout(900); p32.click('[data-a=settings]'); p32.wait_for_selector('#cm')
+    p32.fill('#cm', '85'); p32.fill('#cpx', 'pix.fora@teste.com'); p32.click('#dlg [data-a=saveSettings]'); p32.wait_for_timeout(800)
+    njog32 = p32.evaluate("Object.keys(S.jog).length")
+    p32.click('[data-a=tab][data-v=caixa]'); p32.wait_for_timeout(1200)
+    p32.click('[data-a=ratNovo]'); p32.wait_for_selector('#rtn')
+    p32.fill('#rtn', 'Churrasco'); p32.fill('#rtv', '300')
+    ids32 = p32.evaluate("[...document.querySelectorAll('#rtPart .rtp')].map(x=>x.value)")[:2]
+    for pid in ids32:
+        p32.locator(f'#rtPart .rat-linha:has(.rtp[value="{pid}"]) .chk-linha span').click(); p32.wait_for_timeout(60)
+    p32.fill('#rtFora', 'Primo do Bruno'); p32.press('#rtFora', 'Enter'); p32.wait_for_timeout(150)
+    p32.fill('#rtFora', 'Vizinho'); p32.click('#rtForaAdd'); p32.wait_for_timeout(150)
+    ok(p32.locator('#rtPart .rat-fora').count() == 2 and p32.input_value('#rtFora') == '' and p32.is_visible('#dlg'),
+       'CT-KAN-216-01: "Adicionar" (ou Enter) põe a pessoa de fora no rateio e limpa o campo, sem fechar a janela')
+    p32.locator('#rtPart .rat-fora:has-text("Vizinho") .rat-tirar').click(); p32.wait_for_timeout(150)
+    vals32 = p32.evaluate("[...document.querySelectorAll('#rtPart .rat-valor')].map(x=>x.value)")
+    soma32 = p32.inner_text('#rtSoma').replace('\xa0', ' ')
+    ok(p32.locator('#rtPart .rat-fora').count() == 1 and vals32 == ['100', '100', '100'] and '3 participantes · soma R$ 300,00' in soma32,
+       f'CT-KAN-216-01: com "Primo do Bruno", R$ 300 entre 3 dá R$ 100 cada e o total confere; tirar quem não pagou funciona ({vals32}, {soma32!r})')
+    for tema in ['light', 'dark']:
+        p32.emulate_media(color_scheme=tema); p32.wait_for_timeout(150)
+        v32 = p32.evaluate("(()=>{const d=document.getElementById('dlgBody');const a=[...d.querySelectorAll('.rat-fora .rat-valor,#rtFora,.rat-fora-nome')].map(e=>e.getBoundingClientRect().height);return [document.documentElement.scrollWidth<=innerWidth, d.scrollWidth<=d.clientWidth+1, Math.round(Math.min(...a))]})()")
+        ok(v32[0] and v32[1] and v32[2] >= 44, f'CT-KAN-216-04: em 360px ({tema}), a parte "De fora do elenco" sem rolagem lateral e com 44px ({v32})')
+        contraste(p32, f'Rateio com pessoa de fora ({tema})')
+    p32.emulate_media(color_scheme='light')
+    p32.locator('#rtPart .rat-fora').scroll_into_view_if_needed(); p32.screenshot(path=f'{OUT}/v81-rateio-fora-360.png')
+    p32.click('#dlg [data-a=ratSalvar]'); p32.wait_for_timeout(900)
+    rid32 = p32.evaluate("Object.keys((S.pc||{}).rat||{})[0]")
+    r32 = p32.evaluate("(r)=>S.pc.rat[r]", rid32)
+    fid = list((r32.get('fora') or {}).keys())[0] if r32.get('fora') else None
+    ok(fid and fid.startswith('f_') and r32['fora'][fid] == 'Primo do Bruno' and r32['part'].get(fid) == 10000 and len(r32['fora']) == 1,
+       f'CT-KAN-216-01: o rateio grava a pessoa de fora só com o nome ({r32.get("fora")})')
+    card = f'#rat-{rid32}'
+    ok('Primo do Bruno' in p32.inner_text(f'{card} .rat-faltam') and 'de fora' in p32.inner_text(f'{card} .rat-faltam'),
+       'CT-KAN-216-01: no cartão, a pessoa aparece em "Falta pagar" com a etiqueta "de fora"')
+    # Critério 3: não entra no elenco nem na mensalidade
+    ok(p32.evaluate("Object.keys(S.jog).length") == njog32 and 'Primo do Bruno' not in p32.evaluate("Object.values(S.jog).map(j=>j.name).join('|')"),
+       'CT-KAN-216-03: a pessoa de fora não entra no elenco')
+    pend32 = [l for l in p32.inner_text('#pendLista').split('\n') if 'Primo do Bruno' in l]
+    ok(pend32 and all('Churrasco' in l for l in pend32) and not [l for l in pend32 if 'Mensalidade' in l],
+       f'CT-KAN-216-03: nas pendências, ela aparece só pelo rateio, nunca com mensalidade ({pend32})')
+    # Critério 4: cobrança inclui quem é de fora
+    p32.click(f'{card} [data-a=ratCobrar]'); p32.wait_for_timeout(500)
+    tz32 = p32.input_value('#shtxt') if p32.locator('#shtxt').count() else ''
+    ok('• Primo do Bruno: R$' in tz32 and 'Pix: pix.fora@teste.com' in tz32, f'CT-KAN-216-04: a cobrança do WhatsApp inclui a pessoa de fora ({tz32!r})')
+    p32.click('#dlg [data-a=close]'); p32.wait_for_timeout(300)
+    # Critério 2: Recebi
+    p32.click(f'{card} [data-a=ratRecebi][data-p="{fid}"]'); p32.wait_for_timeout(900)
+    l32 = p32.evaluate("(r)=>Object.values(S.caixa).filter(l=>l.rat===r).map(l=>[l.k,l.pid||null,l.fora||null,l.v,l.d,l.note])", rid32)
+    ok(l32 == [['entrada', None, fid, 100, '2026-10-29', 'Churrasco — Primo do Bruno']] and p32.evaluate("(a)=>S.pc.rat[a[0]].pg[a[1]]", [rid32, fid]) == 10000,
+       f'CT-KAN-216-02: "Recebi" lança uma entrada ligada ao rateio, sem jogador, com o nome na descrição ({l32})')
+    ok('Primo do Bruno' not in p32.inner_text(f'{card} .rat-faltam') and 'Churrasco — Primo do Bruno' in p32.inner_text('#lanLista'),
+       'CT-KAN-216-02: ela sai de "Falta pagar" e a entrada aparece no fluxo do mês')
+    # Quem já pagou não pode ser tirado
+    p32.click(f'{card} [data-a=ratEditar]'); p32.wait_for_selector('#rtPart .rat-fora')
+    ok(p32.locator('#rtPart .rat-fora .rat-tirar').count() == 0, 'CT-KAN-216-01: depois de pagar, a pessoa de fora não pode ser tirada')
+    p32.click('#dlg [data-a=close]'); p32.wait_for_timeout(300)
+    if p32.locator('#dlg .conf').count(): confirmar_app(p32, True)
+    p32.reload(); p32.wait_for_timeout(1800); p32.click('[data-a=tab][data-v=caixa]'); p32.wait_for_timeout(1200)
+    rr32 = p32.evaluate("(a)=>{const x=S.pc.rat[a[0]];return [x.fora[a[1]], x.pg[a[1]]]}", [rid32, fid])
+    ok(rr32 == ['Primo do Bruno', 10000] and 'Primo do Bruno' in p32.locator(f'{card} .rat-pagaram').text_content(), f'CT-KAN-216-04: continua depois de recarregar ({rr32})')
+    ctx32.close()
     # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
     ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
     p7 = ctx7.new_page()

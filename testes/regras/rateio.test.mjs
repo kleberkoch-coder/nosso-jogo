@@ -73,3 +73,35 @@ test('janela: nome, participantes e valor obrigatórios', () => {
   assert.equal(erroRateio({ n: 'X', part: { a: 0 } }), 'rateio.erroValor');
   assert.equal(erroRateio({ n: 'X', part: { a: 100 } }), '');
 });
+
+test('KAN-216: pessoa de fora do elenco entra só no rateio, pelo nome', async () => {
+  const { eDeFora, limparNome, nomeNoRateio } = await import('../../src/dominio/rateio.ts');
+  assert.ok(eDeFora('f_abc') && !eDeFora('abc'));
+  assert.equal(limparNome('  Primo   do Bruno '), 'Primo do Bruno');
+  assert.equal(limparNome('   '), '');
+  const r = { fora: { f_1: 'Primo do Bruno' } };
+  assert.equal(
+    nomeNoRateio(r, 'f_1', () => 'x'),
+    'Primo do Bruno'
+  );
+  assert.equal(
+    nomeNoRateio(r, 'j1', id => 'Jogador ' + id),
+    'Jogador j1'
+  );
+  // Entra na divisão como qualquer outro (R$ 300 entre 2 do elenco e 1 de fora)
+  assert.deepEqual(dividirRateio(30000, ['a', 'b', 'f_1']), { a: 10000, b: 10000, f_1: 10000 });
+  // O pagamento é uma entrada sem jogador, com o id em "fora", e soma no pago dele
+  assert.deepEqual(camposDoRateio({ k: 'entrada', v: 100, pid: null, fora: 'f_1', rat: 'r1' }, 1), {
+    'rat.r1.pg.f_1': 10000,
+  });
+  assert.equal(camposDoRateio({ k: 'entrada', v: 100, pid: null, fora: 'xx', rat: 'r1' }, 1), null);
+  const s = situacao({
+    n: 'Churrasco',
+    modo: 'total',
+    base: 30000,
+    part: { a: 10000, f_1: 10000 },
+    pg: { f_1: 10000 },
+    fora: r.fora,
+  });
+  assert.deepEqual(s.pagaram, [['f_1', 10000]]);
+});

@@ -95,7 +95,7 @@ document.addEventListener('click', e => {
     return;
   }
   setBusy(el, true);
-  const pub = S.route.n === 'r' || S.route.n === 'v';
+  const pub = S.route.n === 'r' || S.route.n === 'v' || S.route.n === 'a';
   let fim = false;
   const all = Promise.allSettled(ps).then(() => {
     fim = true;

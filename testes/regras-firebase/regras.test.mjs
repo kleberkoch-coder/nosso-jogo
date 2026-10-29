@@ -1017,3 +1017,52 @@ describe('afastamento de jogador (KAN-208)', () => {
     await assertSucceeds(updateDoc(doc(db.dono(), AF), { a4: deleteField() }));
   });
 });
+
+describe('avaliação de notas por link (KAN-214)', () => {
+  const semRegras = fn => env.withSecurityRulesDisabled(async ctx => fn(ctx.firestore()));
+  const A = G + '/avaliacoes/a1';
+  const NADA = { caixa: false, notas: false, elenco: false, config: false };
+  const conv = () => env.authenticatedContext('conv', senha).firestore();
+  const futuro = Date.now() + 86400000;
+  const preparar = (extra = {}) =>
+    semRegras(f => setDoc(doc(f, A), { t: 'Avaliação', ate: futuro, jogs: ['j1', 'j2'], open: true, em: 1, ...extra }));
+
+  test('quem tem Notas cria; o link (sem conta) lê a avaliação, mas não cria', async () => {
+    await assertSucceeds(
+      setDoc(doc(db.adm(), G + '/avaliacoes/a2'), { t: 'Nov', ate: futuro, jogs: ['j1'], open: true, em: 1 })
+    );
+    await assertFails(
+      setDoc(doc(db.anon(), G + '/avaliacoes/a3'), { t: 'Nov', ate: futuro, jogs: ['j1'], open: true, em: 1 })
+    );
+    await assertFails(setDoc(doc(db.adm(), G + '/avaliacoes/a4'), { t: 'Nov', ate: futuro, jogs: ['j1'], nota: 9 }));
+    await preparar();
+    await assertSucceeds(getDoc(doc(db.anon(), A)));
+  });
+  test('pelo link: grava só as próprias notas, de quem está na lista, com notas de 1 a 10 de meio em meio', async () => {
+    await preparar();
+    await assertSucceeds(setDoc(doc(db.anon(), A + '/notas/anon1'), { pid: 'j1', n: { j1: 7, j2: 8.5 }, t: 1 }));
+    await assertFails(setDoc(doc(db.anon(), A + '/notas/outro1'), { pid: 'j1', n: { j1: 7 }, t: 1 }));
+    await assertFails(setDoc(doc(db.anon(), A + '/notas/anon1'), { pid: 'x9', n: { j1: 7 }, t: 1 }));
+    await assertFails(setDoc(doc(db.anon(), A + '/notas/anon1'), { pid: 'j1', n: { j1: 11 }, t: 1 }));
+    await assertFails(setDoc(doc(db.anon(), A + '/notas/anon1'), { pid: 'j1', n: { j1: 7.3 }, t: 1 }));
+    await assertFails(setDoc(doc(db.anon(), A + '/notas/anon1'), { pid: 'j1', n: { j9: 7 }, t: 1 }));
+    await assertFails(setDoc(doc(db.anon(), A + '/notas/anon1'), { pid: '', n: { j1: 7 }, t: 1 }));
+  });
+  test('o link não lê as notas dos outros; só quem tem Notas lê o resultado', async () => {
+    await preparar();
+    await semRegras(f => setDoc(doc(f, A + '/notas/u2'), { pid: 'j2', n: { j1: 5 }, t: 1 }));
+    await assertFails(getDoc(doc(db.anon(), A + '/notas/u2')));
+    await assertFails(getDocs(collection(db.anon(), A + '/notas')));
+    await assertSucceeds(getDocs(collection(db.adm(), A + '/notas')));
+    await semRegras(f => setDoc(doc(f, G + '/membros/conv'), { uid: 'conv', role: 'admin', perm: NADA }));
+    await assertFails(getDocs(collection(conv(), A + '/notas')));
+  });
+  test('administrador dá nota pelo app (sem nome); encerrada ou vencida não recebe nota', async () => {
+    await preparar();
+    await assertSucceeds(setDoc(doc(db.adm(), A + '/notas/adm'), { pid: '', n: { j1: 6 }, t: 1 }));
+    await preparar({ open: false });
+    await assertFails(setDoc(doc(db.anon(), A + '/notas/anon1'), { pid: 'j1', n: { j1: 7 }, t: 2 }));
+    await preparar({ ate: Date.now() - 1000 });
+    await assertFails(setDoc(doc(db.anon(), A + '/notas/anon1'), { pid: 'j1', n: { j1: 7 }, t: 2 }));
+  });
+});

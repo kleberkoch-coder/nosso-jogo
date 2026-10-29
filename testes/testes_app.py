@@ -3096,6 +3096,107 @@ with sync_playwright() as pw:
     ok(rr29 and rr29[1] == 7 and rr29[2] == {ids29[1]: 7214, ids29[2]: 7214} and rr29[3],
        f'CT-KAN-213-04: o rateio, os pagamentos e o encerramento continuam depois de recarregar ({rr29})')
     ctx29.close()
+    # ---------- v80 (KAN-214): avaliação de notas por link
+    ctx30 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+    p30 = ctx30.new_page(); p30.on('pageerror', lambda e: errs.append(str(e)))
+    p30.clock.install(time=datetime.datetime(2026, 10, 29, 15, 0, 0, tzinfo=datetime.timezone(datetime.timedelta(hours=-3))))
+    p30.goto(URL + '#/criar'); p30.wait_for_selector('#le')
+    p30.fill('#le', 'aval80@teste.com'); p30.fill('#lp', 'Jogo@2026'); p30.fill('#lp2', 'Jogo@2026'); p30.keyboard.press('Enter'); p30.wait_for_selector('#ngBox', timeout=8000)
+    p30.fill('#ngn', 'Notas FC'); p30.click('[data-a=createGroup]'); p30.wait_for_function("location.hash.startsWith('#/g/')"); p30.wait_for_timeout(1500)
+    g30 = p30.url.split('#/g/')[1]
+    p30.click('[data-a=tab][data-v=jogadores]'); p30.wait_for_timeout(300); p30.click('[data-a=seed]'); p30.wait_for_timeout(1500)
+    ok(p30.locator('[data-a=avAbrir]').count() == 1, 'CT-KAN-214-01: com a permissão de Notas, a aba Jogadores tem "Avaliação por link"')
+    p30.click('[data-a=avAbrir]'); p30.wait_for_selector('[data-a=avNova]', timeout=8000)
+    p30.click('[data-a=avNova]'); p30.wait_for_selector('#avT'); p30.wait_for_timeout(150)
+    mens30 = p30.evaluate("Object.keys(S.jog).filter(id=>(((S.pc||{}).tipos||{})[id]||'mensalista')==='mensalista')")
+    ok(p30.evaluate("document.activeElement && document.activeElement.id") == 'avT' and p30.locator('#avQuem .avj:checked').count() == len(mens30),
+       f'CT-KAN-214-01: a nova avaliação abre com o cursor no título e já marca os {len(mens30)} mensalistas')
+    p30.fill('#avData', '2026-11-05')
+    p30.click('#dlg [data-a=avCriar]'); p30.wait_for_selector('#shtxt', timeout=8000)
+    tz30 = p30.input_value('#shtxt')
+    aid30 = p30.evaluate("(g)=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2')||'{}');return Object.keys(s).filter(k=>k.startsWith('grupos/'+g+'/avaliacoes/')&&k.split('/').length===4).map(k=>k.split('/')[3])[0]}", g30)
+    ok(aid30 and f'#/p/{g30}/a/{aid30}' in tz30 and 'Notas FC' in tz30 and '05/11' in tz30,
+       f'CT-KAN-214-01: criar já abre o compartilhar, com o link e o prazo ({tz30!r})')
+    av30 = p30.evaluate(LER, f'grupos/{g30}/avaliacoes/{aid30}')
+    alvo = sorted(mens30, key=lambda i: p30.evaluate("(i)=>S.jog[i].name", i))[0]
+    nalvo = p30.evaluate("(i)=>S.jog[i].name", alvo)
+    outros = [j for j in av30['jogs'] if j != alvo]
+    antes30 = p30.evaluate("(i)=>S.rat&&S.rat.nivel?S.rat.nivel[i]:null", alvo)
+    # Administrador dá a própria nota pelo app (5 para o alvo)
+    p30.click('#dlg [data-a=close]'); p30.wait_for_timeout(200)
+    p30.click('[data-a=avAbrir]'); p30.wait_for_selector(f'[data-a=avMinhas][data-v="{aid30}"]', timeout=8000)
+    p30.click(f'[data-a=avMinhas][data-v="{aid30}"]'); p30.wait_for_selector('#avLista')
+    ok(p30.locator('#avLista .aval-nota').count() == len(av30['jogs']) and 'Atual' not in p30.inner_text('#dlgBody'),
+       'CT-KAN-214-02: "Minhas notas" lista todos os avaliados, sem mostrar a nota atual')
+    p30.select_option(f'#avLista .aval-nota[data-p="{alvo}"]', '5'); p30.select_option(f'#avLista .aval-nota[data-p="{outros[0]}"]', '8')
+    p30.click('#dlg [data-a=avEnviar]'); p30.wait_for_timeout(800)
+    # Outros dois pelo link (gravados direto, como se fossem outros aparelhos)
+    p30.evaluate(PUT, {f'grupos/{g30}/avaliacoes/{aid30}/notas/anon-x': {'pid': outros[0], 'n': {alvo: 6}, 't': 1},
+                       f'grupos/{g30}/avaliacoes/{aid30}/notas/anon-y': {'pid': outros[1], 'n': {alvo: 9}, 't': 2},
+                       f'grupos/{g30}/avaliacoes/{aid30}/notas/anon-z': {'pid': outros[1], 'n': {alvo: 2}, 't': 1}})
+    # O link, sem conta (outro navegador com os mesmos dados de demonstração)
+    est30 = ctx30.storage_state()
+    ctx31 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo', storage_state=est30)
+    ctx31.add_init_script("if(!sessionStorage.getItem('saiu')){localStorage.removeItem('pelada-demo-v2-u');sessionStorage.setItem('saiu','1')}")
+    q = ctx31.new_page(); q.on('pageerror', lambda e: errs.append(str(e)))
+    q.clock.install(time=datetime.datetime(2026, 10, 29, 16, 0, 0, tzinfo=datetime.timezone(datetime.timedelta(hours=-3))))
+    q.goto(URL + f'#/p/{g30}/a/{aid30}'); q.wait_for_selector('#avNome', timeout=10000); q.wait_for_timeout(300)
+    t31 = q.inner_text('main')
+    ok('Avaliação de outubro' in t31 and 'Ninguém vê as notas dos outros' in t31 and q.locator('#avLista').count() == 0,
+       'CT-KAN-214-03: o link mostra o título e a regra, e pede o nome antes das notas')
+    q.select_option('#avNome', alvo); q.wait_for_selector('#avLista')
+    linhas31 = q.inner_text('#avLista')
+    vazios31 = [q.input_value(f'#avLista .aval-nota[data-p="{j}"]') for j in av30['jogs']]
+    ok(q.locator('#avLista .aval-nota').count() == len(av30['jogs']) and q.locator('#avLista .lvl-tag').count() == 0
+       and all(v == '' for v in vazios31),
+       'CT-KAN-214-03: quem abre o link vê só nome e posição de cada um, sem nota atual nem dos outros (todas começam em "—")')
+    q.select_option(f'#avLista .aval-nota[data-p="{alvo}"]', '7'); q.select_option(f'#avLista .aval-nota[data-p="{outros[0]}"]', '6.5')
+    ok('2 de ' in q.inner_text('#avConta'), 'CT-KAN-214-03: o contador mostra quantos já têm nota')
+    for tema in ['light', 'dark']:
+        q.emulate_media(color_scheme=tema); q.wait_for_timeout(150)
+        v31 = q.evaluate("(()=>[document.documentElement.scrollWidth<=innerWidth, Math.round(Math.min(...[...document.querySelectorAll('#avLista .aval-nota,#avNome,#avEnviar')].map(e=>e.getBoundingClientRect().height)))])()")
+        ok(v31[0] and v31[1] >= 44, f'CT-KAN-214-06: link da avaliação em 360px ({tema}) sem rolagem lateral e com alvos de 44px ({v31})')
+        contraste(q, f'Avaliação pelo link ({tema})')
+    q.emulate_media(color_scheme='light'); q.screenshot(path=f'{OUT}/v80-avaliacao-link-360.png', full_page=True)
+    q.click('#avEnviar'); q.wait_for_timeout(900)
+    meu31 = q.evaluate("S.minhaAv")
+    ok(meu31 and meu31['pid'] == alvo and meu31['n'] == {alvo: 7, outros[0]: 6.5} and q.locator('#avEnviado').count() == 1,
+       f'CT-KAN-214-03: as notas são enviadas com o nome escolhido ({meu31})')
+    q.reload(); q.wait_for_selector('#avLista', timeout=10000); q.wait_for_timeout(300)
+    ok(q.input_value(f'#avLista .aval-nota[data-p="{alvo}"]') == '7' and 'Atualizar notas' in q.inner_text('#avEnviar'),
+       'CT-KAN-214-03: depois de recarregar, o aparelho volta com o nome e as notas enviadas, e dá para mudar')
+    uid31 = q.evaluate("S.user.uid"); doc31 = q.evaluate(LER, f'grupos/{g30}/avaliacoes/{aid30}/notas/{uid31}')
+    ctx31.close()
+    p30.evaluate(PUT, {f'grupos/{g30}/avaliacoes/{aid30}/notas/{uid31}': doc31})
+    # Resultado: 5 (adm), 6, 9 (o 2 do mesmo nome é mais antigo e não vale) e 7 → média 6,75 e mediana 6,5
+    p30.reload(); p30.wait_for_timeout(1500); p30.click('[data-a=tab][data-v=jogadores]'); p30.wait_for_timeout(400)
+    p30.click('[data-a=avAbrir]'); p30.wait_for_selector(f'[data-a=avResultado][data-v="{aid30}"]', timeout=8000)
+    p30.click(f'[data-a=avResultado][data-v="{aid30}"]'); p30.wait_for_selector('#avRes')
+    lin = f'#avRes tr[data-pid="{alvo}"]'
+    r30 = [p30.inner_text(f'{lin} .aval-media'), p30.inner_text(f'{lin} .aval-mediana'), p30.inner_text(f'{lin} .aval-qtd')]
+    ok(r30 == ['6,75', '6,5', '4'], f'CT-KAN-214-04: {nalvo} com notas 5, 6, 7 e 9: média 6,75, mediana 6,5, 4 notas; a nota repetida do mesmo nome vale só a mais recente ({r30})')
+    ok('4 responderam (1 pelo app)' in p30.inner_text('#avQuemRespondeu'), 'CT-KAN-214-04: mostra quantos responderam e quem')
+    atual30 = p30.evaluate("(i)=>S.rat&&S.rat.nivel?S.rat.nivel[i]:null", alvo)
+    ok(atual30 == antes30, f'CT-KAN-214-05: nada muda no cadastro sozinho ({antes30} → {atual30})')
+    for tema in ['light', 'dark']:
+        p30.emulate_media(color_scheme=tema); p30.wait_for_timeout(150)
+        v30 = p30.evaluate("(()=>{const d=document.getElementById('dlgBody');return [document.documentElement.scrollWidth<=innerWidth, d.scrollWidth<=d.clientWidth+1]})()")
+        ok(v30[0] and v30[1], f'CT-KAN-214-06: resultado em 360px ({tema}): só a tabela rola de lado ({v30})')
+        contraste(p30, f'Resultado da avaliação ({tema})')
+    p30.emulate_media(color_scheme='light')
+    p30.click('#avUsarMediana'); p30.wait_for_timeout(150)
+    ok(p30.input_value(f'{lin} .aval-nova') == '6.5' and p30.is_checked(f'{lin} .avap'), 'CT-KAN-214-05: "Usar a mediana" preenche e marca')
+    p30.fill(f'#avRes tr[data-pid="{outros[0]}"] .aval-nova', '7.2'); p30.wait_for_timeout(100)
+    p30.screenshot(path=f'{OUT}/v80-resultado-360.png')
+    p30.click('#dlg [data-a=avAplicar]'); p30.wait_for_timeout(900)
+    n30 = p30.evaluate("(a)=>[S.rat.nivel[a[0]], S.rat.nivel[a[1]]]", [alvo, outros[0]])
+    ok(n30 == [6.5, 7], f'CT-KAN-214-05: "Atualizar notas" grava no cadastro só as marcadas, de meio em meio ponto ({n30})')
+    # Encerrar: o link para de receber notas
+    p30.click(f'[data-a=avEncerrar][data-v="{aid30}"]'); confirmar_app(p30, True); p30.wait_for_timeout(700)
+    ok(p30.evaluate(LER, f'grupos/{g30}/avaliacoes/{aid30}')['open'] is False, 'CT-KAN-214-07: "Encerrar" fecha a avaliação')
+    p30.goto(URL + f'#/p/{g30}/a/{aid30}'); p30.wait_for_timeout(1500)
+    ok('terminou' in p30.inner_text('main') and p30.locator('#avLista').count() == 0, 'CT-KAN-214-07: encerrada, o link avisa e não recebe mais notas')
+    ctx30.close()
     # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
     ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
     p7 = ctx7.new_page()

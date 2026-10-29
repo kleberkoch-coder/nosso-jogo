@@ -2739,3 +2739,21 @@ fieldset.chk-lista legend {
   min-height: var(--touch-min);
   flex: none;
 }
+/* KAN-214: avaliação de notas por link (a tabela do resultado usa a do Quadro do ano) */
+#avPublico .btn,
+#avPublico .sel {
+  min-height: var(--touch-min);
+}
+.aval-nota {
+  width: 92px;
+  flex: none;
+  min-height: var(--touch-min);
+}
+.aval-aplicar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.aval-nova {
+  width: 76px;
+}

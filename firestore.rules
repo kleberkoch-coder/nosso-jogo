@@ -487,6 +487,39 @@ service cloud.firestore {
         allow delete: if pode(gid, 'caixa') && pago(gid) && resource != null;
       }
 
+      // KAN-214 (pelada-v80): avaliação de notas por link. A avaliação (título, fim, lista de mensalistas) é pública,
+      // como a votação; só quem tem a permissão de Notas cria, encerra e apaga. Cada aparelho grava só as próprias notas,
+      // enquanto a avaliação está aberta e antes do fim; o nome tem que estar na lista (administrador: nome vazio).
+      // As notas dadas só são lidas por quem tem a permissão de Notas (e cada aparelho lê a sua).
+      function avaliacao(gid, aid) { return get(/databases/$(database)/documents/grupos/$(gid)/avaliacoes/$(aid)).data; }
+      function avaliacaoValida(d) {
+        return d.keys().hasOnly(['t', 'ate', 'jogs', 'open', 'em'])
+          && d.t is string && d.t.size() > 0 && d.t.size() <= 60
+          && d.ate is int && d.jogs is list && d.jogs.size() > 0 && d.jogs.size() <= 60
+          && d.get('open', true) is bool;
+      }
+      match /avaliacoes/{aid} {
+        allow read: if true;
+        allow create, update: if pode(gid, 'notas') && avaliacaoValida(request.resource.data);
+        allow delete: if pode(gid, 'notas');
+
+        match /notas/{uid} {
+          allow read: if podeVer(gid, 'notas') || (signed() && request.auth.uid == uid);
+          allow create, update: if signed() && request.auth.uid == uid
+            && grpAtivo(gid)
+            && avaliacao(gid, aid).get('open', true) == true
+            && request.time.toMillis() < avaliacao(gid, aid).ate
+            && request.resource.data.keys().hasOnly(['pid', 'n', 't'])
+            && request.resource.data.pid is string
+            && (request.resource.data.pid == '' ? adminAtivo(gid) : request.resource.data.pid in avaliacao(gid, aid).jogs)
+            && request.resource.data.n is map
+            && request.resource.data.n.keys().hasOnly(avaliacao(gid, aid).jogs)
+            && request.resource.data.n.values().hasOnly([1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10])
+            && request.resource.data.t is int;
+          allow delete: if pode(gid, 'notas');
+        }
+      }
+
       match /votacoes/{vid} {
         allow read: if true;
         // KAN-119: criar votação só com o Plano A; encerrar ou apagar uma que já existe continua.

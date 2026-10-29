@@ -199,6 +199,13 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D32. Avaliação de notas por link: notas por aparelho, resultado só para Notas (29 out. 2026, pelada-v80, KAN-214)
+- **Onde fica:** `avaliacoes/{id}` = `{t, ate, jogs, open, em}` (pública, como a votação: título, prazo e quem é avaliado; sem nota nenhuma) e `avaliacoes/{id}/notas/{uid}` = `{pid, n: {pid: nota}, t}`, um documento por aparelho (login anônimo, como a votação).
+- **Regras do Firebase (mudam):** só quem tem Notas cria, encerra e apaga. Cada aparelho grava só o próprio documento, com a avaliação aberta e antes do prazo; o nome tem que estar na lista (vazio só para administrador); as notas só para quem está na lista e só de 1 a 10, de meio em meio (lista fechada nas regras). Ler as notas: só quem tem Notas, e cada aparelho as suas.
+- **Mesmo peso e repetição:** o resultado (`resultado` em `dominio/avaliacao.ts`) junta as notas válidas; o mesmo nome em dois aparelhos conta uma vez (a mais recente). É o mesmo limite conhecido da votação.
+- **Nada automático:** o resultado só preenche a tela; o cadastro (`privado/ratings.nivel`) muda só quando o administrador marca e confirma.
+- **Leveza:** o link baixa a própria parte (`PublicoAvaliacao`, 1,3 KB) e a janela do administrador vem sob demanda (`avaliacao-lote`, 3,2 KB). A gestão foi a 94,9 KB, quase no limite de 95 KB: a próxima entrega que crescer a gestão precisa tirar algo dela (candidatos: CSS de telas que só aparecem sob demanda, como o Quadro do ano e os Rateios).
+
 ### D31. Rateio dentro de privado/caixa, com o pago somado no rateio (29 out. 2026, pelada-v79, KAN-213)
 - **Onde fica:** `privado/caixa.rat.{id}` = `{n, modo, base, part: {pid: centavos}, pg: {pid: centavos}, gasto, pend, em, fim}`. Mesmo documento e mesma permissão do caixa (Caixa no Plano A para gravar): sem coleção nova, sem leitura a mais e **sem mudança nas regras do Firebase**. Poucos rateios por ano cabem folgados no documento.
 - **Pagamento:** "Recebi" é uma entrada comum no Caixa (`caixa/{id}` com `pid`, `rat` e o nome em `note`), então entra no fluxo do mês do pagamento e no saldo como qualquer entrada. No mesmo lote, soma em `rat.{id}.pg.{pid}` (incremento do servidor); apagar ou "Desfazer" desconta. Assim o cartão não depende dos lançamentos carregados (7 meses). Despesa ligada soma em `gasto`.

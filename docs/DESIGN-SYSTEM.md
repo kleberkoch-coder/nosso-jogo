@@ -73,6 +73,14 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo; **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v80)
+- **Avaliação de notas** (KAN-214; `telas/PublicoAvaliacao.tsx`, `ui/NotasAvaliacao.tsx`, `ui/AvaliacaoJanela.tsx`; classes `aval-nota`, `aval-aplicar`, `aval-nova`; a tabela do resultado usa a do Quadro do ano, `quadro-rolar`/`quadro-tab`/`q-nome`; os botões em linha usam `rat-acoes`):
+  - **Na aba Jogadores** (só com Notas): "Avaliação por link" (`btn sm`) e, ao lado, `small muted` "O time dá nota pelo link; só vocês veem o resultado.".
+  - **Link** (sem conta): cartão com o título, a regra em `small muted` ("…Ninguém vê as notas dos outros. Dá para mudar até 05/11.") e "Quem é você?" (combo de 44px). Depois de escolher, um cartão com a escala ("1 · iniciante … 10 · craque…"), a Lista de jogadores com a Posição, o nome e o combo da nota (92px, 44px, "—" e 1 a 10 de meio em meio), o contador "2 de 11 com nota" (`aria-live`) e "Enviar notas"/"Atualizar notas" (`primary`, 44px); enviado, a linha `role="status"` "Notas enviadas. Dá para mudar até 05/11.". Encerrada: Estado vazio com "Esta avaliação terminou em 05/11.".
+  - **Janela "Avaliação por link"** (administrador): ajuda, "Nova avaliação" (`primary`), e a lista com o título, `tag` "até 05/11" (ou `tag alt` "encerrada"), "11 avaliados" e os botões `btn sm` Compartilhar link, Minhas notas, Resultado, Encerrar (`ghost`) / Apagar (`ghost danger`).
+  - **Nova avaliação:** Título (cursor nele), "Recebe notas até" (data) e "Quem é avaliado (n)" (Caixas de marcar em lista, mensalistas marcados); "Voltar" e "Criar e compartilhar" (`primary`), que já abre o compartilhar.
+  - **Resultado:** "4 responderam (1 pelo app): nomes", ajuda, "Usar a mediana" e "Usar a média" (`btn sm`), e a Tabela com rolagem lateral (nome fixo): Atual, Média, Mediana, Notas e "Nova nota" (Caixa de marcar + campo de 76px); rodapé "Voltar" e "Atualizar notas (n)" (`primary`).
+
 ## Componentes (pelada-v79)
 - **Rateios** (KAN-213; `telas/Rateios.tsx`; classes `rateio`, `rat-nome`, `rat-resumo`, `rat-falta`, `rat-sub`, `rat-pagaram`, `rat-acoes`, `rat-fechados`, `rat-part`, `rat-atalhos`, `rat-linha`, `rat-valor`):
   - **Seção no Caixa**, depois de Pendentes e Do mês: título "Rateios" com "Novo rateio" (`btn sm`) e, sem nenhum aberto, uma linha `small muted` de exemplo. Encerrados numa Seção recolhível "Encerrados (n)" (resumo de 44px).

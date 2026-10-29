@@ -160,6 +160,14 @@ function JogadoresTela() {
           </div>
         ) : null}
       </div>
+      {notas && ps.length ? (
+        <div class="row rat-acoes">
+          <button class="btn sm" data-a="avAbrir">
+            {tx('jogadores.avaliacaoLink')}
+          </button>
+          <span class="small muted">{tx('jogadores.avaliacaoAjuda')}</span>
+        </div>
+      ) : null}
       <div class="panel">
         {ps.length > 1 ? <SeletorOrdem /> : null}
         <ul class="plist">

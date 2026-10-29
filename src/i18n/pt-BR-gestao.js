@@ -265,6 +265,8 @@ export default {
   'jogadores.total': '{n} jogadores',
   'jogadores.adicionar': 'Adicionar jogador',
   'jogadores.importar': 'Importar da planilha',
+  'jogadores.avaliacaoLink': 'Avaliação por link',
+  'jogadores.avaliacaoAjuda': 'O time dá nota pelo link; só vocês veem o resultado.',
   'jogadores.exemplo': 'Elenco de exemplo',
   'jogadores.nenhumAtivo': 'Nenhum jogador ativo.',
   'jogadores.inativos': 'Inativos ({n})',

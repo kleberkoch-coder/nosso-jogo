@@ -3,6 +3,7 @@ import { S } from './estado.js';
 const baseUrl = () => location.href.split('#')[0];
 const linkRodada = id => baseUrl() + '#/p/' + S.gid + '/r/' + id;
 const linkVoto = id => baseUrl() + '#/p/' + S.gid + '/v/' + id;
+const linkAvaliacao = id => baseUrl() + '#/p/' + S.gid + '/a/' + id;
 const linkProxima = () => baseUrl() + '#/p/' + S.gid;
 const linkConvite = t => baseUrl() + '#/convite/' + S.gid + '/' + t;
 
@@ -12,4 +13,4 @@ const q = t => encodeURIComponent(String(t || '').trim());
 const linkMaps = t => 'https://www.google.com/maps/search/?api=1&query=' + q(t);
 const linkWaze = t => 'https://waze.com/ul?q=' + q(t) + '&navigate=yes';
 
-export { linkConvite, linkMaps, linkProxima, linkRodada, linkVoto, linkWaze };
+export { linkAvaliacao, linkConvite, linkMaps, linkProxima, linkRodada, linkVoto, linkWaze };

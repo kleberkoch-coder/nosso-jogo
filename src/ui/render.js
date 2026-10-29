@@ -17,7 +17,8 @@ import { renderPublicRodada } from '../telas/publico-rodada.js';
 /* Parte do app que baixa sob demanda (gestão, apresentação, aba Partida): mostra "Carregando…" e desenha de novo quando
    chega; sem internet, avisa que não carregou. */
 let apresentacao = null,
-  voto = null;
+  voto = null,
+  aval = null;
 function baixar(promessa, guardar, onde = main) {
   onde.replaceChildren(el('div', 'empty muted', tx('comum.carregando')));
   promessa.then(
@@ -94,13 +95,18 @@ function renderCore() {
   $('#gname').textContent = title;
   document.title = title;
   // KAN-169: com conta, o tema fica no menu da conta; sem conta (link, login, apresentação), o botão continua.
-  $('#themeBtn').hidden = logged && R.n !== 'r' && R.n !== 'v';
+  $('#themeBtn').hidden = logged && R.n !== 'r' && R.n !== 'v' && R.n !== 'a';
   if (R.n !== 'r') desmontarPublico();
   if (R.n === 'r') return renderPublicRodada();
   /* KAN-183: a votação pública baixa só quando o link de votação é aberto. */
   if (R.n === 'v') {
     if (!voto) return baixar(import('../telas/publico-voto.js'), m => (voto = m));
     return voto.renderPublicVoto();
+  }
+  /* KAN-214: a avaliação de notas pelo link baixa só quando o link é aberto. */
+  if (R.n === 'a') {
+    if (!aval) return baixar(import('../telas/PublicoAvaliacao'), m => (aval = m));
+    return aval.renderPublicoAvaliacao();
   }
   $('#tabsnav').hidden = true;
   $('#gsub').textContent = 'Presença, sorteio de times, placar, ranking e caixa dos seus jogos';

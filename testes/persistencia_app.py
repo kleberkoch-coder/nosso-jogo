@@ -561,6 +561,44 @@ with sync_playwright() as pw:
        f'CT-KAN-170-P29: rateio, pagamento e encerramento continuam depois de sair e entrar ({r29}, {l29})')
     c29.close()
 
+    # P30 avaliação por link (KAN-214): criar a avaliação, dar as minhas notas pelo app e atualizar o cadastro pelo
+    # resultado. Confere depois de sair e entrar: a avaliação, as notas dadas e a nota nova do jogador.
+    c30 = novo(); p30 = c30.new_page()
+    p30.on('pageerror', lambda e: errs.append(str(e)))
+    E30 = 'aval30@teste.com'
+    p30.goto(URL + '#/criar'); p30.wait_for_selector('#le', timeout=20000); p30.wait_for_timeout(300)
+    p30.fill('#le', E30); p30.fill('#lp', SENHA); p30.fill('#lp2', SENHA); p30.wait_for_timeout(200)
+    p30.click('[data-a=signup]'); p30.wait_for_selector('#ngn', timeout=20000)
+    p30.fill('#ngn', 'Notas FC'); p30.click('[data-a=createGroup]')
+    p30.wait_for_function("location.hash.startsWith('#/g/')", timeout=20000)
+    g30 = p30.url.split('#/g/')[1].split('/')[0]
+    pronto(p30, 'jogadores'); p30.click('[data-a=seed]'); p30.wait_for_timeout(1500); gravou(p30)
+    pronto(p30, 'jogadores'); p30.click('[data-a=avAbrir]'); p30.wait_for_selector('[data-a=avNova]', timeout=20000)
+    p30.click('[data-a=avNova]'); p30.wait_for_selector('#avT', timeout=10000)
+    p30.click('#dlg [data-a=avCriar]'); p30.wait_for_selector('#shtxt', timeout=10000)
+    link30 = p30.input_value('#shtxt'); aid30 = link30.split('/a/')[1].split()[0].strip()
+    p30.click('#dlg [data-a=close]'); p30.wait_for_timeout(1500); gravou(p30)
+    pronto(p30, 'jogadores'); p30.click('[data-a=avAbrir]'); p30.wait_for_selector(f'[data-a=avMinhas][data-v="{aid30}"]', timeout=20000)
+    p30.click(f'[data-a=avMinhas][data-v="{aid30}"]'); p30.wait_for_selector('#avLista', timeout=20000)
+    j30 = J(p30, "[...document.querySelectorAll('#avLista .aval-nota')].map(x=>x.dataset.p)")[:2]
+    p30.select_option(f'#avLista .aval-nota[data-p="{j30[0]}"]', '8.5'); p30.select_option(f'#avLista .aval-nota[data-p="{j30[1]}"]', '3')
+    p30.click('#dlg [data-a=avEnviar]'); p30.wait_for_timeout(1500); gravou(p30)
+    pronto(p30, 'jogadores'); p30.click('[data-a=avAbrir]'); p30.wait_for_selector(f'[data-a=avResultado][data-v="{aid30}"]', timeout=20000)
+    p30.click(f'[data-a=avResultado][data-v="{aid30}"]'); p30.wait_for_selector('#avRes', timeout=20000)
+    p30.fill(f'#avRes tr[data-pid="{j30[0]}"] .aval-nova', '8.5'); p30.wait_for_timeout(150)
+    p30.click('#dlg [data-a=avAplicar]'); p30.wait_for_timeout(1500); gravou(p30)
+    sair_e_esperar(p30)
+    p30.goto(URL + '#/entrar'); p30.wait_for_selector('#le', timeout=20000); p30.wait_for_timeout(300)
+    p30.fill('#le', E30); p30.fill('#lp', SENHA); p30.keyboard.press('Enter'); p30.wait_for_timeout(2500)
+    p30.goto(URL + '#/g/' + g30); pronto(p30, 'jogadores'); p30.wait_for_timeout(1200)
+    nv30 = J(p30, "(i)=>((S.rat||{}).nivel||{})[i]", j30[0])
+    p30.click('[data-a=avAbrir]'); p30.wait_for_selector(f'[data-a=avResultado][data-v="{aid30}"]', timeout=20000)
+    p30.click(f'[data-a=avResultado][data-v="{aid30}"]'); p30.wait_for_selector('#avRes', timeout=20000)
+    r30 = [p30.inner_text(f'#avRes tr[data-pid="{j30[0]}"] .aval-media'), p30.inner_text(f'#avRes tr[data-pid="{j30[1]}"] .aval-qtd')]
+    ok(nv30 == 8.5 and r30 == ['8,5', '1'],
+       f'CT-KAN-170-P30: avaliação, as notas dadas e a nota atualizada no cadastro continuam depois de sair e entrar ({nv30}, {r30})')
+    c30.close()
+
     ok(not errs, 'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))
     b.close()
 

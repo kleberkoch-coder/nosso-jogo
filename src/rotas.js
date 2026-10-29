@@ -225,6 +225,8 @@ function parseRoute() {
   if (h[0] === 'p' && h[1]) {
     if (h[2] === 'r' && h[3]) return { n: 'r', gid: h[1], id: h[3] };
     if (h[2] === 'v' && h[3]) return { n: 'v', gid: h[1], id: h[3] };
+    /* KAN-214: link da avaliação de notas. */
+    if (h[2] === 'a' && h[3]) return { n: 'a', gid: h[1], id: h[3] };
     return { n: 'r', gid: h[1], id: null, next: true };
   }
   if (h[0] === 'g' && h[1]) return { n: 'admin', gid: h[1] };
@@ -260,7 +262,7 @@ function registrarAcesso() {
 function gravarPaisConta() {
   const u = S.user,
     n = S.route.n;
-  if (!u || u.anon || !S.me || S.me.pais || S.paisGravando || n === 'r' || n === 'v') return;
+  if (!u || u.anon || !S.me || S.me.pais || S.paisGravando || n === 'r' || n === 'v' || n === 'a') return;
   S.paisGravando = true;
   // A tabela de países vem com a gestão (quem tem conta já baixa a gestão; o link do jogador não).
   carregarAdmin()
@@ -308,7 +310,7 @@ function setupRoute() {
   aplicarRegiao(!R.gid ? S.me : null);
   /* KAN-149: fora do link público, a parte de gestão já começa a baixar enquanto o Firebase conecta. */
   /* KAN-175: na gestão, a aba Partida também já vem logo depois, para abrir na hora (e na quadra, sem sinal). */
-  if (R.n !== 'r' && R.n !== 'v' && !(R.n === 'auth'))
+  if (R.n !== 'r' && R.n !== 'v' && R.n !== 'a' && !(R.n === 'auth'))
     carregarAdmin()
       .then(A => {
         if (R.n === 'admin') setTimeout(() => A.carregarPartida().catch(() => {}), 1500);
@@ -322,7 +324,7 @@ function setupRoute() {
     S.authMode = R.mode;
   }
   window.scrollTo(0, 0);
-  if (R.n === 'r' || R.n === 'v') {
+  if (R.n === 'r' || R.n === 'v' || R.n === 'a') {
     try {
       localStorage.setItem('pelada-last', location.hash);
     } catch (e) {}
@@ -339,6 +341,8 @@ function setupRoute() {
     membros: {},
     convite: null,
     rat: null,
+    av: null,
+    minhaAv: null,
     presRid: undefined,
     limAv: null,
     limVg: null,
@@ -472,6 +476,19 @@ function setupRoute() {
       sub('mv', 'votacoes/' + R.id + '/votos/' + S.user.uid, d => {
         const keep = S.myVote?.pid;
         S.myVote = d || (keep ? { pid: keep, v: {} } : null);
+      });
+  } else if (R.n === 'a') {
+    /* KAN-214: o link da avaliação lê o elenco (nome e posição), a avaliação e só as notas deste aparelho. */
+    anon();
+    sub('jog', 'jogadores', d => {
+      S.jog = d || {};
+    });
+    sub('av', 'avaliacoes/' + R.id, d => {
+      S.av = d || null;
+    });
+    if (S.user)
+      sub('ma', 'avaliacoes/' + R.id + '/notas/' + S.user.uid, d => {
+        S.minhaAv = d || null;
       });
   } else if ((R.n === 'admin' || R.n === 'inv') && logged) {
     sub('mem', 'membros/' + S.user.uid, d => {

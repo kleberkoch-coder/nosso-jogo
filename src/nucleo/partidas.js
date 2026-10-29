@@ -1,6 +1,8 @@
 import {
   camposEdicao,
   camposLancamento,
+  camposMensal,
+  aplicar,
   camposPartida,
   camposVotacao,
   caixaAntigo,
@@ -83,15 +85,7 @@ const sem = ops => ops.filter(Boolean);
 /* KAN-207: os totais do caixa vão para grupos/{gid}/resumosCaixa/{mês}, que só quem tem a permissão de Caixa lê. */
 function opResumoCaixa(c) {
   if (!c.mes) return null;
-  if (S.resCx) {
-    const d = cl(S.resCx[c.mes]) || { mes: c.mes, cx: {} };
-    d.cx = d.cx || {};
-    Object.entries(c.somar).forEach(([k, n]) => {
-      const f = k.split('.').pop();
-      d.cx[f] = (d.cx[f] || 0) + n;
-    });
-    S.resCx[c.mes] = d;
-  }
+  if (S.resCx) S.resCx[c.mes] = aplicar(cl(S.resCx[c.mes]) || { mes: c.mes, cx: {} }, c);
   return { tipo: 'patch', p: 'resumosCaixa/' + c.mes, o: patchResumo(c) };
 }
 
@@ -182,7 +176,11 @@ function salvarArtilharia(rid, gols) {
 /* Caixa: lançamento junto com o resumo do mês. */
 function salvarLanc(id, o) {
   S.caixa[id] = o;
-  const ops = [{ tipo: 'set', p: 'caixa/' + id, o: clean(o) }, opResumoCaixa(camposLancamento(o, 1))];
+  const ops = [
+    { tipo: 'set', p: 'caixa/' + id, o: clean(o) },
+    opResumoCaixa(camposLancamento(o, 1)),
+    opResumoCaixa(camposMensal(o, 1)),
+  ];
   changed();
   return w(GB.lote(sem(ops)));
 }
@@ -190,7 +188,11 @@ function apagarLanc(id) {
   const o = S.caixa[id];
   if (!o) return Promise.resolve();
   delete S.caixa[id];
-  const ops = [{ tipo: 'del', p: 'caixa/' + id }, opResumoCaixa(camposLancamento(o, -1))];
+  const ops = [
+    { tipo: 'del', p: 'caixa/' + id },
+    opResumoCaixa(camposLancamento(o, -1)),
+    opResumoCaixa(camposMensal(o, -1)),
+  ];
   changed();
   return w(GB.lote(sem(ops)));
 }
@@ -353,6 +355,40 @@ async function migrarCaixa() {
   }
 }
 
+/* KAN-212 (pelada-v78): o Quadro do ano lê as mensalidades pagas por competência (resumosCaixa/{mês}.mens).
+   Uma vez por grupo, quem tem a permissão de Caixa monta esse resumo a partir de todos os lançamentos e marca
+   privado/migracao.mens. Lançamentos novos já somam sozinhos (camposMensal). */
+let migrandoMensal = false;
+async function migrarMensal() {
+  if (migrandoMensal || !S.dataOn || !posso('caixa') || !S.loaded.migr || (S.migr || {}).mens) return;
+  if (((S.migr || {}).v || 0) < VERSAO_DADOS) return;
+  migrandoMensal = true;
+  try {
+    const lanc = Object.values((await B.getServidor(gp('caixa'))) || {}),
+      porMes = {};
+    lanc.forEach(l => {
+      const c = camposMensal(l, 1);
+      if (c.mes) aplicar(porMes[c.mes] || (porMes[c.mes] = { mes: c.mes }), c);
+    });
+    const ops = Object.values(porMes).map(d => ({
+      tipo: 'patch',
+      p: 'resumosCaixa/' + d.mes,
+      o: { mes: d.mes, at: Date.now(), mens: d.mens || {} },
+    }));
+    ops.push({ tipo: 'patch', p: 'privado/migracao', o: { mens: 1 } });
+    await enviar(ops);
+    S.migr = Object.assign({}, S.migr, { mens: 1 });
+    Object.values(porMes).forEach(d => {
+      if (S.resCx) S.resCx[d.mes] = Object.assign({}, S.resCx[d.mes] || { mes: d.mes, cx: {} }, { mens: d.mens || {} });
+    });
+    changed();
+  } catch (e) {
+    console.warn('resumo das mensalidades', e);
+  } finally {
+    migrandoMensal = false;
+  }
+}
+
 /* Botão Recalcular: refaz as fichas do período a partir das partidas, do caixa e das votações.
    periodo: 'AAAA-MM' (um mês), 'AAAA' (ano) ou 'todos'. */
 async function recalcular(periodo) {
@@ -363,8 +399,15 @@ async function recalcular(periodo) {
   // Todos os lançamentos do servidor (o caixa na tela carrega só a janela recente, KAN-106).
   // Sem a permissão de Caixa, os totais do caixa não são lidos nem refeitos (KAN-207).
   const comCaixa = posso('caixa'),
-    lanc = comCaixa ? Object.values((await B.getServidor(gp('caixa'))) || {}).filter(l => dentro(mesDe(l.d))) : [];
+    lancTodos = comCaixa ? Object.values((await B.getServidor(gp('caixa'))) || {}) : [],
+    lanc = lancTodos.filter(l => dentro(mesDe(l.d)));
   const res = resumirTudo(partidas, lanc, Object.values(S.vot || {}));
+  /* KAN-212: as mensalidades pagas contam no mês a que se referem (ref), venha o dinheiro de qualquer mês. */
+  Object.values(res).forEach(d => delete d.mens);
+  lancTodos.forEach(l => {
+    const c = camposMensal(l, 1);
+    if (c.mes && dentro(c.mes)) aplicar(res[c.mes] || (res[c.mes] = vazio(c.mes)), c);
+  });
   Object.keys(res).forEach(m => {
     if (!dentro(m)) delete res[m];
   });
@@ -395,6 +438,7 @@ async function recalcular(periodo) {
 export {
   VERSAO_DADOS,
   migrarCaixa,
+  migrarMensal,
   addMatch,
   apagarLanc,
   apagarPartidasDaRodada,

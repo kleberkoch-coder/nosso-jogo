@@ -469,11 +469,13 @@ service cloud.firestore {
       }
 
       // Totais do caixa por mês (KAN-207, pelada-v74): entradas e saídas, só para quem tem a permissão de Caixa.
+      // KAN-212 (pelada-v78): mens = mensalidade paga por jogador na competência (centavos), para o Quadro do ano.
       match /resumosCaixa/{mes} {
         allow read: if podeVer(gid, 'caixa');
         allow write: if pode(gid, 'caixa')
           && mes.matches('[0-9]{4}-[0-9]{2}')
-          && request.resource.data.keys().hasOnly(['mes', 'at', 'cx'])
+          && request.resource.data.keys().hasOnly(['mes', 'at', 'cx', 'mens'])
+          && (!('mens' in request.resource.data) || request.resource.data.mens is map)
           && request.resource.data.mes == mes;
       }
 

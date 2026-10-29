@@ -32,7 +32,7 @@ export type Partida = {
   at?: number;
 };
 export type PartidaComData = Partida & { rid: string; date: string };
-export type Lancamento = { k: string; v: number | string; d?: string };
+export type Lancamento = { k: string; v: number | string; d?: string; pid?: string | null; ref?: string };
 export type Votacao = {
   open?: boolean;
   cats?: { id: string; neg?: boolean }[];
@@ -50,8 +50,10 @@ export type Resumo = {
     { rid: string; date: string; ca: number; cb: number; ta?: number; tb?: number; ga: number; gb: number; at?: number }
   >;
   cx?: { ent?: number; sai?: number };
+  /* KAN-212: mensalidades pagas da competência (o mês a que se referem), por jogador, em centavos. */
+  mens?: Record<string, number>;
 };
-export type ResumoCaixa = { mes: string; cx: { ent?: number; sai?: number } };
+export type ResumoCaixa = { mes: string; cx: { ent?: number; sai?: number }; mens?: Record<string, number> };
 
 /* KAN-207: a ficha calculada se divide em duas, a do ranking (sem cx) e a do caixa (só cx). */
 export function semCaixa(d: Resumo): Resumo {
@@ -59,7 +61,11 @@ export function semCaixa(d: Resumo): Resumo {
   delete o.cx;
   return o;
 }
-export const soCaixa = (d: Resumo): ResumoCaixa => ({ mes: d.mes, cx: { ...(d.cx || {}) } });
+export function soCaixa(d: Resumo): ResumoCaixa {
+  const o: ResumoCaixa = { mes: d.mes, cx: { ...(d.cx || {}) } };
+  if (d.mens && Object.keys(d.mens).length) o.mens = { ...d.mens };
+  return o;
+}
 /* Totais de caixa que ainda estão no resumo do ranking (grupos de antes da v74), para mudar de lugar. */
 export function caixaAntigo(d: Partial<Resumo> | null | undefined): ResumoCaixa | null {
   if (!d || !d.mes || !d.cx) return null;
@@ -125,6 +131,15 @@ export function camposEdicao(antes: Partida, depois: Partida, rid: string, date:
 export function camposLancamento(l: Lancamento, sinal: 1 | -1): Campos {
   const c = novo(mesDe(l.d));
   soma(c, l.k === 'despesa' ? 'cx.sai' : 'cx.ent', Math.round((+l.v || 0) * 100) * sinal);
+  return c;
+}
+
+/* KAN-212: mensalidade lançada (1) ou apagada (-1) conta no resumo da competência (o mês a que se refere, ref),
+   não no mês em que o dinheiro entrou: é o que o Quadro do ano mostra. Outros lançamentos não entram aqui. */
+export function camposMensal(l: Lancamento, sinal: 1 | -1): Campos {
+  const ok = l.k === 'mensal' && !!l.pid && /^\d{4}-\d{2}$/.test(l.ref || '');
+  const c = novo(ok ? (l.ref as string) : '');
+  if (ok) soma(c, `mens.${l.pid}`, Math.round((+l.v || 0) * 100) * sinal);
   return c;
 }
 
@@ -194,7 +209,10 @@ export function resumirTudo(
     aplicar(out[c.mes] || (out[c.mes] = vazio(c.mes)), c);
   };
   partidas.forEach(p => usar(camposPartida(p, p.rid, p.date, 1)));
-  lancamentos.forEach(l => usar(camposLancamento(l, 1)));
+  lancamentos.forEach(l => {
+    usar(camposLancamento(l, 1));
+    usar(camposMensal(l, 1));
+  });
   votacoes.filter(v => !v.open && v.resultado).forEach(v => usar(camposVotacao(v, 1)));
   if (soMes && !out[soMes]) out[soMes] = vazio(soMes);
   return out;

@@ -936,6 +936,17 @@ describe('totais do caixa fora do resumo do ranking (KAN-207)', () => {
     await assertSucceeds(b.commit());
     await assertFails(setDoc(doc(conv(), RC), { mes: '2026-10', extra: 1 }, { merge: true }));
   });
+  test('Quadro do ano (KAN-212): mensalidade paga por jogador só com a permissão de Caixa', async () => {
+    await preparar({ ...NADA, caixa: true });
+    const f = conv(),
+      b = writeBatch(f);
+    b.set(doc(f, G + '/caixa/c10'), { k: 'mensal', v: 85, d: '2026-11-05', pid: 'p1', ref: '2026-10' });
+    b.set(doc(f, RC), { mes: '2026-10', at: 1, mens: { p1: increment(8500) } }, { merge: true });
+    await assertSucceeds(b.commit());
+    await assertFails(setDoc(doc(conv(), RC), { mes: '2026-10', mens: 5 }, { merge: true }));
+    await preparar(NADA);
+    await assertFails(setDoc(doc(conv(), RC), { mes: '2026-10', mens: { p1: increment(1) } }, { merge: true }));
+  });
   test('ranking continua para todo administrador, e ninguém põe totais do caixa nele (critério 5)', async () => {
     await preparar(NADA);
     await assertSucceeds(getDoc(doc(conv(), G + '/resumos/2026-10')));

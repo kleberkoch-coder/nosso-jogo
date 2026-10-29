@@ -2920,6 +2920,76 @@ with sync_playwright() as pw:
     ok('R$ 255,00' in ent27 and n1 not in pend27 and not [l for l in at27b.split('Recebi') if n1 in l and 'dez.' in l],
        'CT-KAN-209-03: os dois entram no fluxo do mês (R$ 255 com o Recebi) e saem das pendências (janeiro) e do atraso (dezembro)')
     ctx27.close()
+    # ---------- v78 (KAN-212): Quadro do ano no Caixa (mensalistas × 12 meses)
+    ctx28 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+    p28 = ctx28.new_page(); p28.on('pageerror', lambda e: errs.append(str(e)))
+    p28.clock.install(time=datetime.datetime(2026, 10, 29, 15, 0, 0, tzinfo=datetime.timezone(datetime.timedelta(hours=-3))))
+    p28.goto(URL + '#/criar'); p28.wait_for_selector('#le')
+    p28.fill('#le', 'quadro78@teste.com'); p28.fill('#lp', 'Jogo@2026'); p28.fill('#lp2', 'Jogo@2026'); p28.keyboard.press('Enter'); p28.wait_for_selector('#ngBox', timeout=8000)
+    p28.fill('#ngn', 'Quadro FC'); p28.click('[data-a=createGroup]'); p28.wait_for_function("location.hash.startsWith('#/g/')"); p28.wait_for_timeout(1500)
+    g28 = p28.url.split('#/g/')[1]
+    p28.click('[data-a=tab][data-v=jogadores]'); p28.wait_for_timeout(300); p28.click('[data-a=seed]'); p28.wait_for_timeout(1500)
+    p28.click('[data-a=tab][data-v=grupo]'); p28.wait_for_timeout(900); p28.click('[data-a=settings]'); p28.wait_for_selector('#cm')
+    p28.fill('#cm', '85'); p28.click('#dlg [data-a=saveSettings]'); p28.wait_for_timeout(800)
+    mens28 = p28.evaluate("Object.keys(S.jog).filter(id=>(((S.pc||{}).tipos||{})[id]||'mensalista')==='mensalista').sort((a,b)=>S.jog[a].name.localeCompare(S.jog[b].name))")
+    a1, a2, a3 = mens28[0], mens28[1], mens28[2]
+    n1, n2, n3 = [p28.evaluate("(i)=>S.jog[i].name", x) for x in (a1, a2, a3)]
+    # Elenco: a1 e a2 desde 2025; a3 entrou em 10/06/2026. Grupo antigo: mensalidade de janeiro de a2 lançada antes do resumo
+    # por jogador existir (sem privado/migracao.mens); a2 afastado em maio e junho, sem cobrança.
+    o28 = {}
+    for id, quando in ((a1, datetime.datetime(2025, 6, 1)), (a2, datetime.datetime(2025, 6, 1)), (a3, datetime.datetime(2026, 6, 10, 12))):
+        d = p28.evaluate(LER, f'grupos/{g28}/jogadores/{id}'); d['criado'] = int(quando.timestamp() * 1000); o28[f'grupos/{g28}/jogadores/{id}'] = d
+    o28[f'grupos/{g28}/caixa/velho1'] = {'k': 'mensal', 'v': 85, 'd': '2026-02-05', 'pid': a2, 'ref': '2026-01', 'note': ''}
+    migr = p28.evaluate(LER, f'grupos/{g28}/privado/migracao') or {}; migr.pop('mens', None); o28[f'grupos/{g28}/privado/migracao'] = migr
+    o28[f'grupos/{g28}/privado/afast'] = {'af1': {'pid': a2, 'mot': 'lesao', 'de': '2026-05', 'ate': '2026-06', 'em': 1}}
+    pc = p28.evaluate(LER, f'grupos/{g28}/privado/caixa') or {}; pc['afIsen'] = {'af1': {'pid': a2, 'de': '2026-05', 'ate': '2026-06'}}; o28[f'grupos/{g28}/privado/caixa'] = pc
+    p28.evaluate(PUT, o28); p28.reload(); p28.wait_for_timeout(1800)
+    p28.click('[data-a=tab][data-v=caixa]'); p28.wait_for_timeout(1200)
+    r28 = p28.evaluate(LER, f'grupos/{g28}/resumosCaixa/2026-01') or {}
+    ok((r28.get('mens') or {}).get(a2) == 8500 and (p28.evaluate(LER, f'grupos/{g28}/privado/migracao') or {}).get('mens') == 1,
+       f'CT-KAN-212-05: grupo antigo: na primeira abertura do Caixa, o resumo por jogador é montado com os lançamentos que já existiam ({r28})')
+    # Lançar setembro e outubro de a1 (dois lançamentos): o resumo de cada competência soma na hora
+    p28.click('[data-a=addLan]'); p28.wait_for_selector('#lanMeses'); p28.select_option('#lp2', a1)
+    p28.locator('#lanMeses .chk-linha:has(.lm[value="2026-09"]) span').click(); p28.wait_for_timeout(150)
+    p28.click('#dlg [data-a=saveLan]'); p28.wait_for_timeout(1000)
+    s9 = ((p28.evaluate(LER, f'grupos/{g28}/resumosCaixa/2026-09') or {}).get('mens') or {}).get(a1)
+    ok(s9 == 8500, f'CT-KAN-212-05: lançar a mensalidade soma no resumo da competência dela (setembro), não só no mês do dinheiro ({s9})')
+    # Critério 1: abre o quadro (fechado por padrão) e confere cada situação
+    ok(p28.locator('#quadroTab').count() == 0, 'CT-KAN-212-04: o Quadro do ano começa fechado (não pesa no Caixa)')
+    p28.click('#quadroAno > summary'); p28.wait_for_selector('#quadroTab')
+    est = p28.evaluate("""(ids)=>Object.fromEntries(ids.map(id=>{const tr=document.querySelector(`#quadroTab tr[data-pid="${id}"]`);return [id,tr?[...tr.querySelectorAll('td')].map(td=>(td.className.match(/q-(\\w+)/)||[])[1]):null]}))""", [a1, a2, a3])
+    e1, e2, e3 = est[a1], est[a2], est[a3]
+    ok(e1 and e1[8] == 'pago' and e1[9] == 'pago' and e1[0] == 'aberto' and e1[10] == 'futuro',
+       f'CT-KAN-212-01: {n1}: set. e out. pagos, jan. em aberto, nov. ainda não venceu ({e1})')
+    ok(e2 and e2[0] == 'pago' and e2[4] == 'isento' and e2[5] == 'isento' and e2[1] == 'aberto',
+       f'CT-KAN-212-01: {n2}: jan. pago (lançado em fevereiro), mai. e jun. sem cobrança (afastado), fev. em aberto ({e2})')
+    ok(e3 and all(x == 'antes' for x in e3[:5]) and e3[5] == 'aberto',
+       f'CT-KAN-212-01: {n3}, que entrou em junho: jan. a mai. com "—" e junho em aberto ({e3})')
+    nomes28 = p28.inner_text('#quadroTab tbody')
+    tipos28 = p28.evaluate("Object.keys(S.jog).filter(id=>(((S.pc||{}).tipos||{})[id]||'mensalista')!=='mensalista').map(id=>S.jog[id].name)")
+    ok(not [n for n in tipos28 if n in nomes28.split('\n')], f'CT-KAN-212-01: só mensalistas no quadro (fora: {tipos28})')
+    pe28 = p28.locator(f'#quadroTab tr[data-pid="{a1}"] .q-pago').first.get_attribute('title') or ''
+    ok('pago em' in pe28 and '29/10' in pe28 and 'R$' in pe28, f'CT-KAN-212-01: o "Pago" mostra a data e o valor ({pe28!r})')
+    ft28 = p28.inner_text('#quadroTab tfoot').replace('\xa0', ' ')
+    ok('Pagaram' in ft28 and 'Recebido' in ft28 and 'R$ 85' in ft28, f'CT-KAN-212-01: o rodapé mostra quantos pagaram e o total recebido por mês ({ft28!r})')
+    # Critério 3: 360px, só a grade rola de lado, nome fixo, alvos de 44px, nos dois temas
+    for tema in ['light', 'dark']:
+        p28.emulate_media(color_scheme=tema); p28.wait_for_timeout(150)
+        v28 = p28.evaluate("""(()=>{const r=document.querySelector('.quadro-rolar');r.scrollLeft=0;const n0=r.querySelector('tbody .q-nome').getBoundingClientRect().left;r.scrollLeft=400;const n1=r.querySelector('tbody .q-nome').getBoundingClientRect().left;const alt=Math.min(...[...r.querySelectorAll('tbody td,.q-btn')].map(e=>e.getBoundingClientRect().height));r.scrollLeft=0;return [document.documentElement.scrollWidth<=innerWidth, r.scrollWidth>r.clientWidth, Math.abs(n0-n1)<1, Math.round(alt)]})()""")
+        ok(v28[0] and v28[1] and v28[2] and v28[3] >= 44, f'CT-KAN-212-03: em 360px ({tema}), só a grade rola de lado, com o nome fixo e alvos de 44px ({v28})')
+        contraste(p28, f'Quadro do ano ({tema})')
+        p28.locator('#quadroAno').screenshot(path=f'{OUT}/v78-quadro-{tema}-360.png')
+    p28.emulate_media(color_scheme='light')
+    # Critério 2: "Recebi" numa célula em aberto grava aquela competência com a data de hoje, e a célula vira Pago
+    p28.locator(f'#quadroTab tr[data-pid="{a3}"] [data-a=payMes][data-v="2026-06"]').click(); p28.wait_for_timeout(900)
+    l28 = p28.evaluate("(p)=>Object.values(S.caixa).filter(l=>l.pid===p).map(l=>[l.k,l.ref,l.d,l.v])", a3)
+    c28 = p28.locator(f'#quadroTab tr[data-pid="{a3}"] td').nth(5).get_attribute('class')
+    ok(l28 == [['mensal', '2026-06', '2026-10-29', 85]] and c28 == 'q-pago',
+       f'CT-KAN-212-02: "Recebi" grava a mensalidade de junho com a data de hoje e a célula vira Pago ({l28}, {c28})')
+    ok(p28.locator('#quadroAno').get_attribute('open') is not None, 'CT-KAN-212-02: o quadro continua aberto depois de lançar')
+    p28.set_viewport_size({'width': 390, 'height': 844}); p28.wait_for_timeout(200)
+    p28.locator('#quadroAno').screenshot(path=f'{OUT}/v78-quadro-390.png')
+    ctx28.close()
     # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
     ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
     p7 = ctx7.new_page()

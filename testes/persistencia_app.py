@@ -494,6 +494,38 @@ with sync_playwright() as pw:
     ok(l27 == sorted([[ant27, 85], [comp27, 85]]), f'CT-KAN-170-P27: dois meses de mensalidade num lançamento só viram dois lançamentos, depois de sair e entrar ({l27})')
     c27.close()
 
+    # P28 quadro do ano (KAN-212): "Recebi" no Quadro do ano grava a mensalidade da competência e soma no resumo por
+    # jogador (resumosCaixa/{mês}.mens). Confere depois de sair e entrar: a célula continua Paga.
+    c28 = novo(); p28 = c28.new_page()
+    p28.on('pageerror', lambda e: errs.append(str(e)))
+    E28 = 'quadro28@teste.com'
+    p28.goto(URL + '#/criar'); p28.wait_for_selector('#le', timeout=20000); p28.wait_for_timeout(300)
+    p28.fill('#le', E28); p28.fill('#lp', SENHA); p28.fill('#lp2', SENHA); p28.wait_for_timeout(200)
+    p28.click('[data-a=signup]'); p28.wait_for_selector('#ngn', timeout=20000)
+    p28.fill('#ngn', 'Quadro FC'); p28.click('[data-a=createGroup]')
+    p28.wait_for_function("location.hash.startsWith('#/g/')", timeout=20000)
+    g28 = p28.url.split('#/g/')[1].split('/')[0]
+    pronto(p28, 'jogadores'); p28.click('[data-a=seed]'); p28.wait_for_timeout(1500)
+    pronto(p28, 'grupo'); p28.click('[data-a=settings]'); p28.wait_for_selector('#cm', timeout=10000)
+    p28.fill('#cm', '85'); p28.click('#dlg [data-a=saveSettings]'); p28.wait_for_timeout(800)
+    gravou(p28); pronto(p28, 'caixa'); p28.wait_for_function("S.loaded.pc", timeout=20000)
+    p28.click('#quadroAno > summary'); p28.wait_for_selector('#quadroTab [data-a=payMes]', timeout=20000)
+    alvo28 = p28.locator('#quadroTab [data-a=payMes]').first
+    j28, m28 = alvo28.get_attribute('data-p'), alvo28.get_attribute('data-v')
+    alvo28.click(); p28.wait_for_timeout(1200); gravou(p28)
+    sair_e_esperar(p28)
+    p28.goto(URL + '#/entrar'); p28.wait_for_selector('#le', timeout=20000); p28.wait_for_timeout(300)
+    p28.fill('#le', E28); p28.fill('#lp', SENHA); p28.keyboard.press('Enter'); p28.wait_for_timeout(2500)
+    p28.goto(URL + '#/g/' + g28); pronto(p28, 'caixa'); p28.wait_for_function("S.loaded.pc && S.resCx", timeout=20000); p28.wait_for_timeout(1200)
+    r28 = J(p28, "(a)=>((S.resCx[a[1]]||{}).mens||{})[a[0]]||0", [j28, m28])
+    l28 = J(p28, "(a)=>Object.values(S.caixa||{}).filter(l=>l&&l.pid===a[0]&&l.k==='mensal').map(l=>[l.ref,l.v])", [j28, m28])
+    if not p28.locator('#quadroTab').count():
+        p28.click('#quadroAno > summary'); p28.wait_for_selector('#quadroTab', timeout=20000)
+    cel28 = J(p28, "(a)=>{const b=[...document.querySelectorAll(`#quadroTab tr[data-pid=\"${a[0]}\"] td`)];const i=Number(a[1].slice(5))-1;return b[i]?b[i].className:null}", [j28, m28])
+    ok(r28 == 8500 and l28 == [[m28, 85]] and cel28 == 'q-pago',
+       f'CT-KAN-170-P28: "Recebi" no Quadro do ano grava a mensalidade e o resumo por jogador, e a célula segue Paga depois de sair e entrar ({r28}, {l28}, {cel28})')
+    c28.close()
+
     ok(not errs, 'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))
     b.close()
 

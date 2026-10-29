@@ -26,8 +26,10 @@ import { LOCAL, simboloMoeda } from '../i18n/formatos.js';
 import { ciclo, fdm, mesHoje, periodoDe, semMensalNoMes } from '../nucleo/afast';
 import { S as estado } from '../nucleo/estado.js';
 import { brl, fdate, fmonth, today } from '../nucleo/util.js';
+import { QuadroAno } from './QuadroAno';
 
 const st = (): any => estado;
+let quadroAberto = false;
 type Lanc = Lancamento & { id: string };
 
 /* Pendências do mês com o texto de cada uma (usado pela tela, pelo "Recebi" e pela cobrança no WhatsApp).
@@ -293,6 +295,13 @@ const Dinheiro = ({ v, neg }: { v: number; neg?: boolean }) => (
 function Caixa() {
   const S = st(),
     m: string = S.month;
+  /* KAN-212: o Quadro do ano fica fechado e só se desenha quando aberto. A gestão redesenha a aba a cada mudança,
+     então o "aberto" fica guardado fora do componente (vale até sair do grupo). */
+  const [quadro, setQuadroEstado] = useState(quadroAberto);
+  const setQuadro = (v: boolean) => {
+    quadroAberto = v;
+    if (v !== quadro) setQuadroEstado(v);
+  };
   const lan: Lanc[] = Object.entries(S.caixa as Record<string, Lancamento>).map(([id, v]) => Object.assign({ id }, v));
   /* KAN-106: só os lançamentos recentes são carregados (janela do mês escolhido). Entradas, saídas e a lista do mês
      saem deles; o saldo de todo o histórico sai das fichas de resumo de cada mês (D11), mantidas a cada lançamento. */
@@ -464,6 +473,18 @@ function Caixa() {
           </ul>
         </div>
       </div>
+      <details
+        class="panel quadro-painel"
+        id="quadroAno"
+        open={quadro}
+        onToggle={e => setQuadro((e.currentTarget as HTMLDetailsElement).open)}
+      >
+        <summary>
+          <h3>{tx('quadro.titulo')}</h3>
+          <span class="small muted">{tx('quadro.resumo')}</span>
+        </summary>
+        {quadro ? <QuadroAno /> : null}
+      </details>
     </div>
   );
 }

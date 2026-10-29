@@ -17,7 +17,7 @@ export { renderInvite } from './telas/convite.js';
 export { montarHome, vHome } from './telas/Grupos';
 export { guardarOrdemJogadores, montarJogadores, vJogadores } from './telas/Jogadores';
 export { montarRodada, vRodada } from './telas/Rodada';
-export { migrar, migrarCaixa, verificarRodadas } from './nucleo/partidas.js';
+export { migrar, migrarCaixa, migrarMensal, verificarRodadas } from './nucleo/partidas.js';
 export { drawPreview } from './ui/dialogos-gestao.js';
 export { contaRegiao, listaPais, paisAparelho, preencher } from './ui/regiao.ts';
 export { trocarPaisTelefone } from './ui/contato-form';

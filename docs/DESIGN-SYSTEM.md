@@ -73,6 +73,13 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo; **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v78)
+- **Quadro do ano** (KAN-212; `telas/QuadroAno.tsx`; classes `quadro-painel`, `quadro-ano`, `quadro-rolar`, `quadro-tab`, `q-nome`, `q-conta`, `q-pago`, `q-btn`, `q-isento`, `q-antes`, `q-futuro`, `q-total`, `quadro-legenda`; utilitário `sr`, texto só para leitor de tela):
+  - **Seção recolhível** no fim do Caixa (`details.panel`, fechada): título "Quadro do ano" e, ao lado, "Quem pagou cada mês" em `small muted`; a linha do resumo tem 44px.
+  - **Troca de ano:** "‹ 2026 ›" centralizado (`btn sm ghost`; ‹ desligado no primeiro ano com mensalidade, › até o ano seguinte).
+  - **Grade** (Tabela com rolagem lateral só dentro dela, borda `line`, cantos de 10px): cabeçalho com os meses curtos em `display` 700 13px maiúsculo, `muted`, e o mês atual em `ink` com sublinhado `brand` de 3px. Primeira coluna fixa à esquerda (`surface`, 112 a 140px, nome 600, cortado com reticências) com a contagem de meses em aberto numa pílula `out-soft`/`out`. Células de 44px de altura e no mínimo 60px de largura: **pago** ✓ em `in` sobre `in-soft`; **em aberto** botão "Recebi" de 44px, contorno e texto em `out`; **afast.** em `muted` 12px; **antes de entrar** "—" em `muted` sobre `surface-2`; **futuro** vazio sobre `surface-2`. Rodapé em 700: "Pagaram" (quantidade) e "Recebido" (valor sem centavos quando redondo).
+  - **Legenda** em `small muted` embaixo da grade.
+
 ## Componentes (pelada-v77)
 - **Ciclo da mensalidade** (KAN-209; `telas/PartidasCaixa.tsx`, `telas/Caixa.tsx`; classes `meses-grade`, `ciclo-linha`, `atraso-tit`):
   - **Partidas e caixa** (janela, agora componente): depois de Mensalidade e Diária, o combo "O mês da mensalidade começa no dia" (1 a 28, 140px) e uma linha em `muted` com a mensalidade de hoje ("Hoje vale a mensalidade de outubro de 2026: 01/10 a 31/10. O mês leva o nome de quando começa."). Ao trocar o dia, aparece "A partir de quando" como Caixas de marcar em lista com opção única: "A partir da próxima (novembro de 2026: 20/11 a 19/12); outubro de 2026 vai até 19/11" (marcada) e "Já na mensalidade atual (…)".

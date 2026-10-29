@@ -29,7 +29,7 @@ import { avulsosEsgotados, limite } from '../dominio/limites';
 import { hora } from '../dominio/rodadas.js';
 import { quality } from '../dominio/sorteio.js';
 import { tp, tx } from '../i18n/index.js';
-import { afastadoEm, afastamentoDe, confirmaramAfastados } from '../nucleo/afast';
+import { afastadoEm, afastamentoDe, compDe, confirmaramAfastados } from '../nucleo/afast';
 import { presAlterada } from '../nucleo/edicoes.js';
 import { S as estado } from '../nucleo/estado.js';
 import { fdate } from '../nucleo/util.js';
@@ -56,7 +56,7 @@ const st = (): any => estado;
 const statusDe = (id: string): 'in' | 'out' | undefined => st().pres[id]?.s;
 /* KAN-208: o elenco da rodada sem os afastados no mês da rodada (quem respondeu aparece mesmo afastado). */
 export const elencoDaRodada = (r: Rodada): string[] =>
-  (players() as { id: string }[]).map(p => p.id).filter(id => statusDe(id) || !afastadoEm(id, r.date.slice(0, 7)));
+  (players() as { id: string }[]).map(p => p.id).filter(id => statusDe(id) || !afastadoEm(id, compDe(r.date)));
 
 /* Seletor da rodada (D10): as próximas e as últimas 4; as antigas ficam na aba Histórico. */
 /* Painel do link permanente (KAN-150): só o link; dia, hora e local ficam no cartão da rodada.
@@ -235,12 +235,13 @@ function RespostasMudadas({ alt }: { alt: string[] }) {
 
 /* KAN-208: afastado que respondeu "Vou" pelo link: o organizador decide se ele voltou. */
 function AfastadoConfirmou({ r }: { r: Rodada }) {
-  const lista = confirmaramAfastados(st().pres, r.date.slice(0, 7), r.id);
+  const comp = compDe(r.date),
+    lista = confirmaramAfastados(st().pres, comp, r.id);
   if (!lista.length) return null;
   return (
     <div class="warn-alt" role="status" id="afastConfirmou">
       {lista.map(([pid, aid]) => {
-        const a = afastamentoDe(pid, r.date.slice(0, 7));
+        const a = afastamentoDe(pid, comp);
         return (
           <div key={pid} class="afast-aviso">
             <span>{tx('afast.confirmou', { nome: pname(pid), motivo: a ? tx('afast.mot.' + a[1].mot) : '' })}</span>

@@ -1,6 +1,5 @@
 import { ACT } from './acoes.js';
 import { adm, carregarAdmin } from './nucleo/carga-admin.js';
-import { cfg } from './dominio/caixa.js';
 import { posTag } from './dominio/esportes.js';
 import { fmtL, normName, soVer } from './dominio/grupo.js';
 import { applyBusy, setBusy, setCAP, sleep } from './nucleo/backend.js';
@@ -151,11 +150,6 @@ document.addEventListener('keydown', e => {
 addEventListener('resize', () => closeThemeMenu());
 document.addEventListener('change', e => {
   const t = e.target;
-  if (t.id === 'lk') {
-    const c = cfg();
-    $('#lv').value = t.value === 'mensal' ? c.mensal : t.value === 'diaria' ? c.diaria : '';
-    return;
-  }
   if (t.id === 'ppais') {
     adm()?.trocarPaisTelefone();
     return;

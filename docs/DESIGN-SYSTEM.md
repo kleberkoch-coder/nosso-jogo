@@ -73,6 +73,12 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo; **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v77)
+- **Ciclo da mensalidade** (KAN-209; `telas/PartidasCaixa.tsx`, `telas/Caixa.tsx`; classes `meses-grade`, `ciclo-linha`, `atraso-tit`):
+  - **Partidas e caixa** (janela, agora componente): depois de Mensalidade e Diária, o combo "O mês da mensalidade começa no dia" (1 a 28, 140px) e uma linha em `muted` com a mensalidade de hoje ("Hoje vale a mensalidade de outubro de 2026: 01/10 a 31/10. O mês leva o nome de quando começa."). Ao trocar o dia, aparece "A partir de quando" como Caixas de marcar em lista com opção única: "A partir da próxima (novembro de 2026: 20/11 a 19/12); outubro de 2026 vai até 19/11" (marcada) e "Já na mensalidade atual (…)".
+  - **Caixa → Pendentes:** com ciclo (ou quando a mensalidade de hoje é de outro mês), uma linha `small muted` "Mensalidade de janeiro de 2026: 20/01 a 19/02". Depois da lista do mês, o subtítulo **"Em atraso (18)"** (`display` 700, 15px, em `out`) e a lista das mensalidades em aberto das 6 competências anteriores, cada uma com o mês curto em `tag` ("dez. de 2025"), o valor e "Recebi" (que diz também o mês ao leitor de tela).
+  - **Novo lançamento** (janela, agora componente): com "Mensalidade", a lista "Mensalidade de qual mês" em duas colunas (`meses-grade`: Caixas de marcar de 44px, divisória embaixo de cada uma), de 6 meses antes a 3 depois, com a atual marcada e indicada ("jan. de 2026 · atual"). O valor acompanha os meses marcados, e com 2 ou mais aparece em `muted` "Vira 2 lançamentos de R$ 85,00, um por mês."
+
 ## Componentes (pelada-v76)
 - **Afastamento** (KAN-208; `ui/AfastamentoJanela.tsx`, classes `afast-linha`, `afast-tag`, `afast-aviso`, `af-meses`):
   - **Na ficha do jogador**, acima do rodapé: uma linha com a situação em `small` ("Afastado set.–nov. · Lesão"; sem afastamento agora, o último em `muted`) e o botão `btn sm` "Afastar" ou "Ver afastamento".

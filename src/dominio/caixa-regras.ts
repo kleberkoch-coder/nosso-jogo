@@ -127,11 +127,12 @@ export function mesesDoCaixa(
     .reverse();
 }
 
-/* Janela de lançamentos que o Caixa carrega (KAN-106): do 1º dia de 3 meses antes do mês escolhido em diante.
-   Cobre o pagamento de uma rodada feito depois dela (pagamento nunca vem antes do jogo), a mensalidade paga até
-   3 meses adiantada e a referência dos últimos 3 meses (KAN-161). Com alguém recebendo por jogo (KAN-172),
+/* Janela de lançamentos que o Caixa carrega (KAN-106): do 1º dia de 7 meses antes do mês escolhido em diante.
+   Cobre o pagamento de uma rodada feito depois dela (pagamento nunca vem antes do jogo), a mensalidade paga
+   adiantada, a referência dos últimos meses (KAN-161) e as 6 mensalidades anteriores da seção "Em atraso"
+   (KAN-209: com o ciclo começando depois do dia 1, a competência atual pode ser a do mês anterior). Com alguém recebendo por jogo (KAN-172),
    começa no "desde" mais antigo, se for antes. O saldo vem das fichas de resumo do mês (D11), não da soma. */
-export const MESES_ANTES = 3;
+export const MESES_ANTES = 7;
 export function inicioDaJanela(mes: string, desdeAPagar?: string | null): string {
   const [a, m] = mes.slice(0, 7).split('-').map(Number),
     ini = new Date(Date.UTC(a, m - 1 - MESES_ANTES, 1)).toISOString().slice(0, 10);

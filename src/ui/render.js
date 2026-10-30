@@ -100,7 +100,7 @@ function renderCore() {
   if (R.n === 'r') return renderPublicRodada();
   /* KAN-183: a votação pública baixa só quando o link de votação é aberto. */
   if (R.n === 'v') {
-    if (!voto) return baixar(import('../telas/publico-voto.js'), m => (voto = m));
+    if (!voto) return baixar(import('../telas/PublicoVoto'), m => (voto = m));
     return voto.renderPublicVoto();
   }
   /* KAN-214: a avaliação de notas pelo link baixa só quando o link é aberto. */
@@ -122,10 +122,10 @@ function renderCore() {
   document.body.classList.remove('is-landing', 'so-ver');
   /* KAN-175: a apresentação (quem ainda não tem conta) baixa sozinha, sem esperar a gestão. */
   if (R.n === 'home' && !logged && !isStandalone()) {
-    if (!apresentacao) return baixar(import('../telas/apresentacao.js'), m => (apresentacao = m));
+    if (!apresentacao) return baixar(import('../telas/Apresentacao'), m => (apresentacao = m));
     document.body.classList.add('is-landing');
     $('#tabsnav').hidden = true;
-    main.innerHTML = apresentacao.vLanding();
+    apresentacao.montarApresentacao(main);
     return;
   }
   /* KAN-149: página inicial, convite e gestão vêm da parte de gestão, que carrega na primeira vez. */

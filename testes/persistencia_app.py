@@ -20,9 +20,9 @@ def _parou(tipo, valor, tb):
     # KAN-222: a linha é a deste roteiro (não a de dentro do Playwright), e vai junto o estado da última página aberta.
     quadros = [f for f in traceback.extract_tb(tb) if f.filename.endswith('persistencia_app.py')] if tb else []
     linha = quadros[-1].lineno if quadros else '?'
-    estado = ''
+    estado = ULTIMA_FALHA[0]
     try:
-        if PAGINAS:
+        if PAGINAS and not estado:
             estado = PAGINAS[-1].evaluate("(()=>{const d=document.getElementById('dlg');return location.hash+' | janela: '+(d&&d.open?(d.innerText||'').replace(/\\s+/g,' ').slice(0,120):'fechada')+' | aviso: '+((document.getElementById('toast')||{}).innerText||'').slice(0,80)})()")
     except Exception:
         pass
@@ -30,6 +30,7 @@ def _parou(tipo, valor, tb):
     print(('::error::Gravação: ' if GITHUB else 'ERRO    ') + msg, flush=True)
     sys.__excepthook__(tipo, valor, tb)
 PAGINAS = []
+ULTIMA_FALHA = ['']
 sys.excepthook = _parou
 # KAN-222: quando um clique ou uma espera falha, anota o estado da tela na hora (depois o navegador já fechou).
 from playwright.sync_api import Page as _Pagina
@@ -41,7 +42,8 @@ def _com_estado(nome):
         except Exception:
             try:
                 e = self.evaluate("(()=>{const d=document.getElementById('dlg');return location.hash+' | janela: '+(d&&d.open?(d.innerText||'').replace(/\\s+/g,' ').slice(0,160):'fechada')+' | aviso: '+((document.getElementById('toast')||{}).innerText||'').slice(0,80)})()")
-                print(('::error::Gravação: ' if GITHUB else 'ERRO    ') + f'{nome}({str(a[0])[:60] if a else ""}) falhou; tela: {e}', flush=True)
+                # Guarda para a anotação do fim (_parou): esperas que falham de propósito (ex.: confirmação opcional) não poluem.
+                ULTIMA_FALHA[0] = f'{nome}({str(a[0])[:60] if a else ""}) falhou; tela: {e}'
             except Exception:
                 pass
             raise

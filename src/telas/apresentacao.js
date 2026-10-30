@@ -1,7 +1,10 @@
+import estilo from '../estilos/apresentacao.css' with { type: 'text' };
+import { usarEstilo } from '../ui/estilo';
 import { tx } from '../i18n/index.js';
 import { numeroVersao } from '../nucleo/versao.js';
 import { APP, SPORTS } from '../dominio/esportes.js';
 import { themeDef, themeLabel } from '../ui/tema.js';
+usarEstilo('apresentacao', estilo, true);
 
 /* ---------- Página de apresentação ---------- */
 function vLanding() {

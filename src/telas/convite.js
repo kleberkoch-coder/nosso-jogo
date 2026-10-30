@@ -1,10 +1,13 @@
 import { sport, sportName } from '../dominio/esportes.js';
 import { gname } from '../dominio/grupo.js';
-import { tp, tx } from '../i18n/index.js';
+import { juntarTextos, tp, tx } from '../i18n/index.js';
+import textos from '../i18n/pt-BR-convite';
 import { conviteDoGrupoCheio, limiteAdmins } from '../nucleo/plano';
 import { S } from '../nucleo/estado.js';
 import { $, esc, main } from '../nucleo/util.js';
 import { entrarPronto } from '../nucleo/carga-entrar';
+
+juntarTextos(textos);
 
 /* ---------- Convite para administrador ---------- */
 function invHead() {

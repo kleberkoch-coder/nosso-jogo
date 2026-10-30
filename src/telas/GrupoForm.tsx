@@ -9,12 +9,15 @@ import { dupName, freq } from '../dominio/grupo.js';
 import { paisPor, regiaoNova } from '../dominio/paises.ts';
 import { ordemDias } from '../dominio/relogio';
 import { relogio12 } from '../i18n/formatos.js';
-import { tx } from '../i18n/index.js';
+import { juntarTextos, tx } from '../i18n/index.js';
+import textos from '../i18n/pt-BR-grupoform';
 import { S as estado } from '../nucleo/estado.js';
 import { $, DIAS, toast, uid } from '../nucleo/util.js';
 import { HoraCampo } from '../ui/HoraCampo';
 import { val } from '../ui/dialogos.js';
 import { fusoAparelho, listaFuso, listaMoeda, listaPais } from '../ui/regiao.ts';
+
+juntarTextos(textos);
 
 type Fixo = { id?: string; dow: number; ini: string; fim?: string; place?: string };
 type Grupo = {

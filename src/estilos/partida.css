@@ -1,0 +1,79 @@
+/* Estilos que só a parte "partida" usa (KAN-217): chegam com ela, não com o link nem com a gestão (ui/estilo.ts). */
+.board {
+  background: var(--pitch);
+  color: var(--chalk);
+  border-radius: 18px;
+  padding: 18px;
+  background-image: repeating-linear-gradient(90deg, transparent 0 48px, rgba(255, 255, 255, 0.04) 48px 96px);
+}
+.board .sides {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 10px;
+  align-items: center;
+  text-align: center;
+}
+.board .tn {
+  font: 700 20px var(--display);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.board .sc {
+  font: 800 clamp(72px, 18vw, 128px) / 0.9 var(--display);
+}
+.board .x {
+  font: 700 28px var(--display);
+  opacity: 0.5;
+}
+#clock.over {
+  color: var(--bib);
+}
+#clock.over.pisca {
+  animation: blink 1s steps(2) 3;
+}
+.clock-msg {
+  display: table;
+  margin: 0 auto 10px;
+  background: var(--bib);
+  color: var(--bib-ink);
+  font: 800 18px var(--display);
+  letter-spacing: 0.4px;
+  padding: 4px 14px;
+  border-radius: 999px;
+}
+@media (prefers-reduced-motion: reduce) {
+  #clock.over {
+    animation: none;
+  }
+}
+.board .btn {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: var(--chalk);
+}
+.board .btn {
+  min-height: var(--touch-min);
+  justify-content: center;
+}
+.board .pts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+.board .pts.grade {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.board .pts .btn {
+  min-width: var(--touch-min);
+  padding: 9px 10px;
+}
+.board .btn.bib {
+  background: var(--bib);
+  color: var(--bib-ink);
+  border-color: var(--bib);
+}

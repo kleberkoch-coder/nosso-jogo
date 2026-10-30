@@ -1,0 +1,4 @@
+/* Estilos que só a parte "ranking" usa (KAN-217): chegam com ela, não com o link nem com a gestão (ui/estilo.ts). */
+tr.lead td {
+  background: var(--surface-2);
+}

@@ -1,5 +1,7 @@
 /* Janela "Importar jogadores" (KAN-159): colar da planilha ou enviar .xlsx/.csv, com prévia antes de salvar.
    Quem grava é a ação "importarJogadores" (acoes/jogadores.js), que lê a prévia daqui. */
+import estilo from '../estilos/importar.css' with { type: 'text' };
+import { usarEstilo } from './estilo';
 import { render } from 'preact';
 import { useState } from 'preact/hooks';
 import { posLabel, sport } from '../dominio/esportes.js';
@@ -14,6 +16,7 @@ import { ErroPlanilha, lerArquivo } from './arquivo-planilha.ts';
 /* Os textos desta parte chegam com ela (KAN-205). */
 juntarTextos(textosImportar);
 import { lerTexto } from '../dominio/planilha.ts';
+usarEstilo('importar', estilo);
 
 const st = (): any => estado;
 let previa: Item[] = [];

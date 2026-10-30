@@ -1,5 +1,7 @@
 /* Janelas dos planos (KAN-119): "Planos" e "Quais continuam ativos?". Baixam só quando abertas (sob demanda),
    para a gestão abrir leve. Os botões usam data-a (ações em acoes/plano.ts). */
+import estilo from '../estilos/planos.css' with { type: 'text' };
+import { usarEstilo } from './estilo';
 import { render } from 'preact';
 import { catalogo } from '../dominio/planos';
 import { fdia } from '../dominio/grupo.js';
@@ -8,6 +10,7 @@ import textosPlanos from '../i18n/pt-BR-planos';
 import { S as estado } from '../nucleo/estado.js';
 import { limiteGrupos, meusAtivos, minhaSituacao, situacaoDoGrupo } from '../nucleo/plano';
 import { Convite } from './Plano';
+usarEstilo('planos', estilo);
 
 juntarTextos(textosPlanos);
 const st = (): any => estado;

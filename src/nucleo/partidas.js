@@ -13,6 +13,7 @@ import {
   vazio,
 } from '../dominio/resumos.ts';
 import { isOwnerMe, posso, rodById } from '../dominio/grupo.js';
+import { tx } from '../i18n/index.js';
 import { B, op } from './backend.js';
 import { GB, S, clean, gp, w } from './estado.js';
 import { cl, toast } from './util.js';
@@ -438,7 +439,7 @@ async function recalcular(periodo) {
     });
   await enviar(ops);
   changed();
-  toast('Totais recalculados.');
+  toast(tx('resumo.recalculados'));
 }
 
 export {

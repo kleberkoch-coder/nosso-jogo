@@ -1,12 +1,14 @@
 import { w } from '../nucleo/estado.js';
 import { render } from './render.js';
+import { tx } from '../i18n/index.js';
 
 /* =================== tema (Automático, Claro, Escuro) =================== */
 /* A escolha fica salva neste aparelho e vale para todos, inclusive jogadores sem conta. */
+/* O terceiro item é a chave do nome no dicionário (tx). */
 const THEMES = [
-  ['auto', '🌓', 'Automático'],
-  ['light', '☀️', 'Claro'],
-  ['dark', '🌙', 'Escuro'],
+  ['auto', '🌓', 'tema.auto'],
+  ['light', '☀️', 'tema.claro'],
+  ['dark', '🌙', 'tema.escuro'],
 ];
 const TEMA_K = 'nj-tema';
 const darkMQ = matchMedia('(prefers-color-scheme: dark)');
@@ -23,7 +25,7 @@ function effTheme() {
   return t === 'auto' ? (darkMQ.matches ? 'dark' : 'light') : t;
 }
 const themeDef = () => THEMES.find(x => x[0] === getTheme());
-const themeLabel = () => 'Tema: ' + themeDef()[2];
+const themeLabel = () => tx('tema.rotulo', { tema: tx(themeDef()[2]) });
 function applyTheme() {
   const t = getTheme(),
     h = document.documentElement;
@@ -37,13 +39,29 @@ function applyTheme() {
     b.title = themeLabel();
   });
 }
+/* Opções do menu do tema, montadas como elementos (sem HTML em texto). */
 function themeOpts() {
   const t = getTheme(),
-    now = effTheme() === 'dark' ? 'escuro' : 'claro';
-  return THEMES.map(
-    ([k, ic, l]) =>
-      `<button role="menuitemradio" aria-checked="${t === k}" data-a="setTheme" data-v="${k}"><span class="ic" aria-hidden="true">${ic}</span>${l}${k === 'auto' ? `<span class="hint">agora: ${now}</span>` : ''}</button>`
-  ).join('');
+    agora = tx(effTheme() === 'dark' ? 'tema.agoraEscuro' : 'tema.agoraClaro');
+  return THEMES.map(([k, ic, l]) => {
+    const b = document.createElement('button'),
+      s = document.createElement('span');
+    b.setAttribute('role', 'menuitemradio');
+    b.setAttribute('aria-checked', String(t === k));
+    b.dataset.a = 'setTheme';
+    b.dataset.v = k;
+    s.className = 'ic';
+    s.setAttribute('aria-hidden', 'true');
+    s.textContent = ic;
+    b.append(s, tx(l));
+    if (k === 'auto') {
+      const h = document.createElement('span');
+      h.className = 'hint';
+      h.textContent = agora;
+      b.append(h);
+    }
+    return b;
+  });
 }
 let themeMenuEl = null,
   themeAnchor = null;
@@ -77,8 +95,12 @@ function abrirMenu(anchor, rotulo, montar) {
   (m.querySelector('[aria-checked=true]') || m.querySelector('button')).focus({ preventScroll: true });
 }
 function openThemeMenu(anchor) {
-  abrirMenu(anchor, 'Tema', m => {
-    m.innerHTML = '<p class="tm-t" aria-hidden="true">Tema</p>' + themeOpts();
+  abrirMenu(anchor, tx('tema.titulo'), m => {
+    const p = document.createElement('p');
+    p.className = 'tm-t';
+    p.setAttribute('aria-hidden', 'true');
+    p.textContent = tx('tema.titulo');
+    m.append(p, ...themeOpts());
   });
 }
 /* Quando o celular troca entre claro e escuro, o modo Automático acompanha. */

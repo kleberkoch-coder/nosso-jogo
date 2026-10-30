@@ -187,3 +187,28 @@ export function SeletorRodada({ r, acoes }: { r: RodadaOpcao; acoes?: boolean })
     </div>
   );
 }
+
+/* Campo "Posição" das janelas (jogador, avulso, link): o combo com as posições do esporte. Some quando o esporte não
+   tem posição. Componente desde a v84 (antes posField, em texto). */
+export function CampoPosicao({ id, valor }: { id: string; valor?: string }) {
+  if (!hasPos()) return null;
+  const atual = valor || (ppos('') as string);
+  return (
+    <label class="f">
+      <span>{tx('comum.posicao')}</span>
+      <select class="sel" id={id}>
+        {(sport().pos as [string, string][]).map(([k, l]) => (
+          <option key={k} value={k} selected={atual === k}>
+            {l}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+/* Texto do dicionário com trechos em negrito marcados com <b>…</b> (ex.: o nome de um botão): vira negrito de verdade,
+   sem montar HTML. */
+export function ComNegrito({ texto }: { texto: string }) {
+  return <>{texto.split(/<b>|<\/b>/).map((p, i) => (i % 2 ? <b key={i}>{p}</b> : p))}</>;
+}

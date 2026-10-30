@@ -43,7 +43,6 @@ export function contaRegiao(iso?: string) {
   return { pais: p.iso, formato: p.formato };
 }
 
-const esc = (s: string) => String(s).replace(/[&<>"']/g, c => '&#' + c.charCodeAt(0) + ';');
 type Opcao = { v: string; t: string };
 const ordenados = () => PAISES.map(p => ({ p, n: nomePais(p.iso) })).sort((a, b) => a.n.localeCompare(b.n, LOCAL));
 
@@ -59,17 +58,11 @@ export function listaMoeda(atual: string): Opcao[] {
   return lista.map(m => ({ v: m, t: `${nomeMoeda(m)} (${m})` })).sort((a, b) => a.t.localeCompare(b.t, LOCAL));
 }
 
-/* Opções em texto, para os formulários montados como texto. */
-export const opcoes = (lista: Opcao[], atual: string) =>
-  lista.map(o => `<option value="${esc(o.v)}"${o.v === atual ? ' selected' : ''}>${esc(o.t)}</option>`).join('');
 /* Troca as opções de um combo já na tela (sem montar HTML). */
 export function preencher(sel: HTMLSelectElement, lista: Opcao[], atual: string) {
   sel.replaceChildren(...lista.map(o => new Option(o.t, o.v, false, o.v === atual)));
   sel.value = atual;
 }
-export const opcoesPais = (atual: string) => opcoes(listaPais(), atual);
-export const opcoesDdi = (atual: string) => opcoes(listaDdi(), atual);
-export const opcoesMoeda = (atual: string) => opcoes(listaMoeda(atual), atual);
 
 /* Nome do fuso para o combo: a cidade e a diferença para o horário de Greenwich ("Manaus (GMT-4)"). */
 export function nomeFuso(f: string): string {
@@ -88,7 +81,3 @@ export function listaFuso(iso: string, atual: string): Opcao[] {
   const lista = p.fusos.includes(atual) || !atual ? p.fusos : [atual].concat(p.fusos);
   return lista.map(f => ({ v: f, t: nomeFuso(f) }));
 }
-export const opcoesFuso = (iso: string, atual: string) => {
-  const p = paisPor(iso) || paisPor('BR')!;
-  return opcoes(listaFuso(iso, atual), atual || p.fusos[0]);
-};

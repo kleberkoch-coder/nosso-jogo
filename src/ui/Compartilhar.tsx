@@ -28,7 +28,7 @@ function Compartilhar({ titulo, texto }: { titulo: string; texto: string }) {
 }
 
 export function shareDlg(titulo: string, texto: string) {
-  openDlg('<div id="shRaiz"></div>');
+  openDlg('shRaiz');
   dlg.setAttribute('aria-labelledby', 'shTitulo');
   const el = document.getElementById('shRaiz');
   if (el) render(<Compartilhar titulo={titulo} texto={texto} />, el);

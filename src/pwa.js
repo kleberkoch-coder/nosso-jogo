@@ -1,5 +1,6 @@
 import { $, toast } from './nucleo/util.js';
-import { openDlg } from './ui/dialogos.js';
+import { janelaInstalar } from './ui/JanelasLink';
+import { tx } from './i18n/index.js';
 
 /* =================== PWA =================== */
 function isStandalone() {
@@ -17,7 +18,7 @@ window.addEventListener('beforeinstallprompt', e => {
 window.addEventListener('appinstalled', () => {
   ib.hidden = true;
   installEvt = null;
-  toast('App instalado.');
+  toast(tx('pwa.instalado'));
 });
 if (isIOS && !isStandalone() && location.protocol.startsWith('http')) ib.hidden = false;
 ib.addEventListener('click', async () => {
@@ -28,12 +29,7 @@ ib.addEventListener('click', async () => {
     installEvt = null;
     return;
   }
-  openDlg(`<h3>Instalar no celular</h3>${
-    isIOS
-      ? `<ol class="small" style="padding-left:18px;line-height:1.8"><li>Abra esta página no <b>Safari</b>.</li><li>Toque no botão <b>Compartilhar</b> (quadrado com seta para cima).</li><li>Escolha <b>Adicionar à Tela de Início</b> e confirme.</li></ol>`
-      : `<ol class="small" style="padding-left:18px;line-height:1.8"><li>Abra o menu do navegador (⋮).</li><li>Toque em <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.</li></ol>`
-  }
-  <p class="small muted">O ícone do Nosso Jogo aparece junto dos seus apps e abre direto, em tela cheia.</p><div class="dlg-f"><button class="btn primary" data-a="close">Entendi</button></div>`);
+  janelaInstalar(isIOS);
 });
 const netBar = () => {
   $('#net').hidden = navigator.onLine;

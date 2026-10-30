@@ -1,6 +1,6 @@
 /* Página inicial de quem tem conta, "Meus grupos" (KAN-162: virou componente em TypeScript + Preact).
    Lista os grupos ativos e inativos. O país da conta fica no menu da conta, no cabeçalho (KAN-166).
-   Os botões usam data-a (ações em acoes/grupo.js). */
+   Os botões usam data-a (ações em acoes/grupo.ts). */
 import { render } from 'preact';
 import { SPORTS } from '../dominio/esportes.js';
 import { fdia } from '../dominio/grupo.js';
@@ -95,7 +95,7 @@ function GruposTela() {
 }
 
 /* A página inicial entra num lugar reservado (#homeRaiz), como as abas migradas. */
-const vHome = () => '<div id="homeRaiz"></div>';
+const vHome = () => 'homeRaiz';
 function montarHome() {
   const el = document.getElementById('homeRaiz');
   if (el) render(<GruposTela />, el);

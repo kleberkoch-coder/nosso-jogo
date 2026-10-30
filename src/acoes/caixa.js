@@ -59,7 +59,7 @@ function valorConferido(el, v, ref, campo) {
 const acoes = {
   /* KAN-209: a janela é um componente (telas/Caixa.tsx). */
   addLan: () => {
-    openDlg('<div id="lanRaiz"></div>');
+    openDlg('lanRaiz');
     dlg.setAttribute('aria-labelledby', 'lanTitulo');
     montarNovoLancamento();
   },
@@ -116,7 +116,7 @@ const acoes = {
   },
   /* A pagar por jogo (KAN-172): a janela lista os jogos acumulados; Paguei lança uma despesa com o total e as rodadas pagas. */
   abrirPagar: el => {
-    openDlg('<div id="apgRaiz"></div>');
+    openDlg('apgRaiz');
     if (!montarPagar(el.dataset.v)) closeDlg();
   },
   pagarJogos: el => {
@@ -163,9 +163,9 @@ const acoes = {
   delLan: el => {
     if (
       confirmou(el, {
-        titulo: 'Apagar este lançamento?',
-        texto: 'O valor sai do saldo e do mês.',
-        acao: 'Apagar lançamento',
+        titulo: tx('caixa.apagarLancTitulo'),
+        texto: tx('caixa.apagarLancTexto'),
+        acao: tx('caixa.apagarLanc'),
         perigo: true,
       }) !== 'sim'
     )

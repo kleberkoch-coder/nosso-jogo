@@ -3,7 +3,7 @@ import { curRodada, fdia, gname, grpAtivo, isAdmin, isOwnerMe, posso, recurso, s
 import { hora } from '../dominio/rodadas.js';
 import { B, applyBusy } from '../nucleo/backend.js';
 import { S } from '../nucleo/estado.js';
-import { $, esc, fdate, main } from '../nucleo/util.js';
+import { $, fdate, main } from '../nucleo/util.js';
 import { isStandalone } from '../pwa.js';
 import { ensureExtras, ensurePres, ensureVotos } from '../rotas.js';
 import { adm, carregarAdmin } from '../nucleo/carga-admin.js';
@@ -44,23 +44,31 @@ function changed() {
 }
 /* Abas de recursos do Plano A (KAN-119): sem o recurso, a aba aparece com o cadeado e o convite. */
 const travada = k => (k === 'caixa' || k === 'votacao' || k === 'historico') && !recurso(k);
-const TABS = [
-  ['rodada', 'Rodada'],
-  ['historico', 'abas.historico'],
-  ['jogadores', 'Jogadores'],
-  ['partida', 'Partida'],
-  ['ranking', 'Ranking'],
-  ['caixa', 'Caixa'],
-  ['votacao', 'Votação'],
-  ['grupo', 'Grupo'],
-];
+const TABS = ['rodada', 'historico', 'jogadores', 'partida', 'ranking', 'caixa', 'votacao', 'grupo'];
 /* Elemento simples sem montar HTML como texto (KAN-154). */
-function el(tag, cls, txt) {
+function el(tag, cls, txt, attrs) {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
   if (txt) e.textContent = txt;
+  if (attrs) for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
   return e;
 }
+/* Lugar vazio onde uma tela (componente) se desenha: as telas devolvem o id do lugar delas (vRodada, vCaixa…). */
+const lugar = id => el('div', '', '', { id });
+/* Painel de aviso no meio da tela (grupo não encontrado, sem acesso). */
+function painel(titulo, texto, acoes, emLinha) {
+  const p = el('div', 'panel empty auth');
+  p.append(el('h2', '', titulo), el('p', 'muted', texto));
+  if (!emLinha) p.append(...acoes);
+  else {
+    const r = el('div', 'row');
+    r.style.justifyContent = 'center';
+    r.append(...acoes);
+    p.append(r);
+  }
+  return p;
+}
+const meusGrupos = () => el('a', 'btn', tx('render.meusGrupos'), { href: '#/' });
 function render() {
   renderCore();
   applyBusy();
@@ -109,15 +117,17 @@ function renderCore() {
     return aval.renderPublicoAvaliacao();
   }
   $('#tabsnav').hidden = true;
-  $('#gsub').textContent = 'Presença, sorteio de times, placar, ranking e caixa dos seus jogos';
+  $('#gsub').textContent = tx('render.subtitulo');
   // Com conta: "⇄ Grupos" (fora da página inicial) e o botão da conta, que abre o menu com país e Sair (KAN-166).
-  $('#topright').innerHTML = logged
-    ? R.n !== 'home'
-      ? '<button class="chip" data-a="groupsDlg">⇄ Grupos</button>'
-      : ''
-    : R.n === 'auth'
-      ? '<a class="chip" href="#/">← Início</a>'
-      : '';
+  $('#topright').replaceChildren(
+    ...(logged
+      ? R.n !== 'home'
+        ? [el('button', 'chip', tx('render.grupos'), { 'data-a': 'groupsDlg' })]
+        : []
+      : R.n === 'auth'
+        ? [el('a', 'chip', tx('render.inicio'), { href: '#/' })]
+        : [])
+  );
   if (logged) $('#topright').append(botaoConta());
   document.body.classList.remove('is-landing', 'so-ver');
   /* KAN-175: a apresentação (quem ainda não tem conta) baixa sozinha, sem esperar a gestão. */
@@ -139,67 +149,89 @@ function renderCore() {
        está digitando (um aviso do login anônimo logo depois de sair redesenhava e esvaziava os campos). */
     if ($('#authRaiz #le') && main.dataset.auth === S.authMode) return;
     main.dataset.auth = S.authMode;
-    main.innerHTML = entrarPronto().vAuth();
+    main.replaceChildren(lugar(entrarPronto().vAuth()));
     entrarPronto().montarAuth();
     return;
   }
   A.sincronizarPlano();
   if (R.n === 'home') {
-    main.innerHTML = A.vHome();
+    main.replaceChildren(lugar(A.vHome()));
     A.montarHome();
     return;
   }
   if (!S.loaded.mem || !S.loaded.app) {
-    main.innerHTML = '<div class="empty muted">Carregando…</div>';
+    main.replaceChildren(el('div', 'empty muted', tx('comum.carregando')));
     return;
   }
   if (!S.app) {
-    main.innerHTML = `<div class="panel empty auth"><h2>Grupo não encontrado</h2><p class="muted">Ele pode ter sido excluído.</p><a class="btn" href="#/">Meus grupos</a></div>`;
+    main.replaceChildren(painel(tx('render.naoEncontrado'), tx('render.naoEncontradoTexto'), [meusGrupos()]));
     return;
   }
   if (!isAdmin()) {
-    main.innerHTML = `<div class="panel empty auth"><h2>Sem acesso</h2><p class="muted">Sua conta (${esc(S.user.email)}) não administra o grupo ${esc(gname())}. Peça ao organizador um link de convite.</p><div class="row" style="justify-content:center"><a class="btn" href="#/">Meus grupos</a>${S.me?.grupos?.[S.gid] ? '<button class="btn ghost danger" data-a="forgetGroup">Remover da minha lista</button>' : ''}</div></div>`;
+    const acoes = [meusGrupos()];
+    if (S.me?.grupos?.[S.gid])
+      acoes.push(el('button', 'btn ghost danger', tx('render.removerDaLista'), { 'data-a': 'forgetGroup' }));
+    main.replaceChildren(
+      painel(tx('render.semAcesso'), tx('render.semAcessoTexto', { email: S.user.email, grupo: gname() }), acoes, true)
+    );
     return;
   }
   const r0 = curRodada();
   $('#gsub').textContent =
     `${sport().e} ${sportName()}` +
     (r0 ? ' · ' : '') +
-    (r0 ? `Próxima: ${fdate(r0.date)}${r0.time ? ' · ' + hora(r0) : ''}` : '');
+    (r0 ? tx('render.proxima', { data: fdate(r0.date) + (r0.time ? ' · ' + hora(r0) : '') }) : '');
   $('#tabsnav').hidden = false;
   /* KAN-201: sem a permissão de caixa, a aba Caixa não aparece. */
   if (S.tab === 'caixa' && !posso('caixa')) S.tab = 'rodada';
-  $('#tabs').innerHTML = TABS.filter(([k]) => k !== 'caixa' || posso('caixa'))
-    .map(
-      ([k, l]) =>
-        `<button class="tab" role="tab" aria-selected="${S.tab === k}" data-a="tab" data-v="${k}">${l.startsWith('abas.') ? tx(l) : l}${travada(k) ? ' <span class="tab-trava" aria-hidden="true">🔒</span>' : ''}</button>`
-    )
-    .join('');
+  $('#tabs').replaceChildren(
+    ...TABS.filter(k => k !== 'caixa' || posso('caixa')).map(k => {
+      const b = el('button', 'tab', tx('abas.' + k), {
+        role: 'tab',
+        'aria-selected': String(S.tab === k),
+        'data-a': 'tab',
+        'data-v': k,
+      });
+      if (travada(k)) b.append(' ', el('span', 'tab-trava', '🔒', { 'aria-hidden': 'true' }));
+      return b;
+    })
+  );
   abasNoLugar();
   ensurePres();
   ensureVotos();
   ensureExtras();
   /* Abas sob demanda (KAN-180): enquanto a parte não chegou, um lugar para o "Carregando…". */
-  const aba = k => (travada(k) ? A.vCadeado() : A.abaPronta(k) ? A.abaPronta(k).ver() : '<div id="abaRaiz"></div>');
+  const aba = k => (travada(k) ? A.vCadeado() : A.abaPronta(k) ? A.abaPronta(k).ver() : 'abaRaiz');
   /* KAN-204: convidado além do limite do plano: tudo à vista, nada que grave. */
   const soVe = soVer();
   document.body.classList.toggle('so-ver', soVe);
-  main.innerHTML =
-    '<div id="avisosPlanoRaiz"></div>' +
-    (soVe ? `<div class="inbar info" id="avisoSoVer"><span>${tx('soVer.aviso')}</span></div>` : '') +
-    (grpAtivo()
-      ? ''
-      : `<div class="inbar"><span>Grupo inativo desde ${fdia(S.app.inativadoEm)}. Os links públicos não aceitam confirmações nem votos.</span>${isOwnerMe() ? '<button class="btn sm" data-a="toggleAtivo">Reativar</button>' : ''}</div>`) +
-    {
-      rodada: A.vRodada,
-      jogadores: A.vJogadores,
-      partida: () => (A.partidaPronta() ? A.partidaPronta().vPartida() : '<div id="partidaRaiz"></div>'),
-      ranking: () => aba('ranking'),
-      caixa: () => aba('caixa'),
-      votacao: () => aba('votacao'),
-      historico: () => aba('historico'),
-      grupo: () => aba('grupo'),
-    }[S.tab]();
+  const partes = [lugar('avisosPlanoRaiz')];
+  if (soVe) {
+    const b = el('div', 'inbar info', '', { id: 'avisoSoVer' });
+    b.append(el('span', '', tx('soVer.aviso')));
+    partes.push(b);
+  }
+  if (!grpAtivo()) {
+    const b = el('div', 'inbar');
+    b.append(el('span', '', tx('render.inativo', { data: fdia(S.app.inativadoEm) })));
+    if (isOwnerMe()) b.append(el('button', 'btn sm', tx('render.reativar'), { 'data-a': 'toggleAtivo' }));
+    partes.push(b);
+  }
+  partes.push(
+    lugar(
+      {
+        rodada: A.vRodada,
+        jogadores: A.vJogadores,
+        partida: () => (A.partidaPronta() ? A.partidaPronta().vPartida() : 'partidaRaiz'),
+        ranking: () => aba('ranking'),
+        caixa: () => aba('caixa'),
+        votacao: () => aba('votacao'),
+        historico: () => aba('historico'),
+        grupo: () => aba('grupo'),
+      }[S.tab]()
+    )
+  );
+  main.replaceChildren(...partes);
   A.montarAvisosPlano();
   if (travada(S.tab)) return A.montarCadeado(S.tab);
   if (A.abaSobDemanda(S.tab)) {

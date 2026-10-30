@@ -139,4 +139,7 @@ export default {
   'caixa.pagamentoPorJogo.um': 'Pagamento de 1 jogo',
   'caixa.pagamentoPorJogo.outros': 'Pagamento de {n} jogos',
   'caixa.pago': '{nome}: {valor} pago.',
+  'caixa.apagarLancTitulo': 'Apagar este lançamento?',
+  'caixa.apagarLancTexto': 'O valor sai do saldo e do mês.',
+  'caixa.apagarLanc': 'Apagar lançamento',
 };

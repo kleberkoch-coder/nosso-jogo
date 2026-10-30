@@ -1,14 +1,15 @@
 import { cfg } from './caixa.js';
 import { hasPos, posKeys, sport } from './esportes.js';
 import { S } from '../nucleo/estado.js';
-import { DIAS, esc } from '../nucleo/util.js';
+import { diaSemana } from '../nucleo/util.js';
 import { FORMATO, LOCAL, agora } from '../i18n/formatos.js';
+import { tx } from '../i18n/index.js';
 import { endTs, proximasFixas, virtualOf, ymd } from './rodadas-fixas.ts';
 import { pode } from './permissoes';
 import { faixaTexto } from './rodadas.js';
 
 function gname() {
-  return (S.app && S.app.name) || 'Meu grupo';
+  return (S.app && S.app.name) || tx('comum.meuGrupo');
 }
 function rat() {
   return Object.assign({ stars: {}, nivel: {}, sep: [] }, S.rat || {});
@@ -21,12 +22,6 @@ function lvl(id) {
   return st != null ? st * 2 : 5;
 }
 const fmtL = v => (+v).toLocaleString(FORMATO, { minimumFractionDigits: +v % 1 ? 1 : 0, maximumFractionDigits: 1 });
-function lvlTag(id) {
-  if (!posso('notas')) return '';
-  return `<span class="lvl-tag" title="Nota de 1 a 10">${fmtL(lvl(id))}</span>`;
-}
-const lvlIn = v =>
-  `<div class="lvlin"><input type="range" id="plv" min="1" max="10" step="0.5" value="${v}" aria-label="Nota de 1 a 10"><output id="plvo">${fmtL(v)}</output></div><div class="lvlscale"><span>1 · iniciante</span><span>10 · craque</span></div>`;
 function setLvl(a, id, v) {
   a.nivel = a.nivel || {};
   a.nivel[id] = v;
@@ -63,8 +58,6 @@ function dupName(name, except) {
     ([g, v]) => g !== except && normName(v.name) === normName(name)
   );
 }
-const schedTxt = x =>
-  `${DIAS[x.dow]}, ${faixaTexto(x.ini, x.fim)}${x.place ? ' · <span class="corta" data-corta>' + esc(x.place) + '</span>' : ''}`;
 /* Próxima data dos jogos fixos: regra em rodadas-fixas.ts, com teste próprio (D12). */
 function virtualFixos() {
   if (!grpAtivo()) return [];
@@ -143,7 +136,7 @@ function info(id) {
   return null;
 }
 function pname(id) {
-  return S.jog[id]?.name || S.avul?.[id]?.nome || S.pres[id]?.nome || info(id)?.n || 'Avulso';
+  return S.jog[id]?.name || S.avul?.[id]?.nome || S.pres[id]?.nome || info(id)?.n || tx('comum.avulso');
 }
 function ppos(id) {
   if (!hasPos()) return '';
@@ -220,8 +213,6 @@ export {
   isAvulso,
   isOwnerMe,
   lvl,
-  lvlIn,
-  lvlTag,
   normName,
   players,
   pname,
@@ -233,7 +224,6 @@ export {
   rodadasDoMes,
   rodadasJanela,
   rodadasTodas,
-  schedTxt,
   posso,
   definirRecursos,
   recurso,

@@ -15,13 +15,25 @@ import { GB, S, clean, w } from '../nucleo/estado.js';
 import { linkConvite } from '../nucleo/links.js';
 import { $, cl, esc, toast, uid } from '../nucleo/util.js';
 import { upMyGroup } from '../rotas.js';
-import { closeDlg, confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
+import { closeDlg, confirmou, dlg, val } from '../ui/dialogos.js';
 import { changed } from '../ui/render.js';
 import { LOCAL } from '../i18n/formatos.js';
 import { ACT } from '../acoes.js';
-import { contaRegiao, opcoesPais } from '../ui/regiao.ts';
+import { contaRegiao } from '../ui/regiao.ts';
 import { definirRegiao } from '../i18n/formatos.js';
 import { regiaoDe } from '../dominio/regiao.ts';
+import { juntarTextos } from '../i18n/index.js';
+import {
+  janelaDuplicar,
+  janelaGrupo,
+  janelaPaisConta,
+  janelaPermissoes,
+  janelaPosicao,
+  janelaSeusGrupos,
+} from '../ui/JanelasGrupo';
+import textos from '../i18n/pt-BR-grupolote';
+
+juntarTextos(textos);
 
 /* Limite de grupos por conta (KAN-89): confere antes de criar. Sem sinal, deixa a decisão para o Firebase. */
 async function limiteGrupos() {
@@ -64,9 +76,7 @@ const lerForm = gid => (form ? form.readGroupForm(gid) : null);
 const acoes = {
   /* País da conta (KAN-162): vale para os grupos novos; cada grupo tem o seu em Editar grupo. */
   contaPais: () => {
-    openDlg(`<h3>${tx('regiao.contaTitulo')}</h3><p class="small muted" style="margin-top:-6px">${tx('regiao.contaAjuda')}</p>
-    <label class="f"><span>${tx('regiao.pais')}</span><select class="sel" id="cpais">${opcoesPais((S.me && S.me.pais) || 'BR')}</select></label>
-    <div class="dlg-f"><button class="btn" data-a="close">${tx('comum.cancelar')}</button><button class="btn primary" data-a="salvarPaisConta">${tx('comum.salvar')}</button></div>`);
+    janelaPaisConta((S.me && S.me.pais) || 'BR');
     setTimeout(() => $('#cpais')?.focus(), 50);
   },
   salvarPaisConta: () => {
@@ -83,9 +93,7 @@ const acoes = {
   },
   newGroup: () => {
     if (avisoLimiteGrupos()) return; // KAN-119: o plano já está cheio de grupos ativos
-    openDlg(
-      `<h3>Novo grupo</h3><div id="ngRaiz"></div><div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="createGroup">Criar grupo</button></div>`
-    );
+    janelaGrupo(null);
     return carregarForm().then(m => {
       if (!m || !$('#ngRaiz')) return;
       m.montarGrupoForm({}, false);
@@ -93,9 +101,7 @@ const acoes = {
     });
   },
   editGroup: () => {
-    openDlg(
-      `<h3>Editar grupo</h3><p class="small muted" style="margin-top:-6px">Criado em ${fdia(S.app.createdAt)}</p><div id="ngRaiz"></div><div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveGroup">Salvar</button></div>`
-    );
+    janelaGrupo({ criadoEm: fdia(S.app.createdAt) });
     return carregarForm().then(m => {
       if (m && $('#ngRaiz')) m.montarGrupoForm(S.app, true);
     });
@@ -145,28 +151,25 @@ const acoes = {
     upMyGroup(S.gid, { name: g.name, sport: g.sport, sportName: g.sportName });
     S.rid = null;
     closeDlg();
-    toast('Grupo atualizado.');
+    toast(tx('admgrupo.atualizado'));
     return p;
   },
-  addPos: () =>
-    openDlg(`<h3>Nova posição</h3><div class="row"><label class="f" style="width:110px"><span>Sigla</span><input class="inp" id="psg" maxlength="4" placeholder="Ex.: VOL" style="text-transform:uppercase"></label>
-    <label class="f" style="flex:1"><span>Nome</span><input class="inp" id="pnmx" maxlength="24" placeholder="Ex.: Volante"></label></div><p class="small muted" style="margin-top:-6px">A sigla aparece nas listas e nos times (até 4 letras).</p>
-    <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="savePos">Adicionar</button></div>`),
+  addPos: () => janelaPosicao(),
   savePos: () => {
     const k = val('psg')
         .toUpperCase()
         .replace(/[^A-Z0-9]/g, ''),
       l = val('pnmx');
     if (k.length < 2) {
-      toast('A sigla precisa de 2 a 4 letras.');
+      toast(tx('admgrupo.posSiglaCurta'));
       return;
     }
     if (l.length < 2) {
-      toast('Dê um nome à posição.');
+      toast(tx('admgrupo.posSemNome'));
       return;
     }
     if (sport().pos.some(([x, y]) => x === k || normName(y) === normName(l))) {
-      toast('Essa posição já existe.');
+      toast(tx('admgrupo.posExiste'));
       return;
     }
     closeDlg();
@@ -180,9 +183,9 @@ const acoes = {
     const n = Object.values(S.jog).filter(p => p.pos === k).length;
     if (
       confirmou(el, {
-        titulo: `Remover a posição ${l}?`,
-        texto: n ? tp('posicao.removerAviso', n) : 'Ninguém usa esta posição.',
-        acao: 'Remover posição',
+        titulo: tx('admgrupo.posRemoverTitulo', { pos: l }),
+        texto: n ? tp('posicao.removerAviso', n) : tx('admgrupo.posNinguem'),
+        acao: tx('admgrupo.posRemover'),
         perigo: true,
       }) !== 'sim'
     )
@@ -193,11 +196,7 @@ const acoes = {
   },
   dupGroup: () => {
     if (avisoLimiteGrupos()) return;
-    openDlg(`<h3>Duplicar grupo</h3><p class="small muted" style="margin-top:-6px">Cria um grupo novo e independente, com o mesmo esporte, frequência, dias e horários, posições e configurações de partidas e caixa. Você será o organizador dele.</p>
-    <label class="f"><span>Nome do novo grupo</span><input class="inp" id="dgn" maxlength="40" value="${esc(gname() + ' (cópia)')}"></label><div class="err" id="dgErr" style="margin-top:-8px"></div>
-    <label class="row small" style="margin-bottom:6px"><input type="checkbox" id="dgel" checked> Copiar o elenco (jogadores ativos, notas, contatos, avulsos e pares separados)</label>
-    <p class="small muted">Rodadas, partidas, caixa, votações e administradores não são copiados.</p>
-    <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="doDupGroup">Duplicar</button></div>`);
+    janelaDuplicar(gname());
     setTimeout(() => {
       const i = $('#dgn');
       i && (i.focus(), i.select());
@@ -207,11 +206,11 @@ const acoes = {
     const name = val('dgn');
     $('#dgErr').textContent = '';
     if (name.length < 2) {
-      $('#dgErr').textContent = 'Dê um nome ao grupo.';
+      $('#dgErr').textContent = tx('admgrupo.semNome');
       return;
     }
     if (dupName(name, null)) {
-      $('#dgErr').textContent = 'Você já tem um grupo com esse nome.';
+      $('#dgErr').textContent = tx('admgrupo.nomeRepetido');
       return;
     }
     const lg = await limiteGrupos();
@@ -300,13 +299,13 @@ const acoes = {
         criado: now,
       });
       closeDlg();
-      toast('Grupo duplicado.');
+      toast(tx('admgrupo.duplicado'));
       location.hash = '#/g/' + gid;
     } catch (e) {
       console.error(e);
       if (e && e.code === 'permission-denied' && !(await B.get('grupos/' + gid).catch(() => null)))
         avisoGrupos('#dgErr', lg.n);
-      else toast('Não foi possível duplicar. Tente de novo.');
+      else toast(tx('admgrupo.dupFalhou'));
     }
   },
   toggleAtivo: el => {
@@ -314,10 +313,9 @@ const acoes = {
     if (
       !on &&
       confirmou(el, {
-        titulo: 'Inativar "' + gname() + '"?',
-        texto:
-          'Os links públicos deixam de aceitar confirmações e votos, e a rodada fixa para de ser criada. Tudo continua guardado e você pode reativar depois.',
-        acao: 'Inativar grupo',
+        titulo: tx('admgrupo.inativarTitulo', { nome: gname() }),
+        texto: tx('admgrupo.inativarTexto'),
+        acao: tx('admgrupo.inativarAcao'),
         perigo: true,
       }) !== 'sim'
     )
@@ -325,7 +323,7 @@ const acoes = {
     // KAN-119: reativar só se couber no plano; o grupo entra e sai da lista de ativos da conta junto.
     if (on && avisoLimiteGrupos()) return;
     const p = w(on ? reativarGrupo(S.gid) : inativarGrupo(S.gid));
-    toast(on ? 'Grupo reativado.' : 'Grupo inativado.');
+    toast(tx(on ? 'admgrupo.reativado' : 'admgrupo.inativado'));
     return p;
   },
   pickSport: el => formAberto()?.esporte(el.dataset.v),
@@ -376,15 +374,14 @@ const acoes = {
       console.error(e);
       if (e && e.code === 'permission-denied' && !(await B.get('grupos/' + gid).catch(() => null)))
         avisoGrupos('#ngErr', lg.n);
-      else toast('Não foi possível criar o grupo. Tente de novo.');
+      else toast(tx('admgrupo.criarFalhou'));
     }
   },
   groupsDlg: () => {
     const gs = Object.entries((S.me && S.me.grupos) || {})
       .filter(([k, v]) => v.ativo !== false || k === S.gid)
       .sort((a, b) => (a[1].name || '').localeCompare(b[1].name || '', LOCAL));
-    openDlg(`<h3>Seus grupos</h3><ul class="plist">${gs.map(([gid, g]) => `<li><span class="gem">${(SPORTS[g.sport] || SPORTS.futebol).e}</span><span class="pn"><b>${esc(g.name)}</b>${gid === S.gid ? ' <span class="tag">· aberto</span>' : ''}<br><span class="tag">${esc(g.sportName || (SPORTS[g.sport] || SPORTS.futebol).n)}</span></span>${gid === S.gid ? '' : `<a class="btn sm primary" href="#/g/${gid}">Abrir</a>`}</li>`).join('')}</ul>
-    <div class="dlg-f"><a class="btn" href="#/">Ver todos</a><button class="btn primary" data-a="newGroup">Novo grupo</button></div>`);
+    janelaSeusGrupos(gs, S.gid);
   },
   acceptInv: async el => {
     el.disabled = true;
@@ -416,7 +413,7 @@ const acoes = {
     } catch (e) {
       console.error(e);
       el.disabled = false;
-      toast('Convite inválido ou expirado. Peça um novo link ao organizador.');
+      toast(tx('admgrupo.conviteInvalido'));
     }
   },
   inviteLink: () => {
@@ -428,16 +425,16 @@ const acoes = {
       w(GB.set('privado/convite', { token: t }));
     }
     shareDlg(
-      'Convite para administrador',
-      `Oi! Te convidei para administrar o grupo *${gname()}* no ${APP}.\nAbra o link, crie sua conta (ou entre) e aceite:\n${linkConvite(t)}`
+      tx('admgrupo.conviteTitulo'),
+      tx('admgrupo.conviteTexto', { grupo: gname(), app: APP, link: linkConvite(t) })
     );
   },
   newInviteLink: el => {
     if (
       confirmou(el, {
-        titulo: 'Gerar um novo link de convite?',
-        texto: 'O link atual deixa de funcionar.',
-        acao: 'Gerar novo link',
+        titulo: tx('admgrupo.novoLinkTitulo'),
+        texto: tx('admgrupo.novoLinkTexto'),
+        acao: tx('admgrupo.novoLinkAcao'),
       }) !== 'sim'
     )
       return;
@@ -449,9 +446,9 @@ const acoes = {
   rmMember: el => {
     if (
       confirmou(el, {
-        titulo: 'Remover este administrador?',
-        texto: 'O link de convite atual também deixa de funcionar, para ele não conseguir voltar sozinho.',
-        acao: 'Remover administrador',
+        titulo: tx('admgrupo.removerTitulo'),
+        texto: tx('admgrupo.removerTexto'),
+        acao: tx('admgrupo.removerAcao'),
         perigo: true,
       }) !== 'sim'
     )
@@ -465,9 +462,7 @@ const acoes = {
       { tipo: 'del', p: 'membros/' + u },
       { tipo: 'patch', p: 'config/app', o: { adms: op.remover([u]) } },
     ]);
-    return Promise.all([w(fora), w(GB.del('privado/convite'))]).then(() =>
-      toast('Administrador removido. Para convidar alguém, gere um novo link.', 4500)
-    );
+    return Promise.all([w(fora), w(GB.del('privado/convite'))]).then(() => toast(tx('admgrupo.removido'), 4500));
   },
   /* Permissões de um administrador convidado (KAN-201): só o organizador abre e muda. Vale na hora para o convidado. */
   abrirPerm: el => {
@@ -475,13 +470,7 @@ const acoes = {
       m = (S.membros || {})[u];
     if (!m || m.role === 'owner') return;
     const atual = m.perm === undefined || m.perm === null ? null : permLimpa(m.perm);
-    openDlg(`<h3 id="permTitulo">${tx('perm.titulo')}</h3><p class="small muted" style="margin-top:-6px">${tx('perm.ajuda', { email: esc(m.email || u) })}</p>
-    <ul class="perm-lista">${PERMISSOES.map(
-      k =>
-        `<li><label class="perm-item"><input type="checkbox" id="perm_${k}"${!atual || atual[k] ? ' checked' : ''}><span><b>${tx('perm.nome.' + k)}</b><br><span class="small muted">${tx('perm.desc.' + k)}</span></span></label></li>`
-    ).join('')}</ul>
-    <p class="small muted">${tx('perm.sempre')}</p>
-    <div class="dlg-f"><button class="btn" data-a="close">${tx('comum.cancelar')}</button><button class="btn primary" data-a="salvarPerm" data-v="${esc(u)}">${tx('perm.salvar')}</button></div>`);
+    janelaPermissoes(u, m.email || u, atual);
     dlg.setAttribute('aria-labelledby', 'permTitulo');
   },
   salvarPerm: el => {

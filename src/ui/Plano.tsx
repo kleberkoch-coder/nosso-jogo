@@ -130,7 +130,7 @@ export function AvisosPlano() {
 }
 
 /* Lugares reservados nas telas montadas como texto. */
-export const vCadeado = () => '<div id="travaRaiz"></div>';
+export const vCadeado = () => 'travaRaiz';
 export function montarCadeado(r: string) {
   const el = document.getElementById('travaRaiz');
   if (el) render(<Cadeado r={r} />, el);

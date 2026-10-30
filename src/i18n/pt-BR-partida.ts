@@ -64,4 +64,7 @@ export default {
   'partida.semTimes': 'Sem times sorteados',
   'partida.semTimesTexto': 'Sorteie os times desta rodada na aba Rodada, ou escolha outra rodada acima.',
   'partida.irRodada': 'Ir para a rodada',
+  'partida.apagarTitulo': 'Apagar esta partida?',
+  'partida.apagarTexto': 'O placar e os pontos dela saem do ranking. Não dá para desfazer.',
+  'partida.apagarAcao': 'Apagar partida',
 };

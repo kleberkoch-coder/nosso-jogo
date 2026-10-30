@@ -247,12 +247,24 @@ const testesRegra = fs.existsSync('testes/regras')
   ? fs.readdirSync('testes/regras').filter(f => REGRAS.test(f)).length
   : 0;
 /* Textos de tela escritos direto no código, fora do dicionário (D3). Conta frases que começam com maiúscula
-   dentro de textos e HTML, sem os comentários. É uma medida aproximada, mas sempre igual: serve para ver se sobe ou desce. */
+   dentro de textos e HTML, sem os comentários. É uma medida aproximada, mas sempre igual: serve para ver se sobe ou desce.
+   Desde a v84 (D35) não conta o que não é texto de tela: nomes do JavaScript (Object.assign, Math.max), mensagens do
+   console (só para quem programa) e os catálogos de dados (esportes e planos), que terão um arquivo por idioma. */
 const RX_TEXTO = /(?<=['"`]|>\s*|\$\{[^}]*\}\s?)([A-ZÁÉÍÓÚÂÊÔÃÕ][a-zà-úç]+(?:[ ,.:?!][ ]?[A-Za-zà-úçÁÉÍÓÚ]+){1,})/g;
-const semComentario = t => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/.*$/gm, '$1');
+const NOME_JS = /^[A-Z][a-z]+\.[a-z]\w*$/;
+const CATALOGOS = [path.join('src', 'dominio', 'esportes.js'), path.join('src', 'dominio', 'planos.ts')];
+const semComentario = t =>
+  t
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:'"`])\/\/.*$/gm, '$1')
+    .replace(/console\.\w+\([^)]*\)/g, '');
 const textosFixos = arquivos
-  .filter(f => !f.includes(path.join('src', 'i18n')))
-  .reduce((n, f) => n + (semComentario(fs.readFileSync(f, 'utf8')).match(RX_TEXTO) || []).length, 0);
+  .filter(f => !f.includes(path.join('src', 'i18n')) && !CATALOGOS.includes(f))
+  .reduce(
+    (n, f) =>
+      n + (semComentario(fs.readFileSync(f, 'utf8')).match(RX_TEXTO) || []).filter(m => !NOME_JS.test(m)).length,
+    0
+  );
 console.log(
   `Dívida técnica: ${emTS} de ${arquivos.length} arquivos em TypeScript · ${telasComp} de ${telas.length} telas como componente · innerHTML em ${innerHTML} pontos · ${textosFixos} textos fora do dicionário · ${testesRegra} de 5 regras de negócio com teste próprio`
 );

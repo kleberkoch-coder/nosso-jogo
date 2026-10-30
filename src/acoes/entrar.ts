@@ -5,7 +5,8 @@ import * as banco from '../nucleo/backend.js';
 import { S as estado } from '../nucleo/estado.js';
 import { $, inAppBrowser, toast } from '../nucleo/util.js';
 import { AUTH_CANCEL, authMsg, avisoGoogle, pwFalta, pwOk } from '../telas/Login';
-import { openDlg, val } from '../ui/dialogos.js';
+import { val } from '../ui/dialogos.js';
+import { janelaNavegador } from '../ui/JanelaNavegador';
 import { render } from '../ui/render.js';
 
 // O estado e o banco ainda são JavaScript sem tipos; o banco é lido na hora (setB troca o banco ao iniciar).
@@ -69,9 +70,7 @@ const acoes = {
     const le = $('#lerr');
     if (le) le.textContent = '';
     if (!bk().demo && inAppBrowser()) {
-      openDlg(`<h3>Abra no navegador</h3><p>O Google não permite entrar por dentro deste aplicativo. Abra o link no <b>Chrome</b> ou no <b>Safari</b> e toque de novo em <b>Continuar com o Google</b>.</p>
-      <p class="small muted">Dica: toque nos três pontinhos (⋮ ou ⋯) no canto da tela e escolha <b>Abrir no navegador</b>. Ou entre com e-mail e senha aqui mesmo.</p>
-      <div class="dlg-f"><button class="btn" data-a="close">Fechar</button><button class="btn primary" data-a="copyHere">Copiar link</button></div>`);
+      janelaNavegador();
       return;
     }
     if (S.authMode === 'signup') S.paisNovo = val('lpais') || S.paisNovo;

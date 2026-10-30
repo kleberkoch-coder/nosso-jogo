@@ -286,7 +286,7 @@ function ListaPares({ pares, inicio = 1 }: { pares: Par[]; inicio?: number }) {
 }
 
 /* A gestão desenha as abas com texto; os Jogadores entram num lugar reservado (#jogadoresRaiz). */
-const vJogadores = () => '<div id="jogadoresRaiz"></div>';
+const vJogadores = () => 'jogadoresRaiz';
 function montarJogadores() {
   const el = document.getElementById('jogadoresRaiz');
   if (el) render(<JogadoresTela />, el);

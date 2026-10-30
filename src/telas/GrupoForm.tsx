@@ -1,5 +1,5 @@
 /* Formulário do grupo (Novo grupo e Editar grupo), como componente em TypeScript + Preact (KAN-165).
-   Por fora, igual ao de antes: os mesmos ids e classes, que as ações (acoes/grupo.js) e os testes leem.
+   Por fora, igual ao de antes: os mesmos ids e classes, que as ações (acoes/grupo.ts) e os testes leem.
    Os botões continuam com data-a; as ações de escolha (frequência, esporte, dias) chamam este componente.
    KAN-163: os horários seguem o relógio do país (12h com AM/PM ou 24h) e a lista de dias começa no dia do país. */
 import { render } from 'preact';
@@ -12,7 +12,7 @@ import { relogio12 } from '../i18n/formatos.js';
 import { juntarTextos, tx } from '../i18n/index.js';
 import textos from '../i18n/pt-BR-grupoform';
 import { S as estado } from '../nucleo/estado.js';
-import { $, DIAS, toast, uid } from '../nucleo/util.js';
+import { $, diaSemana, toast, uid } from '../nucleo/util.js';
 import { HoraCampo } from '../ui/HoraCampo';
 import { val } from '../ui/dialogos.js';
 import { fusoAparelho, listaFuso, listaMoeda, listaPais } from '../ui/regiao.ts';
@@ -65,7 +65,7 @@ function LinhaDia({ x, doze, dias }: { x: Fixo | null; doze: boolean; dias: numb
       <select class="sel sd" aria-label={tx('grupo.diaSemana')}>
         {dias.map(i => (
           <option key={i} value={i} selected={i === +f.dow}>
-            {DIAS[i]}
+            {diaSemana(i)}
           </option>
         ))}
       </select>

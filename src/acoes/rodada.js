@@ -1,21 +1,16 @@
 /* Ações: Rodada: datas, presença, avulsos, sorteio, times, lista × times e histórico. Fazem parte de ACT (src/acoes.js). */
 import { horaTexto } from '../dominio/rodadas.js';
 import { cfg } from '../dominio/caixa.js';
-import { COL, col, hasPos, porTime, posKeys, posLabel, posTag, sport, tn } from '../dominio/esportes.js';
+import { hasPos, porTime, posKeys, sport, tn } from '../dominio/esportes.js';
 import {
   attendance,
   curRodada,
-  fdia,
   fixos,
-  fmtL,
   gname,
   isAvulso,
-  lvl,
-  lvlIn,
   normName,
   players,
   pname,
-  posso,
   ppos,
   rodadas,
   setLvl,
@@ -32,14 +27,24 @@ import { elencoDaRodada, minimosDoGrupo, montarColetes, montarMinimos, montarVag
 import { situacao, vagasValidas } from '../dominio/vagas';
 import { copyText } from '../eventos.js';
 import { B, setCAP, sleep } from '../nucleo/backend.js';
-import { campoTelefone, lerContato } from '../ui/contato-form';
+import { lerContato } from '../ui/contato-form';
 import { editApp, editRat, editRod, saveContato, setPres } from '../nucleo/edicoes.js';
 import { apagarPartidasDaRodada } from '../nucleo/partidas.js';
 import { GB, S, w } from '../nucleo/estado.js';
 import { linkProxima, linkRodada } from '../nucleo/links.js';
-import { $, DIAS, esc, fdate, toast } from '../nucleo/util.js';
-import { avisar, closeDlg, closeDlgNow, confirmou, dlg, openDlg, posField, val } from '../ui/dialogos.js';
-import { drawPreview, playerDlg, rodDlg } from '../ui/dialogos-gestao.js';
+import { $, diaSemana, fdate, toast } from '../nucleo/util.js';
+import { avisar, closeDlg, closeDlgNow, confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
+import {
+  drawPreview,
+  janelaAvulso,
+  janelaEditarAvulso,
+  janelaEscolherTime,
+  janelaMover,
+  janelaPorTime,
+  janelaSorteio,
+  playerDlg,
+  rodDlg,
+} from '../ui/JanelasGestao';
 import { changed, render } from '../ui/render.js';
 import { LOCAL } from '../i18n/formatos.js';
 import { nPartidas, temVotacao } from '../telas/rodada-partes.js';
@@ -67,10 +72,7 @@ function porNoTime(ti, pid) {
 }
 /* Escolher o time de quem confirmou depois do sorteio. */
 function escolherTime(pid) {
-  const r = curRodada();
-  openDlg(
-    `<h3>${esc(tx('porTime.qualTime', { nome: pname(pid) }))}</h3><div class="vgrid">${r.times.map((t, i) => `<button class="opt" data-a="doPorTime" data-v="${i}" data-p="${pid}"><span class="dot" style="background:${col(t.c).c}"></span>${tn(i)}<span class="tag" style="margin-left:auto">${tp('porTime.jogadores', t.players.length)}</span></button>`).join('')}</div><div class="dlg-f"><button class="btn" data-a="close">Cancelar</button></div>`
-  );
+  janelaEscolherTime(pid, curRodada().times);
 }
 /* KAN-71: depois de sortear, a tela vai até os times e o foco fica no título "Times" (leitor de tela anuncia). */
 function irParaTimes() {
@@ -88,7 +90,7 @@ const acoes = {
   saveRod: el => {
     const d = val('rdt');
     if (!d) {
-      toast('Escolha a data.');
+      toast(tx('rodadm.escolhaData'));
       return;
     }
     const id = el.dataset.v;
@@ -119,10 +121,9 @@ const acoes = {
     const r = curRodada();
     if (
       confirmou(el, {
-        titulo: 'Excluir a rodada de ' + fdate(r.date) + '?',
-        texto:
-          'A lista, os times e as partidas desta rodada somem, e as partidas saem do ranking. Não dá para desfazer.',
-        acao: 'Excluir rodada',
+        titulo: tx('rodadm.excluirTitulo', { data: fdate(r.date) }),
+        texto: tx('rodadm.excluirTexto'),
+        acao: tx('rodadm.excluirAcao'),
         perigo: true,
       }) !== 'sim'
     )
@@ -146,7 +147,7 @@ const acoes = {
         dias: f
           .map(x =>
             tx(x.dow === 0 || x.dow === 6 ? 'fixos.diaTodo' : 'fixos.diaToda', {
-              dia: DIAS[x.dow].toLowerCase(),
+              dia: diaSemana(x.dow).toLowerCase(),
               ini: horaTexto(x.ini),
               fim: x.fim ? tx('fixos.ate', { fim: horaTexto(x.fim) }) : '',
               local: x.place ? ' — ' + x.place : '',
@@ -163,10 +164,10 @@ const acoes = {
     if (
       !r.cancelada &&
       confirmou(el, {
-        titulo: 'Cancelar o jogo de ' + fdate(r.date) + '?',
-        texto: 'O link permanente passa a mostrar a rodada seguinte. Dá para reativar depois.',
-        acao: 'Cancelar esta data',
-        cancelar: 'Voltar',
+        titulo: tx('rodadm.cancelarTitulo', { data: fdate(r.date) }),
+        texto: tx('rodadm.cancelarTexto'),
+        acao: tx('rodadm.cancelarAcao'),
+        cancelar: tx('rodadm.voltar'),
         perigo: true,
       }) !== 'sim'
     )
@@ -174,7 +175,7 @@ const acoes = {
     editRod(r.id, x => {
       x.cancelada = !x.cancelada;
     });
-    if (!r.cancelada) toast('Data cancelada.');
+    if (!r.cancelada) toast(tx('rodadm.cancelada'));
   },
   lock: el => {
     const r = curRodada();
@@ -192,11 +193,11 @@ const acoes = {
       x.locked = !x.locked;
     });
   },
-  shareConvite: () => shareDlg('Convite da rodada', txtConvite(curRodada())),
+  shareConvite: () => shareDlg(tx('rodadm.conviteTitulo'), txtConvite(curRodada())),
   copyLink: () => copyText(linkRodada(curRodada().id)),
   /* KAN-179: mínimo para o jogo (total e por posição), salvo no grupo e válido para todas as rodadas. */
   abrirMinimos: () => {
-    openDlg('<div id="minRaiz"></div>');
+    openDlg('minRaiz');
     dlg.setAttribute('aria-labelledby', 'minTitulo');
     montarMinimos();
     $('#minRaiz .minp')?.focus();
@@ -217,7 +218,7 @@ const acoes = {
   },
   /* KAN-63: vagas para diaristas e avulsos nesta rodada. Abrir zera o contador; mudar a quantidade mantém quem já entrou. */
   abrirVagas: () => {
-    openDlg('<div id="vagasRaiz"></div>');
+    openDlg('vagasRaiz');
     dlg.setAttribute('aria-labelledby', 'vagasTitulo');
     montarVagas(curRodada(), attendance().inn.length);
     $('#vagasN')?.focus();
@@ -258,7 +259,7 @@ const acoes = {
       })
     );
   },
-  shareTimes: () => shareDlg('Times sorteados', txtTimes(curRodada())),
+  shareTimes: () => shareDlg(tx('rodadm.timesTitulo'), txtTimes(curRodada())),
   mark: el => {
     const r = curRodada(),
       id = el.dataset.p,
@@ -290,16 +291,7 @@ const acoes = {
       regs = Object.entries(S.avul || {})
         .filter(([id]) => !S.jog[id] && S.pres[id]?.s !== 'in')
         .sort((a, b) => (a[1].nome || '').localeCompare(b[1].nome || '', LOCAL));
-    openDlg(`<h3>Adicionar avulso</h3>${
-      regs.length
-        ? `<div class="f"><span class="lbl">Já jogou aqui? Escolha o nome</span>${regs.length > 8 ? '<input class="inp" id="avq" placeholder="Buscar nome" style="margin-bottom:8px">' : ''}
-      <div class="vgrid" id="avlist">${regs.map(([id, a]) => `<button class="opt" data-a="pickAvulso" data-p="${id}" data-n="${esc(normName(a.nome))}">${posTag(id)}<span>${esc(a.nome)}</span>${posso('notas') ? `<span class="tag" style="margin-left:auto">${fmtL(lvl(id))}</span>` : ''}</button>`).join('')}</div></div>
-      <p class="small muted" style="margin:4px 0 10px">Ou cadastre um avulso novo:</p>`
-        : ''
-    }
-    <label class="f"><span>Nome</span><input class="inp" id="anm" maxlength="40"></label>${posField('apos')}${posso('notas') ? `<div class="f"><span class="lbl">Nota de 1 a 10</span>${lvlIn(5)}</div>` : ''}
-    ${posso('elenco') ? campoTelefone('', tx('contato.telOpcional')) : ''}
-    <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveAvulso">Adicionar confirmado</button></div>`);
+    janelaAvulso(regs);
   },
   pickAvulso: el => {
     const id = el.dataset.p,
@@ -314,7 +306,7 @@ const acoes = {
   saveAvulso: el => {
     const n = val('anm');
     if (n.length < 2) {
-      toast('Digite o nome.');
+      toast(tx('jogador.digiteNome'));
       return;
     }
     const ct = lerContato('ptel');
@@ -322,10 +314,10 @@ const acoes = {
     const same = Object.entries(S.avul || {}).find(([, a]) => normName(a.nome) === normName(n));
     if (same) {
       const c = confirmou(el, {
-        titulo: n + ' já jogou aqui antes',
-        texto: 'Usar o cadastro dele (posição, nota e contato)?',
-        acao: 'Usar o cadastro',
-        nao: 'Cadastrar como novo',
+        titulo: tx('avulso.jaJogouTitulo', { nome: n }),
+        texto: tx('avulso.usarCadastroTexto'),
+        acao: tx('avulso.usarCadastro'),
+        nao: tx('avulso.cadastrarNovo'),
       });
       if (!c) return;
       if (c === 'sim') return ACT.pickAvulso({ dataset: { p: same[0] } });
@@ -353,17 +345,13 @@ const acoes = {
     const id = el.dataset.p,
       a = S.avul[id] || { nome: pname(id), pos: ppos(id) },
       ct = (S.cont || {})[id] || {};
-    openDlg(`<h3>Avulso: ${esc(a.nome)}</h3><label class="f"><span>Nome</span><input class="inp" id="anm" maxlength="40" value="${esc(a.nome)}"></label>${posField('apos', a.pos)}
-    ${posso('notas') ? `<div class="f"><span class="lbl">Nota de 1 a 10 (só administradores veem)</span>${lvlIn(lvl(id))}</div>` : ''}
-    ${posso('elenco') ? campoTelefone(ct.tel || '', tx('contato.telRotulo')) : ''}
-    <p class="small muted" style="margin-top:-4px">Registrado em ${fdia(a.criado)}</p>
-    <div class="dlg-f"><button class="btn ghost danger" data-a="delAvulso" data-p="${id}">Esquecer avulso</button><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveAvEdit" data-p="${id}">Salvar</button></div>`);
+    janelaEditarAvulso(id, a, ct.tel || '');
   },
   saveAvEdit: el => {
     const id = el.dataset.p,
       n = val('anm');
     if (n.length < 2) {
-      toast('Digite o nome.');
+      toast(tx('jogador.digiteNome'));
       return;
     }
     const ct = lerContato('ptel');
@@ -375,16 +363,16 @@ const acoes = {
     const c = saveContato(id, ct.tel, '');
     if (c) ps.push(c);
     closeDlg();
-    toast('Avulso atualizado.');
+    toast(tx('avulso.atualizado'));
     return Promise.all(ps);
   },
   delAvulso: el => {
     const id = el.dataset.p;
     if (
       confirmou(el, {
-        titulo: 'Esquecer este avulso?',
-        texto: 'Ele some da lista de "já jogaram aqui". O histórico de partidas continua.',
-        acao: 'Esquecer avulso',
+        titulo: tx('avulso.esquecerTitulo'),
+        texto: tx('avulso.esquecerTexto'),
+        acao: tx('avulso.esquecer'),
         perigo: true,
       }) !== 'sim'
     )
@@ -424,30 +412,7 @@ const acoes = {
       k = a.inn.length,
       dentro = a.inn.filter(id => !(hasPos() && fora.has(ppos(id)))).length,
       n = sport().pairs ? Math.max(1, Math.floor(dentro / 2)) : sugerirTimes(dentro, T);
-    openDlg(`<div id="drawBox" data-n="${n}" data-nov="${cfg().novelty}" data-fora="${esc([...fora].join(','))}"><h3>${sport().pairs ? 'Sortear duplas' : 'Sortear times'}</h3>
-    <p class="small muted" style="margin-top:-6px">${sport().pairs ? tx('sorteio.infoDuplas') : tx('sorteio.info', { n: T })}</p>
-    <div class="f" ${sport().pairs ? 'hidden' : ''}><span class="lbl">Quantos times</span><span class="seg">${[
-      2, 3, 4, 5, 6, 7, 8,
-    ]
-      .filter(x => x * 2 <= k)
-      .map(x => `<button data-a="dN" data-v="${x}">${x}</button>`)
-      .join('')}</span></div>
-    ${
-      hasPos()
-        ? `<div class="f" style="margin-top:12px"><span class="lbl">${tx('sorteio.foraPos')}</span><span class="seg seg-wrap">${posKeys()
-            .map(
-              p =>
-                `<button data-a="dFora" data-v="${esc(p)}" aria-pressed="${fora.has(p)}" title="${esc(posLabel(p))}">${esc(p)}</button>`
-            )
-            .join('')}</span>
-      <p class="small muted" style="margin:6px 0 0">${tx('sorteio.foraPosAjuda')}</p></div>`
-        : ''
-    }
-    <p id="drawPrev" style="font-weight:600"></p>
-    <div class="f"><span class="lbl">Variar parceiros (com base no histórico)</span><span class="seg">${['Não', 'Pouco', 'Médio', 'Muito'].map((l, i) => `<button data-a="dNov" data-v="${i}">${l}</button>`).join('')}</span></div>
-    <details><summary>Quem entra no sorteio (<span id="drawK">${dentro}</span> de ${k})</summary><div class="chk">${a.inn.map(id => `<label><input type="checkbox" class="dp" value="${id}" data-pos="${esc(ppos(id) || '')}" ${hasPos() && fora.has(ppos(id)) ? '' : 'checked'}>${esc(pname(id))}${hasPos() && ppos(id) ? ` <span class="tag">· ${esc(ppos(id))}</span>` : ''}</label>`).join('')}</div></details>
-    <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn bib" id="drawGo" data-a="doDraw">Sortear</button></div></div>`);
-    drawPreview();
+    janelaSorteio({ n, nov: cfg().novelty, fora, inn: a.inn, dentro, T });
   },
   /* Deixar uma posição inteira fora do sorteio (ex.: goleiros fixos). A escolha fica salva no grupo ao sortear. */
   dFora: el => {
@@ -534,7 +499,7 @@ const acoes = {
   /* Troca a cor do colete gravando só cores.{time} (KAN-108), sem regravar os jogadores. */
   /* v60: o nome do time é o número; a cor é só o colete. Abre a escolha da cor. */
   color: el => {
-    openDlg('<div id="coleteRaiz"></div>');
+    openDlg('coleteRaiz');
     dlg.setAttribute('aria-labelledby', 'coleteTitulo');
     montarColetes(curRodada(), +el.dataset.v);
     $('#coletes [aria-pressed=true]')?.focus();
@@ -561,8 +526,7 @@ const acoes = {
     const r = curRodada(),
       f = +el.dataset.v,
       pid = el.dataset.p;
-    openDlg(`<h3>Mover ${esc(pname(pid))}</h3><div class="vgrid">${r.times.map((t, i) => (i === f ? '' : `<button class="opt" data-a="doMove" data-v="${i}" data-f="${f}" data-p="${pid}"><span class="dot" style="background:${col(t.c).c}"></span>${tn(i)}</button>`)).join('')}</div>
-    <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn" data-a="toggleRes" data-v="${f}" data-p="${pid}">${(r.times[f].res || []).includes(pid) ? tx('times.marcarTitular') : tx('times.marcarReserva')}</button></div>`);
+    janelaMover(pid, f, r.times);
   },
   toggleRes: el => {
     const f = +el.dataset.v,
@@ -617,12 +581,7 @@ const acoes = {
         r,
         players().map(p => p.id)
       ).filter(id => !conf.includes(id));
-    const opc = id =>
-      `<button class="opt" data-a="doPorTime" data-v="${ti}" data-p="${id}">${posTag(id)}<span>${esc(pname(id))}</span></button>`;
-    openDlg(`<h3><span class="dot" style="background:${col(t.c).c}"></span> ${esc(tx('porTime.titulo', { time: tn(ti) }))}</h3><p class="small muted">${tx('porTime.ajuda')}</p>
-    ${conf.length ? `<div class="f"><span class="lbl">${tx('porTime.confirmados')}</span><div class="vgrid">${conf.map(opc).join('')}</div></div>` : ''}
-    ${outros.length ? `<div class="f"><span class="lbl">${tx('porTime.outros')}</span><div class="vgrid">${outros.map(opc).join('')}</div></div>` : conf.length ? '' : `<p class="muted small">${tx('porTime.ninguem')}</p>`}
-    <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn" data-a="addAvulso" data-t="${ti}">${tx('porTime.avulso')}</button></div>`);
+    janelaPorTime(ti, t, conf, outros);
   },
   doPorTime: el => {
     const ti = +el.dataset.v,

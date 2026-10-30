@@ -3,7 +3,7 @@
    não baixa nada daqui, e o app abre mais rápido com sinal fraco. */
 import textosGestao from './i18n/pt-BR-gestao.js';
 import { juntarTextos } from './i18n/index.js';
-import { acoes as grupo } from './acoes/grupo.js';
+import { acoes as grupo } from './acoes/grupo';
 import { acoes as rodada } from './acoes/rodada.js';
 import { acoes as jogadores } from './acoes/jogadores.js';
 import { acoes as recalcular } from './acoes/recalcular';
@@ -38,7 +38,7 @@ export { montarHome, vHome } from './telas/Grupos';
 export { guardarOrdemJogadores, montarJogadores, vJogadores } from './telas/Jogadores';
 export { montarRodada, vRodada } from './telas/Rodada';
 export { migrar, migrarCaixa, migrarMensal, verificarRodadas } from './nucleo/partidas.js';
-export { drawPreview } from './ui/dialogos-gestao.js';
+export { drawPreview } from './ui/JanelasGestao';
 export { contaRegiao, listaPais, paisAparelho, preencher } from './ui/regiao.ts';
 export { trocarPaisTelefone } from './ui/contato-form';
 /* Planos (KAN-119): quem tem cada recurso, avisos, cadeado das abas e o espelho do plano no grupo. */

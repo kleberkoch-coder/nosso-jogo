@@ -640,7 +640,7 @@ function montarEdicao(mid: string) {
 }
 
 /* A gestão desenha as abas com texto; a Partida entra num lugar reservado (#partidaRaiz), como Rodada e Caixa. */
-const vPartida = () => '<div id="partidaRaiz"></div>';
+const vPartida = () => 'partidaRaiz';
 function montarPartida() {
   const el = document.getElementById('partidaRaiz');
   if (el) render(<PartidaTela />, el);

@@ -1,4 +1,5 @@
 import { FORMATO, LOCAL, MOEDA, agora } from '../i18n/formatos.js';
+import { tx } from '../i18n/index.js';
 /* =================== utilidades =================== */
 const $ = s => document.querySelector(s);
 const main = $('#main');
@@ -106,13 +107,14 @@ function nextSat() {
 }
 /* Navegadores embutidos (Instagram, Facebook, alguns apps no Android): o Google não deixa fazer login neles. */
 const inAppBrowser = () => /FBAN|FBAV|FB_IAB|Instagram|Line\/|MicroMessenger|; wv\)/i.test(navigator.userAgent);
-const DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+/* Nome do dia da semana (0 = domingo), do dicionário. */
+const diaSemana = i => tx('dia.' + i);
 
 export {
   $,
   brl,
   cl,
-  DIAS,
+  diaSemana,
   esc,
   fdate,
   fmonth,

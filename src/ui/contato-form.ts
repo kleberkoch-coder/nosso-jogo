@@ -1,12 +1,12 @@
 /* Lê telefone e e-mail das janelas de jogador e avulso (KAN-156). Com erro, avisa, põe o cursor no campo e devolve null.
    Desde a KAN-162, o telefone tem um combo de país ao lado, que já vem com o país do grupo. */
 import { emailValido } from '../dominio/contato';
-import { normalizarTelefone, numeroParaCampo } from '../dominio/telefone.ts';
-import { paisPor, separarTelefone } from '../dominio/paises.ts';
+import { normalizarTelefone } from '../dominio/telefone.ts';
+import { paisPor } from '../dominio/paises.ts';
 import { PAIS } from '../i18n/formatos.js';
 import { tx } from '../i18n/index.js';
 import { toast } from '../nucleo/util.js';
-import { nomePais, opcoesDdi } from './regiao.ts';
+import { nomePais } from './regiao.ts';
 
 const campo = (id: string) => document.getElementById(id) as HTMLInputElement | null;
 function erro(id: string, msg: string) {
@@ -42,23 +42,16 @@ export function lerContato(telId: string, mailId?: string): { tel: string; email
 }
 
 /* Exemplo dentro do campo: o número brasileiro de sempre ou quantos dígitos tem o número no país escolhido. */
-const exemplo = (iso: string) =>
+export const exemploTelefone = (iso: string) =>
   iso === 'BR'
     ? tx('contato.telExemplo')
     : paisPor(iso)
       ? tx('contato.telExemploPais', { n: digitos(iso) })
       : tx('contato.telExemploOutro');
 
-/* Campo de telefone das janelas: combo do país (bandeira e código) e o número. */
-export function campoTelefone(valor: string, rotulo: string): string {
-  const { pais, numero } = separarTelefone(valor, PAIS);
-  const v = numeroParaCampo(numero, pais).replace(/[&<>"']/g, c => '&#' + c.charCodeAt(0) + ';');
-  return `<div class="f campo-tel"><span class="lbl" id="ptelR">${rotulo}</span><div class="tel-linha"><select class="sel" id="ppais" aria-label="${tx('contato.telPais')}">${opcoesDdi(pais)}</select><input class="inp" id="ptel" type="tel" inputmode="tel" autocomplete="tel" maxlength="22" value="${v}" placeholder="${exemplo(pais)}" aria-labelledby="ptelR"></div><span class="small muted dica">${tx('contato.telDica')}</span></div>`;
-}
-
 /* Trocou o país do telefone: o exemplo do campo acompanha. */
 export function trocarPaisTelefone() {
   const s = document.getElementById('ppais') as HTMLSelectElement | null,
     c = campo('ptel');
-  if (s && c) c.placeholder = exemplo(s.value);
+  if (s && c) c.placeholder = exemploTelefone(s.value);
 }

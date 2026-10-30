@@ -49,7 +49,7 @@ function mudarIsen(aid: string, i: { pid: string; de: string; ate?: string } | n
 }
 
 export function abrirAfastamento(pid: string, aid: string | null) {
-  openDlg('<div id="afRaiz"></div>');
+  openDlg('afRaiz');
   dlg.setAttribute('aria-labelledby', 'afTitulo');
   const el = $('#afRaiz');
   if (el) montarAfastamento(el, pid, aid, comCaixa(pid));

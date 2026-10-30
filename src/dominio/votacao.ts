@@ -1,8 +1,9 @@
-/* Votação (destaques da rodada): contagem dos votos e candidatos de cada categoria (KAN-218: saiu de telas/, porque
-   é regra, não tela). A contagem é pura e testada em testes/regras/votacao.test.mjs (KAN-220). */
-import { pname, ppos, rodDoc } from './grupo.js';
-import { idOk } from '../nucleo/util.js';
-import { LOCAL } from '../i18n/formatos.js';
+/* Regra da votação (destaques da rodada; uma das 5 da D12): contagem dos votos e candidatos de cada categoria.
+   Pura: não lê a memória do app (KAN-220). Testada em testes/regras/votacao.test.mjs.
+   - Cada aparelho vota uma vez por categoria; voto com id inválido ou em categoria que não existe não conta.
+   - Ganha quem tem mais votos; empate: todos os empatados. Sem votos, ninguém ganha.
+   - Candidatos: quem jogou a rodada (titulares e reservas); categoria com posição, só quem é dessa posição. */
+const idOk = (s: unknown) => typeof s === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(s);
 
 export type Categoria = { id: string; name?: string; pos?: string };
 export type Votacao = { rid: string; cats: Categoria[] };
@@ -29,11 +30,16 @@ export function tally(v: Votacao, votos: Votos): Resultado {
   return res;
 }
 
-/* Quem pode ser votado numa categoria: quem jogou a rodada (e, se a categoria tem posição, só dessa posição). */
-export function candidates(v: Votacao, c: Categoria): string[] {
-  const r = rodDoc(v.rid) as { times?: { players: string[] }[] } | null;
-  if (!r || !r.times) return [];
-  let ids = r.times.flatMap(t => t.players);
-  if (c.pos) ids = ids.filter(id => ppos(id) === c.pos);
-  return ids.sort((a, b) => pname(a).localeCompare(pname(b), LOCAL));
+/* Quem pode ser votado numa categoria, em ordem alfabética do nome. */
+export function candidatos(
+  times: { players: string[] }[] | undefined,
+  c: Categoria,
+  pos: (id: string) => string | undefined,
+  nome: (id: string) => string,
+  local = 'pt-BR'
+): string[] {
+  if (!times) return [];
+  let ids = times.flatMap(t => t.players);
+  if (c.pos) ids = ids.filter(id => pos(id) === c.pos);
+  return ids.sort((a, b) => nome(a).localeCompare(nome(b), local));
 }

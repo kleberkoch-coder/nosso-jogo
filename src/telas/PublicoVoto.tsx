@@ -2,14 +2,18 @@
    categoria; encerrada, mostra os vencedores. Baixa só quando o link de votação é aberto (KAN-183). Os botões usam
    data-a (pubVote, acoes/publico.js). */
 import { render } from 'preact';
-import { gname, grpAtivo, pname } from '../dominio/grupo.js';
-import { candidates, type Categoria } from '../dominio/votacao';
+import { gname, grpAtivo, pname, ppos, rodDoc } from '../dominio/grupo.js';
+import { candidatos, type Categoria, type Votacao } from '../dominio/votacao';
 import { LOCAL } from '../i18n/formatos.js';
 import { tp, tx } from '../i18n/index.js';
 import { S as estado } from '../nucleo/estado.js';
 import { $, fdate, main } from '../nucleo/util.js';
 import { myLocal } from './publico-rodada.js';
 import { DEMORA_MS } from '../nucleo/carga';
+
+/* Candidatos de uma categoria (regra em dominio/votacao.ts) com os dados da rodada. */
+const candidates = (v: Votacao, c: Categoria) =>
+  candidatos((rodDoc(v.rid) as { times?: { players: string[] }[] } | null)?.times, c, ppos, pname, LOCAL);
 
 const st = (): any => estado;
 type Vot = {

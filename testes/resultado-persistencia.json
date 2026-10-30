@@ -17,7 +17,7 @@
  },
  {
   "ok": true,
-  "teste": "CT-KAN-170-P05: jogador novo com nota, tipo, telefone e e-mail continua depois de recarregar ({'id': 'mvbfmauj0g6m6k', 'nota': 8.5, 'tipo': 'diarista', 'tel': '+5511987654321', 'mail': 'ze@clube.com.br'})"
+  "teste": "CT-KAN-170-P05: jogador novo com nota, tipo, telefone e e-mail continua depois de recarregar ({'id': 'mvv789wccnxtpp', 'nota': 8.5, 'tipo': 'diarista', 'tel': '+5511987654321', 'mail': 'ze@clube.com.br'})"
  },
  {
   "ok": true,
@@ -45,6 +45,14 @@
  },
  {
   "ok": true,
+  "teste": "CT-KAN-170-P22: controle de vagas, marca dos diaristas (4 de 4) e vagas abertas ({\"aberta\":true,\"max\":2}) continuam"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P22: diarista que entrou pelo link ocupa 1 vaga e continua depois de recarregar"
+ },
+ {
+  "ok": true,
   "teste": "CT-KAN-170-P12: times sorteados continuam (2 times)"
  },
  {
@@ -53,7 +61,27 @@
  },
  {
   "ok": true,
+  "teste": "CT-KAN-170-P13b: partida editada continua depois de recarregar (1 → 2, versão 1)"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P13c: artilharia lançada e corrigida continua depois de recarregar (2 → [3, 1])"
+ },
+ {
+  "ok": true,
   "teste": "CT-KAN-170-P14: lançamento do caixa continua depois de recarregar (1)"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P14: o total do caixa do mês (resumosCaixa) continua depois de recarregar"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P20: tipo isento e \"Recebe por jogo\" continuam, e o jogo aparece em A pagar"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P20: pagamento dos jogos continua e o jogo pago não volta para A pagar"
  },
  {
   "ok": true,
@@ -66,6 +94,10 @@
  {
   "ok": true,
   "teste": "CT-KAN-170-P15c: link de convite de administrador continua depois de recarregar"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P21: mínimo para o jogo (total e por posição) continua depois de recarregar"
  },
  {
   "ok": true,
@@ -82,6 +114,66 @@
  {
   "ok": true,
   "teste": "CT-KAN-170-P19: em outro navegador, depois de entrar de novo, tudo vem do banco ({'nome': 'Persistência FC 2', 'pos': True, 'moeda': 'EUR', 'jog': 17, 'sep': 2, 'pix': 'pix-persistencia@teste.com', 'pais': 'US'})"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P23: grupo dos EUA guarda 19:00–21:00 e 19:30 e mostra 7:00–9:00 PM depois de recarregar ({'f': {'id': 'mvv7azdu6yzg7l', 'dow': 1, 'ini': '19:00', 'fim': '21:00', 'place': ''}, 't': ['19:30']})"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P23: depois de sair e entrar de novo, continua 7:00–9:00 PM (19:00 no banco)"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P24: o grupo novo fica na lista de grupos ativos da conta, depois de recarregar"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P24: inativar grava o grupo inativo e tira da lista, depois de recarregar"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P24: reativar volta o grupo para a lista, depois de sair e entrar de novo"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P25: o convidado entra só com o dia a dia e na lista de convidados do grupo, depois de recarregar"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P25: a permissão liberada pelo organizador continua depois de recarregar"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P26: afastamento (motivo, início, até voltar) e \"não cobrar\" continuam depois de recarregar ({'aid': 'mvv7ceccskfnt6', 'a': {'pid': 'mvv7caf8q3d86d', 'mot': 'lesao', 'obs': 'cirurgia', 'de': '2026-09', 'ate': '', 'em': 1793378649756}, 'i': {'pid': 'mvv7caf8q3d86d', 'de': '2026-09', 'ate': ''}})"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P26: \"Voltou\" fecha o afastamento e a isenção no mês anterior, depois de sair e entrar (['2026-09', '2026-09'], esperado 2026-09)"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P27: o dia em que começa o mês da mensalidade (20, já na atual) continua depois de recarregar ([{'desde': '2026-10', 'dia': 20}])"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P27: dois meses de mensalidade num lançamento só viram dois lançamentos, depois de sair e entrar ([['2026-09', 85], ['2026-10', 85]])"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P28: \"Recebi\" no Quadro do ano grava a mensalidade e o resumo por jogador, e a célula segue Paga depois de sair e entrar (8500, [['2026-10', 85]], q-pago)"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P29: rateio, pagamento e encerramento continuam depois de sair e entrar (['Bola nova', {'mvv7di3fp32tu7': 10000, 'mvv7di3fpvvbye': 10000, 'mvv7di3f7vwcyl': 10000}, {'mvv7di3fp32tu7': 10000}, True, True], [['entrada', 'mvv7di3fp32tu7', 100]])"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P30: avaliação, as notas dadas e a nota atualizada no cadastro continuam depois de sair e entrar (8.5, ['8,5', '1'])"
+ },
+ {
+  "ok": true,
+  "teste": "CT-KAN-170-P31: a pessoa de fora, o valor dela e o pagamento continuam depois de sair e entrar (['Primo do Bruno', 7000, 7000], [['entrada', None, 'f_mvv7eq1s1hpq', 70]])"
  },
  {
   "ok": true,

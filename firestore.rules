@@ -546,6 +546,26 @@ service cloud.firestore {
             && request.resource.data.get('t', 0) is int;
           allow delete: if adminAtivo(gid);
         }
+
+        // KAN-222: auditoria. Cada toque no link grava, no mesmo lote do voto, um registro da troca com a hora do
+        // servidor (em == request.time, que o aparelho não consegue falsificar). Só administradores leem; ninguém
+        // altera; só o administrador apaga (ao excluir a votação). O registro tem de bater com o voto gravado junto.
+        match /trocas/{tid} {
+          allow read: if isMember(gid);
+          allow create: if signed()
+            && request.resource.data.keys().hasOnly(['u', 'pid', 'c', 'p', 'em'])
+            && request.resource.data.keys().hasAll(['u', 'pid', 'c', 'p', 'em'])
+            && request.resource.data.u == request.auth.uid
+            && request.resource.data.em == request.time
+            && idValido(request.resource.data.pid)
+            && idValido(request.resource.data.c)
+            && idValido(request.resource.data.p)
+            && grpAtivo(gid)
+            && get(/databases/$(database)/documents/grupos/$(gid)/votacoes/$(vid)).data.open == true
+            && getAfter(/databases/$(database)/documents/grupos/$(gid)/votacoes/$(vid)/votos/$(request.auth.uid)).data.get('v', {}).get(request.resource.data.c, '') == request.resource.data.p;
+          allow update: if false;
+          allow delete: if adminAtivo(gid);
+        }
       }
     }
   }

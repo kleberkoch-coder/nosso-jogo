@@ -86,6 +86,8 @@ const acoes = {
     const vid = S.vid,
       antes = S.vot[vid];
     Object.keys(S.votos).forEach(u => GB.del('votacoes/' + vid + '/votos/' + u));
+    /* KAN-222: as trocas (auditoria) saem junto. */
+    Object.keys(S.trocas || {}).forEach(t => GB.del('votacoes/' + vid + '/trocas/' + t));
     delete S.vot[vid];
     S.vid = null;
     return gravarVotacao(vid, antes, null);

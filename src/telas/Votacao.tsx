@@ -9,6 +9,7 @@ import { S as estado } from '../nucleo/estado.js';
 import { fdate } from '../nucleo/util.js';
 import { textoRodada } from '../ui/componentes';
 import { tally } from '../dominio/votacao';
+import { QuemVotou } from './QuemVotou';
 
 const st = (): any => estado;
 type Categoria = { id: string; name: string };
@@ -122,6 +123,7 @@ function VotacaoTela() {
       {v.cats.map(c => (
         <CategoriaResultado key={c.id} c={c} R={res[c.id] || { counts: {}, total: 0, winners: [] }} />
       ))}
+      <QuemVotou key={v.id} vid={v.id} cats={v.cats} votos={S.votos} trocas={S.trocas || {}} />
     </div>
   );
 }

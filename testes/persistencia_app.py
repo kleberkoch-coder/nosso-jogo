@@ -17,11 +17,39 @@ GITHUB = bool(os.environ.get('GITHUB_ACTIONS'))
 def _parou(tipo, valor, tb):
     import traceback
     ultimo = res[-1]['teste'][:80] if res else 'nenhum'
-    linha = traceback.extract_tb(tb)[-1].lineno if tb else '?'
-    msg = f'roteiro parou na linha {linha} ({tipo.__name__}: {str(valor).splitlines()[0][:200]}); último caso: {ultimo}'
+    # KAN-222: a linha é a deste roteiro (não a de dentro do Playwright), e vai junto o estado da última página aberta.
+    quadros = [f for f in traceback.extract_tb(tb) if f.filename.endswith('persistencia_app.py')] if tb else []
+    linha = quadros[-1].lineno if quadros else '?'
+    estado = ULTIMA_FALHA[0]
+    try:
+        if PAGINAS and not estado:
+            estado = PAGINAS[-1].evaluate("(()=>{const d=document.getElementById('dlg');return location.hash+' | janela: '+(d&&d.open?(d.innerText||'').replace(/\\s+/g,' ').slice(0,120):'fechada')+' | aviso: '+((document.getElementById('toast')||{}).innerText||'').slice(0,80)})()")
+    except Exception:
+        pass
+    msg = f'roteiro parou na linha {linha} ({tipo.__name__}: {str(valor).splitlines()[0][:200]}); último caso: {ultimo}; tela: {estado}'
     print(('::error::Gravação: ' if GITHUB else 'ERRO    ') + msg, flush=True)
     sys.__excepthook__(tipo, valor, tb)
+PAGINAS = []
+ULTIMA_FALHA = ['']
 sys.excepthook = _parou
+# KAN-222: quando um clique ou uma espera falha, anota o estado da tela na hora (depois o navegador já fechou).
+from playwright.sync_api import Page as _Pagina
+def _com_estado(nome):
+    orig = getattr(_Pagina, nome)
+    def f(self, *a, **k):
+        try:
+            return orig(self, *a, **k)
+        except Exception:
+            try:
+                e = self.evaluate("(()=>{const d=document.getElementById('dlg');return location.hash+' | janela: '+(d&&d.open?(d.innerText||'').replace(/\\s+/g,' ').slice(0,160):'fechada')+' | aviso: '+((document.getElementById('toast')||{}).innerText||'').slice(0,80)})()")
+                # Guarda para a anotação do fim (_parou): esperas que falham de propósito (ex.: confirmação opcional) não poluem.
+                ULTIMA_FALHA[0] = f'{nome}({str(a[0])[:60] if a else ""}) falhou; tela: {e}'
+            except Exception:
+                pass
+            raise
+    setattr(_Pagina, nome, f)
+for _n in ('click', 'wait_for_selector', 'wait_for_function', 'fill'):
+    _com_estado(_n)
 res = []; errs = []
 
 def ok(cond, msg):
@@ -70,7 +98,10 @@ J = lambda pg, js, arg=None: pg.evaluate(js, arg) if arg is not None else pg.eva
 
 with sync_playwright() as pw:
     b = pw.chromium.launch()
-    novo = lambda: b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block', timezone_id='America/Sao_Paulo')
+    def novo():
+        c = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block', timezone_id='America/Sao_Paulo')
+        c.on('page', lambda p: PAGINAS.append(p))
+        return c
     ctx = novo(); pg = ctx.new_page()
     pg.on('pageerror', lambda e: errs.append(str(e)))
 
@@ -256,6 +287,13 @@ with sync_playwright() as pw:
     pvp.evaluate("window.__njPendentes ? window.__njPendentes(10000) : true"); pvp.reload(); pvp.wait_for_timeout(2000)
     ok('Voto registrado' in pvp.inner_text('main'), 'CT-KAN-170-P15b: voto pelo link da votação continua depois de recarregar')
     pv.close() if pv else pvp.close()
+    # P15b (KAN-222): a troca do voto (votacoes/{vid}/trocas) chega ao administrador com a hora do servidor
+    pg.reload(); pronto(pg, 'votacao'); pg.wait_for_function("S.trocas && Object.keys(S.trocas).length >= 1", timeout=20000)
+    em15 = J(pg, "Object.values(S.trocas).map(t=>t.em&&(t.em.toMillis?t.em.toMillis():t.em))[0]")
+    pg.click('#quemVotou > summary'); pg.wait_for_selector('#quemVotou .aud-linha', timeout=10000)
+    t15 = pg.inner_text('#quemVotou')
+    ok(isinstance(em15, (int, float)) and em15 > 0 and 'Quem votou (1)' in t15 and 'hora do aparelho' not in t15,
+       f'CT-KAN-222-P15b: a troca do voto fica gravada com a hora do servidor e aparece em "Quem votou" ({em15}, {t15[:80]!r})')
 
     # P15c convite de administrador (privado/convite)
     pronto(pg, 'grupo'); pg.click('[data-a=inviteLink]'); pg.wait_for_timeout(800)
@@ -540,11 +578,14 @@ with sync_playwright() as pw:
     pronto(p29, 'jogadores'); p29.click('[data-a=seed]'); p29.wait_for_timeout(1500)
     gravou(p29); pronto(p29, 'caixa'); p29.wait_for_function("S.loaded.pc", timeout=20000)
     p29.click('[data-a=ratNovo]'); p29.wait_for_selector('#rtn', timeout=10000)
-    p29.fill('#rtn', 'Bola nova'); p29.fill('#rtv', '300')
+    p29.fill('#rtn', 'Bola nova')
     ids29 = J(p29, "[...document.querySelectorAll('#rtPart .rtp')].map(x=>x.value)")[:3]
     for pid in ids29:
         p29.locator(f'#rtPart .rat-linha:has(.rtp[value="{pid}"]) .chk-linha span').click(); p29.wait_for_timeout(60)
-    p29.click('#dlg [data-a=ratSalvar]'); p29.wait_for_timeout(1000)
+    # KAN-222: o valor entra por último e o roteiro confere que ele ficou (no emulador, às vezes o valor digitado
+    # antes de marcar os participantes não ficava, e o rateio não era criado: "Informe o valor").
+    p29.fill('#rtv', '300'); p29.wait_for_function("document.getElementById('rtv').value === '300'", timeout=5000); p29.wait_for_timeout(200)
+    p29.click('#dlg [data-a=ratSalvar]'); p29.wait_for_function("Object.keys((S.pc||{}).rat||{}).length >= 1", timeout=15000)
     rid29 = J(p29, "Object.keys((S.pc||{}).rat||{})[0]")
     p29.click(f'#rat-{rid29} [data-a=ratRecebi][data-p="{ids29[0]}"]'); p29.wait_for_timeout(1000)
     p29.click(f'#rat-{rid29} [data-a=ratEncerrar]'); p29.wait_for_timeout(300)

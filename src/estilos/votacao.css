@@ -12,3 +12,54 @@
   height: 100%;
   background: var(--brand);
 }
+
+/* "Quem votou" (KAN-222): auditoria da votação, só para administradores. */
+.aud-painel > summary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-height: var(--touch-min);
+  cursor: pointer;
+  list-style-position: inside;
+}
+.aud-painel > summary h3 {
+  display: inline;
+  margin: 0;
+}
+.aud-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.aud-lista > li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.aud-lista > li:last-child {
+  border-bottom: 0;
+}
+.aud-topo {
+  gap: 4px 8px;
+  flex-wrap: wrap;
+}
+.aud-topo .pn {
+  white-space: normal;
+  overflow: visible;
+}
+.aud-hora {
+  white-space: nowrap;
+}
+.aud-votos,
+.aud-trocas {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  line-height: 1.6;
+}
+.aud-lista .btn.aud-ver {
+  margin-top: 4px;
+  min-height: var(--touch-min);
+}
+.aud-repetido {
+  white-space: nowrap;
+}

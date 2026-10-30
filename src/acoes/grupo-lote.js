@@ -91,10 +91,13 @@ const acoes = {
     changed();
     return p;
   },
-  newGroup: () => {
+  newGroup: el => {
     /* KAN-220: depois do cadastro, o "Novo grupo" automático pode ser pedido duas vezes enquanto esta parte baixa;
        se a janela já está aberta, não abre de novo (abrir de novo apagaria o que a pessoa já digitou). */
     if (dlg.open && $('#dlg [data-a=createGroup]')) return;
+    /* KAN-222 (achado no roteiro de gravação): o automático só abre se a pessoa ainda está na página inicial;
+       se ela já criou o grupo (ou abriu outra tela) enquanto esta parte baixava, não abre por cima. */
+    if (el && el.dataset && el.dataset.auto && (S.route.n !== 'home' || dlg.open)) return;
     if (avisoLimiteGrupos()) return; // KAN-119: o plano já está cheio de grupos ativos
     janelaGrupo(null);
     return carregarForm().then(m => {

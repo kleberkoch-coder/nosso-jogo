@@ -24,6 +24,7 @@
   "avaliacoes": ["P30"],
   "avaliacoes/notas": ["P30"],
   "votacoes/votos": ["P15b"],
+  "votacoes/trocas": ["P15b"],
   "privado/convite": ["P15c"],
   "membros": ["P25", "fora: forma de entrar do administrador (via), gravada sozinha ao entrar; conferida em testes_app.py (CT-KAN-98-01) e nas regras do Firebase"],
   "privado/migracao": ["fora: marca de migração gravada sozinha uma vez por grupo; conferida em testes_app.py (CT-KAN-86) e nas regras do Firebase"]

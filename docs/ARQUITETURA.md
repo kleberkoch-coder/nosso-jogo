@@ -199,6 +199,14 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D37. Auditoria da votação: trocas com a hora do servidor (30 out. 2026, pelada-v86, KAN-222)
+- **Onde fica:** `votacoes/{vid}/trocas/{id}` = `{u, pid, c, p, em}`: o aparelho (`u`), o nome escolhido (`pid`), a categoria (`c`), o escolhido (`p`) e a hora do servidor (`em`). Gravado no mesmo lote do voto (`votos/{u}`), a cada toque no link. O voto em si não mudou, então aparelhos com a versão antiga do app continuam votando (só sem a troca).
+- **Hora do servidor:** nova operação `op.agora()` (`nucleo/backend.js`), que vira `serverTimestamp` no Firebase e a hora do aparelho no modo demonstração. Funciona sem internet: o voto e a troca ficam na fila juntos e recebem a hora quando chegam ao servidor.
+- **Regras do Firebase (mudam):** criar só com `em == request.time` (hora do servidor), com a votação aberta, pelo próprio aparelho, com os campos certos e batendo com o voto gravado junto (`getAfter`). Ninguém altera; só o administrador apaga (ao excluir a votação). Leitura: só membros do grupo.
+- **Tela:** `telas/QuemVotou.tsx`, com a regra pura `auditoria` em `dominio/votacao.ts` (testada). O que está aberto fica guardado fora do componente, porque a aba se desenha de novo a cada voto que chega.
+- **Limite conhecido (o mesmo de antes):** o nome é o que a pessoa escolhe (o jogador não tem conta). A auditoria mostra o que cada aparelho declarou e quando, e marca o mesmo nome em mais de um aparelho.
+- **Defeito achado pelo roteiro de gravação no GitHub (e corrigido):** o "Novo grupo" automático depois do cadastro podia abrir tarde, por cima do grupo recém-criado (as ações de grupo baixam sob demanda desde a v84). Agora o automático só abre se a pessoa ainda está na página inicial e sem janela aberta.
+
 ### D36. Sorteio e votação com teste próprio e roteiro em 3 partes (30 out. 2026, pelada-v85, KAN-220, primeira parte)
 - **Regras puras:** o sorteio saiu para `dominio/sorteio-regra.ts`, que recebe tudo o que precisa (nota, posição, pares separados, histórico, quanto variar e o sorteador) e não lê a memória do app; `dominio/sorteio.js` só liga a regra aos dados do grupo. A votação (`dominio/votacao.ts`) também ficou pura: a contagem (`tally`) e os candidatos (`candidatos`, que recebe os times e como achar posição e nome). Nada mudou no resultado: o algoritmo é o mesmo, linha a linha.
 - **Testes:** `testes/regras/sorteio.test.mjs` (10 casos, com sorteador fixo para dar sempre o mesmo resultado) e `testes/regras/votacao.test.mjs` (5 casos). Regras de negócio com teste próprio: **5 de 5** (teto em `docs/divida.json`).

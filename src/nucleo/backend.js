@@ -202,7 +202,9 @@ function fsCampos(campos) {
               ? FV.delete()
               : v && v.$op === 'somar'
                 ? FV.increment(v.n)
-                : v;
+                : v && v.$op === 'agora'
+                  ? FV.serverTimestamp()
+                  : v;
     const ps = k.split('.');
     let a = o;
     for (let i = 0; i < ps.length - 1; i++) {
@@ -226,6 +228,8 @@ const op = {
   remover: v => ({ $op: 'remover', v }),
   apagar: () => ({ $op: 'apagar' }),
   somar: n => ({ $op: 'somar', n }),
+  /* KAN-222: a hora do servidor (não a do aparelho). Ao ler, chega como Timestamp do Firebase (ver emMs). */
+  agora: () => ({ $op: 'agora' }),
 };
 const igual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 /* Modo demonstração: recusa o que o Firestore recusaria (lista dentro de lista, KAN-167), para os testes pegarem. */
@@ -287,6 +291,7 @@ function LocalBackend() {
         a[f] = (a[f] || []).filter(y => !v.v.some(x => igual(x, y)));
       } else if (v && v.$op === 'apagar') delete a[f];
       else if (v && v.$op === 'somar') a[f] = (a[f] || 0) + v.n;
+      else if (v && v.$op === 'agora') a[f] = Date.now();
       else a[f] = cl(v);
     }
     store[p] = d;

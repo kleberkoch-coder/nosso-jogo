@@ -16,6 +16,7 @@ import {
   getDoc,
   getDocs,
   increment,
+  serverTimestamp,
   setDoc,
   updateDoc,
   writeBatch,
@@ -252,6 +253,61 @@ describe('votos pelo link (KAN-76)', () => {
     await assertFails(
       setDoc(doc(db.anon(), V + '/votos/anon1'), { pid: 'j1', v: { best: 'j2', mvp: 'a|'.repeat(1100) + 'a' }, t: 1 })
     );
+  });
+});
+
+describe('auditoria da votação: trocas com a hora do servidor (KAN-222)', () => {
+  const V = G + '/votacoes/v1';
+  const semRegras = fn => env.withSecurityRulesDisabled(async ctx => fn(ctx.firestore()));
+  // Voto e troca no mesmo lote, como o app grava
+  const votar = (f, escolha, troca = {}) => {
+    const b = writeBatch(f);
+    b.set(doc(f, V + '/votos/anon1'), { pid: 'j1', v: { mvp: escolha }, t: Date.now() });
+    b.set(
+      doc(f, V + '/trocas/t1'),
+      Object.assign({ u: 'anon1', pid: 'j1', c: 'mvp', p: escolha, em: serverTimestamp() }, troca)
+    );
+    return b.commit();
+  };
+  beforeEach(() =>
+    semRegras(async f => {
+      await setDoc(doc(f, V), { open: true, cats: [{ id: 'mvp' }] });
+      await deleteDoc(doc(f, V + '/trocas/t1'));
+      await deleteDoc(doc(f, V + '/votos/anon1'));
+    })
+  );
+  test('voto com a troca no mesmo lote, com a hora do servidor, é aceito', async () => {
+    await assertSucceeds(votar(db.anon(), 'j2'));
+  });
+  test('troca com hora do aparelho (não a do servidor) é recusada', async () => {
+    await assertFails(votar(db.anon(), 'j2', { em: Date.now() }));
+  });
+  test('troca que não bate com o voto gravado junto é recusada', async () => {
+    await assertFails(votar(db.anon(), 'j2', { p: 'j3' }));
+  });
+  test('troca em nome de outro aparelho ou com campo a mais é recusada', async () => {
+    await assertFails(votar(db.anon(), 'j2', { u: 'outroAparelho' }));
+    await assertFails(votar(db.anon(), 'j2', { extra: 1 }));
+  });
+  test('com a votação encerrada, a troca é recusada', async () => {
+    await semRegras(f => setDoc(doc(f, V), { open: false, cats: [{ id: 'mvp' }] }));
+    await assertFails(votar(db.anon(), 'j2'));
+  });
+  test('ninguém altera uma troca; só o administrador apaga', async () => {
+    await assertSucceeds(votar(db.anon(), 'j2'));
+    await assertFails(updateDoc(doc(db.anon(), V + '/trocas/t1'), { p: 'j3' }));
+    await assertFails(updateDoc(doc(db.adm(), V + '/trocas/t1'), { p: 'j3' }));
+    await assertFails(deleteDoc(doc(db.anon(), V + '/trocas/t1')));
+    await assertSucceeds(deleteDoc(doc(db.adm(), V + '/trocas/t1')));
+  });
+  test('só administradores do grupo leem as trocas e os votos de todos', async () => {
+    await assertSucceeds(votar(db.anon(), 'j2'));
+    await assertSucceeds(getDoc(doc(db.adm(), V + '/trocas/t1')));
+    await assertSucceeds(getDocs(collection(db.adm(), V + '/votos')));
+    await assertFails(getDoc(doc(db.anon(), V + '/trocas/t1')));
+    await assertFails(getDoc(doc(db.outro(), V + '/trocas/t1')));
+    await assertFails(getDocs(collection(db.anon(), V + '/votos')));
+    await assertFails(getDocs(collection(db.outro(), V + '/votos')));
   });
 });
 

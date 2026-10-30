@@ -11,10 +11,29 @@ import { acoes as plano } from './acoes/plano';
 import { acoes as afastamento } from './acoes/afastamento';
 import { acoes as avaliacao } from './acoes/avaliacao';
 import { ACT } from './acoes.js';
+import { tx } from './i18n/index.js';
+import { main, toast } from './nucleo/util.js';
+import { changed } from './ui/render.js';
+
+/* KAN-217: a tela do convite para administrar baixa só quando alguém abre um convite. */
+let convite = null;
+export function renderInvite() {
+  if (convite) return convite.renderInvite();
+  const d = document.createElement('div');
+  d.className = 'empty muted';
+  d.textContent = tx('comum.carregando');
+  main.replaceChildren(d);
+  import('./telas/convite.js').then(
+    m => {
+      convite = m;
+      changed();
+    },
+    () => toast(tx('comum.naoCarregouTitulo') + '. ' + tx('comum.naoCarregou'))
+  );
+}
 
 export { inicioAPagar } from './dominio/caixa.js';
 export { inicioDaJanela } from './dominio/caixa-regras';
-export { renderInvite } from './telas/convite.js';
 export { montarHome, vHome } from './telas/Grupos';
 export { guardarOrdemJogadores, montarJogadores, vJogadores } from './telas/Jogadores';
 export { montarRodada, vRodada } from './telas/Rodada';

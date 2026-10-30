@@ -16,8 +16,21 @@ if (!VERSAO) throw new Error('Não achei o VERSION em site/sw.js.');
    o código comum vai em chunks/ e a parte de gestão (src/admin.js) só baixa quando alguém entra com conta.
    Os nomes levam um código do conteúdo: versão nova = arquivo novo, sem misturar com cópia antiga guardada no celular.
    Cópia legível: um arquivo só, para os agentes lerem. */
+/* KAN-217: estilos das partes sob demanda (src/estilos/<parte>.css importados com `with { type: 'text' }`) entram
+   como texto no pedaço da própria parte, já compactados. */
+const cssComoTexto = minify => ({
+  name: 'css-como-texto',
+  setup(b) {
+    b.onLoad({ filter: /\.css$/ }, async a => {
+      if (!a.with || a.with.type !== 'text') return undefined;
+      const r = await esbuild.transform(fs.readFileSync(a.path, 'utf8'), { loader: 'css', minify });
+      return { contents: r.code, loader: 'text' };
+    });
+  },
+});
 const montar = minify =>
   esbuild.build({
+    plugins: [cssComoTexto(minify)],
     entryPoints: ['src/main.js'],
     bundle: true,
     format: minify ? 'esm' : 'iife',
@@ -274,7 +287,9 @@ console.log(
 // Desde a v46 o total vai até 90 KB (era 85 desde a v43): funcionalidades de gestão (importar planilha, componentes), que só quem administra baixa (D7).
 // Desde a v47, 95 KB: a tabela de países (telefone, moeda, formato e fusos de 44 países, KAN-162), que vem só com a gestão (D7).
 // Desde a v53 (KAN-175), os 95 KB medem o que baixa ao abrir a gestão; o que baixa só ao abrir uma aba tem até 15 KB cada.
-const LIMITE = 95 * 1024,
+// Desde a v82 (KAN-217), 90 KB: o CSS de cada parte sob demanda chega com ela, e o formulário do grupo e o convite
+// baixam só quando abertos. Folga para as próximas entregas sem voltar a crescer (D33).
+const LIMITE = 90 * 1024,
   LIMITE_LINK = 50 * 1024,
   LIMITE_DEMANDA = 15 * 1024;
 if (gzAbrir > LIMITE) {

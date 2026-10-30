@@ -1,0 +1,11 @@
+/* Estilos que só a parte "afastamento-lote" usa (KAN-217): chegam com ela, não com o link nem com a gestão (ui/estilo.ts). */
+.af-meses {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 10px;
+}
+@media (max-width: 400px) {
+  .af-meses {
+    grid-template-columns: 1fr;
+  }
+}

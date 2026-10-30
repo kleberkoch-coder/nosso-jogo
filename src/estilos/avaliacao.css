@@ -1,0 +1,9 @@
+/* Estilos que só a parte "avaliacao-lote" usa (KAN-217): chegam com ela, não com o link nem com a gestão (ui/estilo.ts). */
+.aval-aplicar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.aval-nova {
+  width: 76px;
+}

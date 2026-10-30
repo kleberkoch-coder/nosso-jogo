@@ -2,6 +2,8 @@
    O afastamento fica em privado/afast (permissão de Elenco); "não cobrar" fica em privado/caixa.afIsen
    (permissão de Caixa e Plano A), gravados juntos num lote. Baixam junto com a janela, na primeira vez que
    uma delas é usada (acoes/afastamento.ts só aponta para cá), para a gestão abrir leve. */
+import estilo from '../estilos/afastamento.css' with { type: 'text' };
+import { usarEstilo } from '../ui/estilo';
 import { erroAfastamento, fimAoVoltar, type Afastamento, type Motivo } from '../dominio/afastamento';
 import { ptipo } from '../dominio/caixa.js';
 import { pname, posso, recurso } from '../dominio/grupo.js';
@@ -16,6 +18,7 @@ import { $, toast } from '../nucleo/util.js';
 import { montarAfastamento } from '../ui/AfastamentoJanela';
 import { closeDlg, confirmou, dlg, openDlg } from '../ui/dialogos.js';
 import { changed } from '../ui/render.js';
+usarEstilo('afastamento', estilo);
 
 const st = (): any => estado;
 type El = HTMLElement & { dataset: DOMStringMap };

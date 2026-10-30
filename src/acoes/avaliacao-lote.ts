@@ -1,6 +1,8 @@
 /* Ações da avaliação por link no app (KAN-214): abrir a janela, criar, compartilhar, as minhas notas, resultado,
    atualizar o cadastro, encerrar e apagar. Baixam junto com a janela, na primeira vez que uma delas é usada
    (acoes/avaliacao.ts só aponta para cá). Tudo exige a permissão de Notas. */
+import estilo from '../estilos/avaliacao.css' with { type: 'text' };
+import { usarEstilo } from '../ui/estilo';
 import { erroAvaliacao, fimDoDia, type Avaliacao, type Resposta } from '../dominio/avaliacao';
 import { gname, posso, setLvl } from '../dominio/grupo.js';
 import { tx } from '../i18n/index.js';
@@ -14,6 +16,7 @@ import { shareDlg } from '../ui/Compartilhar';
 import { montarAvaliacao, rascunhoAplicar, rascunhoNova, type Tela } from '../ui/AvaliacaoJanela';
 import { confirmou, dlg, openDlg } from '../ui/dialogos.js';
 import { acoes as envio } from './avaliacao-envio';
+usarEstilo('avaliacao', estilo);
 
 const bk = (): any => (banco as any).B;
 const st = (): any => estado;

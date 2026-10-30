@@ -15,7 +15,6 @@ import { GB, S, clean, w } from '../nucleo/estado.js';
 import { linkConvite } from '../nucleo/links.js';
 import { $, cl, esc, toast, uid } from '../nucleo/util.js';
 import { upMyGroup } from '../rotas.js';
-import { formAberto, montarGrupoForm, readGroupForm } from '../telas/GrupoForm';
 import { closeDlg, confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
 import { changed } from '../ui/render.js';
 import { LOCAL } from '../i18n/formatos.js';
@@ -48,6 +47,20 @@ const gravarGrupo = (gid, o) =>
     { tipo: 'set', p: 'grupos/' + gid, o },
     { tipo: 'patch', p: 'contas/' + S.user.uid, o: { ng: op.somar(1), ult: gid, ativos: op.uniao([gid]) } },
   ]);
+/* KAN-217: o formulário do grupo (telas/GrupoForm.tsx, com país, moeda, fuso e dias fixos) baixa só quando
+   "Novo grupo" ou "Editar grupo" abre. Enquanto a janela está aberta, o módulo já está aqui (form). */
+let form = null;
+const carregarForm = () =>
+  import('../telas/GrupoForm').then(
+    m => (form = m),
+    () => {
+      toast(tx('comum.naoCarregouTitulo') + '. ' + tx('comum.naoCarregou'));
+      return null;
+    }
+  );
+const formAberto = () => form && form.formAberto();
+const lerForm = gid => (form ? form.readGroupForm(gid) : null);
+
 const acoes = {
   /* País da conta (KAN-162): vale para os grupos novos; cada grupo tem o seu em Editar grupo. */
   contaPais: () => {
@@ -73,21 +86,26 @@ const acoes = {
     openDlg(
       `<h3>Novo grupo</h3><div id="ngRaiz"></div><div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="createGroup">Criar grupo</button></div>`
     );
-    montarGrupoForm({}, false);
-    setTimeout(() => $('#ngn')?.focus(), 50);
+    return carregarForm().then(m => {
+      if (!m || !$('#ngRaiz')) return;
+      m.montarGrupoForm({}, false);
+      setTimeout(() => $('#ngn')?.focus(), 50);
+    });
   },
   editGroup: () => {
     openDlg(
       `<h3>Editar grupo</h3><p class="small muted" style="margin-top:-6px">Criado em ${fdia(S.app.createdAt)}</p><div id="ngRaiz"></div><div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveGroup">Salvar</button></div>`
     );
-    montarGrupoForm(S.app, true);
+    return carregarForm().then(m => {
+      if (m && $('#ngRaiz')) m.montarGrupoForm(S.app, true);
+    });
   },
   /* Escolhas dentro do formulário do grupo (componente telas/GrupoForm.tsx). */
   pickFreq: el => formAberto()?.freq(el.dataset.v),
   addSched: () => formAberto()?.maisDia(),
   rmSched: el => formAberto()?.menosDia(el),
   saveGroup: el => {
-    const g = readGroupForm(S.gid);
+    const g = lerForm(S.gid);
     if (!g) return;
     const wasFix = fixos()
         .map(x => x.dow + '|' + x.ini)
@@ -312,7 +330,7 @@ const acoes = {
   },
   pickSport: el => formAberto()?.esporte(el.dataset.v),
   createGroup: async el => {
-    const g = readGroupForm(null);
+    const g = lerForm(null);
     if (!g) return;
     if (avisoLimiteGrupos()) return;
     const lg = await limiteGrupos();

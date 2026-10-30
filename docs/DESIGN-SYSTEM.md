@@ -6,7 +6,7 @@
 - os componentes com prévia nos dois temas (todos os que existem no app; conferido na pelada-v75, KAN-196);
 - as seções Acessibilidade e Como evolui.
 
-**No app:** os tokens são variáveis CSS com o mesmo nome no começo de `src/estilos/app.css` (no app montado, ficam no `<style>` do `index.html`) (`--primary`, `--field-border`, `--in-fill`…). O tema escuro vale para `prefers-color-scheme: dark` (sem `data-theme="light"`) e para `[data-theme="dark"]`. `--pitch-2` continua só na página de apresentação (faixa de esportes e marca).
+**No app:** os tokens são variáveis CSS com o mesmo nome no começo de `src/estilos/app.css` (no app montado, ficam no `<style>` do `index.html`; desde a pelada-v82, o estilo que só uma parte sob demanda usa fica em `src/estilos/<parte>.css` e chega com ela, KAN-217) (`--primary`, `--field-border`, `--in-fill`…). O tema escuro vale para `prefers-color-scheme: dark` (sem `data-theme="light"`) e para `[data-theme="dark"]`. `--pitch-2` continua só na página de apresentação (faixa de esportes e marca).
 
 ## Identidade
 Campo e colete em tons suaves:

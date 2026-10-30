@@ -1,0 +1,17 @@
+/* Estilos que só a parte "PlanosJanela" usa (KAN-217): chegam com ela, não com o link nem com a gestão (ui/estilo.ts). */
+.planos-tbl th.atual {
+  color: var(--in);
+}
+.planos-tbl td,
+.planos-tbl th {
+  padding: 7px 4px;
+  white-space: normal;
+}
+.planos-tbl td:first-child {
+  text-align: left;
+}
+.planos-tbl td:not(:first-child),
+.planos-tbl th:not(:first-child) {
+  text-align: center;
+  width: 4.2em;
+}

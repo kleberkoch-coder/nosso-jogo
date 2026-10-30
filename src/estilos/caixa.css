@@ -1,0 +1,138 @@
+/* Estilos que só a parte "caixa" usa (KAN-217): chegam com ela, não com o link nem com a gestão (ui/estilo.ts). */
+/* KAN-209: ciclo da mensalidade, meses no Lançar e "Em atraso" no Caixa */
+.meses-grade {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 12px;
+}
+.meses-grade legend {
+  grid-column: 1 / -1;
+}
+.chk-lista.meses-grade .chk-linha + .chk-linha {
+  border-top: 0;
+}
+.meses-grade .chk-linha {
+  border-bottom: 1px solid var(--line);
+}
+.ciclo-linha {
+  margin: 4px 0 0;
+}
+.atraso-tit {
+  margin: 14px 0 0;
+  font: 700 15px var(--display);
+  color: var(--out);
+}
+/* KAN-212: Quadro do ano (mensalistas × 12 meses). A tabela rola de lado dentro do painel; a coluna do nome fica parada. */
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.quadro-painel > summary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-height: var(--touch-min);
+  cursor: pointer;
+  list-style-position: inside;
+}
+.quadro-painel > summary h3 {
+  display: inline;
+  margin: 0;
+}
+.quadro-ano {
+  justify-content: center;
+  gap: 16px;
+  margin: 8px 0;
+}
+.quadro-ano b {
+  font: 700 18px var(--display);
+  min-width: 48px;
+  text-align: center;
+}
+.quadro-tab thead th.q-hoje {
+  color: var(--ink);
+  box-shadow: inset 0 -3px 0 var(--brand);
+}
+.q-conta {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--out-soft);
+  color: var(--out);
+  font-size: 12px;
+}
+.q-pago {
+  background: var(--in-soft);
+  color: var(--in);
+  font-weight: 700;
+  font-size: 16px;
+}
+.q-btn {
+  min-height: var(--touch-min);
+  width: 100%;
+  border: 1px solid var(--out);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--out);
+  font: 600 12px var(--body);
+  cursor: pointer;
+}
+.q-total {
+  font-size: 12px;
+}
+.quadro-legenda {
+  margin: 8px 0 0;
+}
+/* KAN-213: rateios (vaquinhas) no Caixa e a janela Novo rateio */
+.rat-nome {
+  margin: 0;
+}
+.rat-resumo {
+  margin: 4px 0 0;
+}
+.rat-falta {
+  color: var(--out);
+  white-space: nowrap;
+}
+.rat-sub {
+  margin: 12px 0 0;
+  font: 700 15px var(--display);
+}
+.rat-pagaram {
+  margin-top: 8px;
+}
+.rat-pagaram > summary,
+.rat-fechados > summary {
+  min-height: var(--touch-min);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.rat-atalhos {
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.rat-linha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.rat-linha .chk-linha {
+  flex: 1;
+  min-width: 0;
+}
+.rat-linha .chk-linha {
+  min-height: var(--touch-min);
+}
+.rat-linha .rat-valor {
+  width: 108px;
+  min-height: var(--touch-min);
+  flex: none;
+}

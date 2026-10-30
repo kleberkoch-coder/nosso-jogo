@@ -10,11 +10,6 @@ export default {
   'regiao.contaAjuda': 'Vale para os grupos que você criar daqui em diante. Cada grupo tem o seu país em Editar grupo.',
   'regiao.contaSalvo': 'País da conta atualizado.',
   'regiao.pais': 'País',
-  'regiao.moeda': 'Moeda',
-  'regiao.fuso': 'Fuso horário',
-  'regiao.titulo': 'País, moeda e fuso horário',
-  'regiao.grupoAjuda':
-    'Definem o formato das datas e dos valores, o código do telefone dos jogadores e a hora em que cada jogo termina.',
   'regiao.moedaTitulo': 'Trocar a moeda do grupo?',
   'regiao.moedaTexto':
     'Os valores já lançados no caixa não são convertidos: o que foi lançado em {antes} passa a aparecer em {depois}.',
@@ -117,33 +112,8 @@ export default {
   'sorteio.reservas.um': '1 reserva',
   'sorteio.reservas.outros': '{n} reservas',
   'grupo.porTime': 'Jogadores por time',
-  'grupo.diaSemana': 'Dia da semana',
-  'grupo.inicio': 'Início',
-  'grupo.termino': 'Término',
-  'grupo.terminoOpcional': 'Término (opcional)',
-  'grupo.deixeUmDia': 'Deixe pelo menos um dia, ou marque o grupo como esporádico.',
-  'grupo.removerDia': 'Remover dia',
-  'grupo.localOpcional': 'Local (opcional)',
-  'grupo.nome': 'Nome do grupo',
-  'grupo.nomeExemplo': 'Ex.: Futebol de Segunda',
-  'grupo.frequencia': 'Com que frequência vocês jogam?',
-  'grupo.frequente': 'Frequente',
   'grupo.esporadico': 'Esporádico',
-  'grupo.frequenteAjuda':
-    'Dias e horários fixos toda semana. A próxima rodada se cria sozinha e o link de confirmação é sempre o mesmo.',
-  'grupo.esporadicoAjuda': 'Só rola de vez em quando. Você cria cada rodada quando marcar o jogo.',
   'grupo.diasHorarios': 'Dias e horários',
-  'grupo.outroDia': '+ Adicionar outro dia',
-  'grupo.esporte': 'Esporte',
-  'grupo.qualEsporte': 'Qual esporte?',
-  'grupo.qualEsporteExemplo': 'Ex.: Pickleball',
-  'grupo.mudarEsporte':
-    'Mudar o esporte troca posições, pontuação e categorias de votação. Revise as posições dos jogadores depois.',
-  'grupo.semNome': 'Dê um nome ao grupo.',
-  'grupo.nomeRepetido': 'Você já tem um grupo com esse nome. Escolha outro para não confundir.',
-  'grupo.semEsporte': 'Diga qual é o esporte.',
-  'grupo.semInicio': 'Informe o horário de início de cada dia.',
-  'grupo.horarioRepetido': 'Há dois horários iguais no mesmo dia.',
   /* página inicial: Meus grupos */
   'inicio.bemVindo': 'Bem-vindo!',
   'inicio.primeiro':
@@ -168,9 +138,6 @@ export default {
   'grupo.diasTitulo': 'Mudar os dias fixos?',
   'grupo.diasTexto': 'A confirmação da próxima rodada fixa começa do zero.',
   'grupo.diasAcao': 'Mudar dias',
-  'grupo.porTimeAjuda':
-    'Padrão de {esporte}: {n}. Use 2 para jogar em duplas. No sorteio, quem passar desse número fica como reserva.',
-  'grupo.porTimeInvalido': 'Informe de 1 a 30 jogadores por time.',
   'porTime.botao': '+ Pôr no time',
   'porTime.titulo': 'Pôr no time {time}',
   'porTime.ajuda': 'A pessoa entra direto neste time e já fica confirmada na lista.',
@@ -352,14 +319,6 @@ export default {
   'plano.escolher': 'Escolher grupos',
   'plano.limiteGrupos': 'Seu plano permite {grupos}. Para criar ou reativar outro, inative um grupo ou mude de plano.',
   // Administradores convidados por plano (KAN-204)
-  'convite.cheioTitulo': 'Este grupo já tem todos os administradores do plano',
-  'convite.cheioTexto.um':
-    'O plano de {grupo} permite 1 administrador convidado, e a vaga já está ocupada. Peça ao organizador para liberar uma vaga.',
-  'convite.cheioTexto.outros':
-    'O plano de {grupo} permite {n} administradores convidados, e as vagas já estão ocupadas. Peça ao organizador para liberar uma vaga.',
-  'convite.meusGrupos': 'Meus grupos',
-  'convite.aoAceitar':
-    'Ao aceitar, você passa a cuidar da presença, do sorteio e do placar deste grupo junto com o organizador. Ele escolhe se você também cuida do caixa, das notas, do elenco e das configurações.',
   'plano.limiteAdmins.um':
     'Seu plano permite 1 administrador convidado. Para convidar outro, remova um administrador ou mude de plano.',
   'plano.limiteAdmins.outros':

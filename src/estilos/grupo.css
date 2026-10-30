@@ -1,0 +1,43 @@
+/* Estilos que só a parte "grupo" usa (KAN-217): chegam com ela, não com o link nem com a gestão (ui/estilo.ts). */
+.stat {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.stat.on {
+  background: var(--in-soft);
+  color: var(--in);
+}
+.stat.off {
+  background: var(--out-soft);
+  color: var(--out);
+}
+.theme-seg {
+  display: flex;
+  border: 1px solid var(--field-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.theme-seg button {
+  flex: 1;
+  min-height: var(--touch-min);
+  border: 0;
+  background: var(--surface);
+  color: var(--muted);
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 6px;
+}
+.theme-seg button[aria-checked='true'] {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+.perm-resumo {
+  display: inline-block;
+  margin-top: 2px;
+}

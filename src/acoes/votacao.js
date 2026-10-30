@@ -7,7 +7,7 @@ import { gravarVotacao } from '../nucleo/partidas.js';
 import { GB, S, w } from '../nucleo/estado.js';
 import { linkVoto } from '../nucleo/links.js';
 import { $, cl, toast, uid } from '../nucleo/util.js';
-import { tally } from '../telas/votacao.js';
+import { tally } from '../dominio/votacao';
 import { montarNovaVotacao } from '../telas/Votacao';
 import { confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
 import { changed } from '../ui/render.js';

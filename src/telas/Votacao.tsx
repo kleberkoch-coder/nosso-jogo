@@ -8,7 +8,7 @@ import { tp, tx } from '../i18n/index.js';
 import { S as estado } from '../nucleo/estado.js';
 import { fdate } from '../nucleo/util.js';
 import { textoRodada } from '../ui/componentes';
-import { tally } from './votacao.js';
+import { tally } from '../dominio/votacao';
 
 const st = (): any => estado;
 type Categoria = { id: string; name: string };

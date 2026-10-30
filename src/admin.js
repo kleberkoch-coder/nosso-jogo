@@ -23,7 +23,7 @@ export function renderInvite() {
   d.className = 'empty muted';
   d.textContent = tx('comum.carregando');
   main.replaceChildren(d);
-  import('./telas/convite.js').then(
+  import('./telas/Convite').then(
     m => {
       convite = m;
       changed();

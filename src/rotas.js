@@ -405,7 +405,7 @@ function setupRoute() {
           setTimeout(() => {
             if (S.route.n === 'home' && !dlg.open)
               carregarAdmin().then(
-                () => ACT.newGroup(),
+                () => ACT.newGroup({ dataset: { auto: '1' } }),
                 () => {}
               );
           }, 250);

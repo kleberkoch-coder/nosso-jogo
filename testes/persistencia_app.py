@@ -17,10 +17,19 @@ GITHUB = bool(os.environ.get('GITHUB_ACTIONS'))
 def _parou(tipo, valor, tb):
     import traceback
     ultimo = res[-1]['teste'][:80] if res else 'nenhum'
-    linha = traceback.extract_tb(tb)[-1].lineno if tb else '?'
-    msg = f'roteiro parou na linha {linha} ({tipo.__name__}: {str(valor).splitlines()[0][:200]}); último caso: {ultimo}'
+    # KAN-222: a linha é a deste roteiro (não a de dentro do Playwright), e vai junto o estado da última página aberta.
+    quadros = [f for f in traceback.extract_tb(tb) if f.filename.endswith('persistencia_app.py')] if tb else []
+    linha = quadros[-1].lineno if quadros else '?'
+    estado = ''
+    try:
+        if PAGINAS:
+            estado = PAGINAS[-1].evaluate("(()=>{const d=document.getElementById('dlg');return location.hash+' | janela: '+(d&&d.open?(d.innerText||'').replace(/\\s+/g,' ').slice(0,120):'fechada')+' | aviso: '+((document.getElementById('toast')||{}).innerText||'').slice(0,80)})()")
+    except Exception:
+        pass
+    msg = f'roteiro parou na linha {linha} ({tipo.__name__}: {str(valor).splitlines()[0][:200]}); último caso: {ultimo}; tela: {estado}'
     print(('::error::Gravação: ' if GITHUB else 'ERRO    ') + msg, flush=True)
     sys.__excepthook__(tipo, valor, tb)
+PAGINAS = []
 sys.excepthook = _parou
 res = []; errs = []
 
@@ -70,7 +79,10 @@ J = lambda pg, js, arg=None: pg.evaluate(js, arg) if arg is not None else pg.eva
 
 with sync_playwright() as pw:
     b = pw.chromium.launch()
-    novo = lambda: b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block', timezone_id='America/Sao_Paulo')
+    def novo():
+        c = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block', timezone_id='America/Sao_Paulo')
+        c.on('page', lambda p: PAGINAS.append(p))
+        return c
     ctx = novo(); pg = ctx.new_page()
     pg.on('pageerror', lambda e: errs.append(str(e)))
 

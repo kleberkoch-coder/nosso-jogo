@@ -247,7 +247,7 @@ function Login({ convite }: { convite?: boolean }) {
 }
 
 /* Lugar da tela (a página monta como texto e a tela entra logo depois, com montarAuth). */
-const vAuth = () => '<div id="authRaiz"></div>';
+const vAuth = () => 'authRaiz';
 function montarAuth(convite?: boolean) {
   const el = document.getElementById('authRaiz');
   if (!el) return;

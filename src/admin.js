@@ -3,7 +3,7 @@
    não baixa nada daqui, e o app abre mais rápido com sinal fraco. */
 import textosGestao from './i18n/pt-BR-gestao.js';
 import { juntarTextos } from './i18n/index.js';
-import { acoes as grupo } from './acoes/grupo.js';
+import { acoes as grupo } from './acoes/grupo';
 import { acoes as rodada } from './acoes/rodada.js';
 import { acoes as jogadores } from './acoes/jogadores.js';
 import { acoes as recalcular } from './acoes/recalcular';

@@ -42,14 +42,14 @@ function playerDlg(id, prefill) {
     cid = id || prefill?.id,
     st = cid ? lvl(cid) : 5,
     ct = (S.cont || {})[cid] || {};
-  openDlg(`<h3>${p ? 'Editar jogador' : 'Novo jogador'}</h3><label class="f"><span>Nome ou apelido</span><input class="inp" id="pnm" value="${esc(p?.name || prefill?.name || '')}" maxlength="40"></label>
-  ${posField('ppos', p?.pos || prefill?.pos)}${posso('notas') ? `<div class="f"><span class="lbl">Nota de 1 a 10 (só administradores veem)</span>${lvlIn(st)}</div>` : ''}
+  openDlg(`<h3>${tx(p ? 'jogador.editar' : 'jogador.novo')}</h3><label class="f"><span>${tx('jogador.nome')}</span><input class="inp" id="pnm" value="${esc(p?.name || prefill?.name || '')}" maxlength="40"></label>
+  ${posField('ppos', p?.pos || prefill?.pos)}${posso('notas') ? `<div class="f"><span class="lbl">${tx('jogador.nota')}</span>${lvlIn(st)}</div>` : ''}
   ${posso('caixa') && recurso('caixa') ? campoTipo(p ? ptipo(id) : prefill?.tipo, cid ? recebePorJogo(cid) : null) : ''}
   ${campoTelefone(ct.tel || '', tx('contato.telRotulo'))}
   <label class="f"><span>${tx('contato.emailRotulo')}</span><input class="inp" id="pmail" type="email" autocomplete="email" maxlength="100" value="${esc(ct.email || '')}" placeholder="${tx('contato.emailExemplo')}"></label>
-  ${p ? `<p class="small muted" style="margin-top:-4px">Cadastrado em ${fdia(p.criado)} · ${p.ativo === false ? '<b style="color:var(--out)">inativo</b>' : 'ativo'}</p>` : ''}
+  ${p ? `<p class="small muted" style="margin-top:-4px">${tx('jogador.cadastradoEm', { data: fdia(p.criado) })} · ${p.ativo === false ? `<b style="color:var(--out)">${tx('jogador.inativo')}</b>` : tx('jogador.ativo')}</p>` : ''}
   ${p && p.ativo !== false ? linhaAfastamento(id) : ''}
-  <div class="dlg-f">${p ? `<button class="btn ghost danger" data-a="delPlayer" data-p="${id}">Excluir</button><button class="btn" data-a="toggleJog" data-p="${id}">${p.ativo === false ? 'Reativar' : 'Inativar'}</button>` : ''}<button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="savePlayer" data-p="${id || ''}">Salvar jogador</button></div>`);
+  <div class="dlg-f">${p ? `<button class="btn ghost danger" data-a="delPlayer" data-p="${id}">${tx('jogador.excluir')}</button><button class="btn" data-a="toggleJog" data-p="${id}">${tx(p.ativo === false ? 'jogador.reativar' : 'jogador.inativar')}</button>` : ''}<button class="btn" data-a="close">${tx('comum.cancelar')}</button><button class="btn primary" data-a="savePlayer" data-p="${id || ''}">${tx('jogador.salvar')}</button></div>`);
   setTimeout(() => $('#pnm')?.focus(), 50);
 }
 /* Lugar do campo de horário (componente HoraCampo, montado depois de abrir o diálogo). */
@@ -57,11 +57,13 @@ const horaRaiz = (id, v, opcional, rotulo) =>
   `<span data-hora-raiz="${id}" data-v="${esc(v || '')}" data-rotulo="${esc(rotulo)}"${opcional ? ' data-opcional' : ''}></span>`;
 function rodDlg(r) {
   const c = cfg();
-  openDlg(`<h3>${r ? 'Editar rodada' : 'Nova rodada'}</h3>
-  <div class="row"><label class="f" style="flex:1 1 100%"><span>Data</span><input class="inp" type="date" id="rdt" value="${r?.date || nextSat()}"></label><label class="f" style="width:auto"><span>Início</span>${horaRaiz('rtm', r?.time || c.time, false, 'Início')}</label><label class="f" style="width:auto"><span>Término</span>${horaRaiz('rfm', r?.fim || '', true, 'Término')}</label></div>
-  <label class="f"><span>Local</span><input class="inp" id="rpl" value="${esc(r?.place ?? c.place)}" maxlength="200" placeholder="Ex.: Society do Zé, Av. Brasil 100, Jundiaí"></label>
-  <p class="small muted">Quantidade de times e jogadores é definida na hora do sorteio.</p>
-  <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveRod" data-v="${r ? r.id : ''}">${r ? 'Salvar' : 'Criar rodada'}</button></div>`);
+  const ini = tx('novaRodada.inicio'),
+    fim = tx('novaRodada.termino');
+  openDlg(`<h3>${tx(r ? 'novaRodada.editar' : 'novaRodada.titulo')}</h3>
+  <div class="row"><label class="f" style="flex:1 1 100%"><span>${tx('novaRodada.data')}</span><input class="inp" type="date" id="rdt" value="${r?.date || nextSat()}"></label><label class="f" style="width:auto"><span>${ini}</span>${horaRaiz('rtm', r?.time || c.time, false, ini)}</label><label class="f" style="width:auto"><span>${fim}</span>${horaRaiz('rfm', r?.fim || '', true, fim)}</label></div>
+  <label class="f"><span>${tx('novaRodada.local')}</span><input class="inp" id="rpl" value="${esc(r?.place ?? c.place)}" maxlength="200" placeholder="${tx('novaRodada.localEx')}"></label>
+  <p class="small muted">${tx('novaRodada.ajuda')}</p>
+  <div class="dlg-f"><button class="btn" data-a="close">${tx('comum.cancelar')}</button><button class="btn primary" data-a="saveRod" data-v="${r ? r.id : ''}">${tx(r ? 'comum.salvar' : 'novaRodada.criar')}</button></div>`);
   montarHoras(dlg, relogio12());
 }
 function drawPreview() {
@@ -75,9 +77,8 @@ function drawPreview() {
   if (kEl) kEl.textContent = String(k);
   let txt;
   if (sport().pairs)
-    txt =
-      k < 4 ? 'São precisos ao menos 4 jogadores.' : `${k} jogadores → ${n} duplas${k % 2 ? ' (uma com reserva)' : ''}`;
-  else if (k < n * 2) txt = `Poucos jogadores para ${n} times.`;
+    txt = k < 4 ? tx('sorteio.minDuplas') : tx(k % 2 ? 'sorteio.prevDuplasReserva' : 'sorteio.prevDuplas', { k, n });
+  else if (k < n * 2) txt = tx('sorteio.poucos', { n });
   else {
     const r = resumo(k, n, T);
     txt = r.reservas

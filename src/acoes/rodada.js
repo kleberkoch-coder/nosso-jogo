@@ -37,7 +37,7 @@ import { editApp, editRat, editRod, saveContato, setPres } from '../nucleo/edico
 import { apagarPartidasDaRodada } from '../nucleo/partidas.js';
 import { GB, S, w } from '../nucleo/estado.js';
 import { linkProxima, linkRodada } from '../nucleo/links.js';
-import { $, DIAS, esc, fdate, toast } from '../nucleo/util.js';
+import { $, diaSemana, esc, fdate, toast } from '../nucleo/util.js';
 import { avisar, closeDlg, closeDlgNow, confirmou, dlg, openDlg, posField, val } from '../ui/dialogos.js';
 import { drawPreview, playerDlg, rodDlg } from '../ui/dialogos-gestao.js';
 import { changed, render } from '../ui/render.js';
@@ -69,7 +69,7 @@ function porNoTime(ti, pid) {
 function escolherTime(pid) {
   const r = curRodada();
   openDlg(
-    `<h3>${esc(tx('porTime.qualTime', { nome: pname(pid) }))}</h3><div class="vgrid">${r.times.map((t, i) => `<button class="opt" data-a="doPorTime" data-v="${i}" data-p="${pid}"><span class="dot" style="background:${col(t.c).c}"></span>${tn(i)}<span class="tag" style="margin-left:auto">${tp('porTime.jogadores', t.players.length)}</span></button>`).join('')}</div><div class="dlg-f"><button class="btn" data-a="close">Cancelar</button></div>`
+    `<h3>${esc(tx('porTime.qualTime', { nome: pname(pid) }))}</h3><div class="vgrid">${r.times.map((t, i) => `<button class="opt" data-a="doPorTime" data-v="${i}" data-p="${pid}"><span class="dot" style="background:${col(t.c).c}"></span>${tn(i)}<span class="tag" style="margin-left:auto">${tp('porTime.jogadores', t.players.length)}</span></button>`).join('')}</div><div class="dlg-f"><button class="btn" data-a="close">${tx('comum.cancelar')}</button></div>`
   );
 }
 /* KAN-71: depois de sortear, a tela vai até os times e o foco fica no título "Times" (leitor de tela anuncia). */
@@ -88,7 +88,7 @@ const acoes = {
   saveRod: el => {
     const d = val('rdt');
     if (!d) {
-      toast('Escolha a data.');
+      toast(tx('rodadm.escolhaData'));
       return;
     }
     const id = el.dataset.v;
@@ -119,10 +119,9 @@ const acoes = {
     const r = curRodada();
     if (
       confirmou(el, {
-        titulo: 'Excluir a rodada de ' + fdate(r.date) + '?',
-        texto:
-          'A lista, os times e as partidas desta rodada somem, e as partidas saem do ranking. Não dá para desfazer.',
-        acao: 'Excluir rodada',
+        titulo: tx('rodadm.excluirTitulo', { data: fdate(r.date) }),
+        texto: tx('rodadm.excluirTexto'),
+        acao: tx('rodadm.excluirAcao'),
         perigo: true,
       }) !== 'sim'
     )
@@ -146,7 +145,7 @@ const acoes = {
         dias: f
           .map(x =>
             tx(x.dow === 0 || x.dow === 6 ? 'fixos.diaTodo' : 'fixos.diaToda', {
-              dia: DIAS[x.dow].toLowerCase(),
+              dia: diaSemana(x.dow).toLowerCase(),
               ini: horaTexto(x.ini),
               fim: x.fim ? tx('fixos.ate', { fim: horaTexto(x.fim) }) : '',
               local: x.place ? ' — ' + x.place : '',
@@ -163,10 +162,10 @@ const acoes = {
     if (
       !r.cancelada &&
       confirmou(el, {
-        titulo: 'Cancelar o jogo de ' + fdate(r.date) + '?',
-        texto: 'O link permanente passa a mostrar a rodada seguinte. Dá para reativar depois.',
-        acao: 'Cancelar esta data',
-        cancelar: 'Voltar',
+        titulo: tx('rodadm.cancelarTitulo', { data: fdate(r.date) }),
+        texto: tx('rodadm.cancelarTexto'),
+        acao: tx('rodadm.cancelarAcao'),
+        cancelar: tx('rodadm.voltar'),
         perigo: true,
       }) !== 'sim'
     )
@@ -174,7 +173,7 @@ const acoes = {
     editRod(r.id, x => {
       x.cancelada = !x.cancelada;
     });
-    if (!r.cancelada) toast('Data cancelada.');
+    if (!r.cancelada) toast(tx('rodadm.cancelada'));
   },
   lock: el => {
     const r = curRodada();
@@ -192,7 +191,7 @@ const acoes = {
       x.locked = !x.locked;
     });
   },
-  shareConvite: () => shareDlg('Convite da rodada', txtConvite(curRodada())),
+  shareConvite: () => shareDlg(tx('rodadm.conviteTitulo'), txtConvite(curRodada())),
   copyLink: () => copyText(linkRodada(curRodada().id)),
   /* KAN-179: mínimo para o jogo (total e por posição), salvo no grupo e válido para todas as rodadas. */
   abrirMinimos: () => {
@@ -258,7 +257,7 @@ const acoes = {
       })
     );
   },
-  shareTimes: () => shareDlg('Times sorteados', txtTimes(curRodada())),
+  shareTimes: () => shareDlg(tx('rodadm.timesTitulo'), txtTimes(curRodada())),
   mark: el => {
     const r = curRodada(),
       id = el.dataset.p,
@@ -290,16 +289,16 @@ const acoes = {
       regs = Object.entries(S.avul || {})
         .filter(([id]) => !S.jog[id] && S.pres[id]?.s !== 'in')
         .sort((a, b) => (a[1].nome || '').localeCompare(b[1].nome || '', LOCAL));
-    openDlg(`<h3>Adicionar avulso</h3>${
+    openDlg(`<h3>${tx('avulso.adicionar')}</h3>${
       regs.length
-        ? `<div class="f"><span class="lbl">Já jogou aqui? Escolha o nome</span>${regs.length > 8 ? '<input class="inp" id="avq" placeholder="Buscar nome" style="margin-bottom:8px">' : ''}
+        ? `<div class="f"><span class="lbl">${tx('avulso.jaJogou')}</span>${regs.length > 8 ? `<input class="inp" id="avq" placeholder="${tx('avulso.buscar')}" style="margin-bottom:8px">` : ''}
       <div class="vgrid" id="avlist">${regs.map(([id, a]) => `<button class="opt" data-a="pickAvulso" data-p="${id}" data-n="${esc(normName(a.nome))}">${posTag(id)}<span>${esc(a.nome)}</span>${posso('notas') ? `<span class="tag" style="margin-left:auto">${fmtL(lvl(id))}</span>` : ''}</button>`).join('')}</div></div>
-      <p class="small muted" style="margin:4px 0 10px">Ou cadastre um avulso novo:</p>`
+      <p class="small muted" style="margin:4px 0 10px">${tx('avulso.ouNovo')}</p>`
         : ''
     }
-    <label class="f"><span>Nome</span><input class="inp" id="anm" maxlength="40"></label>${posField('apos')}${posso('notas') ? `<div class="f"><span class="lbl">Nota de 1 a 10</span>${lvlIn(5)}</div>` : ''}
+    <label class="f"><span>${tx('avulso.nome')}</span><input class="inp" id="anm" maxlength="40"></label>${posField('apos')}${posso('notas') ? `<div class="f"><span class="lbl">${tx('nota.titulo')}</span>${lvlIn(5)}</div>` : ''}
     ${posso('elenco') ? campoTelefone('', tx('contato.telOpcional')) : ''}
-    <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveAvulso">Adicionar confirmado</button></div>`);
+    <div class="dlg-f"><button class="btn" data-a="close">${tx('comum.cancelar')}</button><button class="btn primary" data-a="saveAvulso">${tx('avulso.adicionarConfirmado')}</button></div>`);
   },
   pickAvulso: el => {
     const id = el.dataset.p,
@@ -314,7 +313,7 @@ const acoes = {
   saveAvulso: el => {
     const n = val('anm');
     if (n.length < 2) {
-      toast('Digite o nome.');
+      toast(tx('jogador.digiteNome'));
       return;
     }
     const ct = lerContato('ptel');
@@ -322,10 +321,10 @@ const acoes = {
     const same = Object.entries(S.avul || {}).find(([, a]) => normName(a.nome) === normName(n));
     if (same) {
       const c = confirmou(el, {
-        titulo: n + ' já jogou aqui antes',
-        texto: 'Usar o cadastro dele (posição, nota e contato)?',
-        acao: 'Usar o cadastro',
-        nao: 'Cadastrar como novo',
+        titulo: tx('avulso.jaJogouTitulo', { nome: n }),
+        texto: tx('avulso.usarCadastroTexto'),
+        acao: tx('avulso.usarCadastro'),
+        nao: tx('avulso.cadastrarNovo'),
       });
       if (!c) return;
       if (c === 'sim') return ACT.pickAvulso({ dataset: { p: same[0] } });
@@ -353,17 +352,17 @@ const acoes = {
     const id = el.dataset.p,
       a = S.avul[id] || { nome: pname(id), pos: ppos(id) },
       ct = (S.cont || {})[id] || {};
-    openDlg(`<h3>Avulso: ${esc(a.nome)}</h3><label class="f"><span>Nome</span><input class="inp" id="anm" maxlength="40" value="${esc(a.nome)}"></label>${posField('apos', a.pos)}
-    ${posso('notas') ? `<div class="f"><span class="lbl">Nota de 1 a 10 (só administradores veem)</span>${lvlIn(lvl(id))}</div>` : ''}
+    openDlg(`<h3>${esc(tx('avulso.titulo', { nome: a.nome }))}</h3><label class="f"><span>${tx('avulso.nome')}</span><input class="inp" id="anm" maxlength="40" value="${esc(a.nome)}"></label>${posField('apos', a.pos)}
+    ${posso('notas') ? `<div class="f"><span class="lbl">${tx('jogador.nota')}</span>${lvlIn(lvl(id))}</div>` : ''}
     ${posso('elenco') ? campoTelefone(ct.tel || '', tx('contato.telRotulo')) : ''}
-    <p class="small muted" style="margin-top:-4px">Registrado em ${fdia(a.criado)}</p>
-    <div class="dlg-f"><button class="btn ghost danger" data-a="delAvulso" data-p="${id}">Esquecer avulso</button><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveAvEdit" data-p="${id}">Salvar</button></div>`);
+    <p class="small muted" style="margin-top:-4px">${tx('avulso.registradoEm', { data: fdia(a.criado) })}</p>
+    <div class="dlg-f"><button class="btn ghost danger" data-a="delAvulso" data-p="${id}">${tx('avulso.esquecer')}</button><button class="btn" data-a="close">${tx('comum.cancelar')}</button><button class="btn primary" data-a="saveAvEdit" data-p="${id}">${tx('comum.salvar')}</button></div>`);
   },
   saveAvEdit: el => {
     const id = el.dataset.p,
       n = val('anm');
     if (n.length < 2) {
-      toast('Digite o nome.');
+      toast(tx('jogador.digiteNome'));
       return;
     }
     const ct = lerContato('ptel');
@@ -375,16 +374,16 @@ const acoes = {
     const c = saveContato(id, ct.tel, '');
     if (c) ps.push(c);
     closeDlg();
-    toast('Avulso atualizado.');
+    toast(tx('avulso.atualizado'));
     return Promise.all(ps);
   },
   delAvulso: el => {
     const id = el.dataset.p;
     if (
       confirmou(el, {
-        titulo: 'Esquecer este avulso?',
-        texto: 'Ele some da lista de "já jogaram aqui". O histórico de partidas continua.',
-        acao: 'Esquecer avulso',
+        titulo: tx('avulso.esquecerTitulo'),
+        texto: tx('avulso.esquecerTexto'),
+        acao: tx('avulso.esquecer'),
         perigo: true,
       }) !== 'sim'
     )
@@ -424,9 +423,9 @@ const acoes = {
       k = a.inn.length,
       dentro = a.inn.filter(id => !(hasPos() && fora.has(ppos(id)))).length,
       n = sport().pairs ? Math.max(1, Math.floor(dentro / 2)) : sugerirTimes(dentro, T);
-    openDlg(`<div id="drawBox" data-n="${n}" data-nov="${cfg().novelty}" data-fora="${esc([...fora].join(','))}"><h3>${sport().pairs ? 'Sortear duplas' : 'Sortear times'}</h3>
+    openDlg(`<div id="drawBox" data-n="${n}" data-nov="${cfg().novelty}" data-fora="${esc([...fora].join(','))}"><h3>${tx(sport().pairs ? 'sorteio.tituloDuplas' : 'sorteio.titulo')}</h3>
     <p class="small muted" style="margin-top:-6px">${sport().pairs ? tx('sorteio.infoDuplas') : tx('sorteio.info', { n: T })}</p>
-    <div class="f" ${sport().pairs ? 'hidden' : ''}><span class="lbl">Quantos times</span><span class="seg">${[
+    <div class="f" ${sport().pairs ? 'hidden' : ''}><span class="lbl">${tx('sorteio.quantos')}</span><span class="seg">${[
       2, 3, 4, 5, 6, 7, 8,
     ]
       .filter(x => x * 2 <= k)
@@ -444,9 +443,9 @@ const acoes = {
         : ''
     }
     <p id="drawPrev" style="font-weight:600"></p>
-    <div class="f"><span class="lbl">Variar parceiros (com base no histórico)</span><span class="seg">${['Não', 'Pouco', 'Médio', 'Muito'].map((l, i) => `<button data-a="dNov" data-v="${i}">${l}</button>`).join('')}</span></div>
-    <details><summary>Quem entra no sorteio (<span id="drawK">${dentro}</span> de ${k})</summary><div class="chk">${a.inn.map(id => `<label><input type="checkbox" class="dp" value="${id}" data-pos="${esc(ppos(id) || '')}" ${hasPos() && fora.has(ppos(id)) ? '' : 'checked'}>${esc(pname(id))}${hasPos() && ppos(id) ? ` <span class="tag">· ${esc(ppos(id))}</span>` : ''}</label>`).join('')}</div></details>
-    <div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn bib" id="drawGo" data-a="doDraw">Sortear</button></div></div>`);
+    <div class="f"><span class="lbl">${tx('sorteio.variar')}</span><span class="seg">${[0, 1, 2, 3].map(i => `<button data-a="dNov" data-v="${i}">${tx('sorteio.variar' + i)}</button>`).join('')}</span></div>
+    <details><summary>${tx('sorteio.quemEntra', { k: `<span id="drawK">${dentro}</span>`, total: k })}</summary><div class="chk">${a.inn.map(id => `<label><input type="checkbox" class="dp" value="${id}" data-pos="${esc(ppos(id) || '')}" ${hasPos() && fora.has(ppos(id)) ? '' : 'checked'}>${esc(pname(id))}${hasPos() && ppos(id) ? ` <span class="tag">· ${esc(ppos(id))}</span>` : ''}</label>`).join('')}</div></details>
+    <div class="dlg-f"><button class="btn" data-a="close">${tx('comum.cancelar')}</button><button class="btn bib" id="drawGo" data-a="doDraw">${tx('sorteio.sortear')}</button></div></div>`);
     drawPreview();
   },
   /* Deixar uma posição inteira fora do sorteio (ex.: goleiros fixos). A escolha fica salva no grupo ao sortear. */

@@ -8,6 +8,7 @@ import { $, cl, toast } from './nucleo/util.js';
 import { closeDlgNow, dlg } from './ui/dialogos.js';
 import { render } from './ui/render.js';
 import { agora, definirRegiao } from './i18n/formatos.js';
+import { tx } from './i18n/index.js';
 import { regiaoDe } from './dominio/regiao.ts';
 /* Datas, números, moeda e relógio do grupo aberto; fora de um grupo, os da conta (KAN-162). */
 const aplicarRegiao = c => definirRegiao(regiaoDe(c));
@@ -423,7 +424,7 @@ function setupRoute() {
       sincronizarVagas();
     });
   const anon = () => {
-    if (!S.user) B.anon().catch(() => toast('Não foi possível conectar. Recarregue a página.'));
+    if (!S.user) B.anon().catch(() => toast(tx('erro.conectar')));
   };
   if (R.n === 'r') subLimCfg();
   if (R.n === 'r' && R.next) {

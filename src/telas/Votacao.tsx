@@ -189,7 +189,7 @@ export function montarNovaVotacao(rs: Rodada[]) {
 }
 
 /* A gestão desenha as abas com texto; a Votação entra num lugar reservado (#votRaiz). */
-export const vVotacao = () => '<div id="votRaiz"></div>';
+export const vVotacao = () => 'votRaiz';
 export function montarVotacao() {
   const el = document.getElementById('votRaiz');
   if (el) render(<VotacaoTela />, el);

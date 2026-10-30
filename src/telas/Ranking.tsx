@@ -224,7 +224,7 @@ function RankingTela() {
 }
 
 /* A gestão desenha as abas com texto; o Ranking entra num lugar reservado (#rankRaiz). */
-export const vRanking = () => '<div id="rankRaiz"></div>';
+export const vRanking = () => 'rankRaiz';
 export function montarRanking() {
   const el = document.getElementById('rankRaiz');
   if (el) render(<RankingTela />, el);

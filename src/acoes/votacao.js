@@ -12,6 +12,7 @@ import { montarNovaVotacao } from '../telas/Votacao';
 import { confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
 import { changed } from '../ui/render.js';
 import { ACT } from '../acoes.js';
+import { tx } from '../i18n/index.js';
 
 const acoes = {
   /* KAN-195: a janela é um componente (telas/Votacao.tsx). */
@@ -25,24 +26,29 @@ const acoes = {
   saveVote: () => {
     const sel = [...dlg.querySelectorAll('.vc:checked')].map(x => x.value),
       cats = [];
-    if (sel.includes('best')) cats.push({ id: 'best', name: 'Melhor jogador', pos: null, neg: false });
+    if (sel.includes('best')) cats.push({ id: 'best', name: tx('votacao.catMelhor'), pos: null, neg: false });
     if (sel.includes('gk') && !sel.includes('pos') && sport().key)
-      cats.push({ id: 'gk', name: 'Melhor ' + posLabel(sport().key).toLowerCase(), pos: sport().key, neg: false });
+      cats.push({
+        id: 'gk',
+        name: tx('votacao.catMelhorPos', { pos: posLabel(sport().key).toLowerCase() }),
+        pos: sport().key,
+        neg: false,
+      });
     if (sel.includes('pos'))
       sport().pos.forEach(([k, l]) =>
-        cats.push({ id: 'p' + k, name: 'Melhor — ' + l.toLowerCase(), pos: k, neg: false })
+        cats.push({ id: 'p' + k, name: tx('votacao.catMelhorDe', { pos: l.toLowerCase() }), pos: k, neg: false })
       );
     if (val('vx')) cats.push({ id: 'x' + uid(), name: val('vx'), pos: null, neg: false });
-    if (sel.includes('worst')) cats.push({ id: 'worst', name: 'Bagre da rodada', pos: null, neg: true });
+    if (sel.includes('worst')) cats.push({ id: 'worst', name: tx('votacao.nomeBagre'), pos: null, neg: true });
     if (!cats.length) {
-      toast('Escolha ao menos uma categoria.');
+      toast(tx('votacao.escolhaCategoria'));
       return;
     }
     const id = B.newId(),
       o = {
         rid: val('vr'),
         rdate: (rodById(val('vr')) || {}).date || '',
-        title: val('vt') || 'Votação',
+        title: val('vt') || tx('votacao.semTitulo'),
         cats,
         open: true,
         selfVote: $('#vsf').checked,
@@ -53,8 +59,8 @@ const acoes = {
     changed();
     w(GB.set('votacoes/' + id, o));
     /* A janela troca para o link da votação; não fecha ao terminar de salvar. */ shareDlg(
-      'Link da votação',
-      `🗳️ *${o.title}*\nVote aqui: ${linkVoto(id)}`
+      tx('votacao.linkTitulo'),
+      `🗳️ *${o.title}*\n` + tx('votacao.voteAqui', { link: linkVoto(id) })
     );
   },
   toggleVote: () => {
@@ -70,9 +76,9 @@ const acoes = {
   delVote: el => {
     if (
       confirmou(el, {
-        titulo: 'Excluir esta votação?',
-        texto: 'Os votos e o resultado somem, e os destaques saem do ranking. Não dá para desfazer.',
-        acao: 'Excluir votação',
+        titulo: tx('votacao.excluirTitulo'),
+        texto: tx('votacao.excluirTexto'),
+        acao: tx('votacao.excluirAcao'),
         perigo: true,
       }) !== 'sim'
     )
@@ -87,14 +93,17 @@ const acoes = {
   shareVote: () => {
     const v = S.vot[S.vid];
     let t = `🗳️ *${v.title}*\n`;
-    if (v.open) t += `Vote aqui: ${linkVoto(S.vid)}`;
+    if (v.open) t += tx('votacao.voteAqui', { link: linkVoto(S.vid) });
     else
       t +=
         '\n' +
         v.cats
-          .map(c => `🏅 ${c.name}: ${(v.resultado?.[c.id]?.winners || []).map(pname).join(' e ') || 'sem votos'}`)
+          .map(
+            c =>
+              `🏅 ${c.name}: ${(v.resultado?.[c.id]?.winners || []).map(pname).join(tx('votacao.e')) || tx('votacao.semVotosCurto')}`
+          )
           .join('\n');
-    shareDlg('Votação', t);
+    shareDlg(tx('votacao.semTitulo'), t);
   },
 };
 

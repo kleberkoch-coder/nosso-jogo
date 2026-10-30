@@ -163,9 +163,9 @@ const acoes = {
   delLan: el => {
     if (
       confirmou(el, {
-        titulo: 'Apagar este lançamento?',
-        texto: 'O valor sai do saldo e do mês.',
-        acao: 'Apagar lançamento',
+        titulo: tx('caixa.apagarLancTitulo'),
+        texto: tx('caixa.apagarLancTexto'),
+        acao: tx('caixa.apagarLanc'),
         perigo: true,
       }) !== 'sim'
     )

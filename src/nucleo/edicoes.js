@@ -132,7 +132,7 @@ function setPres(rid, pid, data) {
     toast(
       e && e.code === 'permission-denied'
         ? tx(vaga && mov > 0 ? 'vagaslink.fechadas' : 'limite.avulsosPublico')
-        : 'Não foi possível salvar. Verifique a conexão.'
+        : tx('erro.salvar')
     );
     throw e;
   });

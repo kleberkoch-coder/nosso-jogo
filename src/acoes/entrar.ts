@@ -69,9 +69,9 @@ const acoes = {
     const le = $('#lerr');
     if (le) le.textContent = '';
     if (!bk().demo && inAppBrowser()) {
-      openDlg(`<h3>Abra no navegador</h3><p>O Google não permite entrar por dentro deste aplicativo. Abra o link no <b>Chrome</b> ou no <b>Safari</b> e toque de novo em <b>Continuar com o Google</b>.</p>
-      <p class="small muted">Dica: toque nos três pontinhos (⋮ ou ⋯) no canto da tela e escolha <b>Abrir no navegador</b>. Ou entre com e-mail e senha aqui mesmo.</p>
-      <div class="dlg-f"><button class="btn" data-a="close">Fechar</button><button class="btn primary" data-a="copyHere">Copiar link</button></div>`);
+      openDlg(`<h3>${tx('auth.abraNavTitulo')}</h3><p>${tx('auth.abraNavTexto')}</p>
+      <p class="small muted">${tx('auth.abraNavDica')}</p>
+      <div class="dlg-f"><button class="btn" data-a="close">${tx('auth.fechar')}</button><button class="btn primary" data-a="copyHere">${tx('auth.copiarLink')}</button></div>`);
       return;
     }
     if (S.authMode === 'signup') S.paisNovo = val('lpais') || S.paisNovo;

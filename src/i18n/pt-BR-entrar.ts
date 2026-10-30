@@ -50,4 +50,11 @@ export default {
   'login.pais': 'Seu país',
   'login.paisDica':
     'Define a moeda, o formato das datas e o código do telefone dos seus grupos. Dá para trocar depois.',
+  'auth.abraNavTitulo': 'Abra no navegador',
+  'auth.abraNavTexto':
+    'O Google não permite entrar por dentro deste aplicativo. Abra o link no <b>Chrome</b> ou no <b>Safari</b> e toque de novo em <b>Continuar com o Google</b>.',
+  'auth.abraNavDica':
+    'Dica: toque nos três pontinhos (⋮ ou ⋯) no canto da tela e escolha <b>Abrir no navegador</b>. Ou entre com e-mail e senha aqui mesmo.',
+  'auth.fechar': 'Fechar',
+  'auth.copiarLink': 'Copiar link',
 };

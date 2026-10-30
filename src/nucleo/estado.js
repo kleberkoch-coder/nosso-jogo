@@ -2,6 +2,7 @@ import { B } from './backend.js';
 import { toast, today } from './util.js';
 import { changed } from '../ui/render.js';
 import { proximaTentativa } from './carga.ts';
+import { tx } from '../i18n/index.js';
 
 /* =================== estado =================== */
 const S = {
@@ -95,9 +96,7 @@ function dropAll() {
 function w(p) {
   return Promise.resolve(p).catch(e => {
     console.error(e);
-    toast(
-      e && e.code === 'permission-denied' ? 'Sem permissão para isso.' : 'Não foi possível salvar. Verifique a conexão.'
-    );
+    toast(tx(e && e.code === 'permission-denied' ? 'erro.semPermissao' : 'erro.salvar'));
     document.dispatchEvent(new Event('nj-gravacao-falhou'));
     throw e;
   });

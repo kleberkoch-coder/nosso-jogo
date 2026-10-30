@@ -41,8 +41,15 @@ async function boot() {
       }
       setB(wrapBackend(FirebaseBackend(C, ak)));
     } catch (e) {
-      main.innerHTML =
-        '<div class="panel empty"><h2>Não foi possível carregar</h2><p class="muted">Verifique sua conexão e recarregue a página.</p></div>';
+      const p = document.createElement('div'),
+        h = document.createElement('h2'),
+        t = document.createElement('p');
+      p.className = 'panel empty';
+      h.textContent = tx('carga.iniciarTitulo');
+      t.className = 'muted';
+      t.textContent = tx('carga.iniciarTexto');
+      p.append(h, t);
+      main.replaceChildren(p);
       return;
     }
   } else setB(wrapBackend(LocalBackend()));

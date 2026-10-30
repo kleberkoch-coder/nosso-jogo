@@ -26,7 +26,7 @@ const acoes = {
   savePlayer: el => {
     const name = val('pnm');
     if (name.length < 2) {
-      toast('Digite o nome.');
+      toast(tx('jogador.digiteNome'));
       return;
     }
     const ct = lerContato('ptel', 'pmail');
@@ -108,7 +108,7 @@ const acoes = {
       w(GB.del('avulsos/' + nw));
     }
     closeDlg();
-    toast('Jogador salvo.');
+    toast(tx('jogador.salvo'));
   },
   toggleJog: el => {
     const id = el.dataset.p,
@@ -117,9 +117,9 @@ const acoes = {
     if (
       !on &&
       confirmou(el, {
-        titulo: 'Inativar ' + o.name + '?',
-        texto: 'Ele sai das listas de presença, mas o histórico continua.',
-        acao: 'Inativar jogador',
+        titulo: tx('jogador.inativarTitulo', { nome: o.name }),
+        texto: tx('jogador.inativarTexto'),
+        acao: tx('jogador.inativarAcao'),
       }) !== 'sim'
     )
       return;
@@ -129,16 +129,16 @@ const acoes = {
     S.jog[id] = o;
     changed();
     closeDlg();
-    toast(on ? 'Jogador reativado.' : 'Jogador inativado.');
+    toast(tx(on ? 'jogador.reativado' : 'jogador.inativado'));
     return w(GB.set('jogadores/' + id, clean(o)));
   },
   delPlayer: el => {
     const id = el.dataset.p;
     if (
       confirmou(el, {
-        titulo: 'Excluir ' + pname(id) + '?',
-        texto: 'Ele sai do elenco de vez. Para manter o histórico, prefira Inativar.',
-        acao: 'Excluir jogador',
+        titulo: tx('jogador.excluirTitulo', { nome: pname(id) }),
+        texto: tx('jogador.excluirTexto'),
+        acao: tx('jogador.excluirAcao'),
         perigo: true,
       }) !== 'sim'
     )
@@ -161,14 +161,14 @@ const acoes = {
       .map(p => `<option value="${p.id}">${esc(p.name)}</option>`)
       .join('');
     openDlg(
-      `<h3>Não colocar no mesmo time</h3><label class="f"><span>Jogador</span><select class="sel" id="sa">${o}</select></label><label class="f"><span>e</span><select class="sel" id="sb">${o}</select></label><div class="dlg-f"><button class="btn" data-a="close">Cancelar</button><button class="btn primary" data-a="saveSep">Adicionar par</button></div>`
+      `<h3>${tx('jogadores.separarTitulo')}</h3><label class="f"><span>${tx('jogador.jogador')}</span><select class="sel" id="sa">${o}</select></label><label class="f"><span>${tx('jogadores.e')}</span><select class="sel" id="sb">${o}</select></label><div class="dlg-f"><button class="btn" data-a="close">${tx('comum.cancelar')}</button><button class="btn primary" data-a="saveSep">${tx('jogadores.adicionarPar')}</button></div>`
     );
   },
   saveSep: () => {
     const a = val('sa'),
       b = val('sb');
     if (a === b) {
-      toast('Escolha duas pessoas diferentes.');
+      toast(tx('jogador.parIgual'));
       return;
     }
     editRat(x => {
@@ -259,7 +259,7 @@ const acoes = {
       ids.forEach((id, i) => setLvl(a, id, ns[i][2] * 2 - (i % 3 === 0 ? 0.5 : 0)));
       a.sep.push([ids[6], ids[10]]);
     });
-    toast('Elenco de exemplo carregado.');
+    toast(tx('jogador.exemploCarregado'));
   },
 };
 

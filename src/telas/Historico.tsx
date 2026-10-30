@@ -429,7 +429,7 @@ function Historico() {
 }
 
 /* A gestão desenha as abas com texto; o Histórico entra num lugar reservado (#histRaiz) logo depois. */
-const vHistorico = () => '<div id="histRaiz"></div>';
+const vHistorico = () => 'histRaiz';
 function montarHistorico() {
   const el = document.getElementById('histRaiz');
   if (el) render(<Historico />, el);

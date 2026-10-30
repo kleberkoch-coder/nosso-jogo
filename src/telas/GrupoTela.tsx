@@ -1,7 +1,7 @@
 /* Aba Grupo como componente em TypeScript + Preact (KAN-201; antes, telas/grupo.js).
    Mostra os dados do grupo, as posições, partidas e caixa, os administradores com as permissões de cada convidado
    (só o organizador muda) e a aparência. Cada botão aparece só para quem tem a permissão (dominio/permissoes.ts);
-   as regras do Firebase garantem o mesmo. Os botões usam data-a (ações em acoes/grupo.js e acoes/jogadores.js). */
+   as regras do Firebase garantem o mesmo. Os botões usam data-a (ações em acoes/grupo.ts e acoes/jogadores.js). */
 import { render } from 'preact';
 import { cfg } from '../dominio/caixa.js';
 import { basePos, porTime, sport, sportName } from '../dominio/esportes.js';
@@ -11,7 +11,7 @@ import { PERMISSOES, pode, type Membro } from '../dominio/permissoes';
 import { tp, tx } from '../i18n/index.js';
 import { limiteAdmins, quemSoVe } from '../nucleo/plano';
 import { S as estado } from '../nucleo/estado.js';
-import { DIAS, brl } from '../nucleo/util.js';
+import { brl, diaSemana } from '../nucleo/util.js';
 import { numeroVersao } from '../nucleo/versao.js';
 import { THEMES, effTheme, getTheme } from '../ui/tema.js';
 
@@ -144,7 +144,7 @@ function Aparencia() {
       <div class="theme-seg" role="radiogroup" aria-label={tx('aparencia.rotulo')}>
         {(THEMES as [string, string, string][]).map(([k, ic, l]) => (
           <button key={k} role="radio" aria-checked={t === k} data-a="setTheme" data-v={k}>
-            <span aria-hidden="true">{ic}</span> {l}
+            <span aria-hidden="true">{ic}</span> {tx(l)}
           </button>
         ))}
       </div>
@@ -191,7 +191,7 @@ function GrupoTela() {
                 {f.length
                   ? f.map((x, i) => (
                       <div key={i}>
-                        {DIAS[x.dow]}, {faixaTexto(x.ini, x.fim)}
+                        {diaSemana(x.dow)}, {faixaTexto(x.ini, x.fim)}
                         {x.place ? (
                           <>
                             {' · '}
@@ -325,7 +325,7 @@ function GrupoTela() {
 }
 
 /* A gestão desenha as abas com texto; a aba Grupo entra num lugar reservado (#grupoRaiz). */
-const vGrupo = () => '<div id="grupoRaiz"></div>';
+const vGrupo = () => 'grupoRaiz';
 function montarGrupo() {
   const el = document.getElementById('grupoRaiz');
   if (el) render(<GrupoTela />, el);

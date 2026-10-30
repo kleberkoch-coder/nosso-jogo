@@ -526,7 +526,7 @@ function Caixa() {
 }
 
 /* A gestão desenha as abas com texto; o Caixa entra num lugar reservado (#caixaRaiz) logo depois. */
-const vCaixa = () => '<div id="caixaRaiz"></div>';
+const vCaixa = () => 'caixaRaiz';
 function montarCaixa() {
   const el = document.getElementById('caixaRaiz');
   if (el) render(<Caixa />, el);

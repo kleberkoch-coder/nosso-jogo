@@ -824,7 +824,7 @@ function montarMinimos() {
 }
 
 /* A gestão desenha as abas com texto; a Rodada entra num lugar reservado (#rodadaRaiz) logo depois (como o Caixa). */
-const vRodada = () => '<div id="rodadaRaiz"></div>';
+const vRodada = () => 'rodadaRaiz';
 function montarRodada() {
   const el = document.getElementById('rodadaRaiz');
   if (el) render(<RodadaTela />, el);

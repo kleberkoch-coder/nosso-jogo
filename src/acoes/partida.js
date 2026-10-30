@@ -168,9 +168,9 @@ const acoes = {
   delMatch: el => {
     if (
       confirmou(el, {
-        titulo: 'Apagar esta partida?',
-        texto: 'O placar e os pontos dela saem do ranking. Não dá para desfazer.',
-        acao: 'Apagar partida',
+        titulo: tx('partida.apagarTitulo'),
+        texto: tx('partida.apagarTexto'),
+        acao: tx('partida.apagarAcao'),
         perigo: true,
       }) !== 'sim'
     )

@@ -10,7 +10,7 @@ import * as tema from './tema.js';
 import { abrirMenu, closeThemeMenu } from './tema.js';
 
 const st = (): any => estado;
-const temaAtual = () => (tema.themeDef() || ['auto', '🌓', 'Automático']) as string[];
+const temaAtual = () => (tema.themeDef() || tema.THEMES[0]) as string[];
 const inicial = (email: string) => (String(email || '?').trim()[0] || '?').toUpperCase();
 const { fromCodePoint } = String;
 const bandeira = (iso: string) => fromCodePoint(...[...iso].map(c => 127397 + c.charCodeAt(0)));
@@ -68,7 +68,7 @@ export function abrirMenuConta(anchor: HTMLElement) {
     m.append(
       t,
       item('🌐', tx('conta.pais'), 'contaPais', bandeira(pais) + ' ' + nomePais(pais)),
-      item(temaAtual()[1], tx('conta.tema'), 'temaConta', temaAtual()[2]),
+      item(temaAtual()[1], tx('conta.tema'), 'temaConta', tx(temaAtual()[2])),
       item('⭐', tx('conta.plano'), 'planosDlg'),
       sep,
       item('↪', tx('conta.sair'), 'logout')

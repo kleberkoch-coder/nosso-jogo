@@ -121,7 +121,7 @@ function confirmou(el, o) {
   t.id = 'confT';
   h.append(t);
   if (o.texto) h.append(el_('p', 'conf-txt', o.texto));
-  if (!o.unico) f.append(el_('button', 'btn', o.cancelar || 'Cancelar', 'confNao'));
+  if (!o.unico) f.append(el_('button', 'btn', o.cancelar || tx('comum.cancelar'), 'confNao'));
   if (o.nao) f.append(el_('button', 'btn', o.nao, 'confOutro'));
   f.append(el_('button', 'btn ' + (o.perigo ? 'perigo' : 'primary'), o.acao, 'confSim'));
   h.append(f);
@@ -191,7 +191,7 @@ dlg.addEventListener('close', () => {
 /* Aviso de uma linha com "Entendi" (no lugar do alert): resolve quando a janela fecha. */
 function avisar(titulo, texto) {
   return new Promise(res => {
-    confirmou(null, { titulo, texto, acao: 'Entendi', unico: true, fim: res });
+    confirmou(null, { titulo, texto, acao: tx('comum.entendi'), unico: true, fim: res });
   });
 }
 const val = id => (document.getElementById(id)?.value || '').trim();
@@ -199,7 +199,8 @@ const posSel = (id, v) =>
   `<select class="sel" id="${id}">${sport()
     .pos.map(([k, l]) => `<option value="${k}" ${(v || ppos('')) === k ? 'selected' : ''}>${l}</option>`)
     .join('')}</select>`;
-const posField = (id, v) => (hasPos() ? `<label class="f"><span>Posição</span>${posSel(id, v)}</label>` : '');
+const posField = (id, v) =>
+  hasPos() ? `<label class="f"><span>${tx('comum.posicao')}</span>${posSel(id, v)}</label>` : '';
 
 export {
   avisar,

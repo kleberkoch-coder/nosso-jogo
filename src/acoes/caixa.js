@@ -180,7 +180,7 @@ const acoes = {
       Object.entries(by)
         .map(
           ([pid, xs]) =>
-            `• ${pname(pid)}: ${brl(xs.reduce((s, x) => s + x.v, 0))} (${xs.map(x => x.cob || x.label).join(', ')})`
+            `• ${xs[0].nome || pname(pid)}: ${brl(xs.reduce((s, x) => s + x.v, 0))} (${xs.map(x => x.cob || x.label).join(', ')})`
         )
         .join('\n');
     if (cfg().pix) t += `\n\nPix: ${cfg().pix}`;

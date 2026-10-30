@@ -599,6 +599,36 @@ with sync_playwright() as pw:
        f'CT-KAN-170-P30: avaliação, as notas dadas e a nota atualizada no cadastro continuam depois de sair e entrar ({nv30}, {r30})')
     c30.close()
 
+    # P31 rateio com pessoa de fora (KAN-216): criar o rateio com "Primo do Bruno" e "Recebi" dele. Confere depois de
+    # sair e entrar: o nome no rateio (rat.fora), o pagamento (rat.pg) e a entrada sem jogador, com o id em "fora".
+    c31 = novo(); p31 = c31.new_page()
+    p31.on('pageerror', lambda e: errs.append(str(e)))
+    E31 = 'fora31@teste.com'
+    p31.goto(URL + '#/criar'); p31.wait_for_selector('#le', timeout=20000); p31.wait_for_timeout(300)
+    p31.fill('#le', E31); p31.fill('#lp', SENHA); p31.fill('#lp2', SENHA); p31.wait_for_timeout(200)
+    p31.click('[data-a=signup]'); p31.wait_for_selector('#ngn', timeout=20000)
+    p31.fill('#ngn', 'Fora FC'); p31.click('[data-a=createGroup]')
+    p31.wait_for_function("location.hash.startsWith('#/g/')", timeout=20000)
+    g31 = p31.url.split('#/g/')[1].split('/')[0]
+    pronto(p31, 'jogadores'); p31.click('[data-a=seed]'); p31.wait_for_timeout(1500)
+    gravou(p31); pronto(p31, 'caixa'); p31.wait_for_function("S.loaded.pc", timeout=20000)
+    p31.click('[data-a=ratNovo]'); p31.wait_for_selector('#rtn', timeout=10000)
+    p31.fill('#rtn', 'Camisa'); p31.check('input[name=rtModo][value=fixo]'); p31.fill('#rtv', '70')
+    p31.fill('#rtFora', 'Primo do Bruno'); p31.click('#rtForaAdd'); p31.wait_for_timeout(150)
+    p31.click('#dlg [data-a=ratSalvar]'); p31.wait_for_timeout(1000)
+    rid31 = J(p31, "Object.keys((S.pc||{}).rat||{})[0]")
+    f31 = J(p31, "(r)=>Object.keys(S.pc.rat[r].fora||{})[0]", rid31)
+    p31.click(f'#rat-{rid31} [data-a=ratRecebi][data-p="{f31}"]'); p31.wait_for_timeout(1000); gravou(p31)
+    sair_e_esperar(p31)
+    p31.goto(URL + '#/entrar'); p31.wait_for_selector('#le', timeout=20000); p31.wait_for_timeout(300)
+    p31.fill('#le', E31); p31.fill('#lp', SENHA); p31.keyboard.press('Enter'); p31.wait_for_timeout(2500)
+    p31.goto(URL + '#/g/' + g31); pronto(p31, 'caixa'); p31.wait_for_function("S.loaded.pc", timeout=20000); p31.wait_for_timeout(1200)
+    r31 = J(p31, "(a)=>{const x=((S.pc||{}).rat||{})[a[0]];return x?[(x.fora||{})[a[1]], (x.part||{})[a[1]], (x.pg||{})[a[1]]]:null}", [rid31, f31])
+    l31 = J(p31, "(r)=>Object.values(S.caixa||{}).filter(l=>l&&l.rat===r).map(l=>[l.k,l.pid||null,l.fora||null,l.v])", rid31)
+    ok(r31 == ['Primo do Bruno', 7000, 7000] and l31 == [['entrada', None, f31, 70]],
+       f'CT-KAN-170-P31: a pessoa de fora, o valor dela e o pagamento continuam depois de sair e entrar ({r31}, {l31})')
+    c31.close()
+
     ok(not errs, 'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))
     b.close()
 

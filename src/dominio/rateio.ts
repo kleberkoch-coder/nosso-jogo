@@ -4,6 +4,8 @@
    - "Recebi" lança uma entrada no Caixa com o jogador e o rateio (rat), no fluxo do mês do pagamento, e soma em pg.
    - Despesa ligada ao rateio (fornecedor, devolução para quem pagou a mais) soma em gasto.
    - Cada rateio escolhe se aparece nas pendências do Caixa (pend). Encerrar guarda a data (fim); quem não pagou fica registrado.
+   - KAN-216: pessoa de fora do elenco (convidado do churrasco, quem quer só a camisa) entra só no rateio, com o nome
+     (fora: {id: nome}, id começando com "f_"). O pagamento dela é uma entrada sem jogador, com o id em "fora".
    Fica em privado/caixa.rat (só com a permissão de Caixa). Regra pura, testada em testes/regras/rateio.test.mjs. */
 export type Rateio = {
   n: string;
@@ -15,7 +17,14 @@ export type Rateio = {
   pend?: boolean;
   em?: number;
   fim?: number;
+  fora?: Record<string, string>; // id ("f_…") -> nome de quem é de fora do elenco
 };
+export const eDeFora = (id: string) => id.startsWith('f_');
+/* Nome de quem participa: de fora, o do rateio; do elenco, o do jogador (nomeDoElenco). */
+export const nomeNoRateio = (r: Pick<Rateio, 'fora'>, id: string, nomeDoElenco: (id: string) => string) =>
+  eDeFora(id) ? (r.fora || {})[id] || '?' : nomeDoElenco(id);
+/* Nome de quem é de fora: sem espaços sobrando, até 40 letras. Devolve '' se vazio. */
+export const limparNome = (s: string) => s.replace(/\s+/g, ' ').trim().slice(0, 40);
 export type Rateios = Record<string, Rateio | null | undefined>;
 
 export function centavos(v: unknown): number {
@@ -94,12 +103,13 @@ export function erroRateio(r: { n?: string; part?: Record<string, number> }): st
 
 /* Campos que um lançamento ligado ao rateio muda no rateio (sinal 1 ao lançar, -1 ao apagar). */
 export function camposDoRateio(
-  l: { k: string; v: number | string; pid?: string | null; rat?: string },
+  l: { k: string; v: number | string; pid?: string | null; rat?: string; fora?: string },
   sinal: 1 | -1
 ): Record<string, number> | null {
   if (!l.rat) return null;
   const c = centavos(l.v) * sinal;
   if (l.k === 'despesa') return { [`rat.${l.rat}.gasto`]: c };
-  if (l.pid) return { [`rat.${l.rat}.pg.${l.pid}`]: c };
+  const quem = l.pid || (l.fora && eDeFora(l.fora) ? l.fora : '');
+  if (quem) return { [`rat.${l.rat}.pg.${quem}`]: c };
   return null;
 }

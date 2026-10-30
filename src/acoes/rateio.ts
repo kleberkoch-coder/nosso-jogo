@@ -2,7 +2,7 @@
    O rateio fica em privado/caixa.rat; cada pagamento é uma entrada no Caixa com o jogador e o rateio (rat). */
 import { cfg } from '../dominio/caixa.js';
 import { gname, pname, posso, recurso } from '../dominio/grupo.js';
-import { camposDoRateio, erroRateio, situacao, type Rateio } from '../dominio/rateio';
+import { camposDoRateio, eDeFora, erroRateio, nomeNoRateio, situacao, type Rateio } from '../dominio/rateio';
 import { tx } from '../i18n/index.js';
 import * as banco from '../nucleo/backend.js';
 import { GB, S, w } from '../nucleo/estado.js';
@@ -78,6 +78,7 @@ export const acoes: Record<string, (el: El) => unknown> = {
     toast(tx(antes ? 'rateio.salvo' : 'rateio.criado', { nome: r.n }));
     if (!antes) {
       const novo: Rateio = { n: r.n, modo: r.modo, base: r.base, part: r.part, pend: r.pend, em: Date.now() };
+      if (Object.keys(r.fora).length) novo.fora = r.fora;
       return gravar(rid, { ['rat.' + rid]: novo }, () => novo);
     }
     const campos: Record<string, unknown> = {
@@ -90,6 +91,13 @@ export const acoes: Record<string, (el: El) => unknown> = {
       if (!(p in r.part)) campos[`rat.${rid}.part.${p}`] = op.apagar();
     });
     Object.entries(r.part).forEach(([p, v]) => (campos[`rat.${rid}.part.${p}`] = v));
+    /* KAN-216: quem é de fora entra e sai junto com a lista; quem já pagou não sai (a janela não deixa tirar). */
+    Object.keys(antes.fora || {}).forEach(f => {
+      if (!(f in r.fora) && !((antes.pg || {})[f] > 0)) campos[`rat.${rid}.fora.${f}`] = op.apagar();
+    });
+    Object.entries(r.fora).forEach(([f, nome]) => (campos[`rat.${rid}.fora.${f}`] = nome));
+    const pagos: Record<string, string> = {};
+    for (const [f, nome] of Object.entries(antes.fora || {})) if ((antes.pg || {})[f]! > 0) pagos[f] = nome;
     return gravar(rid, campos, x => ({
       ...(x as Rateio),
       n: r.n,
@@ -97,6 +105,7 @@ export const acoes: Record<string, (el: El) => unknown> = {
       base: r.base,
       pend: r.pend,
       part: r.part,
+      fora: { ...pagos, ...r.fora },
     }));
   },
   /* "Recebi": entrada no Caixa com o jogador e o rateio, pelo que falta, com a data de hoje e "Desfazer". */
@@ -113,7 +122,7 @@ export const acoes: Record<string, (el: El) => unknown> = {
     const r = rateios()[el.dataset.v || ''];
     if (!r) return;
     const linhas = situacao(r)
-      .faltam.map(([pid, v]) => `• ${pname(pid)}: ${reais(v)}`)
+      .faltam.map(([pid, v]) => `• ${nomeNoRateio(r, pid, pname)}: ${reais(v)}`)
       .join('\n');
     let t = tx('rateio.cobrancaTitulo', { grupo: gname(), nome: r.n }) + '\n\n' + linhas;
     if (cfg().pix) t += '\n\n' + tx('rateio.pix', { pix: cfg().pix });
@@ -167,10 +176,15 @@ export const acoes: Record<string, (el: El) => unknown> = {
 export function receberRateio(rid: string, pid: string, v: number) {
   const r = rateios()[rid];
   if (!r) return;
-  const id = novoId(),
-    o = { k: 'entrada', pid, v, d: today(), rat: rid, note: r.n };
+  /* KAN-216: quem é de fora não é jogador: a entrada fica sem jogador, com o id em "fora" e o nome na descrição. */
+  const fora = eDeFora(pid),
+    nome = nomeNoRateio(r, pid, pname),
+    id = novoId(),
+    o = fora
+      ? { k: 'entrada', pid: null, fora: pid, v, d: today(), rat: rid, note: r.n + ' — ' + nome }
+      : { k: 'entrada', pid, v, d: today(), rat: rid, note: r.n };
   const p = salvarLanc(id, o);
-  toastAcao(tx('caixa.recebido', { nome: pname(pid), valor: brl(v) }), tx('caixa.desfazer'), () => {
+  toastAcao(tx('caixa.recebido', { nome, valor: brl(v) }), tx('caixa.desfazer'), () => {
     const d = apagarLanc(id);
     toast(tx('caixa.pagamentoDesfeito'));
     return d;

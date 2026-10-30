@@ -256,6 +256,13 @@ with sync_playwright() as pw:
     pvp.evaluate("window.__njPendentes ? window.__njPendentes(10000) : true"); pvp.reload(); pvp.wait_for_timeout(2000)
     ok('Voto registrado' in pvp.inner_text('main'), 'CT-KAN-170-P15b: voto pelo link da votação continua depois de recarregar')
     pv.close() if pv else pvp.close()
+    # P15b (KAN-222): a troca do voto (votacoes/{vid}/trocas) chega ao administrador com a hora do servidor
+    pg.reload(); pronto(pg, 'votacao'); pg.wait_for_function("S.trocas && Object.keys(S.trocas).length >= 1", timeout=20000)
+    em15 = J(pg, "Object.values(S.trocas).map(t=>t.em&&(t.em.toMillis?t.em.toMillis():t.em))[0]")
+    pg.click('#quemVotou > summary'); pg.wait_for_selector('#quemVotou .aud-linha', timeout=10000)
+    t15 = pg.inner_text('#quemVotou')
+    ok(isinstance(em15, (int, float)) and em15 > 0 and 'Quem votou (1)' in t15 and 'hora do aparelho' not in t15,
+       f'CT-KAN-222-P15b: a troca do voto fica gravada com a hora do servidor e aparece em "Quem votou" ({em15}, {t15[:80]!r})')
 
     # P15c convite de administrador (privado/convite)
     pronto(pg, 'grupo'); pg.click('[data-a=inviteLink]'); pg.wait_for_timeout(800)

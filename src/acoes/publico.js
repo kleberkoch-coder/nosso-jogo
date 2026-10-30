@@ -2,7 +2,7 @@
 import { isAvulso, normName, players, pname, rodById } from '../dominio/grupo.js';
 import { tx } from '../i18n/index.js';
 import { semConexao } from '../eventos.js';
-import { B } from '../nucleo/backend.js';
+import { B, op } from '../nucleo/backend.js';
 import { avulsosEsgotados, limite } from '../dominio/limites.ts';
 import { precisaVaga, situacao } from '../dominio/vagas.ts';
 import { setPres } from '../nucleo/edicoes.js';
@@ -127,7 +127,18 @@ const acoes = {
     d.t = Date.now();
     S.myVote = d;
     changed();
-    w(GB.set('votacoes/' + S.route.id + '/votos/' + S.user.uid, d));
+    /* KAN-222: junto com o voto, no mesmo lote, o registro da troca com a hora do servidor (auditoria). */
+    const vid = S.route.id;
+    w(
+      GB.lote([
+        { tipo: 'set', p: 'votacoes/' + vid + '/votos/' + S.user.uid, o: d },
+        {
+          tipo: 'patch',
+          p: 'votacoes/' + vid + '/trocas/' + B.newId(),
+          o: { u: S.user.uid, pid: me, c: el.dataset.c2, p: el.dataset.p, em: op.agora() },
+        },
+      ])
+    );
   },
 };
 

@@ -68,11 +68,18 @@ function ensureVotos() {
   if (S.votosVid === id) return;
   S.votosVid = id;
   S.votos = {};
+  S.trocas = {};
   drop('votos');
-  if (id)
+  drop('trocas');
+  if (id) {
     sub('votos', 'votacoes/' + id + '/votos', d => {
       S.votos = d || {};
     });
+    /* KAN-222: trocas de voto, com a hora do servidor, para a seção "Quem votou" (só administradores leem). */
+    sub('trocas', 'votacoes/' + id + '/trocas', d => {
+      S.trocas = d || {};
+    });
+  }
 }
 /* Data relativa a hoje (AAAA-MM-DD). */
 const dia = n => {
@@ -376,6 +383,7 @@ function setupRoute() {
     pres: {},
     vot: {},
     votos: {},
+    trocas: {},
     myVote: null,
     jog: {},
     rid: null,

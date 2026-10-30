@@ -3435,6 +3435,67 @@ with sync_playwright() as pw:
         sem_chave(p34, 'convite de grupo que não existe')
         p34.screenshot(path=f'{OUT}/83-convite-nao-encontrado.png')
         ctx34.close()
+        # ---------- v86 (KAN-222): "Quem votou" na aba Votação, com a hora do servidor, as trocas e o aviso de 2 aparelhos
+        ctx37 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+        p37 = ctx37.new_page(); p37.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p37, 'criar')
+        p37.fill('#le', 'auditoria86@teste.com'); p37.fill('#lp', 'Jogo@2026'); p37.fill('#lp2', 'Jogo@2026'); p37.keyboard.press('Enter')
+        p37.wait_for_selector('#ngBox', timeout=12000)
+        p37.fill('#ngn', 'Auditoria FC'); p37.click('[data-a=createGroup]'); p37.wait_for_function("location.hash.startsWith('#/g/')"); p37.wait_for_timeout(1500)
+        g37 = p37.url.split('#/g/')[1]
+        p37.click('[data-a=tab][data-v=jogadores]'); p37.wait_for_timeout(300); p37.click('[data-a=seed]'); p37.wait_for_timeout(1500)
+        ids37 = p37.evaluate("Object.keys(S.jog).sort((a,b)=>S.jog[a].name.localeCompare(S.jog[b].name))")
+        nm37 = p37.evaluate("(ids)=>ids.map(i=>S.jog[i].name)", ids37)
+        base37 = 1793404800000  # 30/10/2026 21:00 em São Paulo
+        p37.evaluate(PUT, {
+            f'grupos/{g37}/rodadas/rold': {'date': '2026-10-29', 'time': '20:00', 'place': '', 'np': 0, 'times': [{'c': 0, 'players': ids37[0:5]}, {'c': 1, 'players': ids37[5:10]}]},
+            f'grupos/{g37}/votacoes/v1': {'rid': 'rold', 'title': 'Destaques', 'open': True, 'cats': [{'id': 'best', 'name': 'Melhor jogador'}], 'createdAt': 1},
+            # aparelho A: votou em ids[2] e trocou para ids[3] (com as trocas, hora do servidor)
+            f'grupos/{g37}/votacoes/v1/votos/devA': {'pid': ids37[0], 'v': {'best': ids37[3]}, 't': base37 + 600000},
+            f'grupos/{g37}/votacoes/v1/trocas/x1': {'u': 'devA', 'pid': ids37[0], 'c': 'best', 'p': ids37[2], 'em': base37 + 120000},
+            f'grupos/{g37}/votacoes/v1/trocas/x2': {'u': 'devA', 'pid': ids37[0], 'c': 'best', 'p': ids37[3], 'em': base37 + 600000},
+            # aparelho B: o mesmo nome, votação antiga (sem trocas: vale a hora do aparelho)
+            f'grupos/{g37}/votacoes/v1/votos/devB': {'pid': ids37[0], 'v': {'best': ids37[4]}, 't': base37 + 300000},
+        })
+        p37.reload(); p37.wait_for_timeout(1500)
+        p37.click('[data-a=tab][data-v=votacao]'); p37.wait_for_selector('#quemVotou', timeout=8000)
+        ok('Quem votou (2)' in p37.inner_text('#quemVotou > summary') and p37.locator('#quemVotou .aud-linha').count() == 0,
+           'CT-KAN-222-01: a aba Votação tem "Quem votou (2)", recolhida (o resultado continua em cima)')
+        p37.click('#quemVotou > summary'); p37.wait_for_selector('#quemVotou .aud-linha', timeout=5000)
+        lin37 = p37.evaluate("[...document.querySelectorAll('#quemVotou .aud-linha')].map(l=>[l.dataset.u,l.querySelector('.aud-hora').textContent.trim(),l.querySelector('.aud-votos').textContent.trim(),!!l.querySelector('.aud-repetido')])")
+        ok(lin37[0][0] == 'devA' and lin37[0][1] == '30/10, 21:10' and lin37[0][2] == 'Melhor jogador: ' + nm37[3],
+           f'CT-KAN-222-01: cada voto mostra o nome, a data e a hora (do servidor) e a escolha em cada categoria ({lin37[0]})')
+        ok(lin37[1][0] == 'devB' and 'hora do aparelho' in lin37[1][1], f'CT-KAN-222-01: voto sem trocas (votação antiga) mostra a hora do aparelho, marcada ({lin37[1]})')
+        ok(lin37[0][3] and lin37[1][3], 'CT-KAN-222-03: o mesmo nome em 2 aparelhos aparece marcado ("votou em 2 aparelhos")')
+        bt37 = p37.locator('#quemVotou .aud-linha[data-u=devA] .aud-ver')
+        ok(bt37.inner_text() == 'Ver trocas (2)' and p37.locator('#quemVotou .aud-linha[data-u=devB] .aud-ver').count() == 0, 'CT-KAN-222-02: "Ver trocas (2)" só onde há trocas')
+        bt37.click(); p37.wait_for_timeout(200)
+        tr37 = p37.evaluate("[...document.querySelectorAll('#quemVotou .aud-linha[data-u=devA] .aud-trocas li')].map(x=>x.textContent)")
+        ok(tr37 == [f'21:02 · Melhor jogador: {nm37[2]}', f'21:10 · Melhor jogador: {nm37[3]}'] and bt37.get_attribute('aria-expanded') == 'true',
+           f'CT-KAN-222-02: as trocas aparecem em ordem, com a hora do servidor ({tr37})')
+        al37 = p37.evaluate("[...document.querySelectorAll('#quemVotou > summary, #quemVotou .aud-ver')].map(e=>Math.round(e.getBoundingClientRect().height))")
+        ok(min(al37) >= 44, f'CT-KAN-222-01: o resumo e "Ver trocas" têm pelo menos 44px ({al37})')
+        ok(p37.evaluate("document.documentElement.scrollWidth") <= 360, 'CT-KAN-222-01: a 360px, nada passa da largura da tela')
+        for tema in ['light', 'dark']:
+            p37.emulate_media(color_scheme=tema); p37.wait_for_timeout(150)
+            contraste(p37, f'Quem votou ({tema})')
+            ok(p37.locator('#quemVotou .aud-trocas li').count() == 2, f'CT-KAN-222-02: a seção e as trocas continuam abertas quando a tela se desenha de novo ({tema})')
+            p37.locator('#quemVotou').screenshot(path=f'{OUT}/86-quem-votou-{tema}.png')
+        p37.emulate_media(color_scheme='light')
+        # o voto pelo link grava a troca junto (mesmo aparelho, modo demonstração)
+        p37.goto(URL + f'#/p/{g37}/v/v1'); p37.wait_for_selector('[data-c=voter]', timeout=8000)
+        p37.select_option('[data-c=voter]', ids37[1]); p37.wait_for_timeout(400)
+        p37.locator('[data-a=pubVote]').first.click(); p37.wait_for_timeout(800)
+        meu37 = p37.evaluate("(g)=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2'));return Object.entries(s).filter(([k])=>k.startsWith('grupos/'+g+'/votacoes/v1/trocas/')).map(([,v])=>v)}", g37)
+        novas37 = [t for t in meu37 if t.get('pid') == ids37[1]]
+        ok(len(novas37) == 1 and novas37[0].get('c') == 'best' and isinstance(novas37[0].get('em'), (int, float)),
+           f'CT-KAN-222-02: votar pelo link grava a troca junto com o voto, com a hora ({novas37})')
+        p37.goto(URL + '#/g/' + g37); p37.wait_for_timeout(1200); p37.click('[data-a=tab][data-v=votacao]'); p37.wait_for_selector('#quemVotou', timeout=8000)
+        ok('Quem votou (3)' in p37.inner_text('#quemVotou > summary'), 'CT-KAN-222-02: o voto novo entra em "Quem votou"')
+        p37.click('[data-a=delVote]'); confirmar_app(p37, True); p37.wait_for_timeout(1000)
+        sobra37 = p37.evaluate("(g)=>Object.keys(JSON.parse(localStorage.getItem('pelada-demo-v2'))).filter(k=>k.startsWith('grupos/'+g+'/votacoes/v1/')).length", g37)
+        ok(sobra37 == 0, f'CT-KAN-222-06: excluir a votação apaga também os votos e as trocas ({sobra37} sobraram)')
+        ctx37.close()
         # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
         ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
         p7 = ctx7.new_page()

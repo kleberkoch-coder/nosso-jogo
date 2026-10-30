@@ -43,3 +43,44 @@ export function candidatos(
   if (c.pos) ids = ids.filter(id => pos(id) === c.pos);
   return ids.sort((a, b) => nome(a).localeCompare(nome(b), local));
 }
+
+/* KAN-222: auditoria ("Quem votou"). Uma linha por aparelho que votou, com o nome que a pessoa escolheu, o voto
+   final, a hora e as trocas. A hora é a do servidor (última troca gravada); em votação antiga, sem trocas, vale a
+   hora do aparelho (t), marcada. O mesmo nome em mais de um aparelho fica marcado (repetido). */
+export type Troca = { u: string; pid: string; c: string; p: string; em: number | null };
+export type LinhaAuditoria = {
+  u: string;
+  pid: string;
+  v: Record<string, string>;
+  quando: number | null;
+  doServidor: boolean;
+  trocas: Troca[];
+  repetido: boolean;
+};
+export function auditoria(
+  votos: Record<string, { pid?: string; v?: Record<string, string>; t?: number } | null | undefined>,
+  trocas: Record<string, Troca | null | undefined>
+): LinhaAuditoria[] {
+  const porAparelho: Record<string, Troca[]> = {};
+  for (const x of Object.values(trocas || {})) if (x && x.u) (porAparelho[x.u] ||= []).push(x);
+  const linhas: LinhaAuditoria[] = [];
+  for (const [u, d] of Object.entries(votos || {})) {
+    if (!d || !d.pid) continue;
+    const ts = (porAparelho[u] || []).slice().sort((a, b) => (a.em ?? Infinity) - (b.em ?? Infinity)),
+      ult = ts.length ? ts[ts.length - 1]!.em : null;
+    linhas.push({
+      u,
+      pid: d.pid,
+      v: d.v || {},
+      quando: ult ?? d.t ?? null,
+      doServidor: ult != null,
+      trocas: ts,
+      repetido: false,
+    });
+  }
+  const n: Record<string, number> = {};
+  linhas.forEach(l => (n[l.pid] = (n[l.pid] || 0) + 1));
+  linhas.forEach(l => (l.repetido = n[l.pid]! > 1));
+  /* Mais recente primeiro. */
+  return linhas.sort((a, b) => (b.quando || 0) - (a.quando || 0));
+}

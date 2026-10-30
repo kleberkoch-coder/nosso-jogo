@@ -45,4 +45,16 @@ export default {
   'votacao.excluirAcao': 'Excluir votação',
   'votacao.e': ' e ',
   'votacao.semVotosCurto': 'sem votos',
+  'aud.titulo': 'Quem votou ({n})',
+  'aud.resumo': 'Só administradores veem',
+  'aud.ajuda':
+    'Cada linha é um aparelho. O nome é o que a pessoa escolheu ao votar. A hora é a do servidor; em votação antiga, a do aparelho.',
+  'aud.repetido': 'votou em 2 aparelhos',
+  'aud.horaAparelho': '(hora do aparelho)',
+  'aud.escolha': '{cat}: {nome}',
+  'aud.semEscolha': 'Escolheu o nome, mas ainda não votou.',
+  'aud.verTrocas.um': 'Ver trocas (1)',
+  'aud.verTrocas.outros': 'Ver trocas ({n})',
+  'aud.esconderTrocas': 'Esconder trocas',
+  'aud.nenhum': 'Ninguém votou ainda.',
 };

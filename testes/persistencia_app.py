@@ -578,11 +578,14 @@ with sync_playwright() as pw:
     pronto(p29, 'jogadores'); p29.click('[data-a=seed]'); p29.wait_for_timeout(1500)
     gravou(p29); pronto(p29, 'caixa'); p29.wait_for_function("S.loaded.pc", timeout=20000)
     p29.click('[data-a=ratNovo]'); p29.wait_for_selector('#rtn', timeout=10000)
-    p29.fill('#rtn', 'Bola nova'); p29.fill('#rtv', '300')
+    p29.fill('#rtn', 'Bola nova')
     ids29 = J(p29, "[...document.querySelectorAll('#rtPart .rtp')].map(x=>x.value)")[:3]
     for pid in ids29:
         p29.locator(f'#rtPart .rat-linha:has(.rtp[value="{pid}"]) .chk-linha span').click(); p29.wait_for_timeout(60)
-    p29.click('#dlg [data-a=ratSalvar]'); p29.wait_for_timeout(1000)
+    # KAN-222: o valor entra por último e o roteiro confere que ele ficou (no emulador, às vezes o valor digitado
+    # antes de marcar os participantes não ficava, e o rateio não era criado: "Informe o valor").
+    p29.fill('#rtv', '300'); p29.wait_for_function("document.getElementById('rtv').value === '300'", timeout=5000); p29.wait_for_timeout(200)
+    p29.click('#dlg [data-a=ratSalvar]'); p29.wait_for_function("Object.keys((S.pc||{}).rat||{}).length >= 1", timeout=15000)
     rid29 = J(p29, "Object.keys((S.pc||{}).rat||{})[0]")
     p29.click(f'#rat-{rid29} [data-a=ratRecebi][data-p="{ids29[0]}"]'); p29.wait_for_timeout(1000)
     p29.click(f'#rat-{rid29} [data-a=ratEncerrar]'); p29.wait_for_timeout(300)

@@ -31,6 +31,23 @@ def _parou(tipo, valor, tb):
     sys.__excepthook__(tipo, valor, tb)
 PAGINAS = []
 sys.excepthook = _parou
+# KAN-222: quando um clique ou uma espera falha, anota o estado da tela na hora (depois o navegador já fechou).
+from playwright.sync_api import Page as _Pagina
+def _com_estado(nome):
+    orig = getattr(_Pagina, nome)
+    def f(self, *a, **k):
+        try:
+            return orig(self, *a, **k)
+        except Exception:
+            try:
+                e = self.evaluate("(()=>{const d=document.getElementById('dlg');return location.hash+' | janela: '+(d&&d.open?(d.innerText||'').replace(/\\s+/g,' ').slice(0,160):'fechada')+' | aviso: '+((document.getElementById('toast')||{}).innerText||'').slice(0,80)})()")
+                print(('::error::Gravação: ' if GITHUB else 'ERRO    ') + f'{nome}({str(a[0])[:60] if a else ""}) falhou; tela: {e}', flush=True)
+            except Exception:
+                pass
+            raise
+    setattr(_Pagina, nome, f)
+for _n in ('click', 'wait_for_selector', 'wait_for_function', 'fill'):
+    _com_estado(_n)
 res = []; errs = []
 
 def ok(cond, msg):

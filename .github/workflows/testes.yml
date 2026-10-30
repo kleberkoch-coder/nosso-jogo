@@ -79,10 +79,16 @@ jobs:
           test "${pass:-0}" -gt 0 || { echo "::error::Nenhum teste de regra rodou."; exit 1; }
           echo "::notice::Regras do Firebase no emulador: ${pass} passaram, ${fail:-0} falharam."
 
-  testes:
+  # KAN-220: o roteiro se divide em 3 partes que rodam ao mesmo tempo (PARTE=a, b e c; ver testes/testes_app.py).
+  # Juntas levam o tempo da mais longa (cerca de 8 min), em vez dos 20 min de uma só.
+  testes-parte:
     needs: montar
     runs-on: ubuntu-latest
-    timeout-minutes: 28
+    timeout-minutes: 16
+    strategy:
+      fail-fast: false
+      matrix:
+        parte: [a, b, c]
     # Imagem oficial do Playwright: já vem com o navegador instalado.
     container: mcr.microsoft.com/playwright/python:v1.47.0-jammy
     steps:
@@ -111,10 +117,11 @@ jobs:
               assert n == 1, 'Não achei window.FIREBASE_CONFIG em ' + orig
               pathlib.Path(dest).write_text(s2, encoding='utf-8')
           PY
-      - name: Rodar os testes
-        # 16 min desde a v62: o roteiro passou de 500 verificações e já levava cerca de 9 min (KAN-184 soma ~30 s de espera de propósito).
-        # 24 min desde a v79: com 758 verificações, a v78 já levou 15 min 51 s e a v79 passou dos 16.
-        timeout-minutes: 24
+      - name: Rodar os testes (parte ${{ matrix.parte }})
+        # Cada parte leva de 5 a 8 min; 12 min deixam folga sem esconder um teste travado.
+        timeout-minutes: 12
+        env:
+          PARTE: ${{ matrix.parte }}
         run: |
           (cd /tmp/demo && python -m http.server 8765 >/dev/null 2>&1 &)
           sleep 2
@@ -123,10 +130,21 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: resultado-dos-testes
+          name: resultado-dos-testes-${{ matrix.parte }}
           path: |
             testes/fotos
-            testes/resultado.json
+
+  # Resultado único "testes" (o nome que a proposta espera): passa só se as 3 partes passaram.
+  testes:
+    needs: testes-parte
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Conferir as 3 partes
+        run: |
+          echo "Partes do roteiro: ${{ needs.testes-parte.result }}"
+          test "${{ needs.testes-parte.result }}" = "success"
 
   # Roteiro de gravação contra o EMULADOR do Firebase (KAN-170): o app grava no Firestore de verdade (com as regras),
   # recarrega e confere. Pega o que o modo demonstração não pega (ex.: o defeito do KAN-167).

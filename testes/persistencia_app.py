@@ -512,10 +512,10 @@ with sync_playwright() as pw:
     p28.click('#quadroAno > summary'); p28.wait_for_selector('#quadroTab [data-a=payMes]', timeout=20000)
     alvo28 = p28.locator('#quadroTab [data-a=payMes]').first
     j28, m28 = alvo28.get_attribute('data-p'), alvo28.get_attribute('data-v')
-    alvo28.click(); p28.wait_for_timeout(1200); gravou(p28)
+    alvo28.click(); p28.wait_for_function("(a)=>{const i=Number(a[1].slice(5))-1;const c=[...document.querySelectorAll(`#quadroTab tr[data-pid=\"${a[0]}\"] td`)][i];return c&&c.className==='q-pago'}", arg=[j28, m28], timeout=20000); gravou(p28)
     sair_e_esperar(p28)
     p28.goto(URL + '#/entrar'); p28.wait_for_selector('#le', timeout=20000); p28.wait_for_timeout(300)
-    p28.fill('#le', E28); p28.fill('#lp', SENHA); p28.keyboard.press('Enter'); p28.wait_for_timeout(2500)
+    p28.fill('#le', E28); p28.fill('#lp', SENHA); p28.keyboard.press('Enter'); p28.wait_for_function("window.S && S.user && !S.user.anon", timeout=20000)
     p28.goto(URL + '#/g/' + g28); pronto(p28, 'caixa'); p28.wait_for_function("S.loaded.pc && S.resCx", timeout=20000); p28.wait_for_timeout(1200)
     r28 = J(p28, "(a)=>((S.resCx[a[1]]||{}).mens||{})[a[0]]||0", [j28, m28])
     l28 = J(p28, "(a)=>Object.values(S.caixa||{}).filter(l=>l&&l.pid===a[0]&&l.k==='mensal').map(l=>[l.ref,l.v])", [j28, m28])

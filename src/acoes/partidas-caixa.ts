@@ -13,7 +13,7 @@ const st = (): any => estado;
 
 export const acoes = {
   settings: () => {
-    openDlg('<div id="pcRaiz"></div>');
+    openDlg('pcRaiz');
     dlg.setAttribute('aria-labelledby', 'pcTitulo');
     montarPartidasCaixa();
   },

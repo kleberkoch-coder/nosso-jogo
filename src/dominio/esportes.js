@@ -1,6 +1,5 @@
 import { ppos } from './grupo.js';
 import { S } from '../nucleo/estado.js';
-import { esc } from '../nucleo/util.js';
 import { tx } from '../i18n/index.js';
 
 const POS = { GOL: 'Goleiro', DEF: 'Defesa', MEI: 'Meio', ATA: 'Ataque' };
@@ -253,12 +252,6 @@ function tnJogo(m, lado, times) {
 }
 /* "colete laranja" (sem colete nas duplas). */
 const colete = c => tx('time.colete', { cor: COL[(c || 0) % COL.length].n.toLowerCase() });
-function posTag(id) {
-  const k = ppos(id);
-  return hasPos() && k
-    ? `<span class="pos ${k === sport().key ? 'GOL' : ''}" title="${esc(posLabel(k))}">${esc(k)}</span>`
-    : '';
-}
 const COL = [
   { n: 'Laranja', c: '#F4B183', e: '🟧' },
   { n: 'Azul', c: '#9DBBF0', e: '🟦' },
@@ -285,7 +278,6 @@ export {
   posIdx,
   posKeys,
   posLabel,
-  posTag,
   sport,
   sportName,
   tn,

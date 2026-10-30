@@ -19,7 +19,7 @@ const acoes = {
   newVote: () => {
     const rs = rodadas().filter(r => r.times);
     if (!rs.length) return;
-    openDlg('<div id="novaVotRaiz"></div>');
+    openDlg('novaVotRaiz');
     dlg.setAttribute('aria-labelledby', 'novaVotTitulo');
     montarNovaVotacao(rs);
   },

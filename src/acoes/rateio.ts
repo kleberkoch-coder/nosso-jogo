@@ -52,7 +52,7 @@ function gravar(rid: string, campos: Record<string, unknown>, local: (r: Rateio 
 
 function abrir(rid: string) {
   if (!pode()) return;
-  openDlg('<div id="ratRaiz"></div>');
+  openDlg('ratRaiz');
   dlg.setAttribute('aria-labelledby', 'ratTitulo');
   montarRateio(rid);
   setTimeout(() => ($('#rtn') as HTMLInputElement | null)?.focus(), 30);

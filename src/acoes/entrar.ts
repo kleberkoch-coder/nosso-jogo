@@ -5,7 +5,8 @@ import * as banco from '../nucleo/backend.js';
 import { S as estado } from '../nucleo/estado.js';
 import { $, inAppBrowser, toast } from '../nucleo/util.js';
 import { AUTH_CANCEL, authMsg, avisoGoogle, pwFalta, pwOk } from '../telas/Login';
-import { openDlg, val } from '../ui/dialogos.js';
+import { val } from '../ui/dialogos.js';
+import { janelaNavegador } from '../ui/JanelaNavegador';
 import { render } from '../ui/render.js';
 
 // O estado e o banco ainda são JavaScript sem tipos; o banco é lido na hora (setB troca o banco ao iniciar).
@@ -69,9 +70,7 @@ const acoes = {
     const le = $('#lerr');
     if (le) le.textContent = '';
     if (!bk().demo && inAppBrowser()) {
-      openDlg(`<h3>${tx('auth.abraNavTitulo')}</h3><p>${tx('auth.abraNavTexto')}</p>
-      <p class="small muted">${tx('auth.abraNavDica')}</p>
-      <div class="dlg-f"><button class="btn" data-a="close">${tx('auth.fechar')}</button><button class="btn primary" data-a="copyHere">${tx('auth.copiarLink')}</button></div>`);
+      janelaNavegador();
       return;
     }
     if (S.authMode === 'signup') S.paisNovo = val('lpais') || S.paisNovo;

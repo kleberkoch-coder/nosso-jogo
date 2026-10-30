@@ -38,7 +38,7 @@ export { montarHome, vHome } from './telas/Grupos';
 export { guardarOrdemJogadores, montarJogadores, vJogadores } from './telas/Jogadores';
 export { montarRodada, vRodada } from './telas/Rodada';
 export { migrar, migrarCaixa, migrarMensal, verificarRodadas } from './nucleo/partidas.js';
-export { drawPreview } from './ui/dialogos-gestao.js';
+export { drawPreview } from './ui/JanelasGestao';
 export { contaRegiao, listaPais, paisAparelho, preencher } from './ui/regiao.ts';
 export { trocarPaisTelefone } from './ui/contato-form';
 /* Planos (KAN-119): quem tem cada recurso, avisos, cadeado das abas e o espelho do plano no grupo. */

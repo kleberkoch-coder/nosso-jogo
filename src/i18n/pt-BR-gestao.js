@@ -397,6 +397,7 @@ export default {
   'sorteio.variar1': 'Pouco',
   'sorteio.variar2': 'Médio',
   'sorteio.variar3': 'Muito',
-  'sorteio.quemEntra': 'Quem entra no sorteio ({k} de {total})',
+  'sorteio.quemEntraAntes': 'Quem entra no sorteio (',
+  'sorteio.quemEntraDepois': ' de {total})',
   'sorteio.sortear': 'Sortear',
 };

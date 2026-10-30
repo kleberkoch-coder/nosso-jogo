@@ -23,7 +23,7 @@ type El = HTMLElement & { dataset: DOMStringMap };
 function abrirPlanos(motivo?: string) {
   return janelas().then(
     m => {
-      openDlg('<div id="planosRaiz"></div>');
+      openDlg('planosRaiz');
       dlg.setAttribute('aria-labelledby', 'planosTitulo');
       const el = $('#planosRaiz');
       if (el) m.montarPlanos(el, motivo);
@@ -94,7 +94,7 @@ export const acoes = {
   escolherAtivos: () =>
     janelas().then(
       m => {
-        openDlg('<div id="escolherRaiz"></div>');
+        openDlg('escolherRaiz');
         dlg.setAttribute('aria-labelledby', 'escolherTitulo');
         const el = $('#escolherRaiz');
         if (el) m.montarEscolher(el);

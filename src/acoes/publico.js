@@ -7,9 +7,10 @@ import { avulsosEsgotados, limite } from '../dominio/limites.ts';
 import { precisaVaga, situacao } from '../dominio/vagas.ts';
 import { setPres } from '../nucleo/edicoes.js';
 import { GB, S, w } from '../nucleo/estado.js';
-import { $, cl, esc, toast } from '../nucleo/util.js';
+import { $, cl, toast } from '../nucleo/util.js';
 import { MEK, myLocal } from '../telas/publico-rodada.js';
-import { closeDlg, dlg, openDlg, posField, val } from '../ui/dialogos.js';
+import { closeDlg, dlg, val } from '../ui/dialogos.js';
+import { janelaMeuNome } from '../ui/JanelasLink';
 import { changed } from '../ui/render.js';
 import { ACT } from '../acoes.js';
 
@@ -52,9 +53,7 @@ const acoes = {
   },
   /* KAN-127: o que o jogador digitou na busca já vem no nome. */
   pubAdd: el => {
-    openDlg(`<h3>${tx('publico.addTitulo')}</h3><label class="f"><span>${tx('publico.addNome')}</span><input class="inp" id="anm" maxlength="40" autocomplete="off" value="${esc((el && el.dataset.v) || '')}"></label>
-    <div id="avsug"></div><div id="avnew">${posField('apos')}</div>
-    <div class="dlg-f"><button class="btn" data-a="close">${tx('comum.cancelar')}</button><button class="btn primary" data-a="pubSaveAdd">${tx('publico.addConfirmar')}</button></div>`);
+    janelaMeuNome((el && el.dataset.v) || '');
     if (el && el.dataset.v) $('#anm')?.dispatchEvent(new Event('input', { bubbles: true }));
   },
   pubPick: el => {

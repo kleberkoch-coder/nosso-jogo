@@ -29,7 +29,7 @@ let tela: Tela = { v: 'lista', avs };
 function mostrar(t: Tela) {
   tela = t;
   if (!dlg.open || !$('#avRaiz')) {
-    openDlg('<div id="avRaiz"></div>');
+    openDlg('avRaiz');
     dlg.setAttribute('aria-labelledby', 'avTitulo');
   }
   const el = $('#avRaiz');

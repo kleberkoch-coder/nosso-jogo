@@ -15,14 +15,22 @@ import { GB, S, clean, w } from '../nucleo/estado.js';
 import { linkConvite } from '../nucleo/links.js';
 import { $, cl, esc, toast, uid } from '../nucleo/util.js';
 import { upMyGroup } from '../rotas.js';
-import { closeDlg, confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
+import { closeDlg, confirmou, dlg, val } from '../ui/dialogos.js';
 import { changed } from '../ui/render.js';
 import { LOCAL } from '../i18n/formatos.js';
 import { ACT } from '../acoes.js';
-import { contaRegiao, opcoesPais } from '../ui/regiao.ts';
+import { contaRegiao } from '../ui/regiao.ts';
 import { definirRegiao } from '../i18n/formatos.js';
 import { regiaoDe } from '../dominio/regiao.ts';
 import { juntarTextos } from '../i18n/index.js';
+import {
+  janelaDuplicar,
+  janelaGrupo,
+  janelaPaisConta,
+  janelaPermissoes,
+  janelaPosicao,
+  janelaSeusGrupos,
+} from '../ui/JanelasGrupo';
 import textos from '../i18n/pt-BR-grupolote';
 
 juntarTextos(textos);
@@ -68,9 +76,7 @@ const lerForm = gid => (form ? form.readGroupForm(gid) : null);
 const acoes = {
   /* País da conta (KAN-162): vale para os grupos novos; cada grupo tem o seu em Editar grupo. */
   contaPais: () => {
-    openDlg(`<h3>${tx('regiao.contaTitulo')}</h3><p class="small muted" style="margin-top:-6px">${tx('regiao.contaAjuda')}</p>
-    <label class="f"><span>${tx('regiao.pais')}</span><select class="sel" id="cpais">${opcoesPais((S.me && S.me.pais) || 'BR')}</select></label>
-    <div class="dlg-f"><button class="btn" data-a="close">${tx('comum.cancelar')}</button><button class="btn primary" data-a="salvarPaisConta">${tx('comum.salvar')}</button></div>`);
+    janelaPaisConta((S.me && S.me.pais) || 'BR');
     setTimeout(() => $('#cpais')?.focus(), 50);
   },
   salvarPaisConta: () => {
@@ -87,9 +93,7 @@ const acoes = {
   },
   newGroup: () => {
     if (avisoLimiteGrupos()) return; // KAN-119: o plano já está cheio de grupos ativos
-    openDlg(
-      `<h3>${tx('admgrupo.novo')}</h3><div id="ngRaiz"></div><div class="dlg-f"><button class="btn" data-a="close">${tx('comum.cancelar')}</button><button class="btn primary" data-a="createGroup">${tx('admgrupo.criar')}</button></div>`
-    );
+    janelaGrupo(null);
     return carregarForm().then(m => {
       if (!m || !$('#ngRaiz')) return;
       m.montarGrupoForm({}, false);
@@ -97,9 +101,7 @@ const acoes = {
     });
   },
   editGroup: () => {
-    openDlg(
-      `<h3>${tx('admgrupo.editar')}</h3><p class="small muted" style="margin-top:-6px">${tx('admgrupo.criadoEm', { data: fdia(S.app.createdAt) })}</p><div id="ngRaiz"></div><div class="dlg-f"><button class="btn" data-a="close">${tx('comum.cancelar')}</button><button class="btn primary" data-a="saveGroup">${tx('comum.salvar')}</button></div>`
-    );
+    janelaGrupo({ criadoEm: fdia(S.app.createdAt) });
     return carregarForm().then(m => {
       if (m && $('#ngRaiz')) m.montarGrupoForm(S.app, true);
     });
@@ -152,10 +154,7 @@ const acoes = {
     toast(tx('admgrupo.atualizado'));
     return p;
   },
-  addPos: () =>
-    openDlg(`<h3>${tx('admgrupo.posNova')}</h3><div class="row"><label class="f" style="width:110px"><span>${tx('admgrupo.posSigla')}</span><input class="inp" id="psg" maxlength="4" placeholder="${tx('admgrupo.posSiglaEx')}" style="text-transform:uppercase"></label>
-    <label class="f" style="flex:1"><span>${tx('admgrupo.posNome')}</span><input class="inp" id="pnmx" maxlength="24" placeholder="${tx('admgrupo.posNomeEx')}"></label></div><p class="small muted" style="margin-top:-6px">${tx('admgrupo.posAjuda')}</p>
-    <div class="dlg-f"><button class="btn" data-a="close">${tx('comum.cancelar')}</button><button class="btn primary" data-a="savePos">${tx('admgrupo.posAdicionar')}</button></div>`),
+  addPos: () => janelaPosicao(),
   savePos: () => {
     const k = val('psg')
         .toUpperCase()
@@ -197,11 +196,7 @@ const acoes = {
   },
   dupGroup: () => {
     if (avisoLimiteGrupos()) return;
-    openDlg(`<h3>${tx('admgrupo.dupTitulo')}</h3><p class="small muted" style="margin-top:-6px">${tx('admgrupo.dupAjuda')}</p>
-    <label class="f"><span>${tx('admgrupo.dupNome')}</span><input class="inp" id="dgn" maxlength="40" value="${esc(tx('admgrupo.dupCopia', { nome: gname() }))}"></label><div class="err" id="dgErr" style="margin-top:-8px"></div>
-    <label class="row small" style="margin-bottom:6px"><input type="checkbox" id="dgel" checked> ${tx('admgrupo.dupElenco')}</label>
-    <p class="small muted">${tx('admgrupo.dupNaoCopia')}</p>
-    <div class="dlg-f"><button class="btn" data-a="close">${tx('comum.cancelar')}</button><button class="btn primary" data-a="doDupGroup">${tx('admgrupo.dupAcao')}</button></div>`);
+    janelaDuplicar(gname());
     setTimeout(() => {
       const i = $('#dgn');
       i && (i.focus(), i.select());
@@ -386,8 +381,7 @@ const acoes = {
     const gs = Object.entries((S.me && S.me.grupos) || {})
       .filter(([k, v]) => v.ativo !== false || k === S.gid)
       .sort((a, b) => (a[1].name || '').localeCompare(b[1].name || '', LOCAL));
-    openDlg(`<h3>${tx('admgrupo.seus')}</h3><ul class="plist">${gs.map(([gid, g]) => `<li><span class="gem">${(SPORTS[g.sport] || SPORTS.futebol).e}</span><span class="pn"><b>${esc(g.name)}</b>${gid === S.gid ? ` <span class="tag">${tx('admgrupo.aberto')}</span>` : ''}<br><span class="tag">${esc(g.sportName || (SPORTS[g.sport] || SPORTS.futebol).n)}</span></span>${gid === S.gid ? '' : `<a class="btn sm primary" href="#/g/${gid}">${tx('admgrupo.abrir')}</a>`}</li>`).join('')}</ul>
-    <div class="dlg-f"><a class="btn" href="#/">${tx('admgrupo.verTodos')}</a><button class="btn primary" data-a="newGroup">${tx('admgrupo.novo')}</button></div>`);
+    janelaSeusGrupos(gs, S.gid);
   },
   acceptInv: async el => {
     el.disabled = true;
@@ -476,13 +470,7 @@ const acoes = {
       m = (S.membros || {})[u];
     if (!m || m.role === 'owner') return;
     const atual = m.perm === undefined || m.perm === null ? null : permLimpa(m.perm);
-    openDlg(`<h3 id="permTitulo">${tx('perm.titulo')}</h3><p class="small muted" style="margin-top:-6px">${tx('perm.ajuda', { email: esc(m.email || u) })}</p>
-    <ul class="perm-lista">${PERMISSOES.map(
-      k =>
-        `<li><label class="perm-item"><input type="checkbox" id="perm_${k}"${!atual || atual[k] ? ' checked' : ''}><span><b>${tx('perm.nome.' + k)}</b><br><span class="small muted">${tx('perm.desc.' + k)}</span></span></label></li>`
-    ).join('')}</ul>
-    <p class="small muted">${tx('perm.sempre')}</p>
-    <div class="dlg-f"><button class="btn" data-a="close">${tx('comum.cancelar')}</button><button class="btn primary" data-a="salvarPerm" data-v="${esc(u)}">${tx('perm.salvar')}</button></div>`);
+    janelaPermissoes(u, m.email || u, atual);
     dlg.setAttribute('aria-labelledby', 'permTitulo');
   },
   salvarPerm: el => {

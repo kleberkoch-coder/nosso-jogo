@@ -1,5 +1,5 @@
 import { $, toast } from './nucleo/util.js';
-import { openDlg } from './ui/dialogos.js';
+import { janelaInstalar } from './ui/JanelasLink';
 import { tx } from './i18n/index.js';
 
 /* =================== PWA =================== */
@@ -29,9 +29,7 @@ ib.addEventListener('click', async () => {
     installEvt = null;
     return;
   }
-  const passos = isIOS ? ['pwa.ios1', 'pwa.ios2', 'pwa.ios3'] : ['pwa.and1', 'pwa.and2'];
-  openDlg(`<h3>${tx('pwa.titulo')}</h3><ol class="small" style="padding-left:18px;line-height:1.8">${passos.map(k => `<li>${tx(k)}</li>`).join('')}</ol>
-  <p class="small muted">${tx('pwa.icone')}</p><div class="dlg-f"><button class="btn primary" data-a="close">${tx('comum.entendi')}</button></div>`);
+  janelaInstalar(isIOS);
 });
 const netBar = () => {
   $('#net').hidden = navigator.onLine;

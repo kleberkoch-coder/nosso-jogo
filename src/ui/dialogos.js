@@ -1,18 +1,27 @@
-import { hasPos, sport } from '../dominio/esportes.js';
+import { render } from 'preact';
+
 import { tx } from '../i18n/index.js';
-import { ppos } from '../dominio/grupo.js';
+
 import { CAP } from '../nucleo/backend.js';
 import { $ } from '../nucleo/util.js';
 
 /* =================== diálogos =================== */
 const dlg = $('#dlg');
-/* KAN-74: com botão principal no rodapé, o teclado do celular mostra "Concluir" e o Enter envia (ver eventos.js). */
-function openDlg(h) {
+/* KAN-74: com botão principal no rodapé, o teclado do celular mostra "Concluir" e o Enter envia (ver eventos.js).
+   Desde a v84 (KAN-218) a janela não recebe HTML em texto: recebe um componente (Preact) ou o id do lugar onde um
+   componente se desenha depois (ex.: openDlg('ratRaiz') e montarRateio). */
+function openDlg(conteudo) {
   conf = null;
   alterada = false;
   dlg.removeAttribute('aria-labelledby');
   const b = $('#dlgBody');
-  b.innerHTML = h;
+  render(null, b);
+  b.replaceChildren();
+  if (typeof conteudo === 'string') {
+    const d = document.createElement('div');
+    d.id = conteudo;
+    b.append(d);
+  } else render(conteudo, b);
   fotoForm = valoresForm();
   setTimeout(() => {
     fotoForm = valoresForm();
@@ -195,23 +204,5 @@ function avisar(titulo, texto) {
   });
 }
 const val = id => (document.getElementById(id)?.value || '').trim();
-const posSel = (id, v) =>
-  `<select class="sel" id="${id}">${sport()
-    .pos.map(([k, l]) => `<option value="${k}" ${(v || ppos('')) === k ? 'selected' : ''}>${l}</option>`)
-    .join('')}</select>`;
-const posField = (id, v) =>
-  hasPos() ? `<label class="f"><span>${tx('comum.posicao')}</span>${posSel(id, v)}</label>` : '';
 
-export {
-  avisar,
-  closeDlg,
-  closeDlgNow,
-  confirmou,
-  dlg,
-  marcarAlterada,
-  naoConfirmar,
-  openDlg,
-  posField,
-  responder,
-  val,
-};
+export { avisar, closeDlg, closeDlgNow, confirmou, dlg, marcarAlterada, naoConfirmar, openDlg, responder, val };

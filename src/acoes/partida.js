@@ -17,6 +17,7 @@ import {
   quadra,
 } from '../telas/Partida';
 import { closeDlg, confirmou, dlg, openDlg } from '../ui/dialogos.js';
+import { janelaPonto } from '../ui/JanelaPonto';
 import { render } from '../ui/render.js';
 import { ACT } from '../acoes.js';
 
@@ -38,29 +39,13 @@ const acoes = {
       SP = sport(),
       sc = SP.score[+el.dataset.i || 0],
       pts = sc[1];
-    openDlg(`<h3>${esc(tx('partida.pontoTime', { ponto: nomePonto(sc, SP), time: tn(ti) }))}</h3><p class="small muted">${tx('partida.quemMarcou')}</p><div class="vgrid">${quadra(
-      r,
-      t
-    )
-      .atuais.map(
-        id =>
-          `<button class="opt" data-a="addGoal" data-v="${t}" data-p="${id}" data-pts="${pts}">${esc(pname(id))}</button>`
-      )
-      .join('')}</div>
-    ${
-      SP.og
-        ? `<p class="small muted" style="margin-top:14px">${tx('partida.contra')}</p><div class="vgrid">${quadra(
-            r,
-            t === 'a' ? 'b' : 'a'
-          )
-            .atuais.map(
-              id =>
-                `<button class="opt" data-a="addGoal" data-v="${t}" data-p="${id}" data-og="1" data-pts="${pts}">${esc(pname(id))}</button>`
-            )
-            .join('')}</div>`
-        : ''
-    }
-    <div class="dlg-f"><button class="btn" data-a="addGoal" data-v="${t}" data-pts="${pts}">${tx('partida.semAutor')}</button><button class="btn" data-a="close">${tx('comum.cancelar')}</button></div>`);
+    janelaPonto({
+      titulo: tx('partida.pontoTime', { ponto: nomePonto(sc, SP), time: tn(ti) }),
+      t,
+      pts,
+      atuais: quadra(r, t).atuais,
+      contra: SP.og ? quadra(r, t === 'a' ? 'b' : 'a').atuais : null,
+    });
   },
   addGoal: el => {
     const L = S.live;
@@ -129,7 +114,7 @@ const acoes = {
   },
   /* KAN-178: artilharia da rodada (só o total de gols de cada jogador). */
   abrirArtilharia: () => {
-    openDlg('<div id="artRaiz"></div>');
+    openDlg('artRaiz');
     if (!montarArtilharia()) closeDlg();
   },
   salvarArtilharia: () => {
@@ -146,12 +131,12 @@ const acoes = {
   },
   /* KAN-177: escalação de um lado (empréstimo, troca, alguém da lista de presença). */
   abrirEscalacao: el => {
-    openDlg('<div id="escRaiz"></div>');
+    openDlg('escRaiz');
     if (!montarEscalacao(el.dataset.v, render)) closeDlg();
   },
   /* KAN-176: corrigir uma partida salva (autores, gols a mais ou a menos). */
   editarPartida: el => {
-    openDlg('<div id="edRaiz"></div>');
+    openDlg('edRaiz');
     if (!montarEdicao(el.dataset.v)) closeDlg();
   },
   salvarEdicao: el => {

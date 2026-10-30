@@ -10,7 +10,7 @@ import { GB, S, clean, w } from '../nucleo/estado.js';
 import { $, brl, esc, key, toast, today } from '../nucleo/util.js';
 import { foraDoPadrao, referenciaDoGrupo } from '../dominio/caixa-regras';
 import { closeDlg, confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
-import { playerDlg } from '../ui/dialogos-gestao.js';
+import { janelaSeparar, playerDlg } from '../ui/JanelasGestao';
 import { changed } from '../ui/render.js';
 import { ACT } from '../acoes.js';
 /* Importar da planilha (KAN-159) baixa só quando a janela abre (v59), para a gestão abrir mais leve.
@@ -156,14 +156,7 @@ const acoes = {
       });
     closeDlg();
   },
-  addSep: () => {
-    const o = players()
-      .map(p => `<option value="${p.id}">${esc(p.name)}</option>`)
-      .join('');
-    openDlg(
-      `<h3>${tx('jogadores.separarTitulo')}</h3><label class="f"><span>${tx('jogador.jogador')}</span><select class="sel" id="sa">${o}</select></label><label class="f"><span>${tx('jogadores.e')}</span><select class="sel" id="sb">${o}</select></label><div class="dlg-f"><button class="btn" data-a="close">${tx('comum.cancelar')}</button><button class="btn primary" data-a="saveSep">${tx('jogadores.adicionarPar')}</button></div>`
-    );
-  },
+  addSep: () => janelaSeparar(players()),
   saveSep: () => {
     const a = val('sa'),
       b = val('sb');
@@ -185,7 +178,7 @@ const acoes = {
   importarDlg: () =>
     carregarImportar().then(
       m => {
-        openDlg('<div id="impRaiz"></div>');
+        openDlg('impRaiz');
         const el = $('#impRaiz');
         if (el) m.montarImportar(el);
         setTimeout(() => $('#impTexto')?.focus(), 50);

@@ -97,6 +97,9 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
 ## Componentes (pelada-v84)
 - **Sugestões "Já jogou aqui?"** (KAN-218; `ui/SugestoesAvulso.tsx`): o mesmo visual de antes, agora componente. Na janela "Adicionar meu nome" do link, ao digitar 2 letras ou mais: a linha `small muted` "Já jogou aqui? Toque no seu nome:" e até 5 avulsos em `vgrid` de `opt` (sigla da posição em `pos` + nome). Nenhuma classe nova.
 - **Cabeçalho, abas, menu do tema e avisos de grupo** (KAN-218): montados como elementos, sem HTML em texto, com as mesmas classes (`chip`, `tab`, `tab-trava`, `theme-menu`, `tm-t`, `hint`, `inbar`, `panel empty auth`). Nada muda no visual.
+- **Janelas como componentes** (KAN-218): todas as janelas (`ui/JanelasGestao.tsx`, `ui/JanelasGrupo.tsx`, `ui/JanelasLink.tsx`, `ui/JanelaPonto.tsx`, `ui/JanelaNavegador.tsx`) seguem o mesmo padrão de sempre: título `h3`, ajuda `small muted` logo abaixo (margem -6px), campos `f`, grade de opções `vgrid`/`opt` e rodapé `dlg-f` com Cancelar à esquerda do botão principal. Nenhuma classe nova.
+- **Campos das janelas** (`ui/Campos.tsx`, `CampoPosicao` em `ui/componentes.tsx`): Posição (combo), Nota de 1 a 10 (barra `lvlin` com o número ao lado e a escala `lvlscale`), Telefone (`campo-tel`: combo do país + número + dica), Tipo do jogador com "Recebe por jogo" e a linha de afastamento (`afast-linha`). O mesmo visual de antes, agora componentes.
+- **Negrito vindo do dicionário** (`ComNegrito`, `ui/componentes.tsx`): o texto marca o nome de um botão com `<b>…</b>` (ex.: "Toque em <b>Instalar app</b>") e ele aparece em negrito, sem montar HTML.
 
 ## Componentes (pelada-v78)
 - **Quadro do ano** (KAN-212; `telas/QuadroAno.tsx`; classes `quadro-painel`, `quadro-ano`, `quadro-rolar`, `quadro-tab`, `q-nome`, `q-conta`, `q-pago`, `q-btn`, `q-isento`, `q-antes`, `q-futuro`, `q-total`, `quadro-legenda`; utilitário `sr`, texto só para leitor de tela):

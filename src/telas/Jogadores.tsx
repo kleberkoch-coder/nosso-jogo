@@ -16,7 +16,7 @@ import { Nota, Pos } from '../ui/componentes';
 type Jogador = { id: string; name: string; criado?: number; ativo?: boolean };
 type Avulso = { nome?: string; criado?: number };
 
-const st = (): any => estado;
+const st = () => estado;
 
 /* Ordem da lista (KAN-168): fica guardada neste aparelho. */
 const ORDEM_K = 'nj-ordem-jogadores';

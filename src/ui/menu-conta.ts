@@ -9,7 +9,7 @@ import { S as estado } from '../nucleo/estado.js';
 import * as tema from './tema.js';
 import { abrirMenu, closeThemeMenu } from './tema.js';
 
-const st = (): any => estado;
+const st = () => estado;
 const temaAtual = () => (tema.themeDef() || tema.THEMES[0]) as string[];
 const inicial = (email: string) => (String(email || '?').trim()[0] || '?').toUpperCase();
 const { fromCodePoint } = String;
@@ -24,7 +24,7 @@ function nomePais(iso: string) {
 
 /* Botão do cabeçalho. */
 export function botaoConta(): HTMLButtonElement {
-  const email = (st().user && st().user.email) || '',
+  const email = st().user?.email || '',
     b = document.createElement('button');
   b.className = 'chip conta-chip';
   b.dataset.a = 'contaMenu';

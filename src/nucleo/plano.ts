@@ -25,7 +25,7 @@ import * as banco from './backend.js';
 const bk = (): any => (banco as any).B;
 import { GB, S as estado, w } from './estado.js';
 
-const st = (): any => estado;
+const st = () => estado;
 const cat = () => catalogo(st().planosCfg);
 
 /* Plano da conta de quem está usando o app. */
@@ -53,7 +53,7 @@ export function euSoVejo(): boolean {
   if (!S.app || !S.user || isOwnerMe()) return false;
   return soVe(S.user.uid, S.app.adms, limiteAdmins());
 }
-export const conviteDoGrupoCheio = () => conviteCheio(st().app && st().app.adms, limiteAdmins());
+export const conviteDoGrupoCheio = () => conviteCheio(st().app?.adms, limiteAdmins());
 /* Convidados que só veem, para o organizador marcar na lista. */
 export function quemSoVe(): string[] {
   const S = st(),
@@ -65,7 +65,7 @@ definirRecursos(temNoGrupo, euSoVejo);
 
 /* Grupos ativos de que a pessoa é organizadora (lista "Meus grupos"). */
 export function meusAtivos(): string[] {
-  const g = (st().me && st().me.grupos) || {};
+  const g = st().me?.grupos || {};
   return Object.keys(g).filter(k => g[k] && g[k].role === 'owner' && g[k].ativo !== false);
 }
 export const limiteGrupos = () => limiteDeGrupos(minhaSituacao());

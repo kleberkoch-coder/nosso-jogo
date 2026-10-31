@@ -14,7 +14,7 @@ import { closeDlg, confirmou, dlg, openDlg } from '../ui/dialogos.js';
 import { montarRateio, rascunho, rateios } from '../telas/Rateios';
 
 type El = HTMLElement & { dataset: DOMStringMap };
-const st = S as any;
+const st = S;
 const novoId = (): string => (banco as any).B.newId();
 const op = (banco as any).op;
 const pode = () => posso('caixa') && recurso('caixa');

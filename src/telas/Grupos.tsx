@@ -11,7 +11,7 @@ import { numeroVersao } from '../nucleo/versao.js';
 import { AvisosPlano } from '../ui/Plano';
 
 type MeuGrupo = { name?: string; sport?: string; sportName?: string; role?: string; ativo?: boolean; criado?: number };
-const st = (): any => estado;
+const st = () => estado;
 const esporte = (k?: string) => (SPORTS as Record<string, { e: string; n: string }>)[k || 'futebol'] || SPORTS.futebol;
 
 function LinhaGrupo({ gid, g }: { gid: string; g: MeuGrupo }) {

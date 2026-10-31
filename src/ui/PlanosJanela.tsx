@@ -13,7 +13,7 @@ import { Convite } from './Plano';
 usarEstilo('planos', estilo);
 
 juntarTextos(textosPlanos);
-const st = (): any => estado;
+const st = () => estado;
 const cat = () => catalogo(st().planosCfg);
 
 /* Janela "Planos": o plano de agora e o que cada plano tem. */

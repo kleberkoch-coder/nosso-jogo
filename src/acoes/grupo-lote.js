@@ -1,37 +1,28 @@
-/* Ações: Grupos: criar, editar, duplicar, posições, convites e administradores. Fazem parte de ACT (src/acoes.js). */
+/* Ações: Grupos: criar, editar, duplicar, posições, inativar e país da conta (os administradores convidados ficam em
+   acoes/administradores.ts). Fazem parte de ACT (src/acoes.js). */
 import { CAIXA_K, cfg, ptipo } from '../dominio/caixa.js';
-import { APP, SPORTS, porTime, porTimePadrao, sport } from '../dominio/esportes.js';
+import { SPORTS, porTime, porTimePadrao, sport } from '../dominio/esportes.js';
 import { dupName, fdia, fixos, freq, gname, grpAtivo, lvl, normName, players } from '../dominio/grupo.js';
 import { tp, tx } from '../i18n/index.js';
-import { shareDlg } from '../ui/Compartilhar';
 import { B, op } from '../nucleo/backend.js';
 import { gruposEsgotados, limite } from '../dominio/limites.ts';
-import { PERM_CONVIDADO, PERMISSOES, permLimpa } from '../dominio/permissoes';
 import { temRecurso } from '../dominio/planos';
 import { minhaSituacao } from '../nucleo/plano';
-import { avisoLimiteAdmins, avisoLimiteGrupos, inativarGrupo, reativarGrupo } from './plano';
+import { avisoLimiteGrupos, inativarGrupo, reativarGrupo } from './plano';
 import { editApp } from '../nucleo/edicoes.js';
 import { GB, S, clean, w } from '../nucleo/estado.js';
-import { linkConvite } from '../nucleo/links.js';
 import { $, cl, esc, toast, uid } from '../nucleo/util.js';
 import { upMyGroup } from '../rotas.js';
 import { closeDlg, confirmou, dlg, val } from '../ui/dialogos.js';
 import { changed } from '../ui/render.js';
 import { LOCAL } from '../i18n/formatos.js';
-import { ACT } from '../acoes.js';
 import { contaRegiao } from '../ui/regiao.ts';
 import { definirRegiao } from '../i18n/formatos.js';
 import { regiaoDe } from '../dominio/regiao.ts';
 import { juntarTextos } from '../i18n/index.js';
-import {
-  janelaDuplicar,
-  janelaGrupo,
-  janelaPaisConta,
-  janelaPermissoes,
-  janelaPosicao,
-  janelaSeusGrupos,
-} from '../ui/JanelasGrupo';
+import { janelaDuplicar, janelaGrupo, janelaPaisConta, janelaPosicao, janelaSeusGrupos } from '../ui/JanelasGrupo';
 import textos from '../i18n/pt-BR-grupolote';
+import { acoes as administradores } from './administradores';
 
 juntarTextos(textos);
 
@@ -73,7 +64,7 @@ const carregarForm = () =>
 const formAberto = () => form && form.formAberto();
 const lerForm = gid => (form ? form.readGroupForm(gid) : null);
 
-const acoes = {
+const proprias = {
   /* País da conta (KAN-162): vale para os grupos novos; cada grupo tem o seu em Editar grupo. */
   contaPais: () => {
     janelaPaisConta((S.me && S.me.pais) || 'BR');
@@ -389,108 +380,6 @@ const acoes = {
       .sort((a, b) => (a[1].name || '').localeCompare(b[1].name || '', LOCAL));
     janelaSeusGrupos(gs, S.gid);
   },
-  acceptInv: async el => {
-    el.disabled = true;
-    const R = S.route,
-      uid = S.user.uid;
-    try {
-      // KAN-204: o convidado entra no fim da lista de convidados do grupo, na mesma gravação (dentro do limite do plano).
-      await B.lote([
-        {
-          tipo: 'set',
-          p: 'grupos/' + R.gid + '/membros/' + uid,
-          o: Object.assign(
-            // KAN-201: convidado novo entra só com o dia a dia; o organizador libera o resto.
-            { uid, email: S.user.email, role: 'admin', token: R.token, at: Date.now(), perm: { ...PERM_CONVIDADO } },
-            S.user.via ? { via: S.user.via } : {}
-          ),
-        },
-        { tipo: 'patch', p: 'grupos/' + R.gid, o: { adms: op.uniao([uid]) } },
-      ]);
-      await upMyGroup(R.gid, {
-        name: gname(),
-        role: 'admin',
-        sport: S.app.sport || 'futebol',
-        sportName: S.app.sportName || '',
-        ativo: S.app.ativo !== false,
-        criado: S.app.createdAt || null,
-      });
-      location.hash = '#/g/' + R.gid;
-    } catch (e) {
-      console.error(e);
-      el.disabled = false;
-      toast(tx('admgrupo.conviteInvalido'));
-    }
-  },
-  inviteLink: () => {
-    if (avisoLimiteAdmins()) return; // KAN-204: o plano já tem todos os convidados que permite
-    let t = S.convite?.token;
-    if (!t) {
-      t = B.newId() + B.newId();
-      S.convite = { token: t };
-      w(GB.set('privado/convite', { token: t }));
-    }
-    shareDlg(
-      tx('admgrupo.conviteTitulo'),
-      tx('admgrupo.conviteTexto', { grupo: gname(), app: APP, link: linkConvite(t) })
-    );
-  },
-  newInviteLink: el => {
-    if (
-      confirmou(el, {
-        titulo: tx('admgrupo.novoLinkTitulo'),
-        texto: tx('admgrupo.novoLinkTexto'),
-        acao: tx('admgrupo.novoLinkAcao'),
-      }) !== 'sim'
-    )
-      return;
-    const t = B.newId() + B.newId();
-    S.convite = { token: t };
-    w(GB.set('privado/convite', { token: t }));
-    ACT.inviteLink();
-  },
-  rmMember: el => {
-    if (
-      confirmou(el, {
-        titulo: tx('admgrupo.removerTitulo'),
-        texto: tx('admgrupo.removerTexto'),
-        acao: tx('admgrupo.removerAcao'),
-        perigo: true,
-      }) !== 'sim'
-    )
-      return;
-    const u = el.dataset.v;
-    delete S.membros[u];
-    S.convite = null;
-    changed();
-    // KAN-204: sai também da lista de convidados, liberando a vaga do plano.
-    const fora = GB.lote([
-      { tipo: 'del', p: 'membros/' + u },
-      { tipo: 'patch', p: 'config/app', o: { adms: op.remover([u]) } },
-    ]);
-    return Promise.all([w(fora), w(GB.del('privado/convite'))]).then(() => toast(tx('admgrupo.removido'), 4500));
-  },
-  /* Permissões de um administrador convidado (KAN-201): só o organizador abre e muda. Vale na hora para o convidado. */
-  abrirPerm: el => {
-    const u = el.dataset.v,
-      m = (S.membros || {})[u];
-    if (!m || m.role === 'owner') return;
-    const atual = m.perm === undefined || m.perm === null ? null : permLimpa(m.perm);
-    janelaPermissoes(u, m.email || u, atual);
-    dlg.setAttribute('aria-labelledby', 'permTitulo');
-  },
-  salvarPerm: el => {
-    const u = el.dataset.v,
-      m = (S.membros || {})[u];
-    if (!m) return;
-    const p = {};
-    PERMISSOES.forEach(k => (p[k] = !!$('#perm_' + k)?.checked));
-    const perm = permLimpa(p);
-    S.membros[u] = Object.assign({}, m, { perm });
-    changed();
-    closeDlg();
-    return w(GB.patch('membros/' + u, { perm })).then(() => toast(tx('perm.salvo')));
-  },
   forgetGroup: () => {
     const me = cl(S.me) || { grupos: {} };
     delete me.grupos[S.gid];
@@ -499,5 +388,8 @@ const acoes = {
     location.hash = '#/';
   },
 };
+
+/* Os administradores convidados (convite, remover e permissões) ficam em acoes/administradores.ts (v87). */
+const acoes = Object.assign({}, proprias, administradores);
 
 export { acoes, limiteGrupos, avisoGrupos, gravarGrupo };

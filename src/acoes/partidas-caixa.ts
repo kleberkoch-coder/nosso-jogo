@@ -9,7 +9,7 @@ import { $, toast, today } from '../nucleo/util.js';
 import { montarPartidasCaixa } from '../telas/PartidasCaixa';
 import { closeDlg, dlg, openDlg, val } from '../ui/dialogos.js';
 
-const st = (): any => estado;
+const st = () => estado;
 
 export const acoes = {
   settings: () => {

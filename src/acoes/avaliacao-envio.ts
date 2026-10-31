@@ -8,7 +8,7 @@ import { changed } from '../ui/render.js';
 import { rascunhoNotas } from '../ui/NotasAvaliacao';
 
 type El = HTMLElement & { dataset: DOMStringMap };
-const st = S as any;
+const st = S;
 
 export const acoes: Record<string, (el: El) => unknown> = {
   avEnviar: el => {

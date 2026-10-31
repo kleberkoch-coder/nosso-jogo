@@ -10,7 +10,7 @@ import { val } from '../ui/dialogos.js';
 import { carregarAdmin } from '../nucleo/carga-admin.js';
 
 // O estado ainda é JavaScript sem tipos.
-const S = estado as any;
+const S = estado;
 
 /* Regras da senha (KAN-10, pelada-v34): iguais à política de senha do Firebase (Authentication > Configurações).
    "Especial" vale só para os símbolos que o Firebase aceita; mudar uma regra aqui exige mudar lá também (docs/REGRAS.md). */

@@ -31,7 +31,7 @@ type Linha = { k: number; x: Fixo | null };
 type Regiao = { pais: string; moeda: string; fuso: string };
 type Esporte = { e: string; n: string };
 
-const st = (): any => estado;
+const st = () => estado;
 const esportes = SPORTS as Record<string, Esporte>;
 const nomeEsporte = (sp: string) => (esportes[sp] || esportes.futebol).n;
 
@@ -48,7 +48,7 @@ let aberto: {
 function regiaoInicial(g: Grupo, editing: boolean): Regiao {
   const c = g.cfg || {};
   if (editing && c.pais) return { pais: c.pais, moeda: c.moeda || 'BRL', fuso: c.fuso || '' };
-  const r = regiaoNova(editing ? 'BR' : st().me && st().me.pais, fusoAparelho());
+  const r = regiaoNova(editing ? 'BR' : st().me?.pais, fusoAparelho());
   if (editing) r.moeda = c.moeda || 'BRL';
   return r;
 }

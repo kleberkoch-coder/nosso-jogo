@@ -11,7 +11,7 @@ import { textoRodada } from '../ui/componentes';
 import { tally } from '../dominio/votacao';
 import { QuemVotou } from './QuemVotou';
 
-const st = (): any => estado;
+const st = () => estado;
 type Categoria = { id: string; name: string };
 type Votacao = {
   id: string;

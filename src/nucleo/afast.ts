@@ -14,7 +14,7 @@ import { tx } from '../i18n/index.js';
 import { S as estado } from './estado.js';
 import { today } from './util.js';
 
-const st = (): any => estado;
+const st = () => estado;
 export const afs = (): Afastamentos => st().af || {};
 export const isencoes = (): Isencoes => (st().pc || {}).afIsen || {};
 /* KAN-209: ciclo da mensalidade (privado/caixa.ciclo). Sem ele (ou sem a permissão de Caixa), o mês do calendário. */

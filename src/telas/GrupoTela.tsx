@@ -15,7 +15,7 @@ import { brl, diaSemana } from '../nucleo/util.js';
 import { numeroVersao } from '../nucleo/versao.js';
 import { THEMES, effTheme, getTheme } from '../ui/tema.js';
 
-const st = (): any => estado;
+const st = () => estado;
 type Fixo = { dow: number; ini: string; fim?: string; place?: string };
 type MembroDoc = { role?: string; email?: string; via?: string; perm?: Record<string, boolean> | null };
 
@@ -92,7 +92,7 @@ function Administradores() {
           <li key={u}>
             <span class="pn">
               {m.email || u}
-              {u === S.user.uid && <span class="tag"> · {tx('grupo.voce')}</span>}
+              {u === S.user!.uid && <span class="tag"> · {tx('grupo.voce')}</span>}
               <Via v={m.via} />
               {m.role !== 'owner' && (
                 <>
@@ -158,7 +158,7 @@ function Aparencia() {
 
 function GrupoTela() {
   const S = st(),
-    a = S.app,
+    a = S.app!,
     f = fixos() as Fixo[],
     c = cfg() as { minutes: number; mensal: number; diaria: number; pix?: string; foraPos?: string[] },
     dono = isOwnerMe(),

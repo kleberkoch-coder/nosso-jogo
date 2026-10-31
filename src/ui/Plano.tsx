@@ -9,7 +9,7 @@ import { tp, tx } from '../i18n/index.js';
 import { S as estado } from '../nucleo/estado.js';
 import { gruposDemais, limiteGrupos, meusAtivos, minhaSituacao, situacaoDoGrupo } from '../nucleo/plano';
 
-const st = (): any => estado;
+const st = () => estado;
 const cat = () => catalogo(st().planosCfg);
 const planoDe = (r: string) => planoComRecurso(cat(), r) || tx('plano.planoPago');
 

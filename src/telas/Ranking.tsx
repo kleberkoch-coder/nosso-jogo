@@ -11,7 +11,7 @@ import { S as estado } from '../nucleo/estado.js';
 import { fdate, fmonth, today } from '../nucleo/util.js';
 import { Trava } from '../ui/Plano';
 
-const st = (): any => estado;
+const st = () => estado;
 type Linha = ReturnType<typeof ranking>[number];
 type Coluna = keyof Linha;
 

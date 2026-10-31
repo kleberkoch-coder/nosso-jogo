@@ -15,7 +15,7 @@ import { DEMORA_MS } from '../nucleo/carga';
 const candidates = (v: Votacao, c: Categoria) =>
   candidatos((rodDoc(v.rid) as { times?: { players: string[] }[] } | null)?.times, c, ppos, pname, LOCAL);
 
-const st = (): any => estado;
+const st = () => estado;
 type Vot = {
   rid: string;
   title: string;
@@ -42,7 +42,7 @@ function Aviso({ titulo, texto, tentar }: { titulo?: string; texto: string; tent
 
 function Pagina() {
   const S = st(),
-    v: Vot | undefined = S.vot[S.route.id];
+    v: Vot | undefined = S.vot[S.route.id || ''];
   /* KAN-184: falha de rede (depois das novas tentativas) avisa e oferece tentar de novo; nunca vira "não encontrada".
      Carregando há mais de 12 s, avisa que está demorando. */
   const carregou = S.loaded.v && S.loaded.app;
@@ -58,7 +58,7 @@ function Pagina() {
   if (!v) return <Aviso titulo={tx('voto.naoEncontrada')} texto={tx('voto.naoEncontradaTexto')} />;
   const r = S.rod[v.rid],
     my = S.myVote || {},
-    me: string = my.pid || myLocal();
+    me: string = my.pid || myLocal() || '';
   const rodadaDe = r ? tx('voto.rodadaDe', { data: fdate(r.date) }) : '';
   if (!v.open) {
     const res = v.resultado || {};

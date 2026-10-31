@@ -199,6 +199,12 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D38. Tipos na memória do app e arquivos menores (30 out. 2026, pelada-v87, KAN-220, segunda parte)
+- **Tipos:** `nucleo/tipos.ts` descreve cada documento que o app guarda (grupo, configuração, jogador, avulso, rodada, presença, partida, partida em andamento, lançamento, caixa privado, votação, voto, troca, conta e usuário) e o estado `Estado`. `nucleo/estado.js` virou `estado.ts`, com `S: Estado`, e as gravações (`GB`, `w`, `sub`) com tipos. Os 30 arquivos TypeScript que liam o estado como "qualquer coisa" (`as any`) agora leem com tipos.
+- **O que os tipos acharam:** 77 pontos em que o código supunha algo que o estado não garante (ex.: `S.user` ou `S.app` podem estar vazios, `S.live` só existe com a partida aberta, o país da conta pode não ter chegado). Cada um foi tratado com um valor padrão ou com a garantia de onde a tela só aparece com o dado (ex.: a aba Grupo só abre com o grupo carregado). Nada mudou para quem usa.
+- **Arquivos menores:** os avulsos saíram de `acoes/rodada.js` (599 → 478 linhas) para `acoes/avulsos.ts`; os administradores convidados (aceitar convite, link, remover, permissões) saíram de `acoes/grupo-lote.js` (503 → 406) para `acoes/administradores.ts`, que baixa junto. A mensagem "Fulano confirmado." passou para o dicionário.
+- **O que fica para depois:** 39 arquivos ainda em JavaScript (sem conferência de tipos; o estado chega a eles igual). Quem mexer num deles o converte (tela mexida, tela migrada, D12). `rotas.js` (645 linhas) é o próximo candidato a dividir.
+
 ### D37. Auditoria da votação: trocas com a hora do servidor (30 out. 2026, pelada-v86, KAN-222)
 - **Onde fica:** `votacoes/{vid}/trocas/{id}` = `{u, pid, c, p, em}`: o aparelho (`u`), o nome escolhido (`pid`), a categoria (`c`), o escolhido (`p`) e a hora do servidor (`em`). Gravado no mesmo lote do voto (`votos/{u}`), a cada toque no link. O voto em si não mudou, então aparelhos com a versão antiga do app continuam votando (só sem a troca).
 - **Hora do servidor:** nova operação `op.agora()` (`nucleo/backend.js`), que vira `serverTimestamp` no Firebase e a hora do aparelho no modo demonstração. Funciona sem internet: o voto e a troca ficam na fila juntos e recebem a hora quando chegam ao servidor.

@@ -29,7 +29,7 @@ type Partida = {
   pb?: string[];
 };
 
-const st = (): any => estado;
+const st = () => estado;
 /* Qualquer minuto de 1 a 60, e jogos longos (v60: antes faltavam 9, 11, 13…). */
 const MINUTOS = Array.from({ length: 60 }, (_, i) => i + 1).concat([70, 80, 90]);
 /* Fim por placar (KAN-175): 0 = sem limite. Vale para gols e para pontos. */
@@ -54,7 +54,7 @@ function escDe(L: { esc?: Record<string, Esc | null> }, t: 'a' | 'b'): Esc {
   return (L.esc && L.esc[t]) || escVazia();
 }
 function quadra(r: Rodada, t: 'a' | 'b') {
-  const L = st().live,
+  const L = st().live!,
     time = (r.times as Time[])[t === 'a' ? L.a : L.b];
   return emQuadra(time ? time.players : [], escDe(L, t));
 }
@@ -80,7 +80,7 @@ function novaPartida(r: Rodada, antes?: { dur?: number; lim?: number } | null) {
 }
 
 function Placar({ r }: { r: Rodada }) {
-  const L = st().live,
+  const L = st().live!,
     times = r.times as Time[],
     SP = sport() as unknown as { score: [string, number][] };
   const lado = (t: 'a' | 'b') => {
@@ -162,7 +162,7 @@ function Placar({ r }: { r: Rodada }) {
 }
 
 function Ajustes({ r }: { r: Rodada }) {
-  const L = st().live,
+  const L = st().live!,
     times = r.times as Time[],
     espera = times.length > 2 ? naEspera(r, L.a, L.b) : [];
   const opcoes = (sel: number, pula: number) =>
@@ -419,7 +419,7 @@ function PartidaTela() {
 /* Janela da escalação de um lado (KAN-177): quem está na partida, trocar e puxar de outro time ou da lista de presença. */
 function Escalacao({ r, t }: { r: Rodada; t: 'a' | 'b' }) {
   const [, redesenhar] = useState(0);
-  const L = st().live,
+  const L = st().live!,
     times = r.times as Time[],
     idx = t === 'a' ? L.a : L.b,
     time = times[idx],

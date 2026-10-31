@@ -5,7 +5,7 @@
    - Candidatos: quem jogou a rodada (titulares e reservas); categoria com posição, só quem é dessa posição. */
 const idOk = (s: unknown) => typeof s === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(s);
 
-export type Categoria = { id: string; name?: string; pos?: string };
+export type Categoria = { id: string; name?: string; pos?: string | null };
 export type Votacao = { rid: string; cats: Categoria[] };
 export type Votos = Record<string, { v?: Record<string, string> } | null | undefined>;
 export type Resultado = Record<string, { counts: Record<string, number>; total: number; winners: string[] }>;

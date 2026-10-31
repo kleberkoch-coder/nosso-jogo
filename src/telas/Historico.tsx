@@ -13,7 +13,7 @@ import { $, fdate, fmonth, toast, today } from '../nucleo/util.js';
 import { changed } from '../ui/render.js';
 import { Pos } from '../ui/componentes';
 
-const st = (): any => estado;
+const st = () => estado;
 const bk = (): any => (banco as any).B;
 const POR_PAGINA = 20;
 type Rod = {

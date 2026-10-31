@@ -12,7 +12,7 @@ import { $, main } from '../nucleo/util.js';
 import { entrarPronto } from '../nucleo/carga-entrar';
 
 juntarTextos(textos);
-const st = (): any => estado;
+const st = () => estado;
 
 function Cabecalho() {
   const S = st(),
@@ -75,7 +75,7 @@ function Logado() {
         </p>
         <p style={{ margin: '14px 0 0' }}>{tx('convite.aoAceitar')}</p>
         <p class="small muted" style={{ margin: '10px 0 16px' }}>
-          {tx('convite.conta', { email: S.user.email })}
+          {tx('convite.conta', { email: S.user!.email })}
         </p>
         <button class="btn primary" style={{ width: '100%', justifyContent: 'center' }} data-a="acceptInv">
           {tx('convite.aceitar')}

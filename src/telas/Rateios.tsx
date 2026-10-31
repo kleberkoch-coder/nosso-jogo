@@ -21,7 +21,7 @@ import { simboloMoeda } from '../i18n/formatos.js';
 import { S as estado } from '../nucleo/estado.js';
 import { brl } from '../nucleo/util.js';
 
-const st = (): any => estado;
+const st = () => estado;
 export const rateios = (): Rateios => (st().pc || {}).rat || {};
 const reais = (c: number) => brl(c / 100);
 /* KAN-216: estilos só desta janela ficam aqui (vêm com o Caixa), para não pesar a gestão. */

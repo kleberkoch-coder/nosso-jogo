@@ -10,7 +10,7 @@ import { janelaNavegador } from '../ui/JanelaNavegador';
 import { render } from '../ui/render.js';
 
 // O estado e o banco ainda são JavaScript sem tipos; o banco é lido na hora (setB troca o banco ao iniciar).
-const S = estado as any,
+const S = estado,
   bk = (): any => (banco as any).B;
 
 const acoes = {
@@ -18,7 +18,7 @@ const acoes = {
     const em = val('le');
     S.authMode = el.dataset.v;
     try {
-      localStorage.setItem('pelada-mode', S.authMode);
+      localStorage.setItem('pelada-mode', S.authMode || 'login');
     } catch (e) {}
     render();
     const i = $('#le');
@@ -77,7 +77,7 @@ const acoes = {
     try {
       const modo = S.authMode,
         r = await bk().google(val('le')),
-        av = avisoGoogle(r, modo);
+        av = avisoGoogle(r, modo || 'login');
       if (av) toast(av, 6000);
       try {
         localStorage.setItem('pelada-mode', 'login');

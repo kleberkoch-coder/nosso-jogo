@@ -19,7 +19,7 @@ import { acoes as envio } from './avaliacao-envio';
 usarEstilo('avaliacao', estilo);
 
 const bk = (): any => (banco as any).B;
-const st = (): any => estado;
+const st = () => estado;
 type El = HTMLElement & { dataset: DOMStringMap };
 
 /* Avaliações lidas ao abrir a janela (e mantidas aqui enquanto ela está aberta). */
@@ -94,7 +94,7 @@ export const acoes: Record<string, (el: El) => unknown> = {
     let minha: Resposta | null = (st().minhaAvAdm || {})[aid] || null;
     if (!minha)
       try {
-        minha = (await respostas(aid))[st().user.uid] || null;
+        minha = (await respostas(aid))[st().user!.uid] || null;
       } catch (e) {}
     mostrar({ v: 'minhas', aid, a, minha });
   },
@@ -116,7 +116,7 @@ export const acoes: Record<string, (el: El) => unknown> = {
     }
     /* A minha nota enviada agora pode ainda não ter chegado ao servidor. */
     const minha = (st().minhaAvAdm || {})[aid];
-    if (minha) rs = Object.assign({}, rs, { [st().user.uid]: minha });
+    if (minha) rs = Object.assign({}, rs, { [st().user!.uid]: minha });
     mostrar({ v: 'res', aid, a, rs });
   },
   avAplicar: () => {

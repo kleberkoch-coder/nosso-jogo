@@ -1,20 +1,9 @@
-/* Ações: Rodada: datas, presença, avulsos, sorteio, times, lista × times e histórico. Fazem parte de ACT (src/acoes.js). */
+/* Ações: Rodada: datas, presença, sorteio, times, lista × times e histórico. Os avulsos ficam em acoes/avulsos.ts
+   (v87). Fazem parte de ACT (src/acoes.js). */
 import { horaTexto } from '../dominio/rodadas.js';
 import { cfg } from '../dominio/caixa.js';
 import { hasPos, porTime, posKeys, sport, tn } from '../dominio/esportes.js';
-import {
-  attendance,
-  curRodada,
-  fixos,
-  gname,
-  isAvulso,
-  normName,
-  players,
-  pname,
-  ppos,
-  rodadas,
-  setLvl,
-} from '../dominio/grupo.js';
+import { attendance, curRodada, fixos, gname, isAvulso, players, pname, ppos, rodadas } from '../dominio/grupo.js';
 import { draw } from '../dominio/sorteio.js';
 import { foraDosTimes } from '../dominio/divergencia.ts';
 import { reservas, sugerirTimes, titulares } from '../dominio/times.ts';
@@ -27,8 +16,7 @@ import { elencoDaRodada, minimosDoGrupo, montarColetes, montarMinimos, montarVag
 import { situacao, vagasValidas } from '../dominio/vagas';
 import { copyText } from '../eventos.js';
 import { B, setCAP, sleep } from '../nucleo/backend.js';
-import { lerContato } from '../ui/contato-form';
-import { editApp, editRat, editRod, saveContato, setPres } from '../nucleo/edicoes.js';
+import { editApp, editRod, setPres } from '../nucleo/edicoes.js';
 import { apagarPartidasDaRodada } from '../nucleo/partidas.js';
 import { GB, S, w } from '../nucleo/estado.js';
 import { linkProxima, linkRodada } from '../nucleo/links.js';
@@ -36,17 +24,13 @@ import { $, diaSemana, fdate, toast } from '../nucleo/util.js';
 import { avisar, closeDlg, closeDlgNow, confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
 import {
   drawPreview,
-  janelaAvulso,
-  janelaEditarAvulso,
   janelaEscolherTime,
   janelaMover,
   janelaPorTime,
   janelaSorteio,
-  playerDlg,
   rodDlg,
 } from '../ui/JanelasGestao';
 import { changed, render } from '../ui/render.js';
-import { LOCAL } from '../i18n/formatos.js';
 import { nPartidas, temVotacao } from '../telas/rodada-partes.js';
 import { ACT } from '../acoes.js';
 
@@ -283,111 +267,6 @@ const acoes = {
         w(GB.del('rodadas/' + r.id + '/presencas/' + id));
       }
     } else setPres(r.id, id, Object.assign({}, cur || {}, { s: v }));
-  },
-  addAvulso: el => {
-    const t = el && el.dataset ? el.dataset.t : null;
-    S.alvoTime = t != null && t !== '' ? +t : null;
-    const r = curRodada(),
-      regs = Object.entries(S.avul || {})
-        .filter(([id]) => !S.jog[id] && S.pres[id]?.s !== 'in')
-        .sort((a, b) => (a[1].nome || '').localeCompare(b[1].nome || '', LOCAL));
-    janelaAvulso(regs);
-  },
-  pickAvulso: el => {
-    const id = el.dataset.p,
-      a = S.avul[id];
-    closeDlg();
-    const ps = [setPres(curRodada().id, id, { s: 'in', nome: a.nome, avulso: true, pos: a.pos || '' })];
-    if (S.alvoTime != null) ps.push(porNoTime(S.alvoTime, id));
-    else toast(a.nome + ' confirmado.');
-    S.alvoTime = null;
-    return Promise.all(ps);
-  },
-  saveAvulso: el => {
-    const n = val('anm');
-    if (n.length < 2) {
-      toast(tx('jogador.digiteNome'));
-      return;
-    }
-    const ct = lerContato('ptel');
-    if (!ct) return;
-    const same = Object.entries(S.avul || {}).find(([, a]) => normName(a.nome) === normName(n));
-    if (same) {
-      const c = confirmou(el, {
-        titulo: tx('avulso.jaJogouTitulo', { nome: n }),
-        texto: tx('avulso.usarCadastroTexto'),
-        acao: tx('avulso.usarCadastro'),
-        nao: tx('avulso.cadastrarNovo'),
-      });
-      if (!c) return;
-      if (c === 'sim') return ACT.pickAvulso({ dataset: { p: same[0] } });
-    }
-    const id = B.newId(),
-      v = +($('#plv')?.value ?? 5),
-      pos = val('apos'),
-      o = { nome: n, pos, criado: Date.now() };
-    S.avul[id] = o;
-    const ps = [
-      setPres(curRodada().id, id, { s: 'in', nome: n, avulso: true, pos }),
-      w(GB.set('avulsos/' + id, o)),
-      editRat(a => setLvl(a, id, v)),
-    ];
-    if (S.alvoTime != null) {
-      ps.push(porNoTime(S.alvoTime, id));
-      S.alvoTime = null;
-    }
-    const c = saveContato(id, ct.tel, '');
-    if (c) ps.push(c);
-    closeDlg();
-    return Promise.all(ps);
-  },
-  editAvulso: el => {
-    const id = el.dataset.p,
-      a = S.avul[id] || { nome: pname(id), pos: ppos(id) },
-      ct = (S.cont || {})[id] || {};
-    janelaEditarAvulso(id, a, ct.tel || '');
-  },
-  saveAvEdit: el => {
-    const id = el.dataset.p,
-      n = val('anm');
-    if (n.length < 2) {
-      toast(tx('jogador.digiteNome'));
-      return;
-    }
-    const ct = lerContato('ptel');
-    if (!ct) return;
-    const o = Object.assign({ criado: Date.now() }, S.avul[id] || {}, { nome: n, pos: val('apos') || '' });
-    S.avul[id] = o;
-    changed();
-    const ps = [w(GB.set('avulsos/' + id, o)), $('#plv') ? editRat(a => setLvl(a, id, +$('#plv').value)) : null];
-    const c = saveContato(id, ct.tel, '');
-    if (c) ps.push(c);
-    closeDlg();
-    toast(tx('avulso.atualizado'));
-    return Promise.all(ps);
-  },
-  delAvulso: el => {
-    const id = el.dataset.p;
-    if (
-      confirmou(el, {
-        titulo: tx('avulso.esquecerTitulo'),
-        texto: tx('avulso.esquecerTexto'),
-        acao: tx('avulso.esquecer'),
-        perigo: true,
-      }) !== 'sim'
-    )
-      return;
-    delete S.avul[id];
-    changed();
-    closeDlg();
-    return w(GB.del('avulsos/' + id));
-  },
-  promote: el => {
-    const id = el.dataset.p,
-      p = S.avul?.[id] || { nome: S.pres[id]?.nome, pos: S.pres[id]?.pos };
-    playerDlg(null, { id, name: p?.nome, pos: p?.pos, tipo: 'diarista' });
-    $('[data-a=savePlayer]').dataset.p = '';
-    $('[data-a=savePlayer]').dataset.new = id;
   },
   drawDlg: el => {
     const r0 = curRodada();

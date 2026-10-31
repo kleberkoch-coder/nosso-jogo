@@ -18,7 +18,7 @@ juntarTextos(textosImportar);
 import { lerTexto } from '../dominio/planilha.ts';
 usarEstilo('importar', estilo);
 
-const st = (): any => estado;
+const st = () => estado;
 let previa: Item[] = [];
 /* Os jogadores que a ação vai gravar: só os novos (os que já existem ou se repetem ficam de fora). */
 export const paraImportar = () => previa.filter(i => i.situacao === 'novo');

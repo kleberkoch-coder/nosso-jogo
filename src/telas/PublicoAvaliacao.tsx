@@ -17,7 +17,7 @@ import { acoes } from '../acoes/avaliacao-envio';
 juntarTextos(textos);
 Object.assign(ACT, acoes);
 
-const st = (): any => estado;
+const st = () => estado;
 const LOCAL_NOME = 'pelada-aval-nome';
 export function nomeGuardado(aid: string): string {
   try {
@@ -50,8 +50,8 @@ function Aviso({ titulo, texto, tentar }: { titulo?: string; texto: string; tent
 
 function Pagina() {
   const S = st(),
-    aid: string = S.route.id,
-    a: Avaliacao | null = S.av,
+    aid: string = S.route.id || '',
+    a: Avaliacao | null = S.av ?? null,
     minha = S.minhaAv as { pid?: string; n?: Record<string, number> } | null;
   const [nome, setNome] = useState(() => (minha && minha.pid) || nomeGuardado(aid));
   const me = nome || (minha && minha.pid) || '';

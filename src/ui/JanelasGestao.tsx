@@ -14,7 +14,7 @@ import { openDlg } from './dialogos.js';
 import { CampoPosicao, Pos } from './componentes';
 import { CampoNota, CampoTelefone, CampoTipo, LinhaAfastamento } from './Campos';
 
-const st = S as any;
+const st = S;
 const Cancelar = () => (
   <button class="btn" data-a="close">
     {tx('comum.cancelar')}

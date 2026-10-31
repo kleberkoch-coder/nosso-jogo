@@ -42,7 +42,7 @@ type Presenca = { s?: 'in' | 'out'; nome?: string };
 
 // O estado do app ainda é JavaScript sem tipos; aqui ele é lido como um objeto livre.
 // Sempre dentro das funções: ao carregar este módulo o estado ainda não existe (regra de ordem, docs/ARQUITETURA.md).
-const st = (): any => estado;
+const st = () => estado;
 
 function Time({ t, i }: { t: { c: number; players: string[]; res?: string[] }; i: number }) {
   const c = COL[(t.c || 0) % COL.length],

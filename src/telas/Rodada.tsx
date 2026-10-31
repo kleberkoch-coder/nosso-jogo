@@ -52,7 +52,7 @@ type Rodada = {
 type Qualidade = { diff: number; gk?: number[]; nsep?: number; viol?: number; newPct?: number | null } | null;
 
 // O estado do app ainda é JavaScript sem tipos; é lido sempre dentro das funções (regra de ordem, docs/ARQUITETURA.md).
-const st = (): any => estado;
+const st = () => estado;
 const statusDe = (id: string): 'in' | 'out' | undefined => st().pres[id]?.s;
 /* KAN-208: o elenco da rodada sem os afastados no mês da rodada (quem respondeu aparece mesmo afastado). */
 export const elencoDaRodada = (r: Rodada): string[] =>
@@ -338,7 +338,7 @@ function Cobrar({ r }: { r: Rodada }) {
 function Presenca({ r, inn, carregou, avs }: { r: Rodada; inn: string[]; carregou: boolean; avs: string[] }) {
   const S = st();
   const ids = [...new Set(elencoDaRodada(r).concat(avs))];
-  const f = FILTROS.includes(S.presFiltro) ? S.presFiltro : 'todos';
+  const f: string = S.presFiltro && FILTROS.includes(S.presFiltro) ? S.presFiltro : 'todos';
   const cont: Record<string, number> = {
     todos: ids.length,
     in: inn.length,

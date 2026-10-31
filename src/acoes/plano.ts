@@ -17,7 +17,7 @@ import { changed } from '../ui/render.js';
 let J: typeof import('../ui/PlanosJanela') | null = null;
 const janelas = () => (J ? Promise.resolve(J) : import('../ui/PlanosJanela').then(m => (J = m)));
 
-const st = (): any => estado;
+const st = () => estado;
 type El = HTMLElement & { dataset: DOMStringMap };
 
 function abrirPlanos(motivo?: string) {
@@ -45,7 +45,7 @@ export function avisoLimiteAdmins(): boolean {
 }
 /* Inativa um grupo e tira da lista de ativos da conta, na mesma gravação (as regras conferem as duas juntas). */
 export function inativarGrupo(gid: string) {
-  const uid = st().user.uid;
+  const uid = st().user!.uid;
   return bk()
     .lote([
       { tipo: 'patch', p: 'grupos/' + gid, o: { ativo: false, inativadoEm: Date.now() } },
@@ -54,7 +54,7 @@ export function inativarGrupo(gid: string) {
     .then(() => upMyGroup(gid, { ativo: false }));
 }
 export function reativarGrupo(gid: string) {
-  const uid = st().user.uid;
+  const uid = st().user!.uid;
   return bk()
     .lote([
       { tipo: 'patch', p: 'grupos/' + gid, o: { ativo: true, inativadoEm: op.apagar() } },

@@ -12,7 +12,7 @@ import { compDe, mesHoje, semMensalidadeEm } from '../nucleo/afast';
 import { S as estado } from '../nucleo/estado.js';
 import { brl, fdate, fmonth } from '../nucleo/util.js';
 
-const st = (): any => estado;
+const st = () => estado;
 /* Ano escolhido: a gestão redesenha a aba a cada mudança, então fica guardado fora do componente. */
 let anoVisto = 0;
 const mesCol = (m: string) => new Date(m + '-15T12:00').toLocaleDateString(LOCAL, { month: 'short' }).replace('.', '');

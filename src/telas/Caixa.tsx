@@ -30,7 +30,7 @@ import { QuadroAno } from './QuadroAno';
 import { SecaoRateios, rateios } from './Rateios';
 import { nomeNoRateio, pendenciasDeRateio } from '../dominio/rateio';
 
-const st = (): any => estado;
+const st = () => estado;
 let quadroAberto = false;
 type Lanc = Lancamento & { id: string };
 

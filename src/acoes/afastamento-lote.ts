@@ -20,7 +20,7 @@ import { closeDlg, confirmou, dlg, openDlg } from '../ui/dialogos.js';
 import { changed } from '../ui/render.js';
 usarEstilo('afastamento', estilo);
 
-const st = (): any => estado;
+const st = () => estado;
 type El = HTMLElement & { dataset: DOMStringMap };
 type Op = { tipo: 'patch'; p: string; o: Record<string, unknown> };
 

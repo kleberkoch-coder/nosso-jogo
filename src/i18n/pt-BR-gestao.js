@@ -400,4 +400,5 @@ export default {
   'sorteio.quemEntraAntes': 'Quem entra no sorteio (',
   'sorteio.quemEntraDepois': ' de {total})',
   'sorteio.sortear': 'Sortear',
+  'avulso.confirmado': '{nome} confirmado.',
 };

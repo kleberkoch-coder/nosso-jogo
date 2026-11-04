@@ -8,6 +8,7 @@ import { isStandalone } from '../pwa.js';
 import { ensureExtras, ensurePres, ensureVotos } from '../rotas';
 import { adm, carregarAdmin } from '../nucleo/carga-admin.js';
 import { tx } from '../i18n/index.js';
+import { LOCAL } from '../i18n/formatos.js';
 import { desmontarPublico } from '../telas/PublicoRodada.tsx';
 import { botaoConta } from './menu-conta.ts';
 import { carregarEntrar, entrarPronto } from '../nucleo/carga-entrar';
@@ -106,6 +107,12 @@ function renderCore() {
   document.title = title;
   // KAN-169: com conta, o tema fica no menu da conta; sem conta (link, login, apresentação), o botão continua.
   $('#themeBtn').hidden = logged && R.n !== 'r' && R.n !== 'v' && R.n !== 'a';
+  /* KAN-164: sem conta (apresentação, entrar, link), o idioma fica num botão no topo; com conta, no menu da conta. */
+  const lb = $('#langBtn');
+  lb.hidden = $('#themeBtn').hidden;
+  lb.textContent = '🌐 ' + (LOCAL === 'pt-BR' ? 'PT' : LOCAL.toUpperCase());
+  lb.setAttribute('aria-label', tx('conta.idioma'));
+  $('#installBtn').textContent = tx('pwa.botao');
   if (R.n !== 'r') desmontarPublico();
   if (R.n === 'r') return renderPublicRodada();
   /* KAN-183: a votação pública baixa só quando o link de votação é aberto. */

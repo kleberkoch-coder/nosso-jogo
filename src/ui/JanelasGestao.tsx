@@ -4,7 +4,7 @@
 import { HoraCampo } from './HoraCampo';
 import { cfg, ptipo, recebePorJogo } from '../dominio/caixa.js';
 import { relogio12 } from '../i18n/formatos.js';
-import { col, hasPos, porTime, posKeys, posLabel, sport, tn } from '../dominio/esportes.js';
+import { col, hasPos, porTime, posKeys, posLabel, siglaTela, sport, tn } from '../dominio/esportes.js';
 import { resumo } from '../dominio/times.ts';
 import { tp, tx } from '../i18n/index.js';
 import { fdia, fmtL, lvl, normName, pname, posso, ppos, recurso } from '../dominio/grupo.js';
@@ -302,7 +302,7 @@ export function janelaSorteio(o: {
           <span class="seg seg-wrap">
             {(posKeys() as string[]).map(p => (
               <button key={p} data-a="dFora" data-v={p} aria-pressed={o.fora.has(p)} title={posLabel(p)}>
-                {p}
+                {siglaTela(p)}
               </button>
             ))}
           </span>
@@ -339,7 +339,7 @@ export function janelaSorteio(o: {
                 checked={!(hasPos() && o.fora.has(ppos(id)))}
               />
               {pname(id) + (hasPos() && ppos(id) ? ' ' : '')}
-              {hasPos() && ppos(id) ? <span class="tag">{'· ' + ppos(id)}</span> : null}
+              {hasPos() && ppos(id) ? <span class="tag">{'· ' + siglaTela(ppos(id))}</span> : null}
             </label>
           ))}
         </div>

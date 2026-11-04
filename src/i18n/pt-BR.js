@@ -305,4 +305,9 @@ export default {
   'conta.idioma': 'Idioma',
   'demo.aviso':
     'Modo demonstração: os dados ficam só neste navegador. Configure o Firebase (LEIA-ME.md) para usar com o grupo.',
+  'zap.confirmeAqui': 'Confirme sua presença aqui:',
+  'zap.confirmados': 'Confirmados ({n})',
+  'zap.times': 'Times — {data}',
+  'zap.detalhes': 'Detalhes: {link}',
+  'pwa.botao': '📲 Instalar app',
 };

@@ -3,7 +3,7 @@
    Tela nova ou migrada usa estes componentes, em vez de montar HTML como texto.
    Os botões continuam com data-a: as ações, o carregando e o aviso de sem sinal são os mesmos do resto do app. */
 import type { ComponentChildren } from 'preact';
-import { hasPos, posKeys, posLabel, sport } from '../dominio/esportes.js';
+import { hasPos, posKeys, posLabel, siglaTela, sport } from '../dominio/esportes.js';
 import { fmtL, lvl, posso, ppos, rodadasJanela } from '../dominio/grupo.js';
 import { faltaTotal, porPosicao } from '../dominio/posicoes';
 import { hora } from '../dominio/rodadas.js';
@@ -72,7 +72,7 @@ export function Pos({ id }: { id: string }) {
   if (!hasPos() || !k) return null;
   return (
     <span class={'pos ' + (k === sport().key ? 'GOL' : '')} title={posLabel(k)}>
-      {k}
+      {siglaTela(k)}
     </span>
   );
 }
@@ -104,7 +104,7 @@ export function PorPosicao({
     lista = hasPos() ? porPosicao(posKeys(), inn, id => ppos(id) as string, m) : [],
     total = faltaTotal(inn.length, m),
     faltas = (total.falta ? [tp('porpos.faltaTotal', total.falta)] : []).concat(
-      lista.filter(x => x.falta).map(x => tp('porpos.falta', x.falta, { pos: x.k }))
+      lista.filter(x => x.falta).map(x => tp('porpos.falta', x.falta, { pos: siglaTela(x.k) }))
     );
   if (!lista.length && !total.min && !acao) return null;
   return (
@@ -122,7 +122,7 @@ export function PorPosicao({
           ) : null}
           {lista.map(x => (
             <span key={x.k} class={x.falta ? 'falta' : ''} data-pos={x.k} title={posLabel(x.k)}>
-              <b>{x.k}</b> {x.min ? tx('porpos.deMinimo', { n: x.n, min: x.min }) : x.n}
+              <b>{siglaTela(x.k)}</b> {x.min ? tx('porpos.deMinimo', { n: x.n, min: x.min }) : x.n}
             </span>
           ))}
         </div>

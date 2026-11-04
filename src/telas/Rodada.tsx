@@ -5,7 +5,7 @@ import { divergencia } from '../dominio/divergencia';
 import { linkCobrar, quemCobrar } from '../dominio/cobrar';
 import { linkWhatsApp } from '../dominio/contato';
 import { linkDaRodada } from '../dominio/whatsapp.js';
-import { COL, col, colete, hasPos, posIdx, posKeys, posLabel, sport, tn } from '../dominio/esportes.js';
+import { COL, col, colete, hasPos, posIdx, posKeys, posLabel, siglaTela, sport, tn } from '../dominio/esportes.js';
 import { TOTAL, faltaTotal, minimoValido } from '../dominio/posicoes';
 import { situacao } from '../dominio/vagas';
 import {
@@ -679,7 +679,7 @@ function Minimos() {
           <p class="small muted" style="margin:10px 0 4px">
             {tx('minimo.porPosicao')}
           </p>
-          <div class="minpos-grade">{(posKeys() as string[]).map(k => campo(k, k, posLabel(k)))}</div>
+          <div class="minpos-grade">{(posKeys() as string[]).map(k => campo(k, siglaTela(k), posLabel(k)))}</div>
         </>
       ) : null}
       <p class="small muted" style="margin:14px 0 4px">

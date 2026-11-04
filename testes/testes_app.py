@@ -3735,6 +3735,59 @@ with sync_playwright() as pw:
            'CT-KAN-164-08: voltar para Português vale na hora, inclusive o nome do esporte')
         ctx40.close()
 
+        # ---------- v91 (KAN-226, KAN-227): siglas no idioma; idioma sem conta (apresentação, entrar, link); Instalar app e WhatsApp
+        BRT91 = datetime.timezone(datetime.timedelta(hours=-3))
+        ctx43 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+        p43 = ctx43.new_page(); p43.on('pageerror', lambda e: errs.append(str(e)))
+        p43.clock.install(time=datetime.datetime(2026, 11, 4, 12, 0, 0, tzinfo=BRT91))
+        p43.goto(URL); p43.wait_for_selector('.ld-lang', timeout=10000); p43.wait_for_timeout(300)
+        ok(p43.inner_text('.ld-lang').strip() == 'PT' and p43.evaluate("document.documentElement.scrollWidth") <= 360,
+           'CT-KAN-227-01: a apresentação tem o botão de idioma (PT) no topo, sem rolagem lateral em 360px')
+        p43.click('.ld-lang'); p43.wait_for_selector('.theme-menu [data-a=setIdioma]', timeout=5000)
+        p43.click('.theme-menu [data-a=setIdioma][data-v=en]'); p43.wait_for_timeout(1500)
+        ok('Fair teams.' in p43.inner_text('main') and p43.inner_text('.ld-lang').strip() == 'EN' and p43.evaluate("document.documentElement.lang") == 'en',
+           'CT-KAN-227-01: escolher English na apresentação vale na hora')
+        ok(p43.evaluate("document.getElementById('installBtn').textContent").strip() == '📲 Install app', 'CT-KAN-227-02: o botão de instalar segue o idioma (Install app)')
+        abrir_entrada(p43, 'criar')
+        ok(p43.locator('#langBtn').is_visible() and 'EN' in p43.inner_text('#langBtn') and 'Create your free account' in p43.inner_text('main'),
+           'CT-KAN-227-01: a tela de criar conta também tem o botão de idioma e continua em inglês')
+        p43.fill('#le', 'siglas91@teste.com'); p43.fill('#lp', 'Jogo@2026'); p43.fill('#lp2', 'Jogo@2026'); p43.keyboard.press('Enter')
+        p43.wait_for_selector('#ngBox', timeout=12000)
+        p43.fill('#ngn', 'Siglas FC'); p43.click('[data-a=pickSport][data-v=futebol]'); p43.click('[data-a=createGroup]')
+        p43.wait_for_function("location.hash.startsWith('#/g/')"); p43.wait_for_timeout(1500)
+        g43 = p43.url.split('#/g/')[1]
+        ok(not p43.locator('#langBtn').is_visible(), 'CT-KAN-227-01: com conta, o idioma sai do topo (fica no menu da conta)')
+        p43.click('[data-a=tab][data-v=jogadores]'); p43.wait_for_timeout(300); p43.click('[data-a=seed]'); p43.wait_for_timeout(1500)
+        sig43 = sorted(set(p43.evaluate("[...document.querySelectorAll('main .pos')].map(e=>e.textContent.trim())")))
+        db43 = sorted(set(p43.evaluate("Object.values(S.jog).map(j=>j.pos).filter(Boolean)")))
+        ok(set(sig43) <= {'GK', 'DF', 'MF', 'FW'} and len(sig43) >= 3 and set(db43) <= {'GOL', 'DEF', 'MEI', 'ATA'},
+           f'CT-KAN-226-01: em English, as siglas aparecem GK, DF, MF e FW, e o banco continua com GOL, DEF, MEI e ATA ({sig43}, {db43})')
+        p43.click('[data-a=tab][data-v=rodada]'); p43.wait_for_timeout(600)
+        p43.click('#porPosicao [data-a=abrirMinimos]'); p43.wait_for_timeout(400)
+        ok('GK' in p43.inner_text('#minRaiz') and 'GOL' not in p43.inner_text('#minRaiz'), 'CT-KAN-226-01: a janela do mínimo mostra a sigla em inglês')
+        p43.fill('#minRaiz .minp[data-k="GOL"]', '2'); p43.click('#dlg [data-a=salvarMinimos]'); p43.wait_for_timeout(800)
+        fp43 = p43.inner_text('#porPosicao')
+        ok('2 GK missing' in fp43 and 'GOL' not in fp43 and (p43.evaluate("S.app.cfg.minPos") or {}).get('GOL') == 2,
+           f'CT-KAN-226-01: "Faltam 2" sai como "2 GK missing", e o mínimo fica gravado em GOL ({fp43[:80]!r})')
+        p43.click('[data-a=shareConvite]'); p43.wait_for_selector('#shtxt', timeout=5000)
+        zap43 = p43.input_value('#shtxt')
+        ok('Confirm your attendance here:' in zap43 and 'Confirme' not in zap43, f'CT-KAN-227-03: o convite do WhatsApp sai em inglês ({zap43[:120]!r})')
+        p43.click('#dlg [data-a=close]'); p43.wait_for_timeout(200)
+        # O link do jogador sem conta também tem o botão de idioma
+        est43 = ctx43.storage_state()
+        c44 = b.new_context(viewport={'width': 360, 'height': 740}, service_workers='block', timezone_id='America/Sao_Paulo', storage_state=est43)
+        c44.add_init_script("if(!sessionStorage.getItem('saiu')){localStorage.removeItem('pelada-demo-v2-u');localStorage.removeItem('nj-idioma');sessionStorage.setItem('saiu','1')}")
+        q44 = c44.new_page(); q44.on('pageerror', lambda e: errs.append(str(e)))
+        q44.clock.install(time=datetime.datetime(2026, 11, 4, 12, 0, 0, tzinfo=BRT91))
+        q44.goto(URL + f'#/p/{g43}'); q44.wait_for_selector('[data-a=pubMark]', timeout=10000); q44.wait_for_timeout(300)
+        ok(q44.locator('#langBtn').is_visible() and 'PT' in q44.inner_text('#langBtn') and 'Vou' in q44.inner_text('main'), 'CT-KAN-227-01: o link do jogador abre no idioma do celular (português) e tem o botão de idioma')
+        q44.click('#langBtn'); q44.wait_for_selector('.theme-menu [data-a=setIdioma]', timeout=5000)
+        q44.click('.theme-menu [data-a=setIdioma][data-v=es]'); q44.wait_for_timeout(1500)
+        ok('Voy' in q44.inner_text('main') and 'ES' in q44.inner_text('#langBtn'),
+           'CT-KAN-227-01: no link, trocar para Español vale na hora')
+        q44.screenshot(path=f'{OUT}/91-link-es.png'); c44.close()
+        ctx43.close()
+
         # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
         ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
         p7 = ctx7.new_page()

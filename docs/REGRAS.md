@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D41) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v90 (04/11/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v91 (04/11/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -12,7 +12,7 @@ Atualizado na pelada-v90 (04/11/2026). Toda entrega que mudar uma regra atualiza
 - Nada específico de esporte no código: posições, pontuação, duplas e textos vêm do catálogo `SPORTS`. Emoji do convite, exemplos da votação (posição-chave só se o esporte tiver) e o nome do ponto ("+2 pontos", "Gol", "TD (+6)") também (KAN-75).
 - Celular primeiro, funciona com sinal fraco (grava no aparelho e envia depois).
 - App instalado: quem nunca entrou com conta naquele aparelho (jogador) abre direto no último link de rodada aberto. Aparelho em que alguém já entrou com conta é de organizador: abre Meus grupos ou, sem conta entrada (por exemplo, depois de Sair), o login; nunca o link do jogador (KAN-171).
-- **Idiomas (KAN-164, pelada-v90):** português, inglês e espanhol. Cada pessoa escolhe o seu em menu da conta → **Idioma** (fica no aparelho e na conta, `usuarios/{uid}.idioma`, e vale em outro aparelho). Sem escolha, vale o idioma do navegador; o **link do jogador** segue o idioma do celular. O idioma muda só os textos, os nomes do catálogo (esporte, posições, pontuação, cores do colete, planos) e os nomes dos dias e meses; **moeda, formato das datas e dos números e fuso continuam os do grupo**. Os dados digitados (nomes de jogadores e grupos, posições criadas, categorias de votação) ficam como foram escritos. As siglas das posições (GOL, DEF…) continuam as mesmas em qualquer idioma.
+- **Idiomas (KAN-164, pelada-v90):** português, inglês e espanhol. Cada pessoa escolhe o seu em menu da conta → **Idioma**; sem conta (apresentação, entrar, link do jogador), num botão **PT / EN / ES** no topo (KAN-227) (fica no aparelho e na conta, `usuarios/{uid}.idioma`, e vale em outro aparelho). Sem escolha, vale o idioma do navegador; o **link do jogador** segue o idioma do celular. O idioma muda só os textos, os nomes do catálogo (esporte, posições, pontuação, cores do colete, planos) e os nomes dos dias e meses; **moeda, formato das datas e dos números e fuso continuam os do grupo**. Os dados digitados (nomes de jogadores e grupos, posições criadas, categorias de votação) ficam como foram escritos. As siglas das posições aparecem no idioma (GOL → GK em inglês, ARQ em espanhol; KAN-226), mas o banco continua gravando as siglas em português; posições criadas pelo grupo ficam como foram escritas. As mensagens prontas do WhatsApp saem inteiras no idioma de quem manda.
 - Vários idiomas: nenhum texto de tela fica no código; tudo vai para o dicionário (`i18n/pt-BR.js` e os dicionários de cada parte, chamados por `tx`). Tela mexida migra seus textos na mesma entrega (D3). Desde a v84 a montagem não aceita nenhum texto fora do dicionário (teto 0) e o teste procura chave aparecendo crua (CT-KAN-219).
 
 ## Privacidade e segurança (valem nas regras do Firebase, não só na tela)

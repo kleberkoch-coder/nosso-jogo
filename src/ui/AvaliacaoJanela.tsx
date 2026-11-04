@@ -14,7 +14,7 @@ import {
 } from '../dominio/avaliacao';
 import { ptipo } from '../dominio/caixa.js';
 import { fmtL, lvl, players, pname } from '../dominio/grupo.js';
-import { FUSO, LOCAL, agora } from '../i18n/formatos.js';
+import { FORMATO, FUSO, LOCAL, agora } from '../i18n/formatos.js';
 import { juntarTextos, tx } from '../i18n/index.js';
 import textos from '../i18n/pt-BR-aval';
 import { today } from '../nucleo/util.js';
@@ -28,9 +28,9 @@ export type Tela =
   | { v: 'minhas'; aid: string; a: Avaliacao; minha: Resposta | null }
   | { v: 'res'; aid: string; a: Avaliacao; rs: Record<string, Resposta> };
 
-const dataCurta = (ms: number) => diaDoPrazo(ms, LOCAL, FUSO);
+const dataCurta = (ms: number) => diaDoPrazo(ms, FORMATO, FUSO);
 const fmt = (v: number | null) =>
-  v == null ? '—' : v.toLocaleString(LOCAL, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  v == null ? '—' : v.toLocaleString(FORMATO, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 function maisDias(n: number): string {
   const d = agora(); // hoje no fuso do grupo (KAN-221)
   d.setDate(d.getDate() + n);

@@ -134,6 +134,12 @@ def adicionar_pelo_link(pg, nome):
 
 with sync_playwright() as pw:
     b = pw.chromium.launch()
+    # KAN-164: o app segue o idioma do navegador. O roteiro roda em português, salvo onde o caso pede outro idioma.
+    _contexto = b.new_context
+    def _em_portugues(*a, **k):
+        k.setdefault('locale', 'pt-BR')
+        return _contexto(*a, **k)
+    b.new_context = _em_portugues
     # Fuso de São Paulo (KAN-162): o país da conta nova é sugerido pelo fuso do aparelho; assim o roteiro dá o mesmo resultado em qualquer máquina.
     ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
     pg = ctx.new_page()
@@ -3619,6 +3625,115 @@ with sync_playwright() as pw:
             ok(esp in t, f'CT-KAN-211-03: no dia {dia}/11, o aviso diz "{esp}" ({t[:100]!r})')
             c.close()
         ctx38.close()
+
+        # ---------- v90 (KAN-164): app em inglês e espanhol; idioma de cada pessoa no menu da conta; link no idioma do celular
+        BRT90 = datetime.timezone(datetime.timedelta(hours=-3))
+        PT90 = re.compile(r'\b(Rodada|Jogadores|Partida|Caixa|Votação|Histórico|Salvar|Editar|confirmados|Mensalista|você|não)\b')
+        ctx40 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+        p40 = ctx40.new_page(); p40.on('pageerror', lambda e: errs.append(str(e)))
+        p40.clock.install(time=datetime.datetime(2026, 11, 4, 12, 0, 0, tzinfo=BRT90))
+        abrir_entrada(p40, 'criar')
+        p40.fill('#le', 'idioma90@teste.com'); p40.fill('#lp', 'Jogo@2026'); p40.fill('#lp2', 'Jogo@2026'); p40.keyboard.press('Enter')
+        p40.wait_for_selector('#ngBox', timeout=12000)
+        p40.fill('#ngn', 'Idiomas FC'); p40.click('[data-a=pickSport][data-v=basquete]'); p40.click('[data-a=createGroup]')
+        p40.wait_for_function("location.hash.startsWith('#/g/')"); p40.wait_for_timeout(1500)
+        g40 = p40.url.split('#/g/')[1]
+        p40.click('[data-a=tab][data-v=jogadores]'); p40.wait_for_timeout(300); p40.click('[data-a=seed]'); p40.wait_for_timeout(1500)
+        nomes40 = p40.evaluate("Object.values(S.jog).map(j=>j.name)")
+        ok(p40.evaluate("document.documentElement.lang") == 'pt-BR' and 'Jogadores' in p40.inner_text('.tabs'), 'CT-KAN-164-08: navegador em português abre em português')
+        # Menu da conta → Idioma
+        p40.click('#topright [data-a=contaMenu]'); p40.wait_for_timeout(200)
+        dica40 = p40.inner_text('.theme-menu [data-a=idiomaConta]')
+        p40.click('.theme-menu [data-a=idiomaConta]'); p40.wait_for_selector('.theme-menu [data-a=setIdioma]', timeout=5000)
+        op40 = p40.evaluate("[...document.querySelectorAll('.theme-menu [data-a=setIdioma]')].map(b=>[b.dataset.v,b.textContent,b.getAttribute('aria-checked')])")
+        ok('Idioma' in dica40 and 'Português' in dica40 and op40 == [['pt-BR', 'Português', 'true'], ['en', 'English', 'false'], ['es', 'Español', 'false']],
+           f'CT-KAN-164-01: o menu da conta tem "Idioma" (Português, English, Español, cada um na própria língua) ({dica40!r}, {op40})')
+        p40.click('.theme-menu [data-a=setIdioma][data-v=en]'); p40.wait_for_timeout(1500)
+        ok(p40.evaluate("document.documentElement.lang") == 'en' and 'Players' in p40.inner_text('.tabs'), 'CT-KAN-164-01: English vale na hora, sem recarregar')
+        ok(p40.evaluate("localStorage.getItem('nj-idioma')") == 'en' and (p40.evaluate(LER, 'usuarios/' + p40.evaluate("S.user.uid")) or {}).get('idioma') == 'en',
+           'CT-KAN-164-06: a escolha fica no aparelho e na conta (usuarios/{uid}.idioma)')
+        # Todas as abas em inglês: nenhuma chave sem tradução e nenhuma palavra em português na tela
+        pt40 = {}
+        for aba in ['rodada', 'historico', 'jogadores', 'partida', 'ranking', 'caixa', 'votacao', 'grupo']:
+            if p40.locator(f'[data-a=tab][data-v={aba}]').count():
+                p40.click(f'[data-a=tab][data-v={aba}]'); p40.wait_for_timeout(900)
+                t = p40.inner_text('body')
+                for n in nomes40: t = t.replace(n, '')
+                achou = sorted(set(PT90.findall(t)))
+                if achou: pt40[aba] = achou
+        sem40 = p40.evaluate("window.__njSemTraducao()")
+        ok(not pt40 and sem40 == [], f'CT-KAN-164-01: em English, nenhuma aba mostra texto em português e nenhum texto ficou sem tradução ({pt40}, {sem40[:5]})')
+        # Catálogo do esporte (basquete) e mensagens prontas
+        ok('Basketball' in p40.inner_text('header'), 'CT-KAN-164-03: o nome do esporte vem do catálogo em inglês (Basketball)')
+        p40.click('[data-a=tab][data-v=jogadores]'); p40.wait_for_timeout(400)
+        p40.locator('[data-a=editPlayer]').first.click(); p40.wait_for_timeout(300)
+        pos40 = p40.evaluate("[...document.querySelectorAll('#dlg select option')].map(o=>o.textContent)")
+        ok(any('Point guard' in x for x in pos40) and not any('Armador' in x for x in pos40), f'CT-KAN-164-03: posições do basquete em inglês ({pos40[:6]})')
+        p40.click('#dlg [data-a=close]'); p40.wait_for_timeout(200)
+        if p40.locator('#dlg .conf').count(): confirmar_app(p40, True)
+        p40.click('[data-a=tab][data-v=grupo]'); p40.wait_for_timeout(500)
+        if p40.locator('[data-a=shareFixo]').count():
+            p40.click('[data-a=shareFixo]'); p40.wait_for_selector('#shtxt', timeout=5000)
+            sh40 = p40.input_value('#shtxt')
+            ok('Always confirm your attendance' in sh40 and 'Idiomas FC' in sh40, f'CT-KAN-164-03: a mensagem pronta do WhatsApp sai em inglês, com o nome do grupo intacto ({sh40[:90]!r})')
+            p40.click('#dlg [data-a=close]'); p40.wait_for_timeout(200)
+        # Caixa: rótulos em inglês, valores em R$ no formato do Brasil (moeda e formato são do grupo)
+        p40.click('[data-a=settings]'); p40.wait_for_selector('#cm', timeout=5000)
+        p40.fill('#cm', '1234.5'); p40.click('#dlg [data-a=saveSettings]'); p40.wait_for_timeout(800)
+        p40.click('[data-a=tab][data-v=caixa]'); p40.wait_for_timeout(1200)
+        cx40 = p40.inner_text('main')
+        ok('Funds balance' in cx40 and 'R$' in cx40 and '1.234,50' in cx40, f'CT-KAN-164-05: em English, o Caixa de um grupo do Brasil continua em R$ no formato brasileiro ({cx40[:120]!r})')
+        # 360px e temas
+        p40.set_viewport_size({'width': 360, 'height': 740})
+        for aba in ['rodada', 'jogadores', 'caixa']:
+            p40.click(f'[data-a=tab][data-v={aba}]'); p40.wait_for_timeout(500)
+            for tema in ['light', 'dark']:
+                p40.emulate_media(color_scheme=tema); p40.wait_for_timeout(150)
+                contraste(p40, f'English {aba} ({tema})')
+            ok(p40.evaluate("document.documentElement.scrollWidth") <= 360, f'CT-KAN-164-09: em English, a aba {aba} cabe em 360px sem rolagem lateral')
+        p40.emulate_media(color_scheme='light'); p40.screenshot(path=f'{OUT}/90-english-caixa.png')
+        # Recarregar e entrar em outro navegador (sem a escolha guardada no aparelho): continua em inglês, pela conta
+        p40.reload(); p40.wait_for_timeout(1500)
+        ok(p40.evaluate("document.documentElement.lang") == 'en' and 'Players' in p40.inner_text('.tabs'), 'CT-KAN-164-06: depois de recarregar, continua em inglês')
+        est40 = ctx40.storage_state()
+        ctx41 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block', timezone_id='America/Sao_Paulo', storage_state=est40)
+        ctx41.add_init_script("if(!sessionStorage.getItem('limpo')){localStorage.removeItem('nj-idioma');sessionStorage.setItem('limpo','1')}")
+        p41 = ctx41.new_page(); p41.on('pageerror', lambda e: errs.append(str(e)))
+        p41.clock.install(time=datetime.datetime(2026, 11, 4, 12, 0, 0, tzinfo=BRT90))
+        p41.goto(URL + '#/g/' + g40); p41.wait_for_timeout(2500)
+        ok('Players' in p41.inner_text('.tabs'), 'CT-KAN-164-06: em outro aparelho (navegador em português, sem escolha guardada), o idioma vem da conta')
+        ctx41.close()
+        # Outro administrador (outra conta, navegador em português) continua em português
+        ctx42 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block', timezone_id='America/Sao_Paulo')
+        p42 = ctx42.new_page(); p42.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p42, 'criar')
+        ok('Crie sua conta grátis' in p42.inner_text('main'), 'CT-KAN-164-07: cada pessoa vê o seu idioma: outra conta, em outro aparelho, continua em português')
+        ctx42.close()
+        # O link do jogador segue o idioma do celular (sem conta)
+        def link40(locale):
+            c = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block', timezone_id='America/Sao_Paulo', locale=locale, storage_state=est40)
+            c.add_init_script("if(!sessionStorage.getItem('saiu')){localStorage.removeItem('pelada-demo-v2-u');localStorage.removeItem('nj-idioma');sessionStorage.setItem('saiu','1')}")
+            q = c.new_page(); q.on('pageerror', lambda e: errs.append(str(e)))
+            q.clock.install(time=datetime.datetime(2026, 11, 4, 12, 0, 0, tzinfo=BRT90))
+            q.goto(URL + f'#/p/{g40}'); q.wait_for_selector('[data-a=pubMark]', timeout=10000); q.wait_for_timeout(500)
+            t = q.inner_text('main'); lang = q.evaluate("document.documentElement.lang")
+            q.locator('[data-a=pubMark]').first.click(); q.wait_for_timeout(800)
+            gravou = q.evaluate("Object.values(S.pres||{}).some(p=>p.s==='in'||p.s==='out')")
+            c.close()
+            return t, lang, gravou
+        ten, len_, gen = link40('en-US')
+        tes, les, ges = link40('es-AR')
+        tpt, lpt, gpt = link40('pt-BR')
+        ok(len_ == 'en' and "I'm in" in ten and 'Vou' not in ten and gen, f'CT-KAN-164-04: celular em inglês: o link aparece em inglês e a resposta grava ({len_})')
+        ok(les == 'es' and 'Voy' in tes and gpt and lpt == 'pt-BR' and 'Vou' in tpt, f'CT-KAN-164-04: celular em espanhol abre em espanhol; em português, em português ({les}, {lpt})')
+        # Voltar ao português, sem recarregar
+        p40.set_viewport_size({'width': 390, 'height': 844})
+        p40.click('#topright [data-a=contaMenu]'); p40.wait_for_timeout(200)
+        p40.click('.theme-menu [data-a=idiomaConta]'); p40.wait_for_selector('.theme-menu [data-a=setIdioma]', timeout=5000)
+        p40.click('.theme-menu [data-a=setIdioma][data-v=pt-BR]'); p40.wait_for_timeout(1000)
+        ok(p40.evaluate("document.documentElement.lang") == 'pt-BR' and 'Jogadores' in p40.inner_text('.tabs') and 'Basquete' in p40.inner_text('header'),
+           'CT-KAN-164-08: voltar para Português vale na hora, inclusive o nome do esporte')
+        ctx40.close()
 
         # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
         ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')

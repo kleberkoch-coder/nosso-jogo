@@ -1,6 +1,8 @@
 /* Carrega a parte de gestão do app (src/admin.js) na primeira vez que ela é necessária (KAN-149).
    Depois de carregada, as ações de gestão entram no mesmo mapa de botões (ACT). */
 import { ACT } from '../acoes.js';
+import { LOCAL } from '../i18n/formatos.js';
+import { carregarIdioma } from '../i18n/idiomas';
 
 /* Pede ao service worker para guardar a gestão neste aparelho (para abrir sem internet). */
 function guardarParaOffline() {
@@ -22,7 +24,13 @@ function carregarAdmin() {
         Object.assign(ACT, m.ACOES);
         ADM = m;
         guardarParaOffline();
-        return m;
+        /* KAN-164: em outro idioma, os textos da gestão chegam junto (sem eles, vale o português). */
+        return LOCAL === 'pt-BR'
+          ? m
+          : carregarIdioma(LOCAL, ['gestao']).then(
+              () => m,
+              () => m
+            );
       })
       .catch(e => {
         carregando = null;

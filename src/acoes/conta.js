@@ -8,7 +8,8 @@ import { avisar, closeDlg, confirmou, dlg, naoConfirmar, openDlg, responder, val
 import { render } from '../ui/render.js';
 import { TEMA_K, applyTheme, closeThemeMenu, openThemeMenu, themeAnchor, themeMenuEl } from '../ui/tema.js';
 import { ACT } from '../acoes.js';
-import { abrirMenuConta } from '../ui/menu-conta.ts';
+import { abrirMenuConta, abrirMenuIdioma } from '../ui/menu-conta.ts';
+import { trocarIdioma } from '../nucleo/idioma';
 
 async function sairDaConta(destino, el) {
   if (!(el && el._conf === 'sim') && !(await B.semPendencias(3000))) {
@@ -47,6 +48,15 @@ const acoes = {
   temaConta: () => {
     const b = $('#topright [data-a=contaMenu]');
     if (b) openThemeMenu(b);
+  },
+  /* Idioma pelo menu da conta (KAN-164): português, inglês ou espanhol, de cada pessoa. */
+  idiomaConta: () => {
+    const b = $('#topright [data-a=contaMenu]');
+    if (b) abrirMenuIdioma(b);
+  },
+  setIdioma: el => {
+    closeThemeMenu(true);
+    return trocarIdioma(el.dataset.v, render);
   },
   themeMenu: el => {
     if (themeMenuEl && themeAnchor === el) {

@@ -183,6 +183,7 @@ Registrados na pelada-v43 (KAN-152); os da v44 a v47 entraram na versão de cada
 - **País da conta** (KAN-162):
   - **No cadastro:** campo "Seu país", logo depois da explicação e antes do botão do Google, já preenchido pelo fuso do aparelho. Embaixo, uma dica em `muted`. O cursor continua no e-mail.
   - **No menu da conta** (desde a v48, KAN-166): o item "País e formatos" mostra o país atual à direita e abre uma janela com o combo (cursor nele) e "Salvar". Na v47 era uma linha no fim de Meus grupos, que saiu.
+- **Idioma no menu da conta** (KAN-164, v90): item "🗣️ Idioma" com o idioma atual à direita; abre, no mesmo lugar, as opções Português, English e Español (`menuitemradio`, cada nome na própria língua e com `lang`), como o Tema. Sem componente novo.
 - **Menu da conta** (KAN-166, `ui/menu-conta.ts`, classe `conta-chip`): no canto do cabeçalho, para quem tem conta, um botão redondo de 38px com a inicial do e-mail, no estilo dos chips do topo.
   - Ele abre o mesmo menu flutuante do tema (`theme-menu`): o e-mail em `muted`, cortado com "…" se for longo; "🌐 País e formatos" com o país à direita; uma linha divisória (`menu-sep`); e "↪ Sair".
   - Abre com o foco no primeiro item. Setas, Esc e tocar fora funcionam, e o foco volta ao botão. Escolher um item fecha o menu.

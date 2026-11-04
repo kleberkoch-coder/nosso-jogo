@@ -7,6 +7,8 @@ import { carregarEntrar } from './nucleo/carga-entrar';
 import { render } from './ui/render.js';
 import { applyTheme } from './ui/tema.js';
 import { tx } from './i18n/index.js';
+import { idiomaInicial } from './i18n/idiomas';
+import { usarIdioma } from './nucleo/idioma';
 
 /* =================== boot =================== */
 const ORG_K = 'nj-organizador';
@@ -21,6 +23,9 @@ function loadScript(src) {
 }
 async function boot() {
   applyTheme();
+  /* KAN-164: o idioma do aparelho (escolhido antes, ou o do celular) vem antes do primeiro desenho. */
+  const idioma = idiomaInicial();
+  if (idioma !== 'pt-BR') await usarIdioma(idioma, ['base']);
   $('#net').textContent = tx('comum.semInternetBarra');
   const C = window.FIREBASE_CONFIG || {};
   if (C.apiKey && C.projectId) {

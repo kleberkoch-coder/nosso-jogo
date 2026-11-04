@@ -5,7 +5,7 @@ import { usarEstilo } from './estilo';
 import { render } from 'preact';
 import { catalogo, ultimoDia } from '../dominio/planos';
 import { fdia } from '../dominio/grupo.js';
-import { juntarTextos, tp, tx } from '../i18n/index.js';
+import { juntarTextos, tc, tp, tx } from '../i18n/index.js';
 import textosPlanos from '../i18n/pt-BR-planos';
 import { S as estado } from '../nucleo/estado.js';
 import { limiteGrupos, meusAtivos, minhaSituacao, situacaoDoGrupo } from '../nucleo/plano';
@@ -42,7 +42,7 @@ function PlanosJanela({ motivo }: { motivo?: string }) {
         </p>
       ) : null}
       <p class="small" id="planoAgora">
-        <b>{tx('plano.seu', { plano: s.plano.nome })}</b>
+        <b>{tx('plano.seu', { plano: tc(s.plano.nome) })}</b>
         {s.ate ? ' · ' + tx('plano.ate', { origem: tx('plano.origem.' + s.origem), data: fdia(ultimoDia(s.ate)) }) : ''}
       </p>
       <div class="tbl planos-tbl">
@@ -52,7 +52,7 @@ function PlanosJanela({ motivo }: { motivo?: string }) {
               <th>{tx('plano.recurso')}</th>
               {ids.map(id => (
                 <th key={id} class={id === s.id ? 'atual' : ''}>
-                  {c[id].nome}
+                  {tc(c[id].nome)}
                 </th>
               ))}
             </tr>

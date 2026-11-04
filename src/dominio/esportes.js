@@ -1,6 +1,6 @@
 import { ppos } from './grupo.js';
 import { S } from '../nucleo/estado.js';
-import { tx } from '../i18n/index.js';
+import { tc, tx } from '../i18n/index.js';
 
 const POS = { GOL: 'Goleiro', DEF: 'Defesa', MEI: 'Meio', ATA: 'Ataque' };
 const APP = 'Nosso Jogo';
@@ -206,7 +206,7 @@ function sport() {
 /* Nome do painel de quem marcou na rodada (KAN-192): vem do catálogo (futebol e handebol: "Artilharia";
    basquete: "Cestinhas"); sem nome no catálogo, inclusive nas duplas, "Pontos". */
 function artNome() {
-  return sport().art || 'Pontos';
+  return sport().art || tc('Pontos');
 }
 function porTimePadrao(k) {
   return (SPORTS[k || 'futebol'] || SPORTS.futebol).time || 5;
@@ -263,9 +263,34 @@ const COL = [
   { n: 'Preto', c: '#4A4A4A', e: '⬛' },
 ];
 const col = c => COL[(c || 0) % COL.length];
+/* KAN-164: os nomes do catálogo (esporte, posições, pontuação, palavra do placar, cores) ficam em português aqui e
+   são trocados pelos do idioma da pessoa quando ele muda. Guarda os originais na primeira vez. */
+let ORIG = null;
+function aplicarCatalogo() {
+  ORIG =
+    ORIG ||
+    JSON.parse(
+      JSON.stringify({
+        s: Object.fromEntries(Object.entries(SPORTS).map(([k, v]) => [k, v])),
+        c: COL,
+      })
+    );
+  for (const [k, o] of Object.entries(ORIG.s)) {
+    const s = SPORTS[k];
+    s.n = tc(o.n);
+    s.pos = o.pos.map(([sig, nome]) => [sig, tc(nome)]);
+    s.score = o.score.map(([r, p]) => [tc(r), p]);
+    s.word = tc(o.word);
+    s.unit = tc(o.unit);
+    if (o.art) s.art = tc(o.art);
+  }
+  ORIG.c.forEach((o, i) => (COL[i].n = tc(o.n)));
+  /* O futebol, o society e o futsal dividiam as listas (FUT): depois da troca, cada um tem a sua. */
+}
 const stars = n => '★'.repeat(n) + '☆'.repeat(5 - n);
 
 export {
+  aplicarCatalogo,
   porTime,
   porTimePadrao,
   APP,

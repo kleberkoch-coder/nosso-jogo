@@ -17,6 +17,7 @@ import { startData } from './carga/gestao';
 import { syncPerm, syncVia } from './carga/permissoes';
 import { Q_PROX, dia, ensurePres, resolveNext, subLimAv, subLimCfg } from './carga/rodada';
 import { cargaLinkVotacao, ensureVotos } from './carga/votacao';
+import { idiomaDaConta } from './nucleo/idioma';
 // O banco é JavaScript sem tipos e é trocado ao iniciar (setB): lido na hora.
 const bk = (): any => (banco as any).B;
 
@@ -94,6 +95,8 @@ const publico = (n: string) => n === 'r' || n === 'v' || n === 'a';
 function cargaConta(uid: string) {
   subRaw('me', 'usuarios/' + uid, d => {
     S.me = d || { grupos: {} };
+    /* KAN-164: o idioma escolhido em outro aparelho vale aqui também. */
+    idiomaDaConta(S.me && S.me.idioma, render);
     gravarPaisConta();
     if (!S.gid) aplicarRegiao(S.me);
     syncName();

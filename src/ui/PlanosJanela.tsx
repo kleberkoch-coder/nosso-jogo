@@ -3,7 +3,7 @@
 import estilo from '../estilos/planos.css' with { type: 'text' };
 import { usarEstilo } from './estilo';
 import { render } from 'preact';
-import { catalogo } from '../dominio/planos';
+import { catalogo, ultimoDia } from '../dominio/planos';
 import { fdia } from '../dominio/grupo.js';
 import { juntarTextos, tp, tx } from '../i18n/index.js';
 import textosPlanos from '../i18n/pt-BR-planos';
@@ -43,7 +43,7 @@ function PlanosJanela({ motivo }: { motivo?: string }) {
       ) : null}
       <p class="small" id="planoAgora">
         <b>{tx('plano.seu', { plano: s.plano.nome })}</b>
-        {s.ate ? ' · ' + tx('plano.ate', { origem: tx('plano.origem.' + s.origem), data: fdia(s.ate) }) : ''}
+        {s.ate ? ' · ' + tx('plano.ate', { origem: tx('plano.origem.' + s.origem), data: fdia(ultimoDia(s.ate)) }) : ''}
       </p>
       <div class="tbl planos-tbl">
         <table>

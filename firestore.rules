@@ -69,6 +69,10 @@ service cloud.firestore {
           .hasOnly(['place', 'time', 'novelty', 'foraPos']);
     }
     function grpAtivo(gid) { return get(grp(gid)).data.get('ativo', true) == true; }
+    // KAN-224: o voto do próprio aparelho antes e depois do lote (vazio se ainda não votou).
+    function votoPath(gid, vid) { return /databases/$(database)/documents/grupos/$(gid)/votacoes/$(vid)/votos/$(request.auth.uid); }
+    function votoAntes(gid, vid) { return exists(votoPath(gid, vid)) ? get(votoPath(gid, vid)).data : {}; }
+    function votoDepois(gid, vid) { return getAfter(votoPath(gid, vid)).data; }
     // Caixa (chave Pix, mensalidade e diária) fica só em /privado/caixa (KAN-79). Desde 13/10/2026 nenhum grupo
     // tem mais esses valores no documento público (conferido no console), então eles não podem existir ali.
     function caixaOk() {
@@ -533,8 +537,13 @@ service cloud.firestore {
           allow create, update: if signed() && request.auth.uid == uid
             && grpAtivo(gid)
             && get(/databases/$(database)/documents/grupos/$(gid)/votacoes/$(vid)).data.open == true
-            && request.resource.data.keys().hasOnly(['pid', 'v', 't'])
+            && request.resource.data.keys().hasOnly(['pid', 'v', 't', 'nt'])
             && idValido(request.resource.data.get('pid', ''))
+            // KAN-224: contador de trocas do aparelho. Sobe de 1 em 1 (ou fica igual), nunca passa de 50.
+            && request.resource.data.get('nt', 0) is int
+            && request.resource.data.get('nt', 0) <= 50
+            && (request.resource.data.get('nt', 0) == (resource == null ? 0 : resource.data.get('nt', 0))
+              || request.resource.data.get('nt', 0) == (resource == null ? 0 : resource.data.get('nt', 0)) + 1)
             && request.resource.data.get('v', {}) is map && request.resource.data.get('v', {}).size() <= 30
             // KAN-198: cada categoria e cada escolhido é um identificador curto (até 64 letras), nunca um texto enorme.
             // Juntos, não passam de 2.000 letras (30 categorias de até 64 letras, com folga).
@@ -550,6 +559,9 @@ service cloud.firestore {
         // KAN-222: auditoria. Cada toque no link grava, no mesmo lote do voto, um registro da troca com a hora do
         // servidor (em == request.time, que o aparelho não consegue falsificar). Só administradores leem; ninguém
         // altera; só o administrador apaga (ao excluir a votação). O registro tem de bater com o voto gravado junto.
+        // KAN-224: a troca tem o id {aparelho}_{contador} do voto gravado junto (no máximo 50 por aparelho) e só
+        // vale se a escolha da categoria mudou (tocar de novo no mesmo nome não grava nada, KAN-223). Trocas com id
+        // solto (app da v86/v87 ainda em cache) são aceitas só até o fim de 29/11/2026, com o voto ainda sem contador.
         match /trocas/{tid} {
           allow read: if isMember(gid);
           allow create: if signed()
@@ -562,7 +574,11 @@ service cloud.firestore {
             && idValido(request.resource.data.p)
             && grpAtivo(gid)
             && get(/databases/$(database)/documents/grupos/$(gid)/votacoes/$(vid)).data.open == true
-            && getAfter(/databases/$(database)/documents/grupos/$(gid)/votacoes/$(vid)/votos/$(request.auth.uid)).data.get('v', {}).get(request.resource.data.c, '') == request.resource.data.p;
+            && getAfter(/databases/$(database)/documents/grupos/$(gid)/votacoes/$(vid)/votos/$(request.auth.uid)).data.get('v', {}).get(request.resource.data.c, '') == request.resource.data.p
+            && votoAntes(gid, vid).get('v', {}).get(request.resource.data.c, '') != request.resource.data.p
+            && (tid == request.auth.uid + '_' + string(votoDepois(gid, vid).get('nt', 0))
+                && votoDepois(gid, vid).get('nt', 0) == votoAntes(gid, vid).get('nt', 0) + 1
+              || (!('nt' in votoDepois(gid, vid)) && request.time < timestamp.date(2026, 11, 30)));
           allow update: if false;
           allow delete: if adminAtivo(gid);
         }

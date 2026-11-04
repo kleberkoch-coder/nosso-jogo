@@ -3,7 +3,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   aberta,
+  diaDoPrazo,
   erroAvaliacao,
+  fimDoDia,
   media,
   mediana,
   meioPonto,
@@ -56,4 +58,15 @@ test('criação: título, data a partir de hoje e mensalistas', () => {
   assert.equal(erroAvaliacao({ t: 'X', data: '2026-10-28', jogs: ['a'] }, '2026-10-29'), 'aval.erroData');
   assert.equal(erroAvaliacao({ t: 'X', data: '2026-10-29', jogs: [] }, '2026-10-29'), 'aval.erroMensalistas');
   assert.equal(erroAvaliacao({ t: 'X', data: '2026-10-29', jogs: ['a'] }, '2026-10-29'), '');
+});
+
+test('KAN-221: o prazo é o fim do dia no fuso do grupo e aparece igual em qualquer fuso', () => {
+  const ate = fimDoDia('2026-11-06', 'America/Sao_Paulo');
+  assert.equal(ate, Date.UTC(2026, 10, 7, 2, 59, 59));
+  assert.equal(diaDoPrazo(ate, 'pt-BR', 'America/Sao_Paulo'), '06/11');
+  // horário de verão (Lisboa em julho) e fuso adiantado (Tóquio)
+  assert.equal(fimDoDia('2026-07-10', 'Europe/Lisbon'), Date.UTC(2026, 6, 10, 22, 59, 59));
+  assert.equal(diaDoPrazo(fimDoDia('2026-11-06', 'Asia/Tokyo'), 'pt-BR', 'Asia/Tokyo'), '06/11');
+  // fuso desconhecido: relógio do aparelho, sem erro
+  assert.equal(typeof fimDoDia('2026-11-06', 'Lua/Base'), 'number');
 });

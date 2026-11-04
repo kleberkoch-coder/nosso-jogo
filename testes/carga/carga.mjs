@@ -5,14 +5,24 @@
    Cenários (critérios do cartão):
      1. 50 jogadores confirmando em 10 segundos: todos gravados, o mais lento abaixo de 2 s.
      2. 40 pessoas se adicionando como avulso ao mesmo tempo, com limite de 30: entram exatamente 30, as outras 10 são recusadas.
-     3. 30 votos ao mesmo tempo: ao encerrar, o resultado conta os 30.
+     3. 30 votos ao mesmo tempo, cada um com 3 trocas (KAN-224): ao encerrar, o resultado conta os 30 e ficam 90 trocas.
      4. 2 administradores sorteando e marcando presença ao mesmo tempo: nenhuma gravação falha e nada se perde.
    Saída: testes/carga/resultado-carga.json e um resumo em Markdown (resultado-carga.md), com tempos, falhas,
    leituras e gravações. O emulador roda numa máquina só: os tempos servem para comparar versões e achar gargalos,
    não são os tempos do Firebase no ar. */
 import fs from 'node:fs';
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
-import { collection, doc, getDoc, getDocs, increment, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  increment,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  writeBatch,
+} from 'firebase/firestore';
 
 const GITHUB = !!process.env.GITHUB_ACTIONS;
 const G = 'grupos/carga',
@@ -149,26 +159,35 @@ async function avulsos() {
   );
 }
 
-/* 3. 30 votos ao mesmo tempo e o encerramento pelo administrador (lê os votos e grava o resultado). */
+/* 3. 30 votos ao mesmo tempo, cada aparelho trocando 3 vezes (voto, contador e troca no mesmo lote, KAN-224),
+   e o encerramento pelo administrador (lê os votos e grava o resultado). */
 async function votos() {
   const r = await Promise.all(
     Array.from({ length: N_VOTOS }, (_, k) => {
-      const uid = 'v' + (k + 1);
+      const uid = 'v' + (k + 1),
+        f = jogador(uid),
+        x = k % 3;
       return cronometrar(async () => {
-        await setDoc(doc(jogador(uid), `${V}/votos/${uid}`), {
-          pid: 'j' + (k + 1),
-          v: { mvp: 'j' + ((k % 3) + 1) },
-          t: Date.now(),
-        });
-        ops.gravacoes++;
+        for (let nt = 1; nt <= 3; nt++) {
+          const p = 'j' + (((x + nt) % 3) + 1),
+            b = writeBatch(f);
+          b.set(doc(f, `${V}/votos/${uid}`), { pid: 'j' + (k + 1), v: { mvp: p }, t: Date.now(), nt });
+          b.set(doc(f, `${V}/trocas/${uid}_${nt}`), { u: uid, pid: 'j' + (k + 1), c: 'mvp', p, em: serverTimestamp() });
+          await b.commit();
+          ops.gravacoes += 2;
+        }
       });
     })
   );
   const f = adm('adm');
-  let contados = 0;
+  let contados = 0,
+    trocas = 0;
   const enc = await cronometrar(async () => {
     const vs = await getDocs(collection(f, V + '/votos'));
     ops.leituras += vs.size;
+    const ts = await getDocs(collection(f, V + '/trocas'));
+    ops.leituras += ts.size;
+    trocas = ts.size;
     const placar = {};
     vs.forEach(d => {
       const x = d.data().v.mvp;
@@ -180,10 +199,16 @@ async function votos() {
   });
   const falhas = r.filter(x => !x.ok);
   registrar(
-    '30 votos ao mesmo tempo',
-    'ao encerrar, o resultado conta os 30, sem perda',
-    contados === N_VOTOS && !falhas.length && enc.ok,
-    { contados, falhas: falhas.length, encerrar: enc.ok ? Math.round(enc.ms) + ' ms' : enc.erro, ...resumoTempos(r) }
+    '30 votos ao mesmo tempo, com 3 trocas cada',
+    'ao encerrar, o resultado conta os 30 e ficam as 90 trocas, sem perda',
+    contados === N_VOTOS && trocas === N_VOTOS * 3 && !falhas.length && enc.ok,
+    {
+      contados,
+      trocas,
+      falhas: falhas.length,
+      encerrar: enc.ok ? Math.round(enc.ms) + ' ms' : enc.erro,
+      ...resumoTempos(r),
+    }
   );
 }
 

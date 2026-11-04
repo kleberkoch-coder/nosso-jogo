@@ -20,6 +20,15 @@ export const acoes = {
   saveSettings: () => {
     const S = st(),
       ps: Promise<unknown>[] = [];
+    /* KAN-210: mensalidade e diária não podem ser negativas; nada é gravado e o cursor vai para o campo. */
+    const neg = ['cm', 'cd'].find(id => $('#' + id) && +val(id) < 0);
+    if (neg) {
+      const c = $('#' + neg) as HTMLInputElement;
+      c.setAttribute('aria-invalid', 'true');
+      c.focus();
+      toast(tx('pc.negativo'));
+      return;
+    }
     if ($('#cm')) {
       const dia = +val('cdia'),
         ja = (document.querySelector('input[name=cdiaQuando]:checked') as HTMLInputElement | null)?.value === 'atual';

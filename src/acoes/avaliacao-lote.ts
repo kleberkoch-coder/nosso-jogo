@@ -3,10 +3,10 @@
    (acoes/avaliacao.ts só aponta para cá). Tudo exige a permissão de Notas. */
 import estilo from '../estilos/avaliacao.css' with { type: 'text' };
 import { usarEstilo } from '../ui/estilo';
-import { erroAvaliacao, fimDoDia, type Avaliacao, type Resposta } from '../dominio/avaliacao';
+import { diaDoPrazo, erroAvaliacao, fimDoDia, type Avaliacao, type Resposta } from '../dominio/avaliacao';
 import { gname, posso, setLvl } from '../dominio/grupo.js';
 import { tx } from '../i18n/index.js';
-import { LOCAL } from '../i18n/formatos.js';
+import { FUSO, LOCAL } from '../i18n/formatos.js';
 import * as banco from '../nucleo/backend.js';
 import { editRat } from '../nucleo/edicoes.js';
 import { GB, S as estado, gp, w } from '../nucleo/estado.js';
@@ -45,7 +45,7 @@ function textoDoLink(aid: string, a: Avaliacao) {
   return tx('aval.textoLink', {
     grupo: gname(),
     t: a.t,
-    data: new Date(a.ate).toLocaleDateString(LOCAL, { day: '2-digit', month: '2-digit' }),
+    data: diaDoPrazo(a.ate, LOCAL, FUSO),
     link: linkAvaliacao(aid),
   });
 }
@@ -75,7 +75,7 @@ export const acoes: Record<string, (el: El) => unknown> = {
       return;
     }
     const aid = bk().newId(),
-      a: Avaliacao = { t: n.t, ate: fimDoDia(n.data), jogs: n.jogs, open: true, em: Date.now() };
+      a: Avaliacao = { t: n.t, ate: fimDoDia(n.data, FUSO), jogs: n.jogs, open: true, em: Date.now() };
     avs = Object.assign({}, avs, { [aid]: a });
     const p = w(GB.set('avaliacoes/' + aid, a));
     /* Já abre o compartilhar: é o próximo passo. */

@@ -47,6 +47,29 @@ export function candidatos(
 /* KAN-222: auditoria ("Quem votou"). Uma linha por aparelho que votou, com o nome que a pessoa escolheu, o voto
    final, a hora e as trocas. A hora é a do servidor (última troca gravada); em votação antiga, sem trocas, vale a
    hora do aparelho (t), marcada. O mesmo nome em mais de um aparelho fica marcado (repetido). */
+/* KAN-224: no máximo 50 trocas gravadas por aparelho em cada votação (o Firebase recusa a 51ª). */
+export const LIMITE_TROCAS = 50;
+export type MeuVoto = { pid?: string; v?: Record<string, string>; t?: number; nt?: number };
+/* KAN-223/224: o que gravar quando o aparelho toca no nome p da categoria c. Tocar de novo no nome já escolhido
+   não grava nada; a primeira escolha ou a troca de nome sobe o contador e gera o registro {aparelho}_{nt}.
+   Depois do limite, o voto continua valendo, só sem registro novo na auditoria. */
+export function proximoVoto(
+  antes: MeuVoto | null | undefined,
+  pid: string,
+  c: string,
+  p: string,
+  t: number
+): { voto: MeuVoto; troca: number } | null {
+  const a = antes || {};
+  if ((a.v || {})[c] === p) return null;
+  const nt = a.nt || 0,
+    troca = nt < LIMITE_TROCAS ? nt + 1 : 0;
+  const voto: MeuVoto = { pid, v: Object.assign({}, a.v, { [c]: p }), t };
+  if (troca) voto.nt = troca;
+  else if (nt) voto.nt = nt;
+  return { voto, troca };
+}
+
 export type Troca = { u: string; pid: string; c: string; p: string; em: number | null };
 export type LinhaAuditoria = {
   u: string;

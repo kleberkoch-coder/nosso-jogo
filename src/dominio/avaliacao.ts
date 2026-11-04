@@ -64,10 +64,53 @@ export function responderam(rs: Record<string, Resposta | null | undefined>): { 
   return { nomes: v.filter(r => r.pid).map(r => r.pid as string), adm: v.filter(r => !r.pid).length };
 }
 
-/* Fim do dia escolhido ("AAAA-MM-DD"), no fuso do aparelho de quem cria. */
-export function fimDoDia(data: string): number {
+/* Diferença (ms) entre o relógio do fuso e o UTC no instante t. */
+function deslocamento(fuso: string, t: number): number {
+  const p: Record<string, number> = {};
+  new Intl.DateTimeFormat('en-US', {
+    timeZone: fuso,
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+  })
+    .formatToParts(new Date(t))
+    .forEach(x => {
+      if (x.type !== 'literal') p[x.type] = +x.value;
+    });
+  return Date.UTC(p.year!, p.month! - 1, p.day!, p.hour!, p.minute!, p.second!) - Math.floor(t / 1000) * 1000;
+}
+
+/* Fim do dia escolhido ("AAAA-MM-DD"), às 23:59:59 no fuso do grupo (KAN-221). Sem fuso (grupo antigo),
+   no relógio do aparelho de quem cria, como antes. */
+export function fimDoDia(data: string, fuso = ''): number {
   const [a, m, d] = data.split('-').map(Number) as [number, number, number];
+  if (fuso)
+    try {
+      const parede = Date.UTC(a, m - 1, d, 23, 59, 59),
+        t = parede - deslocamento(fuso, parede);
+      return parede - deslocamento(fuso, t);
+    } catch (e) {
+      /* fuso desconhecido: relógio do aparelho */
+    }
   return new Date(a, m - 1, d, 23, 59, 59).getTime();
+}
+
+/* Último dia que vale ("06/11"), no fuso do grupo, para quem abre o link de qualquer lugar (KAN-221).
+   Usa o instante logo antes do fim (ate − 1 ms), como os avisos dos planos (KAN-211). */
+export function diaDoPrazo(ate: number, local: string, fuso = ''): string {
+  const o: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit' },
+    ms = ate - 1;
+  if (fuso)
+    try {
+      return new Date(ms).toLocaleDateString(local, Object.assign({ timeZone: fuso }, o));
+    } catch (e) {
+      /* fuso desconhecido: relógio do aparelho */
+    }
+  return new Date(ms).toLocaleDateString(local, o);
 }
 
 /* Confere a criação. Devolve a chave do erro ou ''. */

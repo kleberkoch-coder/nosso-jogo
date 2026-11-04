@@ -1,6 +1,6 @@
 /* Ações dos planos (KAN-119, pelada-v70): ver os planos, testar o Plano A, avisos e escolher os grupos ativos.
    Fazem parte de ACT (src/admin.js). */
-import { TESTE_DIAS, fimDoTeste } from '../dominio/planos';
+import { TESTE_DIAS, fimDoTeste, ultimoDia } from '../dominio/planos';
 import { fdia } from '../dominio/grupo.js';
 import { tp, tx } from '../i18n/index.js';
 import * as banco from '../nucleo/backend.js';
@@ -72,7 +72,7 @@ export const acoes = {
     if (
       confirmou(el, {
         titulo: tx('plano.testarTitulo', { n: TESTE_DIAS }),
-        texto: tx('plano.testarTexto', { data: fdia(fim) }),
+        texto: tx('plano.testarTexto', { data: fdia(ultimoDia(fim)) }),
         acao: tx('plano.testarAcao'),
       }) !== 'sim'
     )
@@ -82,7 +82,7 @@ export const acoes = {
     changed();
     closeDlg();
     return w(bk().patch('contas/' + S.user.uid, { teste: agora })).then(() =>
-      toast(tx('plano.testeLigado', { data: fdia(fimDoTeste(agora)) }), 4500)
+      toast(tx('plano.testeLigado', { data: fdia(ultimoDia(fimDoTeste(agora))) }), 4500)
     );
   },
   lerAvisoPlano: (el: El) => {

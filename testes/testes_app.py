@@ -3355,9 +3355,11 @@ with sync_playwright() as pw:
             if p35.locator('#dlg .conf').count(): confirmar_app(p35, True)
         p35.reload(); p35.wait_for_timeout(1800)
         carregou = lambda: p35.evaluate("performance.getEntriesByType('resource').some(e=>/grupo-lote/.test(e.name))")
-        ok(not carregou(), 'CT-KAN-218-03: ao abrir a gestão, as ações de grupo ainda não baixaram (só chegam quando usadas)')
+        # na cópia de um arquivo só (sem chunks/), não há o que baixar sob demanda: confere só a janela
+        partes35 = p35.evaluate("performance.getEntriesByType('resource').some(e=>/\\/chunks\\//.test(e.name))")
+        ok(not partes35 or not carregou(), 'CT-KAN-218-03: ao abrir a gestão, as ações de grupo ainda não baixaram (só chegam quando usadas)')
         p35.click('[data-a=groupsDlg]'); p35.wait_for_selector('#dlg[open] .plist', timeout=8000)
-        ok(carregou() and 'Seus grupos' in p35.inner_text('#dlg') and 'Textos FC' in p35.inner_text('#dlg'), 'CT-KAN-218-03: "⇄ Grupos" baixa as ações de grupo e abre "Seus grupos"')
+        ok((not partes35 or carregou()) and 'Seus grupos' in p35.inner_text('#dlg') and 'Textos FC' in p35.inner_text('#dlg'), 'CT-KAN-218-03: "⇄ Grupos" baixa as ações de grupo e abre "Seus grupos"')
         sem_chave84(p35, 'Seus grupos')
         p35.click('#dlg [data-a=close]') if p35.locator('#dlg [data-a=close]').count() else p35.keyboard.press('Escape'); p35.wait_for_timeout(300)
         p35.evaluate("document.getElementById('dlg').open && document.getElementById('dlg').close()")
@@ -3496,6 +3498,128 @@ with sync_playwright() as pw:
         sobra37 = p37.evaluate("(g)=>Object.keys(JSON.parse(localStorage.getItem('pelada-demo-v2'))).filter(k=>k.startsWith('grupos/'+g+'/votacoes/v1/')).length", g37)
         ok(sobra37 == 0, f'CT-KAN-222-06: excluir a votação apaga também os votos e as trocas ({sobra37} sobraram)')
         ctx37.close()
+        # ---------- v88 (KAN-223/224, 222-09, 210, 211, 221): trocas sem repetição, caixa sem negativo, datas dos planos e prazo no fuso do grupo
+        BRT88 = datetime.timezone(datetime.timedelta(hours=-3))
+        ctx38 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+        p38 = ctx38.new_page(); p38.on('pageerror', lambda e: errs.append(str(e)))
+        dlg38 = []; p38.on('dialog', lambda d: (dlg38.append(d.message), d.dismiss()))
+        p38.clock.install(time=datetime.datetime(2026, 11, 4, 12, 0, 0, tzinfo=BRT88))
+        abrir_entrada(p38, 'criar')
+        p38.fill('#le', 'v88@teste.com'); p38.fill('#lp', 'Jogo@2026'); p38.fill('#lp2', 'Jogo@2026'); p38.keyboard.press('Enter')
+        p38.wait_for_selector('#ngBox', timeout=12000)
+        p38.fill('#ngn', 'Fuso FC'); p38.click('[data-a=createGroup]'); p38.wait_for_function("location.hash.startsWith('#/g/')"); p38.wait_for_timeout(1500)
+        g38 = p38.url.split('#/g/')[1]
+        # KAN-211: a transição acaba na virada de 28 para 29/11; os avisos mostram 28/11, o último dia que vale
+        p38.wait_for_selector('#avisoNovidade', timeout=8000)
+        nv38 = p38.inner_text('#avisoNovidade')
+        ok('28/11/2026' in nv38 and '29/11' not in nv38, f'CT-KAN-211-01: o aviso "Novidade" diz "Até 28/11/2026", o último dia do Plano A grátis ({nv38[:90]!r})')
+        p38.click('#avisoNovidade [data-a=planosDlg]'); p38.wait_for_selector('#dlg[open]', timeout=8000); p38.wait_for_timeout(300)
+        pl38 = p38.inner_text('#dlg')
+        ok('28/11/2026' in pl38 and '29/11' not in pl38, f'CT-KAN-211-02: a janela Planos mostra a mesma data, 28/11/2026 ({pl38[:120]!r})')
+        p38.keyboard.press('Escape'); p38.wait_for_timeout(300)
+        p38.click('[data-a=tab][data-v=jogadores]'); p38.wait_for_timeout(300); p38.click('[data-a=seed]'); p38.wait_for_timeout(1500)
+        cfg38 = p38.evaluate("(S.app||{}).cfg||{}")
+        ok(cfg38.get('fuso') == 'America/Sao_Paulo', f'CT-KAN-221-00: o grupo criado em São Paulo guarda o fuso do Brasil ({cfg38.get("fuso")})')
+        ids38 = p38.evaluate("Object.keys(S.jog).sort((a,b)=>S.jog[a].name.localeCompare(S.jog[b].name))")
+        # KAN-210: mensalidade e diária negativas não são gravadas
+        p38.click('[data-a=tab][data-v=grupo]'); p38.wait_for_timeout(400)
+        p38.click('[data-a=settings]'); p38.wait_for_selector('#cm', timeout=8000)
+        p38.fill('#cm', '80'); p38.fill('#cd', '20'); p38.click('#dlg [data-a=saveSettings]'); p38.wait_for_timeout(800)
+        pc38 = p38.evaluate("[S.pc&&S.pc.mensal, S.pc&&S.pc.diaria]")
+        p38.click('[data-a=settings]'); p38.wait_for_selector('#cm', timeout=8000)
+        p38.fill('#cm', '-50'); p38.click('#dlg [data-a=saveSettings]'); p38.wait_for_timeout(500)
+        neg38 = p38.evaluate("[S.pc.mensal, S.pc.diaria, document.getElementById('dlg').open, document.activeElement&&document.activeElement.id, (document.getElementById('toast')||{}).textContent||'']")
+        ok(pc38 == [80, 20] and neg38[0] == 80 and neg38[1] == 20 and neg38[2] and neg38[3] == 'cm' and 'não pode ser negativo' in neg38[4],
+           f'CT-KAN-210-01: mensalidade -50 não é gravada; a janela continua aberta, com o cursor no campo e o motivo ({pc38}, {neg38})')
+        p38.fill('#cm', '80'); p38.fill('#cd', '-10'); p38.click('#dlg [data-a=saveSettings]'); p38.wait_for_timeout(500)
+        neg38b = p38.evaluate("[S.pc.diaria, document.getElementById('dlg').open, document.activeElement&&document.activeElement.id]")
+        ok(neg38b == [20, True, 'cd'], f'CT-KAN-210-02: diária -10 também não é gravada, com o cursor na diária ({neg38b})')
+        p38.fill('#cm', '0'); p38.fill('#cd', '0'); p38.click('#dlg [data-a=saveSettings]'); p38.wait_for_timeout(800)
+        ok(p38.evaluate("[S.pc.mensal, S.pc.diaria, document.getElementById('dlg').open]") == [0, 0, False], 'CT-KAN-210-03: zero continua valendo (sem mensalidade) e fecha a janela')
+        # KAN-222-09: nome com HTML aparece como texto em "Quem votou" e nas trocas
+        mau38 = '<img src=x onerror=alert(1)>'
+        p38.evaluate(PUT, {
+            f'grupos/{g38}/jogadores/{ids38[0]}': dict(p38.evaluate(LER, f'grupos/{g38}/jogadores/{ids38[0]}') or {}, name=mau38),
+            f'grupos/{g38}/rodadas/rold': {'date': '2026-11-03', 'time': '20:00', 'place': '', 'np': 0, 'times': [{'c': 0, 'players': ids38[0:5]}, {'c': 1, 'players': ids38[5:10]}]},
+            f'grupos/{g38}/votacoes/v1': {'rid': 'rold', 'title': 'Destaques', 'open': True, 'cats': [{'id': 'best', 'name': 'Melhor jogador'}], 'createdAt': 1},
+            # outro aparelho votou no jogador do nome com HTML
+            f'grupos/{g38}/votacoes/v1/votos/devB': {'pid': ids38[3], 'v': {'best': ids38[0]}, 't': 1793800000000, 'nt': 1},
+            f'grupos/{g38}/votacoes/v1/trocas/devB_1': {'u': 'devB', 'pid': ids38[3], 'c': 'best', 'p': ids38[0], 'em': 1793800000000},
+        })
+        # KAN-223/224: no link, 3 toques no mesmo nome (2 deles rápidos) e 1 em outro gravam só 2 trocas
+        p38.goto(URL + f'#/p/{g38}/v/v1'); p38.reload(); p38.wait_for_selector('[data-c=voter]', timeout=8000)
+        p38.select_option('[data-c=voter]', ids38[0]); p38.wait_for_timeout(400)
+        bt38 = lambda pid: p38.locator(f'[data-a=pubVote][data-c2=best][data-p="{pid}"]')
+        bt38(ids38[1]).click(); p38.wait_for_timeout(300); bt38(ids38[1]).dblclick(); p38.wait_for_timeout(300)
+        bt38(ids38[2]).click(); p38.wait_for_timeout(800)
+        uid38 = p38.evaluate("S.user&&S.user.uid")
+        tr38 = p38.evaluate("(a)=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2'));return Object.entries(s).filter(([k])=>k.startsWith('grupos/'+a[0]+'/votacoes/v1/trocas/'+a[1])).map(([k,v])=>[k.split('/').pop(),v.p])}", [g38, uid38])
+        ok(sorted(tr38) == sorted([[uid38 + '_1', ids38[1]], [uid38 + '_2', ids38[2]]]),
+           f'CT-KAN-223-01: tocar de novo no mesmo nome (inclusive dois toques rápidos) não grava troca; só a troca de nome grava ({tr38})')
+        vt38 = p38.evaluate(LER, f'grupos/{g38}/votacoes/v1/votos/{uid38}') or {}
+        ok(vt38.get('nt') == 2 and (vt38.get('v') or {}).get('best') == ids38[2], f'CT-KAN-224-01: o voto guarda o contador de trocas junto ({vt38})')
+        p38.goto(URL + '#/g/' + g38); p38.wait_for_timeout(1200); p38.click('[data-a=tab][data-v=votacao]'); p38.wait_for_selector('#quemVotou', timeout=8000)
+        p38.click('#quemVotou > summary'); p38.wait_for_selector('#quemVotou .aud-linha', timeout=5000)
+        p38.locator(f'#quemVotou .aud-linha[data-u="{uid38}"] .aud-ver').click(); p38.wait_for_timeout(300)
+        p38.locator('#quemVotou .aud-linha[data-u=devB] .aud-ver').click(); p38.wait_for_timeout(300)
+        li38 = p38.evaluate("(u)=>[...document.querySelectorAll('#quemVotou .aud-linha[data-u=\"'+u+'\"] .aud-trocas li')].map(x=>x.textContent)", uid38)
+        ok(len(li38) == 2 and li38[0] != li38[1], f'CT-KAN-223-02: "Ver trocas" mostra 2 linhas, sem repetição ({li38})')
+        qv38 = p38.inner_text('#quemVotou')
+        ok(mau38 in qv38 and p38.locator('#quemVotou img').count() == 0 and not dlg38,
+           f'CT-KAN-222-09: nome com HTML aparece como texto em "Quem votou" e nas trocas, sem executar ({dlg38})')
+        # KAN-221: o organizador com o aparelho em Lisboa cria a avaliação até 06/11 de um grupo do Brasil
+        est38 = ctx38.storage_state()
+        ctx39 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='Europe/Lisbon', storage_state=est38)
+        p39 = ctx39.new_page(); p39.on('pageerror', lambda e: errs.append(str(e)))
+        p39.clock.install(time=datetime.datetime(2026, 11, 4, 12, 0, 0, tzinfo=BRT88))
+        p39.goto(URL + '#/g/' + g38); p39.wait_for_timeout(1500)
+        p39.click('[data-a=tab][data-v=jogadores]'); p39.wait_for_timeout(400)
+        p39.click('[data-a=avAbrir]'); p39.wait_for_selector('[data-a=avNova]', timeout=8000)
+        p39.click('[data-a=avNova]'); p39.wait_for_selector('#avT'); p39.wait_for_timeout(150)
+        p39.fill('#avData', '2026-11-06'); p39.click('#dlg [data-a=avCriar]'); p39.wait_for_selector('#shtxt', timeout=8000)
+        sh39 = p39.input_value('#shtxt')
+        ok('Vale até 06/11' in sh39, f'CT-KAN-221-03: com o aparelho em Lisboa, o texto do compartilhar diz "até 06/11" ({sh39[:140]!r})')
+        aid39 = p39.evaluate("(g)=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2')||'{}');return Object.keys(s).filter(k=>k.startsWith('grupos/'+g+'/avaliacoes/')&&k.split('/').length===4).map(k=>k.split('/')[3])[0]}", g38)
+        ate39 = (p39.evaluate(LER, f'grupos/{g38}/avaliacoes/{aid39}') or {}).get('ate')
+        fim06 = int(datetime.datetime(2026, 11, 6, 23, 59, 59, tzinfo=BRT88).timestamp() * 1000)
+        p39.click('#dlg [data-a=close]'); p39.wait_for_timeout(200)
+        p39.reload(); p39.wait_for_timeout(1500); p39.click('[data-a=tab][data-v=jogadores]'); p39.wait_for_timeout(300)
+        p39.click('[data-a=avAbrir]'); p39.wait_for_selector(f'[data-a=avMinhas][data-v="{aid39}"]', timeout=8000)
+        lj39 = p39.inner_text('#dlg')
+        ok(ate39 == fim06 and 'até 06/11' in lj39 and '07/11' not in lj39,
+           f'CT-KAN-221-04: o prazo fica gravado como fim de 06/11 em Brasília e continua 06/11 depois de recarregar ({ate39} x {fim06})')
+        est39 = ctx39.storage_state(); ctx39.close()
+        # O link aberto em vários fusos (sem conta): sempre "até 06/11"; fecha quando diz
+        def link39(tz, quando):
+            c = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id=tz, storage_state=est39)
+            c.add_init_script("if(!sessionStorage.getItem('saiu')){localStorage.removeItem('pelada-demo-v2-u');sessionStorage.setItem('saiu','1')}")
+            q = c.new_page(); q.on('pageerror', lambda e: errs.append(str(e)))
+            q.clock.install(time=quando)
+            q.goto(URL + f'#/p/{g38}/a/{aid39}'); q.wait_for_selector('main .panel', timeout=10000); q.wait_for_timeout(800)
+            t = q.inner_text('main'); aberto = q.locator('#avNome').count() == 1
+            c.close()
+            return t, aberto
+        meio = datetime.datetime(2026, 11, 4, 12, 0, 0, tzinfo=BRT88)
+        tzs39 = {}
+        for tz in ['Europe/Lisbon', 'America/Sao_Paulo', 'America/New_York', 'Asia/Tokyo']:
+            t, _ = link39(tz, meio); tzs39[tz] = ('até 06/11' in t and '07/11' not in t)
+        ok(tzs39['Europe/Lisbon'], f'CT-KAN-221-01: com o aparelho em Lisboa, o link diz "Dá para mudar até 06/11" ({tzs39})')
+        ok(all(tzs39.values()), f'CT-KAN-221-02: em São Paulo, Nova York e Tóquio também, sempre "até 06/11" ({tzs39})')
+        t1, ab1 = link39('Europe/Lisbon', datetime.datetime(2026, 11, 6, 23, 30, 0, tzinfo=BRT88))
+        t2, ab2 = link39('Europe/Lisbon', datetime.datetime(2026, 11, 7, 0, 1, 0, tzinfo=BRT88))
+        ok(ab1 and 'até 06/11' in t1 and not ab2 and 'terminou em 06/11' in t2,
+           f'CT-KAN-221-05: em Lisboa, às 23:30 de Brasília ainda recebe notas; às 00:01 avisa que terminou em 06/11 ({ab1}, {ab2}, {t2[:80]!r})')
+        # KAN-211: aviso 3 dias antes, em dias do calendário
+        for dia, esp in [(27, 'acaba em 1 dia, em 28/11/2026'), (28, 'acaba hoje, 28/11/2026')]:
+            c = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo', storage_state=est38)
+            q = c.new_page(); q.on('pageerror', lambda e: errs.append(str(e)))
+            q.clock.install(time=datetime.datetime(2026, 11, dia, 10, 0, 0, tzinfo=BRT88))
+            q.goto(URL + '#/g/' + g38); q.wait_for_timeout(1500)
+            t = q.inner_text('#avisoFimPlano') if q.locator('#avisoFimPlano').count() else ''
+            ok(esp in t, f'CT-KAN-211-03: no dia {dia}/11, o aviso diz "{esp}" ({t[:100]!r})')
+            c.close()
+        ctx38.close()
+
         # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
         ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
         p7 = ctx7.new_page()

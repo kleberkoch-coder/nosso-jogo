@@ -5,9 +5,10 @@ import { semConexao } from '../eventos.js';
 import { B, op } from '../nucleo/backend.js';
 import { avulsosEsgotados, limite } from '../dominio/limites.ts';
 import { precisaVaga, situacao } from '../dominio/vagas.ts';
+import { proximoVoto } from '../dominio/votacao.ts';
 import { setPres } from '../nucleo/edicoes.js';
 import { GB, S, w } from '../nucleo/estado.js';
-import { $, cl, toast } from '../nucleo/util.js';
+import { $, toast } from '../nucleo/util.js';
 import { MEK, myLocal } from '../telas/publico-rodada.js';
 import { closeDlg, dlg, val } from '../ui/dialogos.js';
 import { janelaMeuNome } from '../ui/JanelasLink';
@@ -120,25 +121,26 @@ const acoes = {
   pubVote: el => {
     const me = S.myVote?.pid || myLocal();
     if (!me || !S.user) return;
-    const d = cl(S.myVote) || { v: {} };
-    d.pid = me;
-    d.v = d.v || {};
-    d.v[el.dataset.c2] = el.dataset.p;
-    d.t = Date.now();
+    const c = el.dataset.c2,
+      p = el.dataset.p;
+    /* KAN-223: tocar de novo no nome já escolhido (ou dois toques rápidos) não grava nada.
+       KAN-224: cada troca ganha o id {aparelho}_{contador}; o Firebase recusa a 51ª. */
+    const prox = proximoVoto(S.myVote, me, c, p, Date.now());
+    if (!prox) return;
+    const d = prox.voto;
     S.myVote = d;
     changed();
     /* KAN-222: junto com o voto, no mesmo lote, o registro da troca com a hora do servidor (auditoria). */
-    const vid = S.route.id;
-    w(
-      GB.lote([
-        { tipo: 'set', p: 'votacoes/' + vid + '/votos/' + S.user.uid, o: d },
-        {
-          tipo: 'patch',
-          p: 'votacoes/' + vid + '/trocas/' + B.newId(),
-          o: { u: S.user.uid, pid: me, c: el.dataset.c2, p: el.dataset.p, em: op.agora() },
-        },
-      ])
-    );
+    const vid = S.route.id,
+      uid = S.user.uid;
+    const l = [{ tipo: 'set', p: 'votacoes/' + vid + '/votos/' + uid, o: d }];
+    if (prox.troca)
+      l.push({
+        tipo: 'patch',
+        p: 'votacoes/' + vid + '/trocas/' + uid + '_' + prox.troca,
+        o: { u: uid, pid: me, c, p, em: op.agora() },
+      });
+    w(GB.lote(l));
   },
 };
 

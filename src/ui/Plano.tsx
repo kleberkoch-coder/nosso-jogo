@@ -3,7 +3,7 @@
    O que não está no plano nunca some sem explicação: aparece com o cadeado e o convite. Os botões usam data-a
    (ações em acoes/plano.ts). */
 import { render } from 'preact';
-import { catalogo, diasParaAcabar, planoComRecurso, TESTE_DIAS, type Situacao } from '../dominio/planos';
+import { catalogo, diasParaAcabar, planoComRecurso, TESTE_DIAS, ultimoDia, type Situacao } from '../dominio/planos';
 import { fdia, isOwnerMe } from '../dominio/grupo.js';
 import { tp, tx } from '../i18n/index.js';
 import { S as estado } from '../nucleo/estado.js';
@@ -99,7 +99,7 @@ export function AvisosPlano() {
             plano: s.plano.nome,
             origem: tx('plano.origem.' + s.origem),
             dias: tp('plano.nDias', dias),
-            data: fdia(s.ate),
+            data: fdia(ultimoDia(s.ate)),
           })}
         </span>
         <span class="row">
@@ -115,7 +115,7 @@ export function AvisosPlano() {
   else if (s.origem === 'transicao' && !lido('nj-plano-novidade'))
     avisos.push(
       <div class="inbar info" key="novidade" id="avisoNovidade">
-        <span>{tx('plano.novidade', { data: fdia(s.ate), n: TESTE_DIAS })}</span>
+        <span>{tx('plano.novidade', { data: fdia(ultimoDia(s.ate)), n: TESTE_DIAS })}</span>
         <span class="row">
           <button class="btn sm" data-a="planosDlg">
             {tx('plano.verPlanos')}

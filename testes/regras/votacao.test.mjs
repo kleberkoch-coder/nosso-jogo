@@ -1,7 +1,7 @@
 /* Regra "votação dos destaques" (uma das 5 da D12; KAN-220). Roda com: npm run regras */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { auditoria, candidatos, tally } from '../../src/dominio/votacao.ts';
+import { LIMITE_TROCAS, auditoria, candidatos, proximoVoto, tally } from '../../src/dominio/votacao.ts';
 
 const vot = { rid: 'r1', cats: [{ id: 'best' }, { id: 'worst' }, { id: 'pGOL', pos: 'GOL' }] };
 
@@ -92,4 +92,25 @@ test('KAN-222: auditoria: o mesmo nome em 2 aparelhos fica marcado; voto vazio o
       .sort(),
     ['d1', 'd2']
   );
+});
+
+test('KAN-223: tocar de novo no nome já escolhido não grava nada; a primeira escolha e a troca gravam', () => {
+  const a = proximoVoto(null, 'eu', 'best', 'leo', 1);
+  assert.deepEqual(a, { voto: { pid: 'eu', v: { best: 'leo' }, t: 1, nt: 1 }, troca: 1 });
+  assert.equal(proximoVoto(a.voto, 'eu', 'best', 'leo', 2), null);
+  const b = proximoVoto(a.voto, 'eu', 'best', 'marcao', 3);
+  assert.deepEqual(b, { voto: { pid: 'eu', v: { best: 'marcao' }, t: 3, nt: 2 }, troca: 2 });
+  // outra categoria também é uma escolha nova; a anterior continua
+  const c = proximoVoto(b.voto, 'eu', 'worst', 'leo', 4);
+  assert.deepEqual(c.voto.v, { best: 'marcao', worst: 'leo' });
+  assert.equal(c.troca, 3);
+});
+
+test('KAN-224: voto antigo sem contador começa do 1; depois do limite o voto muda sem troca nova', () => {
+  assert.equal(proximoVoto({ pid: 'eu', v: { best: 'leo' } }, 'eu', 'best', 'ana', 1).troca, 1);
+  const r = proximoVoto({ pid: 'eu', v: { best: 'leo' }, nt: LIMITE_TROCAS }, 'eu', 'best', 'ana', 1);
+  assert.equal(r.troca, 0);
+  assert.equal(r.voto.nt, LIMITE_TROCAS);
+  assert.equal(r.voto.v.best, 'ana');
+  assert.equal(LIMITE_TROCAS, 50);
 });

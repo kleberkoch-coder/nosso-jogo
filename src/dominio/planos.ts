@@ -173,6 +173,13 @@ export function transicaoAte(cfg: { transicaoAte?: unknown } | null | undefined)
   return typeof v === 'number' && Number.isFinite(v) ? v : TRANSICAO_PADRAO;
 }
 export const fimDoTeste = (inicio: number) => inicio + TESTE_DIAS * DIA;
+/* KAN-211: o plano deixa de valer no instante "ate" (a transição, na virada de 28 para 29/11 em Brasília).
+   Os avisos mostram o último dia que ainda vale: o dia do instante logo antes do fim ("Até 28/11/2026"). */
+export function ultimoDia(ate: number): number;
+export function ultimoDia(ate: number | null): number | null;
+export function ultimoDia(ate: number | null): number | null {
+  return ate == null ? null : ate - 1;
+}
 
 /* Plano em vigor de uma conta: o pago (portal) vale primeiro; sem ele, o teste ou a transição dão o Plano A
    até a data mais distante das duas; sem nada disso, Grátis. */
@@ -211,7 +218,12 @@ export function situacaoDoEspelho(e: Partial<Espelho> | null | undefined, cat: C
 /* Aviso de que o plano vai acabar: AVISO_DIAS antes do fim do teste, da transição ou do plano pago com data. */
 export function diasParaAcabar(s: Situacao, agora: number): number | null {
   if (s.id === 'gratis' || s.ate === null) return null;
-  const d = Math.ceil((s.ate - agora) / DIA);
+  /* KAN-211: dias do calendário até o último dia que vale (0 = acaba hoje), no relógio do aparelho. */
+  const dia = (t: number) => {
+    const x = new Date(t);
+    return Math.round(Date.UTC(x.getFullYear(), x.getMonth(), x.getDate()) / DIA);
+  };
+  const d = dia(ultimoDia(s.ate)) - dia(agora);
   return d <= AVISO_DIAS ? Math.max(d, 0) : null;
 }
 

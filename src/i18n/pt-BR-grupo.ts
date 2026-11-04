@@ -62,4 +62,5 @@ export default {
   'pc.pix': 'Chave Pix',
   'pc.soAdmins': 'Valores e chave Pix só aparecem para administradores.',
   'pc.salvo': 'Configurações salvas.',
+  'pc.negativo': 'O valor não pode ser negativo.',
 };

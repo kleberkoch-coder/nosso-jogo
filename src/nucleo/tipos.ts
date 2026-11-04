@@ -186,7 +186,8 @@ export type Votacao = {
   createdAt?: number;
   resultado?: Mapa<{ counts: Mapa<number>; total: number; winners: string[] }>;
 };
-export type Voto = { pid?: string; v?: Mapa<string>; t?: number };
+/* nt (KAN-224): quantas trocas o aparelho já gravou nesta votação (no máximo LIMITE_TROCAS). */
+export type Voto = { pid?: string; v?: Mapa<string>; t?: number; nt?: number };
 /* Troca de voto (KAN-222): a hora do servidor chega como Timestamp do Firebase (ou número no modo demonstração). */
 export type TrocaGravada = { u: string; pid: string; c: string; p: string; em: unknown };
 

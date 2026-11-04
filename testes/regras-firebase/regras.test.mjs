@@ -256,15 +256,15 @@ describe('votos pelo link (KAN-76)', () => {
   });
 });
 
-describe('auditoria da votação: trocas com a hora do servidor (KAN-222)', () => {
+describe('auditoria da votação: trocas com a hora do servidor (KAN-222, KAN-224)', () => {
   const V = G + '/votacoes/v1';
   const semRegras = fn => env.withSecurityRulesDisabled(async ctx => fn(ctx.firestore()));
-  // Voto e troca no mesmo lote, como o app grava
-  const votar = (f, escolha, troca = {}) => {
+  // Voto e troca no mesmo lote, como o app grava desde a v88: troca com id {aparelho}_{nt}
+  const votar = (f, escolha, nt, troca = {}, id) => {
     const b = writeBatch(f);
-    b.set(doc(f, V + '/votos/anon1'), { pid: 'j1', v: { mvp: escolha }, t: Date.now() });
+    b.set(doc(f, V + '/votos/anon1'), { pid: 'j1', v: { mvp: escolha }, t: Date.now(), nt });
     b.set(
-      doc(f, V + '/trocas/t1'),
+      doc(f, V + '/trocas/' + (id || 'anon1_' + nt)),
       Object.assign({ u: 'anon1', pid: 'j1', c: 'mvp', p: escolha, em: serverTimestamp() }, troca)
     );
     return b.commit();
@@ -272,42 +272,78 @@ describe('auditoria da votação: trocas com a hora do servidor (KAN-222)', () =
   beforeEach(() =>
     semRegras(async f => {
       await setDoc(doc(f, V), { open: true, cats: [{ id: 'mvp' }] });
-      await deleteDoc(doc(f, V + '/trocas/t1'));
+      const ts = await getDocs(collection(f, V + '/trocas'));
+      await Promise.all(ts.docs.map(d => deleteDoc(d.ref)));
       await deleteDoc(doc(f, V + '/votos/anon1'));
     })
   );
   test('voto com a troca no mesmo lote, com a hora do servidor, é aceito', async () => {
-    await assertSucceeds(votar(db.anon(), 'j2'));
+    await assertSucceeds(votar(db.anon(), 'j2', 1));
   });
   test('troca com hora do aparelho (não a do servidor) é recusada', async () => {
-    await assertFails(votar(db.anon(), 'j2', { em: Date.now() }));
+    await assertFails(votar(db.anon(), 'j2', 1, { em: Date.now() }));
   });
   test('troca que não bate com o voto gravado junto é recusada', async () => {
-    await assertFails(votar(db.anon(), 'j2', { p: 'j3' }));
+    await assertFails(votar(db.anon(), 'j2', 1, { p: 'j3' }));
   });
   test('troca em nome de outro aparelho ou com campo a mais é recusada', async () => {
-    await assertFails(votar(db.anon(), 'j2', { u: 'outroAparelho' }));
-    await assertFails(votar(db.anon(), 'j2', { extra: 1 }));
+    await assertFails(votar(db.anon(), 'j2', 1, { u: 'outroAparelho' }));
+    await assertFails(votar(db.anon(), 'j2', 1, { extra: 1 }));
   });
   test('com a votação encerrada, a troca é recusada', async () => {
     await semRegras(f => setDoc(doc(f, V), { open: false, cats: [{ id: 'mvp' }] }));
-    await assertFails(votar(db.anon(), 'j2'));
+    await assertFails(votar(db.anon(), 'j2', 1));
   });
   test('ninguém altera uma troca; só o administrador apaga', async () => {
-    await assertSucceeds(votar(db.anon(), 'j2'));
-    await assertFails(updateDoc(doc(db.anon(), V + '/trocas/t1'), { p: 'j3' }));
-    await assertFails(updateDoc(doc(db.adm(), V + '/trocas/t1'), { p: 'j3' }));
-    await assertFails(deleteDoc(doc(db.anon(), V + '/trocas/t1')));
-    await assertSucceeds(deleteDoc(doc(db.adm(), V + '/trocas/t1')));
+    await assertSucceeds(votar(db.anon(), 'j2', 1));
+    await assertFails(updateDoc(doc(db.anon(), V + '/trocas/anon1_1'), { p: 'j3' }));
+    await assertFails(updateDoc(doc(db.adm(), V + '/trocas/anon1_1'), { p: 'j3' }));
+    await assertFails(deleteDoc(doc(db.anon(), V + '/trocas/anon1_1')));
+    await assertSucceeds(deleteDoc(doc(db.adm(), V + '/trocas/anon1_1')));
   });
   test('só administradores do grupo leem as trocas e os votos de todos', async () => {
-    await assertSucceeds(votar(db.anon(), 'j2'));
-    await assertSucceeds(getDoc(doc(db.adm(), V + '/trocas/t1')));
+    await assertSucceeds(votar(db.anon(), 'j2', 1));
+    await assertSucceeds(getDoc(doc(db.adm(), V + '/trocas/anon1_1')));
     await assertSucceeds(getDocs(collection(db.adm(), V + '/votos')));
-    await assertFails(getDoc(doc(db.anon(), V + '/trocas/t1')));
-    await assertFails(getDoc(doc(db.outro(), V + '/trocas/t1')));
+    await assertFails(getDoc(doc(db.anon(), V + '/trocas/anon1_1')));
+    await assertFails(getDoc(doc(db.outro(), V + '/trocas/anon1_1')));
     await assertFails(getDocs(collection(db.anon(), V + '/votos')));
     await assertFails(getDocs(collection(db.outro(), V + '/votos')));
+  });
+  test('KAN-224: Léo para Marcão entra junto (voto, contador e troca); o contador sobe de 1 em 1', async () => {
+    await assertSucceeds(votar(db.anon(), 'j2', 1));
+    await assertSucceeds(votar(db.anon(), 'j3', 2));
+    // pular o contador, repetir um id já usado ou usar id solto com contador é recusado
+    await assertFails(votar(db.anon(), 'j2', 4));
+    await assertFails(votar(db.anon(), 'j2', 3, {}, 'anon1_2'));
+    await assertFails(votar(db.anon(), 'j2', 3, {}, 'qualquerId'));
+    const ts = await semRegras(f => getDocs(collection(f, V + '/trocas')));
+    assert.equal(ts.size, 2);
+  });
+  test('KAN-223/224: gravar de novo o mesmo nome com uma troca é recusado; o voto continua valendo', async () => {
+    await assertSucceeds(votar(db.anon(), 'j2', 1));
+    await assertFails(votar(db.anon(), 'j2', 2));
+    const v = await semRegras(f => getDoc(doc(f, V + '/votos/anon1')));
+    assert.equal(v.data().v.mvp, 'j2');
+    assert.equal(v.data().nt, 1);
+  });
+  test('KAN-224: a 51ª troca do aparelho é recusada; sem troca, o voto ainda muda', async () => {
+    await semRegras(f => setDoc(doc(f, V + '/votos/anon1'), { pid: 'j1', v: { mvp: 'j2' }, t: 1, nt: 50 }));
+    await assertFails(votar(db.anon(), 'j3', 51));
+    await assertSucceeds(
+      setDoc(doc(db.anon(), V + '/votos/anon1'), { pid: 'j1', v: { mvp: 'j3' }, t: Date.now(), nt: 50 })
+    );
+    await assertFails(
+      setDoc(doc(db.anon(), V + '/votos/anon1'), { pid: 'j1', v: { mvp: 'j2' }, t: Date.now(), nt: 7 })
+    );
+  });
+  test('KAN-224: app antigo em cache (troca com id solto, voto sem contador) vale até o fim de 29/11/2026', async () => {
+    const f = db.anon();
+    const lote = writeBatch(f);
+    lote.set(doc(f, V + '/votos/anon1'), { pid: 'j1', v: { mvp: 'j2' }, t: Date.now() });
+    lote.set(doc(f, V + '/trocas/idSolto'), { u: 'anon1', pid: 'j1', c: 'mvp', p: 'j2', em: serverTimestamp() });
+    if (Date.now() < Date.UTC(2026, 10, 30)) await assertSucceeds(lote.commit());
+    else await assertFails(lote.commit());
   });
 });
 

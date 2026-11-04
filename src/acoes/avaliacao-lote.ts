@@ -6,7 +6,7 @@ import { usarEstilo } from '../ui/estilo';
 import { diaDoPrazo, erroAvaliacao, fimDoDia, type Avaliacao, type Resposta } from '../dominio/avaliacao';
 import { gname, posso, setLvl } from '../dominio/grupo.js';
 import { tx } from '../i18n/index.js';
-import { FUSO, LOCAL } from '../i18n/formatos.js';
+import { FORMATO, FUSO } from '../i18n/formatos.js';
 import * as banco from '../nucleo/backend.js';
 import { editRat } from '../nucleo/edicoes.js';
 import { GB, S as estado, gp, w } from '../nucleo/estado.js';
@@ -45,7 +45,7 @@ function textoDoLink(aid: string, a: Avaliacao) {
   return tx('aval.textoLink', {
     grupo: gname(),
     t: a.t,
-    data: diaDoPrazo(a.ate, LOCAL, FUSO),
+    data: diaDoPrazo(a.ate, FORMATO, FUSO),
     link: linkAvaliacao(aid),
   });
 }

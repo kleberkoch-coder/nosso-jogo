@@ -13,7 +13,7 @@ import { tx } from './i18n/index.js';
 import { mostrarSugestoes } from './ui/SugestoesAvulso';
 /* Ações que não gravam nada: valem para quem só vê (KAN-204). */
 const SO_VER = new Set(
-  'tab close contaMenu themeMenu temaConta setTheme contaPais salvarPaisConta groupsDlg planosDlg lerAvisoPlano copy copyLink copyHere copyFixo shareConvite shareFixo shareTimes shareVote histAbrir histBuscar histMais histModo histVoltar recarregar forgetGroup newGroup logout verSenha avisoAcao'.split(
+  'tab close contaMenu themeMenu temaConta setTheme idiomaConta setIdioma contaPais salvarPaisConta groupsDlg planosDlg lerAvisoPlano copy copyLink copyHere copyFixo shareConvite shareFixo shareTimes shareVote histAbrir histBuscar histMais histModo histVoltar recarregar forgetGroup newGroup logout verSenha avisoAcao'.split(
     ' '
   )
 );

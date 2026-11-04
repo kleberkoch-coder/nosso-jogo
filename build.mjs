@@ -268,7 +268,10 @@ const textosFixos = arquivos
 /* KAN-225: arquivos grandes demais (mais de 400 linhas) são difíceis de mudar sem quebrar outra coisa. O teto é o de
    hoje: nenhum arquivo novo passa disso, e quem divide um dos que já passam baixa o teto (D40). */
 const LINHAS_MAX = 400;
-const grandes = arquivos.filter(f => fs.readFileSync(f, 'utf8').split('\n').length - 1 > LINHAS_MAX);
+// Dicionários (src/i18n) são dados, uma linha por texto: não contam (KAN-164).
+const grandes = arquivos.filter(
+  f => !f.includes(path.join('src', 'i18n')) && fs.readFileSync(f, 'utf8').split('\n').length - 1 > LINHAS_MAX
+);
 console.log(
   `Dívida técnica: ${emTS} de ${arquivos.length} arquivos em TypeScript · ${grandes.length} com mais de ${LINHAS_MAX} linhas · ${telasComp} de ${telas.length} telas como componente · innerHTML em ${innerHTML} pontos · ${textosFixos} textos fora do dicionário · ${testesRegra} de 5 regras de negócio com teste próprio`
 );

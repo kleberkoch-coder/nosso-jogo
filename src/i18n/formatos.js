@@ -1,12 +1,17 @@
 /* Local, formato, moeda e fuso usados em textos, datas, números e valores (KAN-162).
-   - LOCAL: idioma dos textos (dicionário, nomes de dias e meses, ordem alfabética). Hoje só português do Brasil.
+   - LOCAL: idioma dos textos (dicionário, nomes de dias e meses, ordem alfabética): o de cada pessoa (KAN-164,
+     português, inglês ou espanhol). Não muda o formato das datas e dos números, que é o do país do grupo.
    - FORMATO: ordem da data e separadores de número, do país do grupo (pt-BR: 16/10 e 1.234,50; en-US: 10/16 e 1,234.50).
    - PAIS: o do grupo (padrão do combo do telefone e da importação da planilha).
    - MOEDA: a do grupo (cfg.moeda), que nasce da moeda do país do organizador.
    - FUSO: o do grupo (cfg.fuso). Vazio (grupo antigo) = relógio do aparelho, como antes.
    - RELÓGIO: 12h (8:00 PM) ou 24h (20:00), do formato do país do grupo (KAN-163). Gravado sempre em 24h.
    Quem muda é definirRegiao(), chamada quando o grupo carrega (rotas.js); fora de um grupo, vale o país da conta. */
-const LOCAL = 'pt-BR';
+let LOCAL = 'pt-BR';
+/* Idioma da pessoa (KAN-164): troca nomes de dias e meses e a ordem alfabética. */
+const definirLocal = l => {
+  LOCAL = l || 'pt-BR';
+};
 let PAIS = 'BR',
   FORMATO = 'pt-BR',
   MOEDA = 'BRL',
@@ -76,4 +81,4 @@ function simboloMoeda() {
   }
 }
 
-export { FORMATO, FUSO, LOCAL, MOEDA, PAIS, agora, definirRegiao, relogio12, simboloMoeda };
+export { FORMATO, FUSO, LOCAL, MOEDA, PAIS, agora, definirLocal, definirRegiao, relogio12, simboloMoeda };

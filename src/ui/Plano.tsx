@@ -5,13 +5,16 @@
 import { render } from 'preact';
 import { catalogo, diasParaAcabar, planoComRecurso, TESTE_DIAS, ultimoDia, type Situacao } from '../dominio/planos';
 import { fdia, isOwnerMe } from '../dominio/grupo.js';
-import { tp, tx } from '../i18n/index.js';
+import { tc, tp, tx } from '../i18n/index.js';
 import { S as estado } from '../nucleo/estado.js';
 import { gruposDemais, limiteGrupos, meusAtivos, minhaSituacao, situacaoDoGrupo } from '../nucleo/plano';
 
 const st = () => estado;
 const cat = () => catalogo(st().planosCfg);
-const planoDe = (r: string) => planoComRecurso(cat(), r) || tx('plano.planoPago');
+const planoDe = (r: string) => {
+  const p = planoComRecurso(cat(), r);
+  return p ? tc(p) : tx('plano.planoPago');
+};
 
 /* O que fazer para ter o recurso: testar (só o organizador, uma vez), falar com o organizador, ou esperar a contratação. */
 export function Convite({ s }: { s: Situacao }) {
@@ -96,7 +99,7 @@ export function AvisosPlano() {
       <div class="inbar info" key="fim" id="avisoFimPlano">
         <span>
           {tx(dias === 0 ? 'plano.acabaHoje' : 'plano.acabaEm', {
-            plano: s.plano.nome,
+            plano: tc(s.plano.nome),
             origem: tx('plano.origem.' + s.origem),
             dias: tp('plano.nDias', dias),
             data: fdia(ultimoDia(s.ate)),

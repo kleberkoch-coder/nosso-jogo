@@ -74,12 +74,13 @@ function colunasPeloTitulo(cab: string[]): (Campo | null)[] | null {
     const s = semAcento(c);
     // Título não tem números ("Jogador 7" é um nome, não um título) e é curto.
     if (!s || /\d/.test(s) || s.length > 30) return null;
-    if (/mail/.test(s)) return 'email';
-    if (/(tel|whats|zap|cel|fone)/.test(s)) return 'tel';
+    if (/(mail|correo)/.test(s)) return 'email';
+    if (/(tel|whats|zap|cel|fone|phone)/.test(s)) return 'tel';
     if (/^(pos|posicao|funcao)/.test(s)) return 'pos';
-    if (/(nota|nivel|estrela)/.test(s)) return 'nota';
-    if (/(tipo|mensal|diar|plano)/.test(s)) return 'tipo';
-    if (/(nome|jogador|apelido|atleta)/.test(s)) return 'nome';
+    if (/(nota|nivel|estrela|rating|level|star)/.test(s)) return 'nota';
+    if (/(tipo|mensal|diar|plano|type)/.test(s)) return 'tipo';
+    // KAN-164: títulos em inglês e espanhol também (Name, Player, Nombre, Jugador, Apodo).
+    if (/(nome|jogador|apelido|atleta|name|player|nombre|apodo)/.test(s)) return 'nome';
     return null;
   };
   const cols = cab.map(qual);
@@ -105,8 +106,8 @@ function nota(valor: string): number | null | undefined {
 function tipo(valor: string): 'mensalista' | 'diarista' | 'isento' | null {
   const v = semAcento(valor);
   if (!v || v.startsWith('m')) return 'mensalista';
-  if (v.startsWith('d') || v.startsWith('a')) return 'diarista';
-  if (v.startsWith('i') || v.startsWith('n')) return 'isento';
+  if (v.startsWith('d') || v.startsWith('a') || v.startsWith('p')) return 'diarista'; // "per game", "por partido"
+  if (v.startsWith('i') || v.startsWith('n') || v.startsWith('e')) return 'isento'; // "exempt", "exento"
   return null;
 }
 

@@ -4,6 +4,7 @@
    Montado elemento por elemento, sem HTML em texto. As ações (contaPais, logout) são as de sempre. */
 import { LOCAL } from '../i18n/formatos.js';
 import { tx } from '../i18n/index.js';
+import { IDIOMAS } from '../i18n/idiomas';
 import { carregarAdmin } from '../nucleo/carga-admin.js';
 import { S as estado } from '../nucleo/estado.js';
 import * as tema from './tema.js';
@@ -20,6 +21,31 @@ function nomePais(iso: string) {
   } catch (e) {
     return iso;
   }
+}
+
+const nomeIdioma = (id: string) => (IDIOMAS.find(i => i.id === id) || IDIOMAS[0]).nome;
+
+/* Idioma (KAN-164): as opções abrem no mesmo lugar do menu da conta, como o tema. Cada nome aparece na própria língua. */
+export function abrirMenuIdioma(anchor: HTMLElement) {
+  abrirMenu(anchor, tx('conta.idioma'), (m: HTMLElement) => {
+    const p = document.createElement('p');
+    p.className = 'tm-t';
+    p.setAttribute('aria-hidden', 'true');
+    p.textContent = tx('conta.idioma');
+    m.append(
+      p,
+      ...IDIOMAS.map(({ id, nome }) => {
+        const b = document.createElement('button');
+        b.setAttribute('role', 'menuitemradio');
+        b.setAttribute('aria-checked', String(LOCAL === id));
+        b.setAttribute('lang', id);
+        b.dataset.a = 'setIdioma';
+        b.dataset.v = id;
+        b.textContent = nome;
+        return b;
+      })
+    );
+  });
 }
 
 /* Botão do cabeçalho. */
@@ -69,6 +95,7 @@ export function abrirMenuConta(anchor: HTMLElement) {
       t,
       item('🌐', tx('conta.pais'), 'contaPais', bandeira(pais) + ' ' + nomePais(pais)),
       item(temaAtual()[1], tx('conta.tema'), 'temaConta', tx(temaAtual()[2])),
+      item('🗣️', tx('conta.idioma'), 'idiomaConta', nomeIdioma(LOCAL)),
       item('⭐', tx('conta.plano'), 'planosDlg'),
       sep,
       item('↪', tx('conta.sair'), 'logout')

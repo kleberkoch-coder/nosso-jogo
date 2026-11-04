@@ -33,6 +33,7 @@ export type Me = {
   pais?: string;
   formato?: string;
   fuso?: string;
+  idioma?: string; // KAN-164: idioma escolhido no menu da conta (pt-BR, en ou es)
   [k: string]: unknown;
 };
 export type Conta = {

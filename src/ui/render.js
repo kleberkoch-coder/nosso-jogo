@@ -96,7 +96,9 @@ function subtituloCompleto() {
 }
 function renderCore() {
   document.body.classList.remove('is-landing');
-  $('#demo').hidden = !(B && B.demo);
+  const demo = $('#demo');
+  demo.hidden = !(B && B.demo);
+  if (!demo.hidden) demo.textContent = tx('demo.aviso'); // KAN-164: no idioma da pessoa
   const R = S.route,
     logged = !!(S.user && !S.user.anon);
   const title = R.n === 'home' || R.n === 'auth' ? APP : S.app ? gname() : APP;

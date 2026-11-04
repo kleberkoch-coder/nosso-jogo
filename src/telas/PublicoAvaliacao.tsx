@@ -4,7 +4,7 @@ import { render } from 'preact';
 import { useState } from 'preact/hooks';
 import { aberta, diaDoPrazo, type Avaliacao } from '../dominio/avaliacao';
 import { gname, grpAtivo, pname } from '../dominio/grupo.js';
-import { FUSO, LOCAL } from '../i18n/formatos.js';
+import { FORMATO, FUSO, LOCAL } from '../i18n/formatos.js';
 import { juntarTextos, tx } from '../i18n/index.js';
 import textos from '../i18n/pt-BR-aval';
 import { DEMORA_MS } from '../nucleo/carga';
@@ -33,7 +33,7 @@ function guardarNome(aid: string, pid: string) {
 }
 
 /* KAN-221: o prazo no fuso do grupo, para quem abre o link de qualquer lugar. */
-export const dataCurta = (ms: number) => diaDoPrazo(ms, LOCAL, FUSO);
+export const dataCurta = (ms: number) => diaDoPrazo(ms, FORMATO, FUSO);
 
 function Aviso({ titulo, texto, tentar }: { titulo?: string; texto: string; tentar?: boolean }) {
   return (

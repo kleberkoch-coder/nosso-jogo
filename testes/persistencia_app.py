@@ -98,6 +98,12 @@ J = lambda pg, js, arg=None: pg.evaluate(js, arg) if arg is not None else pg.eva
 
 with sync_playwright() as pw:
     b = pw.chromium.launch()
+    # KAN-164: o app segue o idioma do navegador. O roteiro roda em português, salvo onde o caso pede outro idioma.
+    _contexto = b.new_context
+    def _em_portugues(*a, **k):
+        k.setdefault('locale', 'pt-BR')
+        return _contexto(*a, **k)
+    b.new_context = _em_portugues
     def novo():
         c = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block', timezone_id='America/Sao_Paulo')
         c.on('page', lambda p: PAGINAS.append(p))
@@ -680,6 +686,33 @@ with sync_playwright() as pw:
     ok(r31 == ['Primo do Bruno', 7000, 7000] and l31 == [['entrada', None, f31, 70]],
        f'CT-KAN-170-P31: a pessoa de fora, o valor dela e o pagamento continuam depois de sair e entrar ({r31}, {l31})')
     c31.close()
+
+    # P32 idioma da pessoa (KAN-164): escolher English no menu da conta grava usuarios/{uid}.idioma. Confere depois de
+    # recarregar e depois de sair e entrar de novo (com o emulador, num navegador limpo; sem a escolha guardada no aparelho).
+    c32 = novo(); p32 = c32.new_page()
+    p32.on('pageerror', lambda e: errs.append(str(e)))
+    E32 = 'idioma32@teste.com'
+    p32.goto(URL + '#/criar'); p32.wait_for_selector('#le', timeout=20000); p32.wait_for_timeout(300)
+    p32.fill('#le', E32); p32.fill('#lp', SENHA); p32.fill('#lp2', SENHA); p32.wait_for_timeout(200)
+    p32.click('[data-a=signup]'); p32.wait_for_selector('#ngn', timeout=20000); p32.wait_for_timeout(300)
+    p32.keyboard.press('Escape'); p32.wait_for_timeout(300)
+    if p32.locator('#dlg .conf').count(): conf(p32)
+    p32.click('#topright [data-a=contaMenu]'); p32.wait_for_timeout(300)
+    p32.click('.theme-menu [data-a=idiomaConta]'); p32.wait_for_selector('.theme-menu [data-a=setIdioma]', timeout=10000)
+    p32.click('.theme-menu [data-a=setIdioma][data-v=en]'); p32.wait_for_timeout(1500); gravou(p32)
+    p32.reload(); p32.wait_for_timeout(2500)
+    ok(J(p32, "document.documentElement.lang") == 'en' and J(p32, "S.me&&S.me.idioma") == 'en',
+       'CT-KAN-164-06 (P32): o idioma escolhido continua depois de recarregar (usuarios/{uid}.idioma)')
+    sair_e_esperar(p32)
+    if EMU:
+        c32.close(); c32 = novo(); p32 = c32.new_page(); p32.on('pageerror', lambda e: errs.append(str(e)))
+    else:
+        p32.evaluate("localStorage.removeItem('nj-idioma')")
+    p32.goto(URL + '#/entrar'); p32.wait_for_selector('#le', timeout=20000); p32.wait_for_timeout(300)
+    p32.fill('#le', E32); p32.fill('#lp', SENHA); p32.keyboard.press('Enter'); p32.wait_for_timeout(3500)
+    ok(J(p32, "document.documentElement.lang") == 'en' and J(p32, "S.me&&S.me.idioma") == 'en',
+       'CT-KAN-164-06 (P32): depois de sair e entrar de novo, sem a escolha guardada no aparelho, o idioma vem da conta')
+    c32.close()
 
     ok(not errs, 'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))
     b.close()

@@ -4,7 +4,8 @@ export default {
   /* pt-BR-afast.ts */
   'afast.titulo': 'Marcar ausencia de {nome}',
   'afast.tituloEditar': 'Ausencia de {nome}',
-  'afast.ajuda': 'Mientras esté ausente, queda fuera de la lista de asistencia y del cobro de la jornada. Ranking, historial y nota no cambian. Vuelve solo el mes siguiente al fin.',
+  'afast.ajuda':
+    'Mientras esté ausente, queda fuera de la lista de asistencia y del cobro de la jornada. Ranking, historial y nota no cambian. Vuelve solo el mes siguiente al fin.',
   'afast.motivo': 'Motivo',
   'afast.obs': 'Observación (opcional)',
   'afast.obsExemplo': 'ej.: cirugía de rodilla',
@@ -124,7 +125,8 @@ export default {
   'quadro.carregando': 'Cargando el historial…',
   'quadro.semMensalistas': 'Ningún mensual en el plantel.',
   'quadro.rolar': 'Cuadro de cuotas. Desliza hacia el costado para ver los otros meses.',
-  'quadro.legenda': 'Número junto al nombre: meses pendientes en el año · ✓ pagado · Recibí: pendiente, toca para registrar con la fecha de hoy · aus.: ausente, sin cobro · —: todavía no estaba en el grupo. Los meses siguen la cuota, no la fecha del pago.',
+  'quadro.legenda':
+    'Número junto al nombre: meses pendientes en el año · ✓ pagado · Recibí: pendiente, toca para registrar con la fecha de hoy · aus.: ausente, sin cobro · —: todavía no estaba en el grupo. Los meses siguen la cuota, no la fecha del pago.',
   'caixa.novoLanc': 'Nuevo registro',
   'caixa.tipo': 'Tipo',
   'caixa.tipoLanc.mensal': 'Cuota mensual',
@@ -182,7 +184,8 @@ export default {
   'regiao.contaSalvo': 'País de la cuenta actualizado.',
   'regiao.pais': 'País',
   'regiao.moedaTitulo': '¿Cambiar la moneda del grupo?',
-  'regiao.moedaTexto': 'Los valores ya registrados en la caja no se convierten: lo registrado en {antes} pasa a aparecer en {depois}.',
+  'regiao.moedaTexto':
+    'Los valores ya registrados en la caja no se convierten: lo registrado en {antes} pasa a aparecer en {depois}.',
   'regiao.moedaAcao': 'Cambiar moneda',
   'caixa.mensalidadeMoeda': 'Cuota mensual ({moeda})',
   'caixa.diariaMoeda': 'Cuota por partido ({moeda})',
@@ -200,13 +203,15 @@ export default {
   'vagas.fechar': 'Cerrar cupos',
   'vagas.quantas': '¿Cuántos cupos?',
   'vagas.semLimite': 'Sin límite',
-  'vagas.ajuda': 'Ya viene con lo que falta para el mínimo del partido. Quien entra por el enlace ocupa un cupo y quien desiste lo devuelve. Déjalo vacío para no tener límite. Puedes seguir agregando a cualquiera aquí.',
+  'vagas.ajuda':
+    'Ya viene con lo que falta para el mínimo del partido. Quien entra por el enlace ocupa un cupo y quien desiste lo devuelve. Déjalo vacío para no tener límite. Puedes seguir agregando a cualquiera aquí.',
   'vagas.abertasToast.um': '1 cupo abierto para jugadores por partido e invitados.',
   'vagas.abertasToast.outros': '{n} cupos abiertos para jugadores por partido e invitados.',
   'vagas.abertasSemLimiteToast': 'Cupos abiertos para jugadores por partido e invitados, sin límite.',
   'vagas.fechadasToast': 'Cupos para jugadores por partido e invitados cerrados.',
   'minimo.dlgTitulo': 'Mínimo para el partido',
-  'minimo.dlgAjuda': 'Cuántos necesita el grupo para que haya partido. Vale para todas las jornadas; la app avisa cuando falte gente. Deja 0 para no seguirlo.',
+  'minimo.dlgAjuda':
+    'Cuántos necesita el grupo para que haya partido. Vale para todas las jornadas; la app avisa cuando falte gente. Deja 0 para no seguirlo.',
   'minimo.campoTotal': 'Total de jugadores',
   'minimo.porPosicao': 'Por posición',
   'minimo.salvo': 'Mínimo para el partido guardado.',
@@ -215,21 +220,29 @@ export default {
   'cobrar.whatsapp': 'WhatsApp',
   'cobrar.individualRotulo': 'Avisar a {nome} por WhatsApp',
   'cobrar.semTelefone': 'sin teléfono',
-  'cobrar.textoGrupo': '{e} *{grupo}* — {data}\nTodavía no respondieron: {nomes}.\n\nConfirma aquí (Voy o No voy):\n{link}',
+  'cobrar.textoGrupo':
+    '{e} *{grupo}* — {data}\nTodavía no respondieron: {nomes}.\n\nConfirma aquí (Voy o No voy):\n{link}',
   'cobrar.individual': '¡Hola, {nome}! ¿Vas al partido del {data}? Confirma aquí (Voy o No voy): {link}',
   'caixa.foraTitulo': '¿Registrar {valor}?',
   'caixa.foraCorrigir': 'Corregir valor',
-  'sorteio.bloqueadoVotacao': 'Esta jornada ya tiene votación, así que los equipos quedan como están. Para sortear de nuevo, elimina la votación en la pestaña Votación. Mover jugador y poner en el equipo siguen valiendo.',
+  'sorteio.bloqueadoVotacao':
+    'Esta jornada ya tiene votación, así que los equipos quedan como están. Para sortear de nuevo, elimina la votación en la pestaña Votación. Mover jugador y poner en el equipo siguen valiendo.',
   'sorteio.comPartidasTitulo': '¿Sortear de nuevo con partidos guardados?',
-  'sorteio.comPartidas.um': 'El partido ya guardado sigue en el ranking con los equipos de cuando se jugó. Los equipos nuevos valen para los próximos partidos.',
-  'sorteio.comPartidas.outros': 'Los {n} partidos ya guardados siguen en el ranking con los equipos de cuando se jugaron. Los equipos nuevos valen para los próximos partidos.',
-  'lista.fechadaComTimesDuplas': 'Lista cerrada por el sorteo. Para cambiar la asistencia, reabre la lista o sortea de nuevo.',
+  'sorteio.comPartidas.um':
+    'El partido ya guardado sigue en el ranking con los equipos de cuando se jugó. Los equipos nuevos valen para los próximos partidos.',
+  'sorteio.comPartidas.outros':
+    'Los {n} partidos ya guardados siguen en el ranking con los equipos de cuando se jugaron. Los equipos nuevos valen para los próximos partidos.',
+  'lista.fechadaComTimesDuplas':
+    'Lista cerrada por el sorteo. Para cambiar la asistencia, reabre la lista o sortea de nuevo.',
   'lista.fechadaAviso': 'Lista cerrada. Para cambiar la asistencia, toca Reabrir lista.',
-  'lista.fechadaComTimes': 'Lista cerrada por el sorteo. Para incluir a alguien, usa "+ Poner en el equipo" en el cuadro Equipos. Para cambiar otras asistencias, reabre la lista.',
-  'lista.confirmaMudar': 'Los equipos ya se sortearon. La lista quedará distinta de los equipos y la app muestra la diferencia aquí en la pestaña Jornada.',
+  'lista.fechadaComTimes':
+    'Lista cerrada por el sorteo. Para incluir a alguien, usa "+ Poner en el equipo" en el cuadro Equipos. Para cambiar otras asistencias, reabre la lista.',
+  'lista.confirmaMudar':
+    'Los equipos ya se sortearon. La lista quedará distinta de los equipos y la app muestra la diferencia aquí en la pestaña Jornada.',
   'lista.mudarTitulo': '¿Cambiar la asistencia de {nome}?',
   'lista.mudarAcao': 'Cambiar asistencia',
-  'lista.confirmaReabrir': 'Los equipos ya se sortearon. Si la lista cambia, la app muestra la diferencia aquí en la pestaña Jornada.',
+  'lista.confirmaReabrir':
+    'Los equipos ya se sortearon. Si la lista cambia, la app muestra la diferencia aquí en la pestaña Jornada.',
   'lista.reabrirTitulo': '¿Reabrir la lista?',
   'lista.reabrirAcao': 'Reabrir lista',
   'lista.sorteadoFechada': 'Equipos sorteados. La lista se cerró.',
@@ -251,7 +264,8 @@ export default {
   'hora.mais': 'Aumentar {campo}',
   'hora.menos': 'Disminuir {campo}',
   'hora.periodo': 'Antes o después del mediodía (AM o PM). Ahora: {atual}',
-  'resumo.confirmaRecalcular': 'Los totales de este período se rehacen a partir de los partidos, los registros y las votaciones.',
+  'resumo.confirmaRecalcular':
+    'Los totales de este período se rehacen a partir de los partidos, los registros y las votaciones.',
   'resumo.recalcularTitulo': '¿Recalcular los totales?',
   'resumo.recalcularAcao': 'Recalcular',
   'posicao.removerAviso.um': '1 jugador con esta posición pasa a una posición predeterminada.',
@@ -260,7 +274,8 @@ export default {
   'sorteio.info': 'Equipos de {n} jugadores (definido en Grupo). Quien pase de eso queda de suplente.',
   'sorteio.infoDuplas': 'Parejas (definido en Grupo). Si sobra alguien, queda de suplente en una pareja.',
   'sorteio.foraPos': 'Fuera del sorteo',
-  'sorteio.foraPosAjuda': 'Toca una posición para dejar a todos los de ella fuera del sorteo (ej.: arqueros fijos). Queda guardado para los próximos sorteos.',
+  'sorteio.foraPosAjuda':
+    'Toca una posición para dejar a todos los de ella fuera del sorteo (ej.: arqueros fijos). Queda guardado para los próximos sorteos.',
   'sorteio.prevCompletos': '{k} jugadores → {n} equipos de {t}',
   'sorteio.prevReservas': '{k} jugadores → {n} equipos de {t} + {r}',
   'sorteio.prevIncompletos': '{k} jugadores → {n} equipos de {tam} (equipo completo: {t})',
@@ -270,7 +285,8 @@ export default {
   'grupo.esporadico': 'De vez en cuando',
   'grupo.diasHorarios': 'Días y horarios',
   'inicio.bemVindo': '¡Bienvenido!',
-  'inicio.primeiro': 'Crea tu primer grupo: ponle un nombre, elige el deporte y di cuándo juegan. Puedes crear todos los grupos que quieras, uno para cada partido.',
+  'inicio.primeiro':
+    'Crea tu primer grupo: ponle un nombre, elige el deporte y di cuándo juegan. Puedes crear todos los grupos que quieras, uno para cada partido.',
   'inicio.criarPrimeiro': 'Crear mi grupo',
   'inicio.grupo': 'Grupo',
   'inicio.organizador': 'organizador',
@@ -312,7 +328,8 @@ export default {
   'fixos.copiar': 'Copiar enlace',
   'fixos.editar': 'Editar días',
   'fixos.comoFunciona': 'Cómo funciona',
-  'fixos.comoFuncionaTexto': 'La confirmación de la semana siguiente se abre sola apenas termina el partido. Para saltar una fecha (feriado), usa "Cancelar esta fecha" en la tarjeta de la jornada.',
+  'fixos.comoFuncionaTexto':
+    'La confirmación de la semana siguiente se abre sola apenas termina el partido. Para saltar una fecha (feriado), usa "Cancelar esta fecha" en la tarjeta de la jornada.',
   'contato.telRotulo': 'Teléfono / WhatsApp',
   'contato.telOpcional': 'Teléfono / WhatsApp (opcional)',
   'contato.telExemplo': '(11) 98765-4321',
@@ -323,14 +340,17 @@ export default {
   'contato.telCurto': 'Teléfono incompleto. Usa código de área + número (ej.: 11 98765-4321) o cambia el país al lado.',
   'contato.telLongo': 'El teléfono tiene demasiados números. Revisa el código de área y el número, o el país al lado.',
   'contato.telInvalido': 'Teléfono inválido. Usa solo números (ej.: 11 98765-4321), o + y el código del país.',
-  'contato.telCurtoPais': 'Teléfono incompleto. En el país elegido ({pais}), el número tiene {n} dígitos, sin el código del país.',
-  'contato.telLongoPais': 'El teléfono tiene demasiados números. En el país elegido ({pais}), el número tiene {n} dígitos, sin el código del país.',
+  'contato.telCurtoPais':
+    'Teléfono incompleto. En el país elegido ({pais}), el número tiene {n} dígitos, sin el código del país.',
+  'contato.telLongoPais':
+    'El teléfono tiene demasiados números. En el país elegido ({pais}), el número tiene {n} dígitos, sin el código del país.',
   'contato.telSemPais': 'Elige el país del teléfono al lado, o escribe + y el código del país.',
   'contato.emailRotulo': 'Correo (opcional)',
   'contato.emailExemplo': 'nombre@ejemplo.com',
   'contato.emailInvalido': 'Correo inválido. Usa el formato nombre@ejemplo.com.',
   'colete.titulo': 'Peto de {time}',
-  'colete.ajuda': 'Elige el color del peto que tienen en la cancha. Si otro equipo ya usa ese color, los dos se intercambian.',
+  'colete.ajuda':
+    'Elige el color del peto que tienen en la cancha. Si otro equipo ya usa ese color, los dos se intercambian.',
   'colete.trocarRotulo': 'Cambiar el color del peto de {time}',
   'importar.mensalista': 'Mensual',
   'importar.diarista': 'Por partido',
@@ -384,9 +404,11 @@ export default {
   'jogadores.nenhumAtivo': 'Ningún jugador activo.',
   'jogadores.inativos': 'Inactivos ({n})',
   'jogadores.avulsosTitulo': 'Invitados que ya jugaron',
-  'jogadores.avulsosAjuda': 'Quedan guardados con posición y nota. Cuando vuelvan, solo elige el nombre, sin completar todo de nuevo.',
+  'jogadores.avulsosAjuda':
+    'Quedan guardados con posición y nota. Cuando vuelvan, solo elige el nombre, sin completar todo de nuevo.',
   'jogadores.porNoElenco': 'Pasar al plantel',
-  'jogadores.avulsosVazio': 'Todavía no hay invitados. Aparecen aquí automáticamente cuando confirman por el enlace o se agregan en la jornada.',
+  'jogadores.avulsosVazio':
+    'Todavía no hay invitados. Aparecen aquí automáticamente cuando confirman por el enlace o se agregan en la jornada.',
   'jogadores.separarTitulo': 'No poner en el mismo equipo',
   'jogadores.separarAjuda': 'Ej.: dos cracks. El sorteo evita juntar estas parejas siempre que se pueda.',
   'jogadores.e': 'y',
@@ -394,8 +416,10 @@ export default {
   'jogadores.separarVazio': 'Ninguna pareja registrada.',
   'jogadores.adicionarPar': 'Agregar pareja',
   'jogadores.juntosTitulo': 'Quiénes juegan más juntos',
-  'jogadores.juntosAjuda.um': 'Veces en el mismo equipo en la última jornada con equipos sorteados. El sorteo usa esto para variar los equipos.',
-  'jogadores.juntosAjuda.outros': 'Veces en el mismo equipo en las últimas {n} jornadas con equipos sorteados. El sorteo usa esto para variar los equipos.',
+  'jogadores.juntosAjuda.um':
+    'Veces en el mismo equipo en la última jornada con equipos sorteados. El sorteo usa esto para variar los equipos.',
+  'jogadores.juntosAjuda.outros':
+    'Veces en el mismo equipo en las últimas {n} jornadas con equipos sorteados. El sorteo usa esto para variar los equipos.',
   'jogadores.juntosVezes.um': '1 vez',
   'jogadores.juntosVezes.outros': '{n} veces',
   'jogadores.juntosTodos': 'Ver todas ({n} parejas)',
@@ -438,22 +462,29 @@ export default {
   'plano.falarOrganizador': 'El plan es del organizador del grupo: habla con él.',
   'plano.verPlanos': 'Ver los planes',
   'plano.testarTitulo': '¿Probar el Plan A por {n} días?',
-  'plano.testarTexto': 'Vale una vez por cuenta, sin tarjeta, para todos tus grupos, hasta el {data}. Al final, vuelve solo al Gratis, sin borrar nada.',
+  'plano.testarTexto':
+    'Vale una vez por cuenta, sin tarjeta, para todos tus grupos, hasta el {data}. Al final, vuelve solo al Gratis, sin borrar nada.',
   'plano.testarAcao': 'Empezar la prueba',
   'plano.testeLigado': 'Prueba del Plan A activa hasta el {data}.',
   'plano.entendi': 'Entendido',
-  'plano.novidade': 'Novedad: Nosso Jogo ahora tiene planes. Hasta el {data}, tus grupos tienen el Plan A gratis (caja, votación, historial y más). Después, puedes probar el Plan A por {n} días.',
-  'plano.acabaEm': 'Tu {plano} ({origem}) termina en {dias}, el {data}. Después, tus grupos vuelven al Gratis, sin borrar nada.',
-  'plano.acabaHoje': 'Tu {plano} ({origem}) termina hoy, {data}. Después, tus grupos vuelven al Gratis, sin borrar nada.',
+  'plano.novidade':
+    'Novedad: Nosso Jogo ahora tiene planes. Hasta el {data}, tus grupos tienen el Plan A gratis (caja, votación, historial y más). Después, puedes probar el Plan A por {n} días.',
+  'plano.acabaEm':
+    'Tu {plano} ({origem}) termina en {dias}, el {data}. Después, tus grupos vuelven al Gratis, sin borrar nada.',
+  'plano.acabaHoje':
+    'Tu {plano} ({origem}) termina hoy, {data}. Después, tus grupos vuelven al Gratis, sin borrar nada.',
   'plano.nDias.um': '1 día',
   'plano.nDias.outros': '{n} días',
   'plano.nGrupos.um': '1 grupo activo',
   'plano.nGrupos.outros': '{n} grupos activos',
-  'plano.demais': 'Tu plan permite {grupos} y tienes {tem}. Elige cuáles siguen activos; los otros quedan guardados, solo para consulta.',
+  'plano.demais':
+    'Tu plan permite {grupos} y tienes {tem}. Elige cuáles siguen activos; los otros quedan guardados, solo para consulta.',
   'plano.escolher': 'Elegir grupos',
   'plano.limiteGrupos': 'Tu plan permite {grupos}. Para crear o reactivar otro, desactiva un grupo o cambia de plan.',
-  'plano.limiteAdmins.um': 'Tu plan permite 1 administrador invitado. Para invitar a otro, quita un administrador o cambia de plan.',
-  'plano.limiteAdmins.outros': 'Tu plan permite {n} administradores invitados. Para invitar a otro, quita un administrador o cambia de plan.',
+  'plano.limiteAdmins.um':
+    'Tu plan permite 1 administrador invitado. Para invitar a otro, quita un administrador o cambia de plan.',
+  'plano.limiteAdmins.outros':
+    'Tu plan permite {n} administradores invitados. Para invitar a otro, quita un administrador o cambia de plan.',
   'jogador.editar': 'Editar jugador',
   'jogador.novo': 'Nuevo jugador',
   'jogador.nome': 'Nombre o apodo',
@@ -494,7 +525,8 @@ export default {
   'resumo.recalculados': 'Totales recalculados.',
   'rodadm.escolhaData': 'Elige la fecha.',
   'rodadm.excluirTitulo': '¿Eliminar la jornada del {data}?',
-  'rodadm.excluirTexto': 'La lista, los equipos y los partidos de esta jornada desaparecen, y los partidos salen del ranking. No se puede deshacer.',
+  'rodadm.excluirTexto':
+    'La lista, los equipos y los partidos de esta jornada desaparecen, y los partidos salen del ranking. No se puede deshacer.',
   'rodadm.excluirAcao': 'Eliminar jornada',
   'rodadm.cancelarTitulo': '¿Cancelar el partido del {data}?',
   'rodadm.cancelarTexto': 'El enlace permanente pasa a mostrar la jornada siguiente. Se puede reactivar después.',
@@ -565,7 +597,8 @@ export default {
   'grupo.organizador': 'organizador',
   'grupo.admin': 'admin',
   'grupo.remover': 'Quitar',
-  'grupo.conviteAjuda': 'La invitación es un enlace: quien lo abra crea la cuenta (o entra) y pasa a ser administrador de este grupo, solo con el día a día. Después habilitas el resto en Permisos.',
+  'grupo.conviteAjuda':
+    'La invitación es un enlace: quien lo abra crea la cuenta (o entra) y pasa a ser administrador de este grupo, solo con el día a día. Después habilitas el resto en Permisos.',
   'grupo.invalidarConvite': 'Invalidar el enlace actual',
   'aparencia.titulo': 'Apariencia',
   'aparencia.rotulo': 'Tema',
@@ -598,7 +631,8 @@ export default {
   'regiao.moeda': 'Moneda',
   'regiao.fuso': 'Zona horaria',
   'regiao.titulo': 'País, moneda y zona horaria',
-  'regiao.grupoAjuda': 'Definen el formato de las fechas y los valores, el código de teléfono de los jugadores y la hora en que termina cada partido.',
+  'regiao.grupoAjuda':
+    'Definen el formato de las fechas y los valores, el código de teléfono de los jugadores y la hora en que termina cada partido.',
   'grupo.diaSemana': 'Día de la semana',
   'grupo.inicio': 'Inicio',
   'grupo.termino': 'Fin',
@@ -610,19 +644,22 @@ export default {
   'grupo.nomeExemplo': 'Ej.: Fútbol del Lunes',
   'grupo.frequencia': '¿Con qué frecuencia juegan?',
   'grupo.frequente': 'Frecuente',
-  'grupo.frequenteAjuda': 'Días y horarios fijos todas las semanas. La próxima jornada se crea sola y el enlace de confirmación es siempre el mismo.',
+  'grupo.frequenteAjuda':
+    'Días y horarios fijos todas las semanas. La próxima jornada se crea sola y el enlace de confirmación es siempre el mismo.',
   'grupo.esporadicoAjuda': 'Solo pasa de vez en cuando. Creas cada jornada cuando programas el partido.',
   'grupo.outroDia': '+ Agregar otro día',
   'grupo.esporte': 'Deporte',
   'grupo.qualEsporte': '¿Qué deporte?',
   'grupo.qualEsporteExemplo': 'Ej.: Pickleball',
-  'grupo.mudarEsporte': 'Cambiar el deporte cambia posiciones, puntuación y categorías de votación. Revisa después las posiciones de los jugadores.',
+  'grupo.mudarEsporte':
+    'Cambiar el deporte cambia posiciones, puntuación y categorías de votación. Revisa después las posiciones de los jugadores.',
   'grupo.semNome': 'Ponle un nombre al grupo.',
   'grupo.nomeRepetido': 'Ya tienes un grupo con ese nombre. Elige otro para no confundirte.',
   'grupo.semEsporte': 'Di cuál es el deporte.',
   'grupo.semInicio': 'Indica el horario de inicio de cada día.',
   'grupo.horarioRepetido': 'Hay dos horarios iguales en el mismo día.',
-  'grupo.porTimeAjuda': 'Predeterminado de {esporte}: {n}. Usa 2 para jugar en parejas. En el sorteo, quien pase de este número queda de suplente.',
+  'grupo.porTimeAjuda':
+    'Predeterminado de {esporte}: {n}. Usa 2 para jugar en parejas. En el sorteo, quien pase de este número queda de suplente.',
   'grupo.porTimeInvalido': 'Indica de 1 a 30 jugadores por equipo.',
   /* pt-BR-grupolote.ts */
   'admgrupo.novo': 'Nuevo grupo',
@@ -644,7 +681,8 @@ export default {
   'admgrupo.posNinguem': 'Nadie usa esta posición.',
   'admgrupo.posRemover': 'Quitar posición',
   'admgrupo.dupTitulo': 'Duplicar grupo',
-  'admgrupo.dupAjuda': 'Crea un grupo nuevo e independiente, con el mismo deporte, frecuencia, días y horarios, posiciones y configuración de partidos y caja. Tú serás el organizador.',
+  'admgrupo.dupAjuda':
+    'Crea un grupo nuevo e independiente, con el mismo deporte, frecuencia, días y horarios, posiciones y configuración de partidos y caja. Tú serás el organizador.',
   'admgrupo.dupNome': 'Nombre del nuevo grupo',
   'admgrupo.dupCopia': '{nome} (copia)',
   'admgrupo.dupElenco': 'Copiar el plantel (jugadores activos, notas, contactos, invitados y parejas separadas)',
@@ -655,7 +693,8 @@ export default {
   'admgrupo.duplicado': 'Grupo duplicado.',
   'admgrupo.dupFalhou': 'No se pudo duplicar. Inténtalo de nuevo.',
   'admgrupo.inativarTitulo': '¿Desactivar "{nome}"?',
-  'admgrupo.inativarTexto': 'Los enlaces públicos dejan de aceptar confirmaciones y votos, y la jornada fija deja de crearse. Todo queda guardado y puedes reactivarlo después.',
+  'admgrupo.inativarTexto':
+    'Los enlaces públicos dejan de aceptar confirmaciones y votos, y la jornada fija deja de crearse. Todo queda guardado y puedes reactivarlo después.',
   'admgrupo.inativarAcao': 'Desactivar grupo',
   'admgrupo.reativado': 'Grupo reactivado.',
   'admgrupo.inativado': 'Grupo desactivado.',
@@ -666,7 +705,8 @@ export default {
   'admgrupo.verTodos': 'Ver todos',
   'admgrupo.conviteInvalido': 'Invitación inválida o vencida. Pide un enlace nuevo al organizador.',
   'admgrupo.conviteTitulo': 'Invitación de administrador',
-  'admgrupo.conviteTexto': '¡Hola! Te invité a administrar el grupo *{grupo}* en {app}.\nAbre el enlace, crea tu cuenta (o entra) y acepta:\n{link}',
+  'admgrupo.conviteTexto':
+    '¡Hola! Te invité a administrar el grupo *{grupo}* en {app}.\nAbre el enlace, crea tu cuenta (o entra) y acepta:\n{link}',
   'admgrupo.novoLinkTitulo': '¿Generar un nuevo enlace de invitación?',
   'admgrupo.novoLinkTexto': 'El enlace actual deja de funcionar.',
   'admgrupo.novoLinkAcao': 'Generar nuevo enlace',
@@ -676,12 +716,14 @@ export default {
   'admgrupo.removido': 'Administrador quitado. Para invitar a alguien, genera un nuevo enlace.',
   /* pt-BR-importar.ts */
   'importar.titulo': 'Importar jugadores',
-  'importar.ajuda': 'Copia las filas de la planilla (Excel o Hojas de cálculo de Google) y pégalas aquí, o sube el archivo. Columnas: Nombre, Posición, Nota, Tipo, Teléfono y Correo; solo el nombre es obligatorio.',
+  'importar.ajuda':
+    'Copia las filas de la planilla (Excel o Hojas de cálculo de Google) y pégalas aquí, o sube el archivo. Columnas: Nombre, Posición, Nota, Tipo, Teléfono y Correo; solo el nombre es obligatorio.',
   'importar.colar': 'Pegar de la planilla',
   'importar.exemplo': 'Nombre\tPosición\tNota\tTipo\nBruno\tArquero\t7\tMensual',
   'importar.escolherArquivo': 'Elegir archivo',
   'importar.formatos': 'Excel (.xlsx) o .csv',
-  'importar.erroArquivo': 'No se pudo leer este archivo. Usa una planilla de Excel (.xlsx) o .csv, o copia y pega las filas.',
+  'importar.erroArquivo':
+    'No se pudo leer este archivo. Usa una planilla de Excel (.xlsx) o .csv, o copia y pega las filas.',
   'importar.erroNavegador': 'Este navegador no abre archivos de Excel. Copia las filas de la planilla y pégalas aquí.',
   'importar.novos.um': '1 jugador nuevo',
   'importar.novos.outros': '{n} jugadores nuevos',
@@ -721,7 +763,8 @@ export default {
   'partida.duplaB': 'Pareja B',
   'partida.minutos': 'Minutos',
   'partida.salvar': 'Terminar y guardar partido',
-  'partida.sugestao': 'Sugerencia: el que gana se queda y entra el que espera hace más tiempo. Cambia los equipos de arriba si hace falta.',
+  'partida.sugestao':
+    'Sugerencia: el que gana se queda y entra el que espera hace más tiempo. Cambia los equipos de arriba si hace falta.',
   'partida.naEspera': 'En espera:',
   'partida.editar': 'Editar',
   'partida.escalacao': 'Alineación',
@@ -729,7 +772,8 @@ export default {
   'partida.artLancar': 'Registrar',
   'partida.artEditar': 'Editar',
   'partida.artAjuda': 'Para quien registra solo el total de cada jugador, sin anotar partido por partido.',
-  'partida.artTexto': 'Registra el total de {ponto} de cada jugador en la jornada. Entra en los goleadores del ranking y no cuenta como victoria.',
+  'partida.artTexto':
+    'Registra el total de {ponto} de cada jugador en la jornada. Entra en los goleadores del ranking y no cuenta como victoria.',
   'partida.artAviso': 'Esta jornada ya tiene partidos con marcador. Lo que registres aquí se suma a sus {ponto}.',
   'partida.artMenos': 'Quitar 1 a {nome}',
   'partida.artMais': 'Sumar 1 a {nome}',
@@ -786,9 +830,11 @@ export default {
   'plano.rec.sorteio': 'Sorteo equilibrado',
   'plano.rec.placar': 'Marcador',
   'plano.rec.rankingMes': 'Ranking del mes',
-  'plano.linkSempre': 'En cualquier plan, el jugador no paga ni necesita cuenta, y el enlace de asistencia siempre funciona.',
+  'plano.linkSempre':
+    'En cualquier plan, el jugador no paga ni necesita cuenta, y el enlace de asistencia siempre funciona.',
   'plano.escolherTitulo': '¿Cuáles siguen activos? (hasta {grupos})',
-  'plano.escolherAjuda': 'Los otros quedan inactivos: todo sigue guardado y se pueden reactivar cuando el plan lo permita.',
+  'plano.escolherAjuda':
+    'Los otros quedan inactivos: todo sigue guardado y se pueden reactivar cuando el plan lo permita.',
   'plano.escolherDemais': 'Marca hasta {n}.',
   'plano.escolherNenhum': 'Marca al menos 1 grupo.',
   'plano.manterAtivos': 'Mantener estos activos',
@@ -862,13 +908,15 @@ export default {
   'votacao.linkTitulo': 'Enlace de la votación',
   'votacao.voteAqui': 'Vota aquí: {link}',
   'votacao.excluirTitulo': '¿Eliminar esta votación?',
-  'votacao.excluirTexto': 'Los votos y el resultado desaparecen, y los destacados salen del ranking. No se puede deshacer.',
+  'votacao.excluirTexto':
+    'Los votos y el resultado desaparecen, y los destacados salen del ranking. No se puede deshacer.',
   'votacao.excluirAcao': 'Eliminar votación',
   'votacao.e': ' y',
   'votacao.semVotosCurto': 'sin votos',
   'aud.titulo': 'Quién votó ({n})',
   'aud.resumo': 'Solo lo ven los administradores',
-  'aud.ajuda': 'Cada fila es un dispositivo. El nombre es el que la persona eligió al votar. La hora es la del servidor; en votaciones antiguas, la del dispositivo.',
+  'aud.ajuda':
+    'Cada fila es un dispositivo. El nombre es el que la persona eligió al votar. La hora es la del servidor; en votaciones antiguas, la del dispositivo.',
   'aud.repetido': 'votó en 2 dispositivos',
   'aud.horaAparelho': '(hora del dispositivo)',
   'aud.escolha': '{cat}: {nome}',

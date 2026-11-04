@@ -23,7 +23,9 @@ for (const [id, d] of Object.entries(IDIOMAS)) {
     assert.deepEqual(sobram, [], 'sobram: ' + sobram.join(', '));
   });
   test(`CT-KAN-164-02: ${id} com os mesmos marcadores e sem texto vazio`, () => {
-    const erradas = Object.keys(pt).filter(k => !String(d[k] || '').trim() || marcas(d[k]).join() !== marcas(pt[k]).join());
+    const erradas = Object.keys(pt).filter(
+      k => !String(d[k] || '').trim() || marcas(d[k]).join() !== marcas(pt[k]).join()
+    );
     assert.deepEqual(erradas, []);
   });
   test(`CT-KAN-164-02: ${id} tem a parte "base" separada da "gestao" como no português do link`, async () => {

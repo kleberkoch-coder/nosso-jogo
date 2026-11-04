@@ -7,15 +7,18 @@ export default {
   'comum.carregando': 'Cargando…',
   'comum.versao': 'Nosso Jogo · versión {n}',
   'comum.versaoCurta': 'versión {n}',
-  'sair.outrasAbas': 'Cerraste sesión. Para borrar también los datos del grupo guardados en este dispositivo, cierra las otras pestañas de Nosso Jogo y toca Salir de nuevo la próxima vez.',
-  'sair.pendentes': 'Hay cambios de este dispositivo que aún no llegaron al servidor (¿sin señal?). Si sales ahora, se perderán.',
+  'sair.outrasAbas':
+    'Cerraste sesión. Para borrar también los datos del grupo guardados en este dispositivo, cierra las otras pestañas de Nosso Jogo y toca Salir de nuevo la próxima vez.',
+  'sair.pendentes':
+    'Hay cambios de este dispositivo que aún no llegaron al servidor (¿sin señal?). Si sales ahora, se perderán.',
   'sair.pendentesTitulo': '¿Salir sin enviar los cambios?',
   'sair.mesmoAssim': 'Salir de todos modos',
   'sair.outrasAbasTitulo': 'Cerraste sesión',
   'comum.copiado': 'Copiado.',
   'comum.copieLink': 'Copia el enlace:',
   'comum.semInternetBarra': 'Sin internet. Lo que hagas ahora se envía cuando vuelva la conexión.',
-  'comum.pendentePublico': 'Sin señal ahora. Tu respuesta quedó guardada en este celular y se enviará cuando vuelva la conexión. Abre el enlace de nuevo antes del partido para confirmar.',
+  'comum.pendentePublico':
+    'Sin señal ahora. Tu respuesta quedó guardada en este celular y se enviará cuando vuelva la conexión. Abre el enlace de nuevo antes del partido para confirmar.',
   'comum.pendenteGestao': 'Sin señal ahora. Quedó guardado en este dispositivo y se enviará cuando vuelva la conexión.',
   'comum.conectando': 'Conectando… inténtalo de nuevo en un momento.',
   'comum.semInternet': 'Sin internet ahora. Inténtalo de nuevo cuando vuelva la señal.',
@@ -28,7 +31,8 @@ export default {
   'publico.canceladoTexto': 'No hay partido en esta fecha.',
   'publico.verProxima': 'Ver la próxima jornada',
   'publico.rodadaNaoEncontrada': 'Jornada no encontrada',
-  'publico.rodadaNaoEncontradaTexto': 'Puede que el enlace esté incompleto o que la jornada se haya borrado. Pide un enlace nuevo al organizador.',
+  'publico.rodadaNaoEncontradaTexto':
+    'Puede que el enlace esté incompleto o que la jornada se haya borrado. Pide un enlace nuevo al organizador.',
   'publico.subtitulo': '{emoji} {esporte} · confirmación de asistencia',
   'publico.localADefinir': 'Lugar por definir',
   'publico.confirmados': 'confirmados',
@@ -58,8 +62,10 @@ export default {
   'publico.semNome': '¿Tu nombre no está en la lista?',
   'publico.adicionarNome': 'Agregar mi nombre',
   'publico.confirmadosTitulo': 'Confirmados',
-  'rodada.timesAjuda': 'El sorteo se habilita con al menos 4 confirmados. La cantidad de equipos se elige en el momento.',
-  'rodada.timesPronto': 'Todo listo: toca el botón de abajo para sortear. La cantidad de equipos se elige en el momento.',
+  'rodada.timesAjuda':
+    'El sorteo se habilita con al menos 4 confirmados. La cantidad de equipos se elige en el momento.',
+  'rodada.timesPronto':
+    'Todo listo: toca el botón de abajo para sortear. La cantidad de equipos se elige en el momento.',
   'rodada.faltam.um': 'Falta 1 para sortear',
   'rodada.faltam.outros': 'Faltan {n} para sortear',
   'publico.buscar': 'Busca tu nombre',
@@ -71,7 +77,8 @@ export default {
   'publico.rodape': 'Organiza tus partidos con {app} →',
   'abas.historico': 'Historial',
   'hist.titulo': 'Historial de jornadas',
-  'hist.ajuda': 'Encuentra partidos antiguos por mes o por período. La pestaña Jornada muestra solo las próximas y las últimas 4.',
+  'hist.ajuda':
+    'Encuentra partidos antiguos por mes o por período. La pestaña Jornada muestra solo las próximas y las últimas 4.',
   'hist.porMes': 'Por mes',
   'hist.porPeriodo': 'Por período',
   'hist.mes': 'Mes',
@@ -127,14 +134,20 @@ export default {
   'times.reserva': 'suplente',
   'times.marcarReserva': 'Marcar como suplente',
   'times.marcarTitular': 'Marcar como titular',
-  'vagaslink.fechadas': 'Los cupos para jugadores por partido e invitados todavía no están abiertos. El organizador avisa en el grupo.',
-  'vagaslink.esgotadas': 'Se acabaron los cupos para jugadores por partido e invitados de esta jornada. Habla con el organizador.',
+  'vagaslink.fechadas':
+    'Los cupos para jugadores por partido e invitados todavía no están abiertos. El organizador avisa en el grupo.',
+  'vagaslink.esgotadas':
+    'Se acabaron los cupos para jugadores por partido e invitados de esta jornada. Habla con el organizador.',
   'vagaslink.restam.um': 'Queda 1 cupo para jugadores por partido e invitados.',
   'vagaslink.restam.outros': 'Quedan {n} cupos para jugadores por partido e invitados.',
-  'limite.avulsosPublico': 'La lista llegó al límite de nombres nuevos por el enlace. Habla con el organizador para entrar.',
-  'limite.avulsosAdmin': 'El enlace de esta jornada llegó al límite de invitados nuevos ({n}). Si alguien más necesita entrar, agrégalo aquí en Agregar invitado.',
-  'limite.grupos.um': 'Esta cuenta llegó al límite de 1 grupo. Usa tu grupo o habla con el soporte de Nosso Jogo para habilitar más.',
-  'limite.grupos.outros': 'Esta cuenta llegó al límite de {n} grupos. Usa uno de tus grupos o habla con el soporte de Nosso Jogo para habilitar más.',
+  'limite.avulsosPublico':
+    'La lista llegó al límite de nombres nuevos por el enlace. Habla con el organizador para entrar.',
+  'limite.avulsosAdmin':
+    'El enlace de esta jornada llegó al límite de invitados nuevos ({n}). Si alguien más necesita entrar, agrégalo aquí en Agregar invitado.',
+  'limite.grupos.um':
+    'Esta cuenta llegó al límite de 1 grupo. Usa tu grupo o habla con el soporte de Nosso Jogo para habilitar más.',
+  'limite.grupos.outros':
+    'Esta cuenta llegó al límite de {n} grupos. Usa uno de tus grupos o habla con el soporte de Nosso Jogo para habilitar más.',
   'comum.cancelar': 'Cancelar',
   'comum.salvar': 'Guardar',
   'conta.menu': 'Mi cuenta ({email})',
@@ -143,7 +156,8 @@ export default {
   'conta.tema': 'Tema',
   'conta.plano': 'Plan y funciones',
   'conta.sair': 'Salir',
-  'soVer.aviso': 'Solo puedes ver este grupo: su plan permite menos administradores invitados y tú entraste después. Para volver a editar, habla con el organizador.',
+  'soVer.aviso':
+    'Solo puedes ver este grupo: su plan permite menos administradores invitados y tú entraste después. Para volver a editar, habla con el organizador.',
   'soVer.barrado': 'Solo puedes ver este grupo. Habla con el organizador.',
   'comum.naoCarregouTitulo': 'No se pudo cargar',
   'comum.naoCarregou': 'Revisa tu conexión y recarga la página.',
@@ -236,7 +250,8 @@ export default {
   'render.naoEncontrado': 'Grupo no encontrado',
   'render.naoEncontradoTexto': 'Puede que lo hayan eliminado.',
   'render.semAcesso': 'Sin acceso',
-  'render.semAcessoTexto': 'Tu cuenta ({email}) no administra el grupo {grupo}. Pide al organizador un enlace de invitación.',
+  'render.semAcessoTexto':
+    'Tu cuenta ({email}) no administra el grupo {grupo}. Pide al organizador un enlace de invitación.',
   'render.removerDaLista': 'Quitar de mi lista',
   'render.proxima': 'Próxima: {data}',
   'render.inativo': 'Grupo inactivo desde {data}. Los enlaces públicos no aceptan confirmaciones ni votos.',
@@ -268,7 +283,8 @@ export default {
   'dia.5': 'Viernes',
   'dia.6': 'Sábado',
   'conta.idioma': 'Idioma',
-  'demo.aviso': 'Modo demostración: los datos quedan solo en este navegador. Configura Firebase (LEIA-ME.md) para usarlo con el grupo.',
+  'demo.aviso':
+    'Modo demostración: los datos quedan solo en este navegador. Configura Firebase (LEIA-ME.md) para usarlo con el grupo.',
   /* pt-BR-apresentacao.ts */
   'apr.entrar': 'Entrar',
   'apr.criarConta': 'Crear cuenta',
@@ -277,7 +293,8 @@ export default {
   'apr.titulo1': 'Equipos justos.',
   'apr.titulo2': 'Lista cerrada.',
   'apr.titulo3': 'Todos en la cancha.',
-  'apr.lead': 'Del fútbol del lunes al vóley del sábado: {app} se encarga de la confirmación de asistencia, sortea equipos equilibrados y guarda marcador, ranking y la caja del grupo. Los jugadores confirman por un enlace, sin descargar nada.',
+  'apr.lead':
+    'Del fútbol del lunes al vóley del sábado: {app} se encarga de la confirmación de asistencia, sortea equipos equilibrados y guarda marcador, ranking y la caja del grupo. Los jugadores confirman por un enlace, sin descargar nada.',
   'apr.criarGrupo': 'Crear mi grupo gratis',
   'apr.jaTenho': 'Ya tengo cuenta',
   'apr.nota': 'Varios grupos y deportes en la misma cuenta · Funciona como app en el celular',
@@ -300,23 +317,30 @@ export default {
   'apr.dor3': 'La caja muestra quién debe en el mes y arma el cobro con tu Pix.',
   'apr.recursosTitulo': 'Todo lo que el organizador necesita',
   'apr.rec1t': 'Confirmación por enlace',
-  'apr.rec1': 'Envía un enlace al grupo. Cada uno toca Voy o No voy, y quien no está en la lista se agrega como invitado. Sin app para descargar, sin registro.',
+  'apr.rec1':
+    'Envía un enlace al grupo. Cada uno toca Voy o No voy, y quien no está en la lista se agrega como invitado. Sin app para descargar, sin registro.',
   'apr.rec2t': 'Un sorteo que piensa',
-  'apr.rec2': 'Equilibra la nota de cada jugador y las posiciones, separa a quienes no pueden quedar juntos y varía los compañeros en cada jornada.',
+  'apr.rec2':
+    'Equilibra la nota de cada jugador y las posiciones, separa a quienes no pueden quedar juntos y varía los compañeros en cada jornada.',
   'apr.rec3t': 'Marcador y cronómetro',
-  'apr.rec3': 'Marcador con la puntuación de cada deporte: gol, triple, try, touchdown. El que gana se queda y el próximo equipo entra solo.',
+  'apr.rec3':
+    'Marcador con la puntuación de cada deporte: gol, triple, try, touchdown. El que gana se queda y el próximo equipo entra solo.',
   'apr.rec4t': 'Ranking e historial',
   'apr.rec4': 'Victorias, rendimiento y goleadores de cada jugador, jornada tras jornada.',
   'apr.rec5t': 'Votación del crack',
   'apr.rec5': 'El mejor de la jornada, el mejor por posición y hasta el tronco. El grupo vota desde el celular.',
   'apr.rec6t': 'Caja del grupo',
-  'apr.rec6': 'Cuota mensual, cuota por partido y gastos en un solo lugar, con cobro listo para WhatsApp y tu clave Pix.',
+  'apr.rec6':
+    'Cuota mensual, cuota por partido y gastos en un solo lugar, con cobro listo para WhatsApp y tu clave Pix.',
   'apr.rec7t': 'Partido fijo',
-  'apr.rec7': '¿Juegan todos los lunes a las 20 h? La jornada se crea sola y el enlace de confirmación es siempre el mismo.',
+  'apr.rec7':
+    '¿Juegan todos los lunes a las 20 h? La jornada se crea sola y el enlace de confirmación es siempre el mismo.',
   'apr.rec8t': 'App en el celular',
-  'apr.rec8': 'Instálala en la pantalla de inicio, como una app. Marcador y cronómetro funcionan incluso sin señal en la cancha.',
+  'apr.rec8':
+    'Instálala en la pantalla de inicio, como una app. Marcador y cronómetro funcionan incluso sin señal en la cancha.',
   'apr.sorteioTitulo': 'Un sorteo del que nadie se puede quejar',
-  'apr.sorteioTexto': 'Pon una nota de 1 a 10 a cada jugador (vale medio punto), marca la posición y di quién no puede quedar junto. El sorteo prueba cientos de combinaciones y muestra por qué quedaron así los equipos. Las notas quedan ocultas para los jugadores.',
+  'apr.sorteioTexto':
+    'Pon una nota de 1 a 10 a cada jugador (vale medio punto), marca la posición y di quién no puede quedar junto. El sorteo prueba cientos de combinaciones y muestra por qué quedaron así los equipos. Las notas quedan ocultas para los jugadores.',
   'apr.sorteio1': 'Nota media parecida entre los equipos',
   'apr.sorteio2': 'Arqueros y posiciones bien distribuidos',
   'apr.sorteio3': 'Cracks separados cuando quieras',
@@ -325,7 +349,8 @@ export default {
   'apr.goleiros': 'Arqueros:',
   'apr.parcerias': 'Duplas nuevas:',
   'apr.gruposTitulo': 'Fútbol el lunes, vóley el jueves, beach tennis el domingo',
-  'apr.gruposTexto': 'Cada partido se convierte en un grupo, con las posiciones, la puntuación y el plantel de tu deporte. Cambia de grupo con un toque.',
+  'apr.gruposTexto':
+    'Cada partido se convierte en un grupo, con las posiciones, la puntuación y el plantel de tu deporte. Cambia de grupo con un toque.',
   'apr.g1': 'Fútbol del Lunes',
   'apr.g1d': 'lun · 20:00 · 16 confirmados',
   'apr.g2': 'Vóley de la Oficina',
@@ -341,26 +366,32 @@ export default {
   'apr.passo3': 'Equipos equilibrados en segundos, marcador en la cancha y ranking actualizado.',
   'apr.faqTitulo': 'Preguntas frecuentes',
   'apr.faq1q': '¿Los jugadores necesitan descargar algo o crear una cuenta?',
-  'apr.faq1': 'No. Reciben un enlace por WhatsApp y confirman la asistencia directo en el navegador. Solo quien organiza crea una cuenta.',
+  'apr.faq1':
+    'No. Reciben un enlace por WhatsApp y confirman la asistencia directo en el navegador. Solo quien organiza crea una cuenta.',
   'apr.faq2q': '¿Puedo organizar más de un partido o deporte?',
-  'apr.faq2': 'Sí. Crea un grupo para cada partido, como el fútbol del lunes y el vóley del jueves. Cada grupo tiene las posiciones, la puntuación y el plantel de su deporte.',
+  'apr.faq2':
+    'Sí. Crea un grupo para cada partido, como el fútbol del lunes y el vóley del jueves. Cada grupo tiene las posiciones, la puntuación y el plantel de su deporte.',
   'apr.faq3q': '¿Puedo dividir la organización con otras personas?',
   'apr.faq3': 'Sí. Invita a otros administradores con un enlace. Cada grupo puede tener los que quiera.',
   'apr.faq4q': '¿Cómo hace el sorteo para equilibrar los equipos?',
-  'apr.faq4': 'Pones una nota de 1 a 10 a cada jugador (vale medio punto) e indicas la posición. El sorteo prueba cientos de combinaciones y elige la más equilibrada, respetando quién no puede jugar junto y evitando repetir los mismos compañeros.',
+  'apr.faq4':
+    'Pones una nota de 1 a 10 a cada jugador (vale medio punto) e indicas la posición. El sorteo prueba cientos de combinaciones y elige la más equilibrada, respetando quién no puede jugar junto y evitando repetir los mismos compañeros.',
   'apr.faq5q': '¿Los jugadores ven la nota que les puse?',
-  'apr.faq5': 'No. Notas y caja solo aparecen para los administradores. Los jugadores ven la lista, los equipos y el marcador.',
+  'apr.faq5':
+    'No. Notas y caja solo aparecen para los administradores. Los jugadores ven la lista, los equipos y el marcador.',
   'apr.faq6q': '¿Funciona en iPhone y Android?',
   'apr.faq6': 'Sí. Funciona en cualquier navegador y se puede instalar en la pantalla de inicio como una app.',
   'apr.faq7q': '¿Cuánto cuesta?',
-  'apr.faq7': 'Crear la cuenta y un grupo es gratis, con asistencia, sorteo, marcador y ranking del mes. El Plan A (hasta 3 grupos) suma caja, votación, historial y ranking del año, y se puede probar gratis por 14 días. Los jugadores nunca pagan ni necesitan cuenta.',
+  'apr.faq7':
+    'Crear la cuenta y un grupo es gratis, con asistencia, sorteo, marcador y ranking del mes. El Plan A (hasta 3 grupos) suma caja, votación, historial y ranking del año, y se puede probar gratis por 14 días. Los jugadores nunca pagan ni necesitan cuenta.',
   'apr.finalTitulo': 'Tu próximo partido empieza organizado.',
   'apr.criarGratis': 'Crear cuenta gratis',
   /* pt-BR-entrar.ts */
   'auth.googleJaTinha': 'Ya tenías cuenta con este Google. Entramos en ella.',
   'auth.googleCriou': 'Cuenta creada con Google. ¡Bienvenido!',
   'login.criarTitulo': 'Crea tu cuenta gratis',
-  'login.criarAjuda': '¿Primera vez? Empieza aquí. Con la cuenta creas un grupo para cada partido que organizas (fútbol, vóley, básquet…) e invitas a otros administradores. Los jugadores no necesitan cuenta: confirman asistencia por el enlace que envías.',
+  'login.criarAjuda':
+    '¿Primera vez? Empieza aquí. Con la cuenta creas un grupo para cada partido que organizas (fútbol, vóley, básquet…) e invitas a otros administradores. Los jugadores no necesitan cuenta: confirman asistencia por el enlace que envías.',
   'login.google': 'Continuar con Google',
   'login.ouEmail': 'o con correo y contraseña',
   'login.email': 'Correo',
@@ -393,7 +424,8 @@ export default {
   'auth.semConexao': 'Sin conexión. Revisa internet e inténtalo de nuevo.',
   'auth.desativada': 'Esta cuenta fue desactivada.',
   'auth.outroMetodo': 'Este correo ya tiene cuenta con contraseña. Entra con correo y contraseña.',
-  'auth.janelaBloqueada': 'El navegador bloqueó la ventana de Google. Habilita las ventanas de este sitio e inténtalo de nuevo.',
+  'auth.janelaBloqueada':
+    'El navegador bloqueó la ventana de Google. Habilita las ventanas de este sitio e inténtalo de nuevo.',
   'auth.naoAtivado': 'Esta forma de entrar todavía no se activó. Avisa al responsable del sitio.',
   'auth.dominio': 'Esta dirección todavía no fue autorizada para entrar con Google. Avisa al responsable del sitio.',
   'auth.armazenamento': 'Este navegador está bloqueando el inicio de sesión. Abre el sitio en Chrome o Safari.',
@@ -403,18 +435,24 @@ export default {
   'login.mostrarSenha': 'Mostrar contraseña',
   'login.ocultarSenha': 'Ocultar contraseña',
   'login.pais': 'Tu país',
-  'login.paisDica': 'Define la moneda, el formato de las fechas y el código de teléfono de tus grupos. Se puede cambiar después.',
+  'login.paisDica':
+    'Define la moneda, el formato de las fechas y el código de teléfono de tus grupos. Se puede cambiar después.',
   'auth.abraNavTitulo': 'Abre en el navegador',
-  'auth.abraNavTexto': 'Google no permite entrar desde dentro de esta aplicación. Abre el enlace en <b>Chrome</b> o en <b>Safari</b> y toca de nuevo <b>Continuar con Google</b>.',
-  'auth.abraNavDica': 'Consejo: toca los tres puntitos (⋮ o ⋯) en la esquina de la pantalla y elige <b>Abrir en el navegador</b>. O entra con correo y contraseña aquí mismo.',
+  'auth.abraNavTexto':
+    'Google no permite entrar desde dentro de esta aplicación. Abre el enlace en <b>Chrome</b> o en <b>Safari</b> y toca de nuevo <b>Continuar con Google</b>.',
+  'auth.abraNavDica':
+    'Consejo: toca los tres puntitos (⋮ o ⋯) en la esquina de la pantalla y elige <b>Abrir en el navegador</b>. O entra con correo y contraseña aquí mismo.',
   'auth.fechar': 'Cerrar',
   'auth.copiarLink': 'Copiar enlace',
   /* pt-BR-convite.ts */
   'convite.cheioTitulo': 'Este grupo ya tiene todos los administradores del plan',
-  'convite.cheioTexto.um': 'El plan de {grupo} permite 1 administrador invitado y el cupo ya está ocupado. Pide al organizador que libere un cupo.',
-  'convite.cheioTexto.outros': 'El plan de {grupo} permite {n} administradores invitados y los cupos ya están ocupados. Pide al organizador que libere un cupo.',
+  'convite.cheioTexto.um':
+    'El plan de {grupo} permite 1 administrador invitado y el cupo ya está ocupado. Pide al organizador que libere un cupo.',
+  'convite.cheioTexto.outros':
+    'El plan de {grupo} permite {n} administradores invitados y los cupos ya están ocupados. Pide al organizador que libere un cupo.',
   'convite.meusGrupos': 'Mis grupos',
-  'convite.aoAceitar': 'Al aceptar, pasas a encargarte de la asistencia, el sorteo y el marcador de este grupo junto con el organizador. Él elige si también te encargas de la caja, las notas, el plantel y la configuración.',
+  'convite.aoAceitar':
+    'Al aceptar, pasas a encargarte de la asistencia, el sorteo y el marcador de este grupo junto con el organizador. Él elige si también te encargas de la caja, las notas, el plantel y la configuración.',
   'convite.convidado': 'Te invitaron a administrar {grupo}',
   'convite.convidadoSemNome': 'Invitación para administrar un grupo',
   'convite.naoExiste': 'Este grupo ya no existe. Pide un enlace nuevo al organizador.',
@@ -435,7 +473,8 @@ export default {
   'aval.naoEncontradaTexto': 'Confirma el enlace con quien organiza el partido.',
   'aval.encerrada': 'Esta evaluación terminó el {data}.',
   'aval.encerradaComNotas': 'Esta evaluación terminó el {data}. Tus notas quedaron registradas. ¡Gracias!',
-  'aval.regra': 'Pon una nota de 1 a 10 a cada uno, incluido tú. Nadie ve las notas de los demás. Puedes cambiarlas hasta el {data}.',
+  'aval.regra':
+    'Pon una nota de 1 a 10 a cada uno, incluido tú. Nadie ve las notas de los demás. Puedes cambiarlas hasta el {data}.',
   'aval.quemEVoce': '¿Quién eres?',
   'aval.escolhaNome': 'Elige tu nombre',
   'aval.escala': '1 · principiante … 10 · crack. Deja "—" en quien no sepas evaluar.',
@@ -447,7 +486,8 @@ export default {
   'aval.nenhumaNota': 'Pon al menos una nota.',
   'aval.notasEnviadas': 'Notas enviadas ({n}).',
   'aval.janela': 'Evaluación por enlace',
-  'aval.ajuda': 'Los mensuales ponen nota por el enlace, y ustedes por la app. Todas las notas pesan lo mismo. Solo los administradores con el permiso de Notas ven el resultado; nada cambia en el registro sin que ustedes lo elijan.',
+  'aval.ajuda':
+    'Los mensuales ponen nota por el enlace, y ustedes por la app. Todas las notas pesan lo mismo. Solo los administradores con el permiso de Notas ven el resultado; nada cambia en el registro sin que ustedes lo elijan.',
   'aval.nova': 'Nueva evaluación',
   'aval.nenhuma': 'Todavía no hay evaluaciones.',
   'aval.ate': 'hasta el {data}',
@@ -465,17 +505,20 @@ export default {
   'aval.tituloPadrao': 'Evaluación de {mes}',
   'aval.fecha': 'Recibe notas hasta',
   'aval.quem': 'Quiénes son evaluados ({n})',
-  'aval.quemAjuda': 'Ya vienen marcados los mensuales. Quien está marcado también elige su nombre y pone nota por el enlace.',
+  'aval.quemAjuda':
+    'Ya vienen marcados los mensuales. Quien está marcado también elige su nombre y pone nota por el enlace.',
   'aval.criar': 'Crear y compartir',
   'aval.erroTitulo': 'Ponle un título a la evaluación.',
   'aval.erroData': 'Elige una fecha a partir de hoy.',
   'aval.erroMensalistas': 'Marca quiénes serán evaluados.',
-  'aval.textoLink': '⭐ *{grupo} — {t}*\nElige tu nombre y pon una nota de 1 a 10 a cada uno, incluido tú. Nadie ve las notas de los demás. Vale hasta el {data}.\n{link}',
+  'aval.textoLink':
+    '⭐ *{grupo} — {t}*\nElige tu nombre y pon una nota de 1 a 10 a cada uno, incluido tú. Nadie ve las notas de los demás. Vale hasta el {data}.\n{link}',
   'aval.minhasTitulo': 'Mis notas · {t}',
   'aval.minhasAjuda': 'Tu nota cuenta igual que la de todos. Aquí no ves las notas de los demás.',
   'aval.resultadoTitulo': 'Resultado · {t}',
   'aval.responderam': '{n} respondieron ({adm} por la app)',
-  'aval.resultadoAjuda': 'Elige a quién actualizar y con qué nota. "Usar la mediana" y "Usar la media" completan y marcan a todos los que recibieron nota; se puede ajustar a mano.',
+  'aval.resultadoAjuda':
+    'Elige a quién actualizar y con qué nota. "Usar la mediana" y "Usar la media" completan y marcan a todos los que recibieron nota; se puede ajustar a mano.',
   'aval.usarMediana': 'Usar la mediana',
   'aval.usarMedia': 'Usar la media',
   'aval.tabela': 'Resultado de la evaluación. Desliza hacia el costado para ver todas las columnas.',

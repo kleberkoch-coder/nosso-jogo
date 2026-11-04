@@ -303,5 +303,6 @@ export default {
   'dia.5': 'Sexta',
   'dia.6': 'Sábado',
   'conta.idioma': 'Idioma',
-  'demo.aviso': "Modo demonstração: os dados ficam só neste navegador. Configure o Firebase (LEIA-ME.md) para usar com o grupo.",
+  'demo.aviso':
+    'Modo demonstração: os dados ficam só neste navegador. Configure o Firebase (LEIA-ME.md) para usar com o grupo.',
 };

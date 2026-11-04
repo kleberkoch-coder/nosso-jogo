@@ -3,6 +3,7 @@ import { attendance, gname, pname, ppos, upcoming } from './grupo.js';
 import { hora } from './rodadas.js';
 import { linkMaps, linkProxima, linkRodada } from '../nucleo/links.js';
 import { fdate } from '../nucleo/util.js';
+import { tx } from '../i18n/index.js';
 
 /* =================== textos WhatsApp =================== */
 /* Link para confirmar: no jogo fixo, o permanente (sempre a próxima rodada); senão, o da rodada. */
@@ -14,13 +15,15 @@ function txtConvite(r) {
     isNext = upcoming()[0]?.id === r.id && r.fixo;
   let t = `${sport().e} *${gname()}* — ${fdate(r.date)}${r.time ? ' · ' + hora(r) : ''}\n`;
   if (r.place) t += `📍 ${r.place}\n🗺️ ${linkMaps(r.place)}\n`;
-  t += `\nConfirme sua presença aqui:\n${isNext ? linkProxima() : linkRodada(r.id)}`;
+  t += `\n${tx('zap.confirmeAqui')}\n${isNext ? linkProxima() : linkRodada(r.id)}`;
   if (a.inn.length)
-    t += `\n\n✅ *Confirmados (${a.inn.length})*\n` + a.inn.map((p, i) => `${i + 1}. ${pname(p)}`).join('\n');
+    t +=
+      `\n\n✅ *${tx('zap.confirmados', { n: a.inn.length })}*\n` +
+      a.inn.map((p, i) => `${i + 1}. ${pname(p)}`).join('\n');
   return t;
 }
 function txtTimes(r) {
-  let t = `${sport().e} *Times — ${fdate(r.date)}*${r.place ? '\n📍 ' + r.place + '\n🗺️ ' + linkMaps(r.place) : ''}\n`;
+  let t = `${sport().e} *${tx('zap.times', { data: fdate(r.date) })}*${r.place ? '\n📍 ' + r.place + '\n🗺️ ' + linkMaps(r.place) : ''}\n`;
   r.times.forEach((tm, i) => {
     const c = col(tm.c),
       rs = id => ((tm.res || []).includes(id) ? 1 : 0);
@@ -29,11 +32,17 @@ function txtTimes(r) {
       tm.players
         .slice()
         .sort((a, b) => rs(a) - rs(b) || posIdx(ppos(a)) - posIdx(ppos(b)))
-        .map(id => '• ' + pname(id) + (hasPos() ? ` (${posLabel(ppos(id))})` : '') + (rs(id) ? ' — reserva' : ''))
+        .map(
+          id =>
+            '• ' +
+            pname(id) +
+            (hasPos() ? ` (${posLabel(ppos(id))})` : '') +
+            (rs(id) ? ' — ' + tx('times.reserva') : '')
+        )
         .join('\n') +
       '\n';
   });
-  return t.trim() + `\n\nDetalhes: ${linkRodada(r.id)}`;
+  return t.trim() + '\n\n' + tx('zap.detalhes', { link: linkRodada(r.id) });
 }
 /* A janela de compartilhar é um componente da gestão (KAN-131): ui/Compartilhar.tsx. */
 export { linkDaRodada, txtConvite, txtTimes };

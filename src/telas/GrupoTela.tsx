@@ -4,7 +4,7 @@
    as regras do Firebase garantem o mesmo. Os botões usam data-a (ações em acoes/grupo.ts e acoes/jogadores.js). */
 import { render } from 'preact';
 import { cfg } from '../dominio/caixa.js';
-import { basePos, porTime, sport, sportName } from '../dominio/esportes.js';
+import { basePos, porTime, siglaTela, sport, sportName } from '../dominio/esportes.js';
 import { fdia, fixos, freq, gname, grpAtivo, isOwnerMe, posso, recurso } from '../dominio/grupo.js';
 import { faixaTexto } from '../dominio/rodadas.js';
 import { PERMISSOES, pode, type Membro } from '../dominio/permissoes';
@@ -265,7 +265,7 @@ function GrupoTela() {
           {(basePos() as [string, string][]).length ? (
             (basePos() as [string, string][]).map(([k, l]) => (
               <span key={k}>
-                <b>{k}</b> {l}
+                <b>{siglaTela(k)}</b> {l}
               </span>
             ))
           ) : (

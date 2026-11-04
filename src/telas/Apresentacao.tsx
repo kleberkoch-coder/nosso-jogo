@@ -4,9 +4,10 @@ import { render } from 'preact';
 import estilo from '../estilos/apresentacao.css' with { type: 'text' };
 import { usarEstilo } from '../ui/estilo';
 import { juntarTextos, tx } from '../i18n/index.js';
+import { LOCAL } from '../i18n/formatos.js';
 import textos from '../i18n/pt-BR-apresentacao';
 import { numeroVersao } from '../nucleo/versao.js';
-import { APP, SPORTS } from '../dominio/esportes.js';
+import { APP, SPORTS, siglaTela } from '../dominio/esportes.js';
 import { themeDef, themeLabel } from '../ui/tema.js';
 usarEstilo('apresentacao', estilo, true);
 juntarTextos(textos);
@@ -24,7 +25,7 @@ function Time({ cor, nome, linhas }: { cor: string; nome: string; linhas: [strin
       <ul>
         {linhas.map(([p, n]) => (
           <li key={n}>
-            <span class={'pos ' + (p === 'GOL' ? 'GOL' : '')}>{p}</span>
+            <span class={'pos ' + (p === 'GOL' ? 'GOL' : '')}>{siglaTela(p, 'futebol')}</span>
             <span class="pn">{n}</span>
           </li>
         ))}
@@ -47,6 +48,17 @@ function Apresentacao() {
             <span class="ld-txt">{APP}</span>
           </a>
           <div class="row" style={{ gap: '8px' }}>
+            <button
+              class="btn ld-ghost ld-ic ld-lang"
+              data-a="idiomaMenu"
+              aria-haspopup="menu"
+              aria-expanded="false"
+              aria-label={tx('conta.idioma')}
+              title={tx('conta.idioma')}
+              lang={LOCAL}
+            >
+              {LOCAL === 'pt-BR' ? 'PT' : LOCAL.toUpperCase()}
+            </button>
             <button
               class="btn ld-ghost ld-ic"
               data-a="themeMenu"

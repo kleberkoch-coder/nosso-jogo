@@ -544,3 +544,9 @@
   font-size: 17px;
   line-height: 1;
 }
+/* KAN-164: idioma na apresentação (PT, EN, ES), ao lado do tema. */
+.ld-nav .ld-lang {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}

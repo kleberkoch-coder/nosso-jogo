@@ -229,6 +229,16 @@ function posLabel(k) {
   const f = sport().pos.find(x => x[0] === k);
   return f ? f[1] : '';
 }
+/* Sigla da posição na tela (KAN-226): no idioma da pessoa (GOL → GK em inglês, ARQ em espanhol), pela chave do catálogo
+   do esporte ou geral. O código gravado no banco não muda; posições criadas pelo grupo ficam como foram escritas. */
+function siglaTela(k, esporte) {
+  if (!k) return '';
+  const e = esporte || (S.app && S.app.sport) || 'futebol',
+    a = tc('#' + e + '.' + k);
+  if (a[0] !== '#') return a;
+  const b = tc('#' + k);
+  return b[0] !== '#' ? b : k;
+}
 function hasPos() {
   return sport().pos.length > 0;
 }
@@ -291,6 +301,7 @@ const stars = n => '★'.repeat(n) + '☆'.repeat(5 - n);
 
 export {
   aplicarCatalogo,
+  siglaTela,
   porTime,
   porTimePadrao,
   APP,

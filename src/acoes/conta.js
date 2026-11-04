@@ -50,6 +50,14 @@ const acoes = {
     if (b) openThemeMenu(b);
   },
   /* Idioma pelo menu da conta (KAN-164): português, inglês ou espanhol, de cada pessoa. */
+  /* Sem conta (apresentação, entrar, link): o botão 🌐 do topo abre as mesmas opções. */
+  idiomaMenu: el => {
+    if (themeMenuEl && themeAnchor === el) {
+      closeThemeMenu(true);
+      return;
+    }
+    abrirMenuIdioma(el);
+  },
   idiomaConta: () => {
     const b = $('#topright [data-a=contaMenu]');
     if (b) abrirMenuIdioma(b);

@@ -1,7 +1,8 @@
 {
   "innerHTML": 0,
   "textosFixos": 0,
-  "arquivosSemTipos": 39,
+  "arquivosSemTipos": 38,
   "telasComponente": 20,
-  "testesRegra": 5
+  "testesRegra": 5,
+  "arquivosGrandes": 10
 }

@@ -42,7 +42,7 @@ O produto vai ganhar muitas funcionalidades e passará a **cobrar por partes do 
     - `LOCAL`: idioma dos textos, hoje só pt-BR;
     - `FORMATO`: ordem da data e separadores, do país do grupo;
     - `MOEDA` e `FUSO`: do grupo.
-    `definirRegiao()` troca tudo quando o grupo carrega (`rotas.js`). Fora de um grupo, valem os da conta.
+    `definirRegiao()` troca tudo quando o grupo carrega (`rotas.ts`, via `carga/conta.ts`). Fora de um grupo, valem os da conta.
   - **O país da conta** é pedido no cadastro, já sugerido pelo **fuso** do aparelho, no celular e no computador. O fuso vem antes do idioma porque muito computador no Brasil está em inglês. Fica em `usuarios/{uid}` (`pais` e `formato`).
   - **O grupo nasce com país, moeda, fuso e formato do organizador** e guarda uma cópia em `cfg`. Assim, mudar o país da conta não troca o símbolo do caixa antigo. Trocar a moeda do grupo avisa que os valores não são convertidos.
   - **Grupo antigo, sem país:** Brasil, Real e o relógio do aparelho, como antes.
@@ -199,6 +199,13 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D40. rotas.js dividido por assunto, em TypeScript, e teto para arquivos grandes (04 nov. 2026, pelada-v89, KAN-225)
+- **Antes:** `src/rotas.js` (645 linhas, sem tipos) misturava os endereços, a carga de cada aba, as permissões, o caixa, a votação, a avaliação e a conta. Quase toda funcionalidade nova passava por ele.
+- **Agora:** `rotas.ts` (239 linhas) só lê o endereço, limpa a memória do grupo anterior e chama a carga do assunto. A carga fica em `src/carga/`: `rodada.ts` (presenças, contadores do link, janela de rodadas), `gestao.ts` (o que todo administrador lê ao abrir), `abas.ts` (o que cada aba pede), `caixa.ts`, `votacao.ts`, `avaliacao.ts`, `permissoes.ts` e `conta.ts`. Tudo em TypeScript, com o `Estado` da D38; nenhum arquivo passa de 103 linhas.
+- **Mesmo comportamento por fora:** mesmas leituras, na mesma ordem. Conferido comparando, no modo demonstração, as leituras abertas em cada passo (início, grupo, cada aba, recarregar, link e entrar) entre a v88 e a v89: iguais.
+- **Teto novo na dívida:** `arquivosGrandes` em `docs/divida.json` conta os arquivos com mais de 400 linhas (hoje 10, a maioria telas grandes, como `Rodada.tsx` com 833). A montagem barra arquivo novo crescendo além disso; quem divide um deles baixa o teto. Arquivos em JavaScript caíram de 39 para 38.
+- **Tamanho:** link do jogador +0,1 KB (46,4) e gestão +0,2 KB (87,7), dentro da folga de 0,3 KB do cartão.
+
 ### D39. Trocas da votação com contador e limite; datas no fuso certo (04 nov. 2026, pelada-v88, KAN-223, 224, 210, 211 e 221)
 - **Contador de trocas (KAN-224):** o voto (`votos/{u}`) ganhou `nt`, o número de trocas que o aparelho já gravou. Cada troca nova sobe `nt` em 1 e tem o id `{u}_{nt}`, no mesmo lote. As regras conferem que `nt` sobe de 1 em 1 (ou fica igual), não passa de 50, que o id da troca bate com o contador gravado junto (`getAfter`) e que a escolha da categoria mudou em relação ao voto anterior (tocar de novo no mesmo nome é recusado). Como o id se repete se alguém tentar reaproveitar, e trocas não podem ser alteradas, cada aparelho grava no máximo 50 trocas por votação. Antes, um script podia gravar milhares (custo no plano grátis para todos os grupos e "Quem votou" lento).
 - **Toque repetido (KAN-223):** a decisão do que gravar é a função pura `proximoVoto` (`dominio/votacao.ts`, com teste): mesmo nome = nada; nome novo = voto + troca; depois de 50, só o voto.
@@ -210,7 +217,7 @@ Medido a cada versão, no celular de 390px:
 - **Tipos:** `nucleo/tipos.ts` descreve cada documento que o app guarda (grupo, configuração, jogador, avulso, rodada, presença, partida, partida em andamento, lançamento, caixa privado, votação, voto, troca, conta e usuário) e o estado `Estado`. `nucleo/estado.js` virou `estado.ts`, com `S: Estado`, e as gravações (`GB`, `w`, `sub`) com tipos. Os 30 arquivos TypeScript que liam o estado como "qualquer coisa" (`as any`) agora leem com tipos.
 - **O que os tipos acharam:** 77 pontos em que o código supunha algo que o estado não garante (ex.: `S.user` ou `S.app` podem estar vazios, `S.live` só existe com a partida aberta, o país da conta pode não ter chegado). Cada um foi tratado com um valor padrão ou com a garantia de onde a tela só aparece com o dado (ex.: a aba Grupo só abre com o grupo carregado). Nada mudou para quem usa.
 - **Arquivos menores:** os avulsos saíram de `acoes/rodada.js` (599 → 478 linhas) para `acoes/avulsos.ts`; os administradores convidados (aceitar convite, link, remover, permissões) saíram de `acoes/grupo-lote.js` (503 → 406) para `acoes/administradores.ts`, que baixa junto. A mensagem "Fulano confirmado." passou para o dicionário.
-- **O que fica para depois:** 39 arquivos ainda em JavaScript (sem conferência de tipos; o estado chega a eles igual). Quem mexer num deles o converte (tela mexida, tela migrada, D12). `rotas.js` (645 linhas) é o próximo candidato a dividir.
+- **O que fica para depois (atualizado na D40):** 39 arquivos ainda em JavaScript (sem conferência de tipos; o estado chega a eles igual). Quem mexer num deles o converte (tela mexida, tela migrada, D12). `rotas.js` (645 linhas) é o próximo candidato a dividir.
 
 ### D37. Auditoria da votação: trocas com a hora do servidor (30 out. 2026, pelada-v86, KAN-222)
 - **Onde fica:** `votacoes/{vid}/trocas/{id}` = `{u, pid, c, p, em}`: o aparelho (`u`), o nome escolhido (`pid`), a categoria (`c`), o escolhido (`p`) e a hora do servidor (`em`). Gravado no mesmo lote do voto (`votos/{u}`), a cada toque no link. O voto em si não mudou, então aparelhos com a versão antiga do app continuam votando (só sem a troca).
@@ -447,7 +454,7 @@ As 5 regras de negócio com teste próprio previsto: sorteio, ranking, pendênci
 | `acoes.js` e `acoes/` | O que cada botão (`data-a`) faz, dividido por assunto desde a pelada-v28: `conta`, `grupo`, `rodada`, `jogadores`, `partida`, `caixa`, `votacao` e `publico` |
 | `portal/` | Portal do Nosso Jogo, site separado (`main.js`, `tela.js` e `textos.js`, com dicionário próprio) |
 | `eventos.js` | Cliques, teclas e campos: liga a tela às ações, com o carregando dos botões |
-| `rotas.js` | Endereços (`#/p/...`, `#/g/...`) e carregamento de dados por tela |
+| `rotas.ts` e `carga/` | Endereços (`#/p/...`, `#/g/...`) e qual tela abrir (`rotas.ts`); o que cada assunto lê do banco fica em `carga/` (`rodada`, `gestao`, `abas`, `caixa`, `votacao`, `avaliacao`, `permissoes`, `conta`), desde a v89 |
 | `inicio.js` | Inicialização: escolhe Firebase ou demonstração e acompanha o login |
 | `pwa.js` | Instalação do app, barra sem internet e atualização de versão |
 

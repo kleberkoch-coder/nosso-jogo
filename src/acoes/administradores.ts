@@ -9,7 +9,7 @@ import * as backend from '../nucleo/backend.js';
 import { GB, S, w } from '../nucleo/estado';
 import { linkConvite } from '../nucleo/links.js';
 import { $, toast } from '../nucleo/util.js';
-import { upMyGroup } from '../rotas.js';
+import { upMyGroup } from '../rotas';
 import { shareDlg } from '../ui/Compartilhar';
 import { closeDlg, confirmou, dlg } from '../ui/dialogos.js';
 import { janelaPermissoes } from '../ui/JanelasGrupo';

@@ -265,8 +265,12 @@ const textosFixos = arquivos
       n + (semComentario(fs.readFileSync(f, 'utf8')).match(RX_TEXTO) || []).filter(m => !NOME_JS.test(m)).length,
     0
   );
+/* KAN-225: arquivos grandes demais (mais de 400 linhas) são difíceis de mudar sem quebrar outra coisa. O teto é o de
+   hoje: nenhum arquivo novo passa disso, e quem divide um dos que já passam baixa o teto (D40). */
+const LINHAS_MAX = 400;
+const grandes = arquivos.filter(f => fs.readFileSync(f, 'utf8').split('\n').length - 1 > LINHAS_MAX);
 console.log(
-  `Dívida técnica: ${emTS} de ${arquivos.length} arquivos em TypeScript · ${telasComp} de ${telas.length} telas como componente · innerHTML em ${innerHTML} pontos · ${textosFixos} textos fora do dicionário · ${testesRegra} de 5 regras de negócio com teste próprio`
+  `Dívida técnica: ${emTS} de ${arquivos.length} arquivos em TypeScript · ${grandes.length} com mais de ${LINHAS_MAX} linhas · ${telasComp} de ${telas.length} telas como componente · innerHTML em ${innerHTML} pontos · ${textosFixos} textos fora do dicionário · ${testesRegra} de 5 regras de negócio com teste próprio`
 );
 
 /* KAN-154: a dívida não pode piorar (D12). Os tetos ficam em docs/divida.json; quando um número melhora, o teto desce na mesma entrega. */
@@ -276,6 +280,12 @@ console.log(
     ['innerHTML', innerHTML, 'pontos com innerHTML (monte a tela como componente; ver docs/DESIGN-SYSTEM.md)', 'max'],
     ['textosFixos', textosFixos, 'textos de tela fora do dicionário (use tx() e src/i18n/pt-BR.js)', 'max'],
     ['arquivosSemTipos', arquivos.length - emTS, 'arquivos sem TypeScript (arquivo novo nasce .ts ou .tsx)', 'max'],
+    [
+      'arquivosGrandes',
+      grandes.length,
+      `arquivos com mais de ${LINHAS_MAX} linhas (${grandes.join(', ')}); divida por assunto`,
+      'max',
+    ],
     ['telasComponente', telasComp, 'telas como componente', 'min'],
     ['testesRegra', testesRegra, 'regras de negócio com teste próprio', 'min'],
   ];

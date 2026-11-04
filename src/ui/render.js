@@ -5,7 +5,7 @@ import { B, applyBusy } from '../nucleo/backend.js';
 import { S } from '../nucleo/estado.js';
 import { $, fdate, main } from '../nucleo/util.js';
 import { isStandalone } from '../pwa.js';
-import { ensureExtras, ensurePres, ensureVotos } from '../rotas.js';
+import { ensureExtras, ensurePres, ensureVotos } from '../rotas';
 import { adm, carregarAdmin } from '../nucleo/carga-admin.js';
 import { tx } from '../i18n/index.js';
 import { desmontarPublico } from '../telas/PublicoRodada.tsx';

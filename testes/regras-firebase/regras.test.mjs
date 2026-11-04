@@ -317,15 +317,21 @@ describe('auditoria da votação: trocas com a hora do servidor (KAN-222, KAN-22
     await assertFails(votar(db.anon(), 'j2', 4));
     await assertFails(votar(db.anon(), 'j2', 3, {}, 'anon1_2'));
     await assertFails(votar(db.anon(), 'j2', 3, {}, 'qualquerId'));
-    const ts = await semRegras(f => getDocs(collection(f, V + '/trocas')));
-    assert.equal(ts.size, 2);
+    let n = 0;
+    await semRegras(async f => {
+      n = (await getDocs(collection(f, V + '/trocas'))).size;
+    });
+    assert.equal(n, 2);
   });
   test('KAN-223/224: gravar de novo o mesmo nome com uma troca é recusado; o voto continua valendo', async () => {
     await assertSucceeds(votar(db.anon(), 'j2', 1));
     await assertFails(votar(db.anon(), 'j2', 2));
-    const v = await semRegras(f => getDoc(doc(f, V + '/votos/anon1')));
-    assert.equal(v.data().v.mvp, 'j2');
-    assert.equal(v.data().nt, 1);
+    let v = null;
+    await semRegras(async f => {
+      v = (await getDoc(doc(f, V + '/votos/anon1'))).data();
+    });
+    assert.equal(v.v.mvp, 'j2');
+    assert.equal(v.nt, 1);
   });
   test('KAN-224: a 51ª troca do aparelho é recusada; sem troca, o voto ainda muda', async () => {
     await semRegras(f => setDoc(doc(f, V + '/votos/anon1'), { pid: 'j1', v: { mvp: 'j2' }, t: 1, nt: 50 }));

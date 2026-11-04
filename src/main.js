@@ -17,7 +17,7 @@ import './telas/publico-rodada.js';
 import './ui/dialogos.js';
 import './acoes.js';
 import './eventos.js';
-import './rotas.js';
+import './rotas';
 import './pwa.js';
 import { S } from './nucleo/estado.js';
 import { boot } from './inicio.js';

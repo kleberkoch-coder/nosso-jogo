@@ -12,7 +12,7 @@ import { avisoLimiteGrupos, inativarGrupo, reativarGrupo } from './plano';
 import { editApp } from '../nucleo/edicoes.js';
 import { GB, S, clean, w } from '../nucleo/estado.js';
 import { $, cl, esc, toast, uid } from '../nucleo/util.js';
-import { upMyGroup } from '../rotas.js';
+import { upMyGroup } from '../rotas';
 import { closeDlg, confirmou, dlg, val } from '../ui/dialogos.js';
 import { changed } from '../ui/render.js';
 import { LOCAL } from '../i18n/formatos.js';

@@ -10,7 +10,7 @@ const { op } = banco as any;
 import { S as estado, w } from '../nucleo/estado.js';
 import { cabeMaisUm, conviteDoGrupoCheio, limiteAdmins, limiteGrupos, meusAtivos } from '../nucleo/plano';
 import { $, toast } from '../nucleo/util.js';
-import { upMyGroup } from '../rotas.js';
+import { upMyGroup } from '../rotas';
 import { closeDlg, confirmou, dlg, openDlg } from '../ui/dialogos.js';
 import { changed } from '../ui/render.js';
 /* As janelas baixam na primeira vez (ui/PlanosJanela.tsx). */

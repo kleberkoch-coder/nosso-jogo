@@ -192,7 +192,7 @@ export type Voto = { pid?: string; v?: Mapa<string>; t?: number; nt?: number };
 export type TrocaGravada = { u: string; pid: string; c: string; p: string; em: unknown };
 
 /* ---- o estado ---- */
-export type Rota = { n: string; gid?: string; id?: string; token?: string; [k: string]: unknown };
+export type Rota = { n: string; gid?: string; id?: string | null; token?: string; [k: string]: unknown };
 export type Estado = {
   /* quem está usando */
   user: Usuario | null;

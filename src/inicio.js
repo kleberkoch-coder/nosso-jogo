@@ -2,7 +2,7 @@ import { B, FirebaseBackend, LocalBackend, setB, wrapBackend } from './nucleo/ba
 import { S } from './nucleo/estado.js';
 import { $, main, toast } from './nucleo/util.js';
 import { isStandalone } from './pwa.js';
-import { setupRoute } from './rotas.js';
+import { setupRoute } from './rotas';
 import { carregarEntrar } from './nucleo/carga-entrar';
 import { render } from './ui/render.js';
 import { applyTheme } from './ui/tema.js';

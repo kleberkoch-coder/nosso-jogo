@@ -166,7 +166,7 @@ export function janelaSeparar(lista: { id: string; name: string }[]) {
   );
 }
 
-const Bolinha = ({ c }: { c: number }) => <span class="dot" style={{ background: col(c).c }}></span>;
+const Bolinha = ({ c }: { c: number | string }) => <span class="dot" style={{ background: col(c).c }}></span>;
 
 /* Escolher o time de quem confirmou depois do sorteio. */
 export function janelaEscolherTime(pid: string, times: any[]) {

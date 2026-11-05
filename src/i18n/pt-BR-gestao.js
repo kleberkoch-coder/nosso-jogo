@@ -185,6 +185,7 @@ export default {
   'colete.titulo': 'Colete do {time}',
   'colete.ajuda': 'Escolha a cor do colete que vocês têm na quadra. Se outro time já usa essa cor, os dois trocam.',
   'colete.trocarRotulo': 'Trocar a cor do colete do {time}',
+  'colete.outra': 'Outra cor…',
   'importar.mensalista': 'Mensalista',
   'importar.diarista': 'Diarista',
   /* Tipo do jogador e recebe por jogo (KAN-172) */

@@ -73,6 +73,14 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo; **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v94)
+- **Colete: outra cor** (KAN-235; `ui/PaletaDeCor.tsx`, classes `paleta`, `paleta-mira`, `paleta-brilho`, `paleta-fim`, `paleta-amostra`, `dot-paleta` em `estilos/paleta.css`):
+  - Na janela do colete, depois das 8 cores e das livres recentes (mesmo `opt`), "Outra cor…" com a bolinha de arco-íris (`dot-paleta`).
+  - Paleta: título "Outra cor para o Time 1", ajuda em `small muted`; o quadro (180px de altura, toda a largura, borda `field-border`, raio 10px) com o tom na horizontal e a intensidade na vertical, e a mira (22px, borda branca com contorno preto) no ponto escolhido. O quadro recebe o foco e anda pelas setas.
+  - "Claro e escuro": barra (`input range`, 44px). Embaixo, a amostra (48px, raio 10px) e o campo "Nome da cor" com o nome sugerido. Nenhum código de cor aparece.
+  - Rodapé: "Voltar" (volta para a janela do colete) e "Usar esta cor" (`primary`; Enter também usa).
+  - Cor clara (Branco ou livre clara) ganha a borda `dot.branco` / `band.branco`, pela cor e não pelo nome.
+
 ## Componentes (pelada-v93)
 - **Corrigir o placar** (KAN-229; `telas/PartidaGols.tsx`, classe `gols-lado`): o mesmo desenho do Editar partida, um `panel` por time com a cor, o nome e o placar; cada gol com a lista do autor (`sel ed-autor`) e "✕" (`btn sm ghost danger`); embaixo, "+ Gol" (`btn sm ed-mais`). O cursor vem no 1º autor. Rodapé: Cancelar e "Aplicar: 2 × 0" (`primary`, mostra o placar que vai ficar). O botão "Corrigir" fica ao lado de "Desfazer último" no placar, desligado sem gol.
 - **Mandar no WhatsApp** (KAN-232): `btn sm` à direita do título em "Partidas desta rodada" (aba Partida) e no detalhe do Histórico (`row between`), só com partida salva; abre a janela de compartilhar.

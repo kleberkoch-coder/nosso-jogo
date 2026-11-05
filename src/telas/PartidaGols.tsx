@@ -12,13 +12,13 @@ import { marcarAlterada } from '../ui/dialogos.js';
 import { sumPts } from '../ui/placar.js';
 import { quadra } from './Partida';
 
-type Time = { c: number; players: string[] };
+type Time = { c: number | string; players: string[] };
 type Rodada = { id: string; date: string; time?: string; times?: Time[] | null };
 type Gol = { t: 'a' | 'b'; pid?: string | null; og?: boolean; pts?: number };
 type Partida = {
   id: string;
-  ca: number;
-  cb: number;
+  ca: number | string;
+  cb: number | string;
   ga: number;
   gb: number;
   goals: Gol[];
@@ -31,7 +31,7 @@ type Lado = 'a' | 'b';
 function GolsDoLado(p: {
   t: Lado;
   titulo: string;
-  cor: number;
+  cor: number | string;
   goals: Gol[];
   meus: string[];
   deles: string[];

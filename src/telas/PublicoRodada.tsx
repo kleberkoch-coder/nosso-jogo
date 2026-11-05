@@ -3,7 +3,7 @@
    Os botões continuam com data-a, então as ações, o carregando e o aviso de sem sinal são os mesmos do resto do app. */
 import { render } from 'preact';
 import { useState } from 'preact/hooks';
-import { APP, COL, colete, sport, sportName, tn, tnJogo } from '../dominio/esportes.js';
+import { APP, col, colete, corClara, sport, sportName, tn, tnJogo } from '../dominio/esportes.js';
 import {
   attendance,
   fixos,
@@ -37,7 +37,7 @@ type Rodada = {
   place?: string;
   locked?: boolean;
   cancelada?: boolean;
-  times?: { c: number; players: string[]; res?: string[] }[] | null;
+  times?: { c: number | string; players: string[]; res?: string[] }[] | null;
   extra?: { n: string; v?: number } | null;
 };
 type Presenca = { s?: 'in' | 'out'; nome?: string };
@@ -46,8 +46,8 @@ type Presenca = { s?: 'in' | 'out'; nome?: string };
 // Sempre dentro das funções: ao carregar este módulo o estado ainda não existe (regra de ordem, docs/ARQUITETURA.md).
 const st = () => estado;
 
-function Time({ t, i }: { t: { c: number; players: string[]; res?: string[] }; i: number }) {
-  const c = COL[(t.c || 0) % COL.length],
+function Time({ t, i }: { t: { c: number | string; players: string[]; res?: string[] }; i: number }) {
+  const c = col(t.c),
     pares = !!(sport() as { pairs?: boolean }).pairs;
   const ordem = (id: string) => {
     const i = sport().pos.findIndex((x: string[]) => x[0] === ppos(id));
@@ -57,7 +57,7 @@ function Time({ t, i }: { t: { c: number; players: string[]; res?: string[] }; i
   const ps = t.players.slice().sort((a, b) => rs(a) - rs(b) || ordem(a) - ordem(b));
   return (
     <div class="team">
-      <div class={'band' + (c.n === 'Branco' && !pares ? ' branco' : '')} style={{ background: c.c }}></div>
+      <div class={'band' + (corClara(c) && !pares ? ' branco' : '')} style={{ background: c.c }}></div>
       <div class="th">
         <b>{tn(i)}</b>
         <span class="tag">
@@ -177,7 +177,7 @@ function Linha({ id, r, me }: { id: string; r: Rodada; me: string | null }) {
 
 /* Placar das partidas já salvas (pelada-v18): só leitura para o jogador. */
 function Placar({ r }: { r: Rodada }) {
-  const ms = partidasDe(r.id) as { id: string; ca: number; cb: number; ga: number; gb: number }[];
+  const ms = partidasDe(r.id) as { id: string; ca: number | string; cb: number | string; ga: number; gb: number }[];
   if (!ms.length) return null;
   return (
     <div class="panel">
@@ -187,13 +187,11 @@ function Placar({ r }: { r: Rodada }) {
           <li key={m.id}>
             <span class="num">{i + 1}</span>
             <span class="pn">
-              <span class="dot" style={{ background: COL[(m.ca || 0) % COL.length].c }}></span>{' '}
-              {tnJogo(m, 'a', r.times)}{' '}
+              <span class="dot" style={{ background: col(m.ca).c }}></span> {tnJogo(m, 'a', r.times)}{' '}
               <b>
                 {m.ga} × {m.gb}
               </b>{' '}
-              {tnJogo(m, 'b', r.times)}{' '}
-              <span class="dot" style={{ background: COL[(m.cb || 0) % COL.length].c }}></span>
+              {tnJogo(m, 'b', r.times)} <span class="dot" style={{ background: col(m.cb).c }}></span>
             </span>
           </li>
         ))}

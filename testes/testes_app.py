@@ -4025,6 +4025,68 @@ with sync_playwright() as pw:
         ok('Who voted for whom' in e93 and "admins' group" in e93 and 'Matches — ' in e93 and 'Game day standings' in e93 and 'Classificação' not in e93 and not falta93,
            f'CT-KAN-231/232: em English, as mensagens e o aviso saem traduzidos ({falta93})')
         ctx93.close()
+        # ---------- v94 (KAN-235, KAN-234): cor de colete livre (paleta) e links do WhatsApp sem o wa.me
+        ctx94 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+        p94 = ctx94.new_page(); p94.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p94, 'criar')
+        p94.fill('#le', 'v94@teste.com'); p94.fill('#lp', 'Jogo@2026'); p94.fill('#lp2', 'Jogo@2026'); p94.keyboard.press('Enter'); p94.wait_for_selector('#ngBox', timeout=12000)
+        p94.fill('#ngn', 'Colete FC'); p94.click('[data-a=pickSport][data-v=futebol]'); p94.click('[data-a=createGroup]')
+        p94.wait_for_function("location.hash.startsWith('#/g/')"); p94.wait_for_timeout(1500)
+        g94 = p94.url.split('#/g/')[1]
+        elenco_e_presenca(p94, 10); sortear(p94)
+        p94.locator('.team [data-a=color][data-v="0"]').click(); p94.wait_for_selector('#coletes [data-a=outraCor]', timeout=8000); p94.wait_for_timeout(200)
+        ok(p94.locator('#coletes [data-a=pickColor]').count() == 8 and p94.locator('#coletes [data-a=outraCor]').count() == 1,
+           'CT-KAN-235-01: a janela do colete tem as 8 cores de sempre e "Outra cor…"')
+        p94.click('#coletes [data-a=outraCor]'); p94.wait_for_selector('#paletaQuadro', timeout=8000); p94.wait_for_timeout(300)
+        for tema in ['light', 'dark']:
+            p94.emulate_media(color_scheme=tema); p94.wait_for_timeout(150)
+            v94 = p94.evaluate("(()=>{const d=document.getElementById('dlgBody');return [document.documentElement.scrollWidth<=innerWidth, d.scrollWidth<=d.clientWidth+1, document.activeElement.id, Math.round(document.getElementById('paletaBrilho').getBoundingClientRect().height), !document.body.innerText.match(/#[0-9a-f]{6}/i)]})()")
+            ok(v94[0] and v94[1] and v94[2] == 'paletaQuadro' and v94[3] >= 44 and v94[4],
+               f'CT-KAN-235-02: em 360px ({tema}), a paleta não tem rolagem lateral, o cursor vem no quadro, a barra de claro e escuro tem 44px e não aparece código de cor ({v94})')
+            contraste(p94, f'paleta de cor ({tema})')
+        p94.emulate_media(color_scheme='light')
+        # Toque no quadro: perto do azul forte (tom ~220, cheio)
+        bx = p94.locator('#paletaQuadro').bounding_box()
+        p94.mouse.click(bx['x'] + bx['width'] * 220 / 360, bx['y'] + 4); p94.wait_for_timeout(200)
+        n94 = p94.input_value('#corNome')
+        ok(n94 in ('Azul', 'Azul-marinho'), f'CT-KAN-235-02: tocar no azul sugere o nome "{n94}"')
+        # Escurecer pela barra e trocar o nome
+        p94.fill('#paletaBrilho', '45'); p94.dispatch_event('#paletaBrilho', 'input'); p94.wait_for_timeout(200)
+        n94b = p94.input_value('#corNome')
+        ok(n94b == 'Azul-marinho', f'CT-KAN-235-02: escurecer muda a sugestão para "Azul-marinho" ({n94b!r})')
+        p94.fill('#corNome', ''); p94.click('#dlg [data-a=usarCor]'); p94.wait_for_timeout(400)
+        ok(p94.locator('#paletaQuadro').count() == 1 and p94.evaluate("document.activeElement.id") == 'corNome', 'CT-KAN-235-02: sem nome, a janela não fecha e o cursor vai para o nome')
+        p94.fill('#corNome', 'Marinho do clube'); p94.keyboard.press('Enter'); p94.wait_for_timeout(1000)
+        c94 = p94.evaluate("(()=>{const r=S.rod[S.rid]||{};return (r.cores||{})[0]})()")
+        ok(isinstance(c94, str) and re.match(r'^#[0-9a-f]{6}\|🟦\|Marinho do clube$', c94 or '') is not None and not p94.evaluate("document.getElementById('dlg').open"),
+           f'CT-KAN-235-01: Enter usa a cor: o Time 1 fica com a cor livre e o nome digitado ({c94!r})')
+        t94 = p94.inner_text('.team >> nth=0')
+        ok('colete marinho do clube' in t94.lower(), f'CT-KAN-235-01: o cartão do time mostra "colete marinho do clube" ({t94[:60]!r})')
+        p94.click('[data-a=shareTimes]') if p94.locator('[data-a=shareTimes]').count() else None
+        if p94.locator('#shtxt').count():
+            z94 = p94.input_value('#shtxt')
+            ok('🟦 *Time 1* · colete marinho do clube' in z94, f'CT-KAN-235-01: no WhatsApp dos times, o quadradinho azul e o nome ({z94[:80]!r})')
+            ok((p94.get_attribute('#dlg a.btn.primary', 'href') or '').startswith('https://api.whatsapp.com/send?text='), 'CT-KAN-234-01: "Abrir no WhatsApp" dos times vai direto para api.whatsapp.com')
+            p94.click('#dlg [data-a=close]'); p94.wait_for_timeout(200)
+        # Recarrega: a cor continua e aparece como recente na janela do colete do outro time
+        p94.reload(); p94.wait_for_timeout(1800)
+        ok(p94.evaluate("((S.rod[S.rid]||{}).cores||{})[0]") == c94, 'CT-KAN-235-01: a cor livre continua depois de recarregar')
+        p94.locator('.team [data-a=color][data-v="1"]').click(); p94.wait_for_selector('#coletes [data-a=outraCor]', timeout=8000); p94.wait_for_timeout(200)
+        lv94 = p94.evaluate("[...document.querySelectorAll('#coletes [data-a=pickColor]')].map(b=>b.dataset.c2)")
+        ok(len(lv94) == 9 and lv94[8] == c94 and 'Time 1' in p94.inner_text('#coletes [data-a=pickColor] >> nth=8'),
+           f'CT-KAN-235-03: a cor livre aparece na janela do outro time, marcada com o time que a usa ({lv94[8:]})')
+        p94.locator('#coletes [data-a=pickColor]').nth(8).click(); p94.wait_for_timeout(900)
+        cs94 = p94.evaluate("((S.rod[S.rid]||{}).cores||{})")
+        ok(cs94.get('1') == c94 and isinstance(cs94.get('0'), int), f'CT-KAN-235-03: escolher a cor livre do outro time faz os dois trocarem ({cs94})')
+        p94.screenshot(path=f'{OUT}/94-colete-livre.png')
+        # Em inglês
+        p94.evaluate("localStorage.setItem('nj-idioma','en')"); p94.reload(); p94.wait_for_timeout(2000)
+        p94.locator('.team [data-a=color][data-v="0"]').click(); p94.wait_for_selector('#coletes [data-a=outraCor]', timeout=8000)
+        p94.click('#coletes [data-a=outraCor]'); p94.wait_for_selector('#paletaQuadro', timeout=8000); p94.wait_for_timeout(300)
+        e94 = p94.inner_text('#dlgBody')
+        f94 = p94.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(paleta|cor\\.|colete\\.outra)/.test(k))")
+        ok('Another color for Team 1' in e94 and 'Light and dark' in e94 and 'Claro' not in e94 and not f94, f'CT-KAN-235-02: em English, a paleta sai traduzida ({f94})')
+        ctx94.close()
         # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
         ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
         p7 = ctx7.new_page()

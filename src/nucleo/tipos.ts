@@ -99,7 +99,7 @@ export type Contato = { tel?: string; email?: string };
 export type Notas = { stars?: Mapa<number>; nivel?: Mapa<number>; sep?: [string, string][] };
 
 /* ---- rodada, presença e partidas ---- */
-export type Time = { c: number; players: string[]; res?: string[] };
+export type Time = { c: number | string; players: string[]; res?: string[] };
 export type Rodada = {
   id?: string;
   date: string;

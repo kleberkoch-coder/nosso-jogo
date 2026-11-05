@@ -95,6 +95,22 @@ service cloud.firestore {
     function dataProxima(rid) {
       return dataDoFixo(rid) > request.time - duration.value(2, 'd') && dataDoFixo(rid) < request.time + duration.value(15, 'd');
     }
+    // KAN-228: extra ligado numa rodada que existe e não foi cancelada.
+    function extraAberto(gid, rid) {
+      return signed() && grpAtivo(gid) && exists(rod(gid, rid))
+        && get(rod(gid, rid)).data.get('extra', null) != null
+        && get(rod(gid, rid)).data.get('cancelada', false) == false;
+    }
+    function extraValido() {
+      return request.resource.data.keys().hasOnly(['s', 't', 'by', 'dev', 'conv'])
+        && request.resource.data.s in ['in', 'out']
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.get('t', 0) is int
+        && request.resource.data.get('t', 0) <= request.time.toMillis() + 60000
+        && (!('conv' in request.resource.data) || (request.resource.data.conv is list
+          && request.resource.data.conv.size() <= 3
+          && (request.resource.data.conv.size() == 0 || request.resource.data.conv.join('|').size() <= 125)));
+    }
     // Identificador gerado pelo app: só letras, números, _ e - (KAN-76: impede injetar código pelo nome do documento).
     function idValido(id) { return id is string && id.matches('[A-Za-z0-9_-]{1,64}'); }
     function presencaValida() {
@@ -404,6 +420,21 @@ service cloud.firestore {
             && ((('dev' in resource.data) && request.resource.data.get('dev', '') == resource.data.dev)
               || (!('dev' in resource.data) && request.resource.data.get('dev', '') == request.auth.uid))
             && vagaOk(gid, rid, pid)
+          );
+          allow delete: if adminAtivo(gid);
+        }
+
+        // KAN-228: extra da rodada (churrasco, pizzada…), com resposta separada da do jogo. Pelo link, só com o extra
+        // ligado na rodada (que existe e não foi cancelada), para quem é do elenco, avulso ou já está na lista; cada um
+        // leva até 3 convidados (só os nomes). 'dev' guarda o aparelho que respondeu primeiro, como na presença.
+        match /extra/{pid} {
+          allow read: if true;
+          allow create, update: if adminAtivo(gid) || (
+            idValido(pid) && extraAberto(gid, rid) && extraValido()
+            && request.resource.data.dev == (resource == null ? request.auth.uid : resource.data.get('dev', request.auth.uid))
+            && (exists(/databases/$(database)/documents/grupos/$(gid)/jogadores/$(pid))
+              || exists(/databases/$(database)/documents/grupos/$(gid)/avulsos/$(pid))
+              || exists(pres(gid, rid, pid)))
           );
           allow delete: if adminAtivo(gid);
         }

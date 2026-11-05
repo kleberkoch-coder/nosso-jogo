@@ -16,6 +16,8 @@ function txtConvite(r) {
   let t = `${sport().e} *${gname()}* — ${fdate(r.date)}${r.time ? ' · ' + hora(r) : ''}\n`;
   if (r.place) t += `📍 ${r.place}\n🗺️ ${linkMaps(r.place)}\n`;
   t += `\n${tx('zap.confirmeAqui')}\n${isNext ? linkProxima() : linkRodada(r.id)}`;
+  /* KAN-228: extra da rodada (churrasco, pizzada…), respondido no mesmo link. */
+  if (r.extra && r.extra.n) t += '\n\n' + tx('zap.extra', { n: r.extra.n });
   if (a.inn.length)
     t +=
       `\n\n✅ *${tx('zap.confirmados', { n: a.inn.length })}*\n` +

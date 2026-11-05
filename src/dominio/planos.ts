@@ -117,7 +117,7 @@ export function montarClientes(
         vencido: p.vencido,
         gruposAtivos: meus.filter(([, g]) => g.ativo !== false).length,
         gruposInativos: meus.filter(([, g]) => g.ativo === false).length,
-        nomesGrupos: meus.map(([, g]) => g.name || 'Grupo'),
+        nomesGrupos: meus.map(([, g]) => g.name || ''),
         acesso: (c && c.acesso) || null,
         criada: (c && c.criada) || null,
         ultimaRodada: datas.length ? datas[datas.length - 1] : null,

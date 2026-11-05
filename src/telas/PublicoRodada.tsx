@@ -27,6 +27,7 @@ import { ComoChegar, Pos, PorPosicao, TextoCortado } from '../ui/componentes';
 import { avulsosEsgotados } from '../dominio/limites';
 import { DEMORA_MS } from '../nucleo/carga';
 import { precisaVaga, situacao } from '../dominio/vagas';
+import { ACT } from '../acoes.js';
 
 type Rodada = {
   id: string;
@@ -37,6 +38,7 @@ type Rodada = {
   locked?: boolean;
   cancelada?: boolean;
   times?: { c: number; players: string[]; res?: string[] }[] | null;
+  extra?: { n: string; v?: number } | null;
 };
 type Presenca = { s?: 'in' | 'out'; nome?: string };
 
@@ -296,6 +298,14 @@ function PublicoRodada() {
           </ul>
         </details>
       )}
+      {r.extra ? (
+        <ExtraDoLink
+          ids={[...new Set(ids)].sort((x, y) =>
+            x === me ? -1 : y === me ? 1 : pname(x).localeCompare(pname(y), LOCAL)
+          )}
+          me={me}
+        />
+      ) : null}
       {times && aberta && (
         <details class="panel">
           <summary>{tx('publico.verTimes', { n: r.times!.length })}</summary>
@@ -324,6 +334,29 @@ function PublicoRodada() {
   );
 }
 
+/* KAN-228: o extra (churrasco, pizzada…) baixa sob demanda, só quando a rodada tem extra. */
+type ModExtra = typeof import('./PublicoExtra');
+let modExtra: ModExtra | null = null,
+  baixandoExtra = false;
+function ExtraDoLink({ ids, me }: { ids: string[]; me: string | null }) {
+  if (!modExtra) {
+    if (!baixandoExtra) {
+      baixandoExtra = true;
+      import('./PublicoExtra')
+        .then(m => {
+          modExtra = m;
+          Object.assign(ACT, m.acoes);
+          if (st().route.n === 'r') montarPublico();
+        })
+        .catch(() => {
+          baixandoExtra = false;
+        });
+    }
+    return null;
+  }
+  const P = modExtra.PainelExtra;
+  return <P ids={ids} me={me} />;
+}
 /* "Você vai?" com a busca pelo nome (KAN-127): filtra enquanto digita, sem diferenciar acentos e maiúsculas. */
 /* Vagas para diaristas e avulsos desta rodada, como o link vê (KAN-63). */
 function vagasDoLink(r: Rodada) {

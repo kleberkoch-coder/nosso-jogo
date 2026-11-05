@@ -2,6 +2,7 @@
    Parte sob demanda do Caixa. Os botões usam data-a (acoes/rateio.ts); as contas ficam em dominio/rateio.ts. */
 import { render } from 'preact';
 import { useState } from 'preact/hooks';
+import { pegarPreparo } from '../nucleo/rateio-preparo';
 import { ptipo } from '../dominio/caixa.js';
 import { pname, players } from '../dominio/grupo.js';
 import {
@@ -48,14 +49,16 @@ type Rascunho = {
 const novoIdFora = () => 'f_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 let atual: Rascunho | null = null;
 export const rascunho = () => atual;
-
 function Janela({ rid }: { rid: string }) {
-  const r: Partial<Rateio> = (rid && rateios()[rid]) || {};
+  const [pre] = useState(() => (rid ? null : pegarPreparo()));
+  const r: Partial<Rateio> =
+    (rid && rateios()[rid]) ||
+    (pre ? { n: pre.n, modo: pre.modo, part: Object.fromEntries(pre.sel.map(id => [id, 0])), fora: pre.fora } : {});
   const elenco = players() as { id: string; name: string }[],
     mensalistas = elenco.filter(p => ptipo(p.id) === 'mensalista').map(p => p.id);
   const [n, setN] = useState(r.n || '');
   const [modo, setModo] = useState<'total' | 'fixo'>(r.modo || 'total');
-  const [base, setBase] = useState(r.base ? String(r.base / 100) : '');
+  const [base, setBase] = useState(pre ? pre.base : r.base ? String(r.base / 100) : '');
   const [sel, setSel] = useState<string[]>(Object.keys(r.part || {}));
   const [pend, setPend] = useState(rid ? !!r.pend : true);
   /* KAN-216: pessoas de fora do elenco, só neste rateio (só o nome). */

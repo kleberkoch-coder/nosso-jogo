@@ -1164,3 +1164,44 @@ describe('avaliação de notas por link (KAN-214)', () => {
     await assertFails(setDoc(doc(db.anon(), A + '/notas/anon1'), { pid: 'j1', n: { j1: 7 }, t: 2 }));
   });
 });
+
+describe('extra da rodada: churrasco, pizzada (KAN-228)', () => {
+  const R = G + '/rodadas/r1',
+    X = R + '/extra/';
+  const semRegras = fn => env.withSecurityRulesDisabled(async ctx => fn(ctx.firestore()));
+  const ligar = (extra = { n: 'Churrasco' }, extraR = {}) =>
+    semRegras(f => setDoc(doc(f, R), Object.assign({ date: '2026-10-05', locked: false, extra }, extraR)));
+  const resp = (s, extra = {}) => Object.assign({ s, t: Date.now(), by: 'anon1', dev: 'anon1' }, extra);
+  test('com o extra ligado, o jogador do elenco responde pelo link, mesmo com a lista do jogo fechada', async () => {
+    await ligar(undefined, { locked: true });
+    await assertSucceeds(setDoc(doc(db.anon(), X + 'j1'), resp('in')));
+    await assertSucceeds(setDoc(doc(db.anon(), X + 'j1'), resp('out')));
+  });
+  test('sem o extra ligado, ou com a rodada cancelada, é recusado', async () => {
+    await assertFails(setDoc(doc(db.anon(), X + 'j1'), resp('in')));
+    await ligar(undefined, { cancelada: true });
+    await assertFails(setDoc(doc(db.anon(), X + 'j1'), resp('in')));
+  });
+  test('até 3 convidados; o 4º, campo a mais, hora do futuro ou nome inventado são recusados', async () => {
+    await ligar();
+    await assertSucceeds(setDoc(doc(db.anon(), X + 'j1'), resp('in', { conv: ['A', 'B', 'C'] })));
+    await assertFails(setDoc(doc(db.anon(), X + 'j1'), resp('in', { conv: ['A', 'B', 'C', 'D'] })));
+    await assertFails(setDoc(doc(db.anon(), X + 'j1'), resp('in', { nome: 'Penetra' })));
+    await assertFails(setDoc(doc(db.anon(), X + 'j1'), resp('in', { t: Date.now() + 3600000 })));
+    await assertFails(setDoc(doc(db.anon(), X + 'ninguem'), resp('in')));
+  });
+  test('o aparelho que respondeu primeiro fica gravado; "by" é sempre quem grava', async () => {
+    await ligar();
+    await semRegras(f => setDoc(doc(f, X + 'j1'), resp('in', { by: 'outroAp', dev: 'outroAp' })));
+    await assertFails(setDoc(doc(db.anon(), X + 'j1'), resp('out')));
+    await assertSucceeds(setDoc(doc(db.anon(), X + 'j1'), resp('out', { dev: 'outroAp' })));
+    await assertFails(setDoc(doc(db.anon(), X + 'j1'), resp('out', { dev: 'outroAp', by: 'outroAp' })));
+  });
+  test('o administrador adiciona alguém de fora pelo nome e apaga; o link não apaga', async () => {
+    await ligar();
+    await assertSucceeds(setDoc(doc(db.adm(), X + 'n1'), { s: 'in', t: Date.now(), by: 'adm', nome: 'Vizinho' }));
+    await assertFails(deleteDoc(doc(db.anon(), X + 'n1')));
+    await assertSucceeds(deleteDoc(doc(db.adm(), X + 'n1')));
+    await assertFails(setDoc(doc(db.outro(), X + 'n2'), { s: 'in', t: Date.now(), by: 'outro', nome: 'X' }));
+  });
+});

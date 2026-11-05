@@ -116,8 +116,14 @@ export type Rodada = {
   info?: Mapa<{ n: string; p?: string }>;
   cores?: Mapa<number>;
   vagas?: { aberta?: boolean; max?: number };
+  extra?: Extra | null; // KAN-228: churrasco, pizzada… depois do jogo
   [k: string]: unknown;
 };
+/* Extra da rodada (KAN-228): nome (como o organizador escreveu) e valor por pessoa opcional. */
+export type Extra = { n: string; v?: number };
+/* Resposta ao extra (rodadas/{rid}/extra/{pid}): vai ou não, convidados (até 3) e, se o organizador
+   adicionou alguém de fora, o nome. */
+export type RespostaExtra = { s: 'in' | 'out'; t?: number; by?: string; dev?: string; conv?: string[]; nome?: string };
 export type Presenca = {
   s: 'in' | 'out';
   t?: number;
@@ -239,6 +245,8 @@ export type Estado = {
   rodX?: Mapa<Rodada>;
   rodXid?: string | null;
   pres: Mapa<Presenca>;
+  ext?: Mapa<RespostaExtra>;
+  extRid?: string | null;
   presRid?: string | null;
   presFiltro?: string;
   alvoTime?: number | null;

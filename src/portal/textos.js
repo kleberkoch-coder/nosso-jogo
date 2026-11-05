@@ -28,6 +28,7 @@ const T = {
   'portal.vencido': 'plano vencido, voltou ao Grátis',
   'portal.teste': 'teste grátis do Plano A até {d}',
   'portal.grupos': '{a} ativo(s), {i} inativo(s)',
+  'portal.semNome': 'Sem nome',
   'portal.acesso': 'Último acesso: {d}',
   'portal.ultimaRodada': 'última rodada gravada: {d}',
   'portal.desde': 'registrado em {d}',

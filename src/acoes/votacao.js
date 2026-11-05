@@ -1,13 +1,14 @@
 /* Ações: Votação: criar, encerrar e compartilhar. Fazem parte de ACT (src/acoes.js). */
 import { posLabel, sport } from '../dominio/esportes.js';
-import { pname, rodById, rodadas } from '../dominio/grupo.js';
+import { rodById, rodadas } from '../dominio/grupo.js';
 import { shareDlg } from '../ui/Compartilhar';
 import { B } from '../nucleo/backend.js';
 import { gravarVotacao } from '../nucleo/partidas.js';
 import { GB, S, w } from '../nucleo/estado.js';
 import { linkVoto } from '../nucleo/links.js';
 import { $, cl, toast, uid } from '../nucleo/util.js';
-import { tally } from '../dominio/votacao';
+import { auditoria, tally } from '../dominio/votacao';
+import { baixarPlanilha, mandarResultado } from '../telas/VotacaoZap';
 import { montarNovaVotacao } from '../telas/Votacao';
 import { confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
 import { changed } from '../ui/render.js';
@@ -94,18 +95,18 @@ const acoes = {
   },
   shareVote: () => {
     const v = S.vot[S.vid];
-    let t = `🗳️ *${v.title}*\n`;
-    if (v.open) t += tx('votacao.voteAqui', { link: linkVoto(S.vid) });
-    else
-      t +=
-        '\n' +
-        v.cats
-          .map(
-            c =>
-              `🏅 ${c.name}: ${(v.resultado?.[c.id]?.winners || []).map(pname).join(tx('votacao.e')) || tx('votacao.semVotosCurto')}`
-          )
-          .join('\n');
-    shareDlg(tx('votacao.semTitulo'), t);
+    /* KAN-231: encerrada, os mais votados de cada categoria e, se o administrador quiser, quem votou em quem. */
+    if (!v.open) return mandarResultado(v, S.votos);
+    shareDlg(tx('votacao.semTitulo'), `🗳️ *${v.title}*\n` + tx('votacao.voteAqui', { link: linkVoto(S.vid) }));
+  },
+  /* KAN-231: planilha de "Quem votou" (só administradores veem a aba). */
+  baixarVotos: () => {
+    const v = S.vot[S.vid];
+    if (!v) return;
+    const linhas = auditoria(S.votos, {});
+    if (!linhas.length) return toast(tx('aud.nenhum'));
+    baixarPlanilha(v, linhas);
+    toast(tx('votzap.baixada'));
   },
 };
 

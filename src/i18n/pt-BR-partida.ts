@@ -10,6 +10,12 @@ export default {
   'partida.iniciar': 'Iniciar',
   'partida.zerar': 'Zerar tempo',
   'partida.desfazer': 'Desfazer último',
+  'partida.corrigir': 'Corrigir',
+  'partida.corrigirTitulo': 'Corrigir o placar',
+  'partida.corrigirTexto':
+    'Troque o autor, tire ou inclua em cada time. Vale para esta partida; ao salvar a partida, fica gravado.',
+  'partida.corrigirSalvar': 'Aplicar: {a} × {b}',
+  'partida.corrigido': 'Placar corrigido: {a} × {b}.',
   'partida.timeA': 'Time A',
   'partida.timeB': 'Time B',
   'partida.duplaA': 'Dupla A',

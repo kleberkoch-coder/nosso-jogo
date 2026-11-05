@@ -118,6 +118,11 @@ export function QuemVotou({
         <>
           <p class="small muted">{tx('aud.ajuda')}</p>
           {linhas.length ? (
+            <button class="btn sm aud-baixar" data-a="baixarVotos">
+              {tx('votzap.baixar')}
+            </button>
+          ) : null}
+          {linhas.length ? (
             <ul class="aud-lista">
               {linhas.map(l => (
                 <Linha key={l.u} l={l} cats={cats} />

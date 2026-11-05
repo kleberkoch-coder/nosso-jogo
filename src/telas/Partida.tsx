@@ -156,6 +156,9 @@ function Placar({ r }: { r: Rodada }) {
         <button class="btn" data-a="undoGoal" disabled={!L.goals.length}>
           {tx('partida.desfazer')}
         </button>
+        <button class="btn" data-a="corrigirGols" disabled={!L.goals.length}>
+          {tx('partida.corrigir')}
+        </button>
       </div>
     </div>
   );
@@ -242,7 +245,14 @@ function Salvas({ r }: { r: Rodada }) {
       .join(', ');
   return (
     <div class="panel">
-      <h3>{tx('partida.salvasTitulo')}</h3>
+      <div class="row between">
+        <h3 style="margin:0">{tx('partida.salvasTitulo')}</h3>
+        {ms.length ? (
+          <button class="btn sm" data-a="zapPartidas" aria-label={tx('zappart.rotulo')}>
+            {tx('zappart.botao')}
+          </button>
+        ) : null}
+      </div>
       {ms.length ? (
         <ul class="plist wrap">
           {ms.map((m, i) => (
@@ -533,112 +543,6 @@ function montarEscalacao(t: 'a' | 'b', redesenharTela: () => void) {
   return true;
 }
 
-/* Editar partida salva (KAN-176): os gols de cada lado, com o autor; o placar sai dos gols.
-   O que está na janela fica em "edicao", que a ação salvarEdicao lê ao gravar. */
-let edicao: { mid: string; goals: Gol[] } | null = null;
-const edicaoAtual = () => edicao;
-function EditarPartida({ m }: { m: Partida }) {
-  const [goals, setGoals] = useState<Gol[]>(m.goals.map(g => ({ ...g })));
-  edicao = { mid: m.id, goals };
-  const SP = sport() as unknown as { score: [string, number][]; og?: boolean },
-    mudar = (gs: Gol[]) => {
-      marcarAlterada(); // KAN-202
-      setGoals(gs);
-    };
-  const lado = (t: 'a' | 'b') => {
-    const meus = (t === 'a' ? m.pa : m.pb) || [],
-      deles = (t === 'a' ? m.pb : m.pa) || [],
-      cor = t === 'a' ? m.ca : m.cb;
-    return (
-      <div class="panel" style="margin:0 0 10px">
-        <h3 style="margin:0 0 6px">
-          <span class="dot" style={{ background: col(cor).c }}></span>{' '}
-          {tnJogo(m, t, ((curRodada() as Rodada | null) || { times: [] }).times)} · {sumPts(goals, t)}
-        </h3>
-        <ul class="plist">
-          {goals.map((g, i) =>
-            g.t !== t ? null : (
-              <li key={i}>
-                <select
-                  class="sel ed-autor"
-                  aria-label={tx('partida.autorDoGol')}
-                  value={g.pid ? (g.og ? 'c:' : 'p:') + g.pid : ''}
-                  onChange={e => {
-                    const v = (e.currentTarget as HTMLSelectElement).value,
-                      gs = goals.slice();
-                    gs[i] = { ...g, pid: v ? v.slice(2) : null, og: v.startsWith('c:') };
-                    mudar(gs);
-                  }}
-                >
-                  <option value="">{tx('partida.semAutor')}</option>
-                  {meus.map(id => (
-                    <option key={id} value={'p:' + id}>
-                      {pname(id)}
-                    </option>
-                  ))}
-                  {SP.og
-                    ? deles.map(id => (
-                        <option key={'c' + id} value={'c:' + id}>
-                          {pname(id) + ' ' + tx('partida.contraMarca')}
-                        </option>
-                      ))
-                    : null}
-                </select>
-                {(g.pts || 1) > 1 ? <span class="tag">+{g.pts}</span> : null}
-                <button
-                  type="button"
-                  class="btn sm ghost danger"
-                  aria-label={tx('partida.tirarGol')}
-                  onClick={() => mudar(goals.filter((_, j) => j !== i))}
-                >
-                  ✕
-                </button>
-              </li>
-            )
-          )}
-        </ul>
-        <div class="row" style="margin-top:6px">
-          {SP.score.map(([rotulo, pts], k) => (
-            <button
-              key={k}
-              type="button"
-              class="btn sm ed-mais"
-              data-lado={t}
-              onClick={() => mudar(goals.concat({ t, pid: null, og: false, pts }))}
-            >
-              {SP.score.length === 1 ? '+ ' + rotulo : rotulo}
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  };
-  return (
-    <>
-      <h3>{tx('partida.editarTitulo')}</h3>
-      <p class="small muted">{tx('partida.editarTexto')}</p>
-      {lado('a')}
-      {lado('b')}
-      <div class="dlg-f">
-        <button class="btn" data-a="close">
-          {tx('comum.cancelar')}
-        </button>
-        <button class="btn primary" data-a="salvarEdicao" data-v={m.id}>
-          {tx('partida.salvarEdicao', { a: sumPts(goals, 'a'), b: sumPts(goals, 'b') })}
-        </button>
-      </div>
-    </>
-  );
-}
-function montarEdicao(mid: string) {
-  const r = curRodada() as Rodada | null,
-    m = r && (partidasDe(r.id) as Partida[]).find(x => x.id === mid),
-    el = document.getElementById('edRaiz');
-  if (!m || !el) return false;
-  render(<EditarPartida m={m} />, el);
-  return true;
-}
-
 /* A gestão desenha as abas com texto; a Partida entra num lugar reservado (#partidaRaiz), como Rodada e Caixa. */
 const vPartida = () => 'partidaRaiz';
 function montarPartida() {
@@ -646,15 +550,4 @@ function montarPartida() {
   if (el) render(<PartidaTela />, el);
 }
 
-export {
-  artAtual,
-  edicaoAtual,
-  limiteAtingido,
-  montarArtilharia,
-  montarEdicao,
-  montarEscalacao,
-  montarPartida,
-  novaPartida,
-  quadra,
-  vPartida,
-};
+export { artAtual, limiteAtingido, montarArtilharia, montarEscalacao, montarPartida, novaPartida, quadra, vPartida };

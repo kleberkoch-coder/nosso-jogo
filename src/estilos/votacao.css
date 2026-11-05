@@ -63,3 +63,16 @@
 .aud-repetido {
   white-space: nowrap;
 }
+
+/* KAN-231: aviso ao incluir quem votou em quem no WhatsApp. */
+.aviso-alerta {
+  margin: 6px 0 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--out-fill);
+  border-radius: 8px;
+  background: var(--out-soft);
+  color: var(--ink);
+}
+.aud-baixar {
+  margin: 0 0 8px;
+}

@@ -48,6 +48,8 @@ type Hist = {
   sel: string | null;
   pres: Record<string, { s?: string; t?: number; nome?: string }> | null;
   parts?: Partida[] | null;
+  /* Artilharia lançada só como total (KAN-178), para a mensagem do WhatsApp (KAN-232). */
+  art?: Record<string, number> | null;
 };
 
 function estadoHist(): Hist {
@@ -136,6 +138,10 @@ async function abrirHist(id: string) {
     }),
   ]);
   h.pres = pres || {};
+  const art = Object.values((parts || {}) as Record<string, Partida & { gols?: Record<string, number> }>).find(
+    m => m.tipo === 'art'
+  );
+  h.art = (art && art.gols) || null;
   h.parts = Object.entries((parts || {}) as Record<string, Partida>)
     .map(([pid, m]): Partida => Object.assign({ id: pid }, m))
     .filter(m => m.tipo !== 'art')
@@ -355,7 +361,14 @@ function Detalhe({ h }: { h: Hist }) {
         )}
       </div>
       <div class="panel">
-        <h3>{tx('hist.partidasTitulo')}</h3>
+        <div class="row between">
+          <h3 style="margin:0">{tx('hist.partidasTitulo')}</h3>
+          {ms.length ? (
+            <button class="btn sm" data-a="histZap" aria-label={tx('zappart.rotulo')}>
+              {tx('zappart.botao')}
+            </button>
+          ) : null}
+        </div>
         {!h.parts ? (
           <p class="muted small">{tx('comum.carregando')}</p>
         ) : ms.length ? (

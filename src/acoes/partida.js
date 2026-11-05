@@ -6,16 +6,10 @@ import { addMatch, delMatch as apagarPartida, editMatch, salvarArtilharia } from
 import { S } from '../nucleo/estado.js';
 import { $, esc, toast, uid } from '../nucleo/util.js';
 import { actx, beep, elapsed, setActx, sumPts } from '../ui/placar.js';
-import {
-  artAtual,
-  edicaoAtual,
-  limiteAtingido,
-  montarArtilharia,
-  montarEdicao,
-  montarEscalacao,
-  novaPartida,
-  quadra,
-} from '../telas/Partida';
+import { artAtual, limiteAtingido, montarArtilharia, montarEscalacao, novaPartida, quadra } from '../telas/Partida';
+import { correcaoAtual, edicaoAtual, montarCorrecao, montarEdicao } from '../telas/PartidaGols';
+import { artilhariaDe, partidasDe } from '../nucleo/partidas-lista.js';
+import { mandarPartidas } from '../ui/zap-partidas';
 import { closeDlg, confirmou, dlg, openDlg } from '../ui/dialogos.js';
 import { janelaPonto } from '../ui/JanelaPonto';
 import { render } from '../ui/render.js';
@@ -60,6 +54,41 @@ const acoes = {
       beep();
     }
     closeDlg();
+    render();
+  },
+  /* KAN-232: as partidas da rodada no WhatsApp, com a artilharia e a classificação. */
+  zapPartidas: () => {
+    const r = curRodada();
+    if (!r) return;
+    const ms = partidasDe(r.id);
+    if (!ms.length) return;
+    const a = artilhariaDe(r.id);
+    mandarPartidas(r, ms, a && a.gols);
+  },
+  /* KAN-229: corrigir qualquer gol da partida em andamento (autor, time, tirar ou somar). */
+  corrigirGols: () => {
+    if (!S.live) return;
+    openDlg('cgRaiz');
+    dlg.setAttribute('aria-labelledby', 'cgTitulo');
+    if (!montarCorrecao()) closeDlg();
+    else setTimeout(() => $('#cgRaiz .ed-autor')?.focus(), 30);
+  },
+  salvarCorrecao: () => {
+    const gs = correcaoAtual(),
+      L = S.live;
+    if (!gs || !L) return;
+    L.goals = gs.map(g => ({ t: g.t, pid: g.pid || null, og: !!g.og, pts: g.pts || 1 }));
+    /* Se a correção tirou o placar do limite, o aviso some; se chegou nele, avisa como num gol. */
+    if (!limiteAtingido(L)) L.limAviso = false;
+    else if (!L.limAviso) {
+      L.limAviso = true;
+      if (L.run) {
+        L.el = elapsed();
+        L.run = false;
+      }
+    }
+    closeDlg();
+    toast(tx('partida.corrigido', { a: sumPts(L.goals, 'a'), b: sumPts(L.goals, 'b') }));
     render();
   },
   undoGoal: () => {

@@ -715,6 +715,44 @@ with sync_playwright() as pw:
        'CT-KAN-164-06 (P32): depois de sair e entrar de novo, sem a escolha guardada no aparelho, o idioma vem da conta')
     c32.close()
 
+    # P33 extra da rodada (KAN-228): ligar o churrasco na rodada (rodadas.extra), adicionar alguém do elenco e alguém
+    # de fora pela gestão e um convidado pelo link (rodadas/extra). Confere depois de recarregar e de sair e entrar.
+    c33 = novo(); p33 = c33.new_page()
+    p33.on('pageerror', lambda e: errs.append(str(e)))
+    E33 = 'extra33@teste.com'
+    p33.goto(URL + '#/criar'); p33.wait_for_selector('#le', timeout=20000); p33.wait_for_timeout(300)
+    p33.fill('#le', E33); p33.fill('#lp', SENHA); p33.fill('#lp2', SENHA); p33.wait_for_timeout(200)
+    p33.click('[data-a=signup]'); p33.wait_for_selector('#ngn', timeout=20000)
+    p33.fill('#ngn', 'Extra FC'); p33.click('[data-a=createGroup]')
+    p33.wait_for_function("location.hash.startsWith('#/g/')", timeout=20000)
+    g33 = p33.url.split('#/g/')[1].split('/')[0]
+    pronto(p33, 'jogadores'); p33.click('[data-a=seed]'); p33.wait_for_timeout(1500)
+    gravou(p33); pronto(p33, 'rodada'); p33.wait_for_timeout(800)
+    j33 = J(p33, "Object.keys(S.jog).sort((a,b)=>S.jog[a].name.localeCompare(S.jog[b].name))[0]")
+    p33.click('[data-a=abrirExtra]'); p33.wait_for_selector('#exN', timeout=10000)
+    p33.select_option('#exN', 'Pizzada'); p33.fill('#exV', '25'); p33.click('#dlg [data-a=salvarExtra]')
+    p33.wait_for_selector('#extraRodada', timeout=10000); p33.wait_for_timeout(800)
+    p33.evaluate("document.querySelector('#extraRodada details.extra-todos').open=true")
+    p33.select_option('#exAdd', j33); p33.click('#extraRodada [data-a=extraAdd]'); p33.wait_for_timeout(800)
+    p33.fill('#exFora', 'Tio do Zé'); p33.click('#extraRodada [data-a=extraAddFora]'); p33.wait_for_timeout(800)
+    gravou(p33)
+    p33.goto(URL + '#/p/' + g33); p33.wait_for_selector(f'#extraPainel [data-extra="{j33}"]', timeout=20000); p33.wait_for_timeout(500)
+    p33.evaluate("document.querySelector('#extraPainel details.extra-todos').open=true")
+    p33.click(f'#extraPainel [data-extra="{j33}"] [data-a=pubConvAbrir]'); p33.wait_for_selector('#extraConv', timeout=10000)
+    p33.fill('#extraConv', 'Primo'); p33.keyboard.press('Enter'); p33.wait_for_timeout(1000); gravou(p33)
+    ler33 = "(j)=>{const r=S.rod[S.rid]||{};const f=Object.values(S.ext||{}).filter(a=>a&&a.nome).map(a=>[a.nome,a.s]);return [r.extra||null,(S.ext[j]||{}).s||null,(S.ext[j]||{}).conv||null,f]}"
+    p33.goto(URL + '#/g/' + g33); pronto(p33, 'rodada'); p33.wait_for_selector('#extraRodada', timeout=20000); p33.wait_for_timeout(1500)
+    e33 = J(p33, ler33, j33)
+    ok(e33 == [{'n': 'Pizzada', 'v': 25}, 'in', ['Primo'], [['Tio do Zé', 'in']]],
+       f'CT-KAN-170-P33: o extra, quem vai, o de fora e o convidado continuam depois de recarregar ({e33})')
+    sair_e_esperar(p33)
+    p33.goto(URL + '#/entrar'); p33.wait_for_selector('#le', timeout=20000); p33.wait_for_timeout(300)
+    p33.fill('#le', E33); p33.fill('#lp', SENHA); p33.keyboard.press('Enter'); p33.wait_for_timeout(2500)
+    p33.goto(URL + '#/g/' + g33); pronto(p33, 'rodada'); p33.wait_for_selector('#extraRodada', timeout=20000); p33.wait_for_timeout(1500)
+    e33b = J(p33, ler33, j33)
+    ok(e33b == e33, f'CT-KAN-170-P33: e também depois de sair e entrar ({e33b})')
+    c33.close()
+
     ok(not errs, 'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))
     b.close()
 

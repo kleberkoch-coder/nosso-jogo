@@ -18,9 +18,10 @@
   align-items: center;
   gap: 4px;
 }
-.extra-conv .linkbtn {
-  min-width: 36px;
-  min-height: 36px;
+/* ✕ de tirar (convidado ou pessoa): alvo de 44px, como os outros botões. */
+.extra-painel .linkbtn {
+  min-width: 44px;
+  min-height: 44px;
 }
 .extra-novo {
   flex-basis: 100%;

@@ -3788,6 +3788,125 @@ with sync_playwright() as pw:
         q44.screenshot(path=f'{OUT}/91-link-es.png'); c44.close()
         ctx43.close()
 
+        # ---------- v92 (KAN-228): extra da rodada (churrasco, pizzada…) com resposta separada do jogo, convidados e rateio
+        BRT92 = datetime.timezone(datetime.timedelta(hours=-3))
+        ctx92 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+        p92 = ctx92.new_page(); p92.on('pageerror', lambda e: errs.append(str(e)))
+        p92.clock.install(time=datetime.datetime(2026, 11, 4, 12, 0, 0, tzinfo=BRT92))
+        abrir_entrada(p92, 'criar')
+        p92.fill('#le', 'extra92@teste.com'); p92.fill('#lp', 'Jogo@2026'); p92.fill('#lp2', 'Jogo@2026'); p92.keyboard.press('Enter'); p92.wait_for_selector('#ngBox', timeout=12000)
+        p92.fill('#ngn', 'Churras FC'); p92.click('[data-a=pickSport][data-v=futebol]'); p92.click('[data-a=createGroup]')
+        p92.wait_for_function("location.hash.startsWith('#/g/')"); p92.wait_for_timeout(1500)
+        g92 = p92.url.split('#/g/')[1]
+        p92.click('[data-a=tab][data-v=jogadores]'); p92.wait_for_timeout(300); p92.click('[data-a=seed]'); p92.wait_for_timeout(1500)
+        js92 = p92.evaluate("Object.keys(S.jog).sort((a,b)=>S.jog[a].name.localeCompare(S.jog[b].name))")
+        ja, jb, jc = js92[0], js92[1], js92[2]
+        na, nb, nc = [p92.evaluate("(i)=>S.jog[i].name", x) for x in (ja, jb, jc)]
+        # jc fica afastado neste mês: mesmo assim responde ao extra
+        p92.click(f'[data-a=editPlayer][data-p="{jc}"]'); p92.wait_for_timeout(400)
+        p92.click('#dlg [data-a=afastarDlg]'); p92.wait_for_selector('#afMot', timeout=8000); p92.wait_for_timeout(200)
+        p92.select_option('#afMot', 'viagem'); p92.click('#dlg [data-a=afSalvar]'); p92.wait_for_timeout(800)
+        p92.click('[data-a=tab][data-v=rodada]'); p92.wait_for_timeout(800)
+        ok(p92.locator('#extraRodada').count() == 0 and p92.locator('[data-a=abrirExtra]').count() == 1,
+           'CT-KAN-228-01: a rodada começa sem extra e tem o botão "🍖 Extra"')
+        p92.click('[data-a=abrirExtra]'); p92.wait_for_selector('#exN', timeout=8000); p92.wait_for_timeout(300)
+        for tema in ['light', 'dark']:
+            p92.emulate_media(color_scheme=tema); p92.wait_for_timeout(150)
+            v92 = p92.evaluate("(()=>{const d=document.getElementById('dlgBody');return [document.documentElement.scrollWidth<=innerWidth, d.scrollWidth<=d.clientWidth+1, document.activeElement.id]})()")
+            ok(v92[0] and v92[1] and v92[2] == 'exN', f'CT-KAN-228-01: em 360px ({tema}), a janela do extra não tem rolagem lateral e o cursor vem no "O que vai ter" ({v92})')
+            contraste(p92, f'janela do extra ({tema})')
+        p92.emulate_media(color_scheme='light')
+        p92.screenshot(path=f'{OUT}/92-extra-janela.png')
+        p92.select_option('#exN', '_'); p92.wait_for_timeout(150)
+        ok(p92.locator('#exOutro').is_visible(), 'CT-KAN-228-01: "Outro" mostra o campo do nome')
+        p92.fill('#exOutro', ''); p92.click('#dlg [data-a=salvarExtra]'); p92.wait_for_timeout(400)
+        ok(p92.locator('#exN').count() == 1 and p92.evaluate("document.activeElement.id") == 'exOutro', 'CT-KAN-228-01: sem nome, a janela não fecha e o cursor vai para o nome')
+        p92.select_option('#exN', 'Churrasco'); p92.fill('#exV', '30'); p92.click('#dlg [data-a=salvarExtra]'); p92.wait_for_timeout(1200)
+        rid92 = p92.evaluate("S.rid")
+        ex92 = p92.evaluate("(i)=>i&&S.rod[i].extra", rid92)
+        ok(ex92 == {'n': 'Churrasco', 'v': 30} and p92.locator('#extraRodada').count() == 1,
+           f'CT-KAN-228-01: o extra fica ligado só nesta rodada, com nome e valor por pessoa, e o painel aparece na Rodada ({ex92})')
+        ok(p92.locator('[data-a=abrirExtra]').count() == 1 and 'Ninguém respondeu' in p92.inner_text('#extraRodada'),
+           'CT-KAN-228-01: o painel mostra que ninguém respondeu e tem "Editar extra"')
+        p92.click('[data-a=shareConvite]'); p92.wait_for_selector('#shtxt', timeout=5000)
+        zap92 = p92.input_value('#shtxt')
+        ok('Depois tem Churrasco: responda no mesmo link, separado do jogo.' in zap92, f'CT-KAN-228-02: o convite do WhatsApp avisa do extra ({zap92[-120:]!r})')
+        p92.click('#dlg [data-a=close]'); p92.wait_for_timeout(200)
+        # Link do jogador, sem conta
+        est92 = ctx92.storage_state()
+        c93 = b.new_context(viewport={'width': 360, 'height': 740}, service_workers='block', timezone_id='America/Sao_Paulo', storage_state=est92)
+        c93.add_init_script("if(!sessionStorage.getItem('saiu')){localStorage.removeItem('pelada-demo-v2-u');sessionStorage.setItem('saiu','1')}")
+        q93 = c93.new_page(); q93.on('pageerror', lambda e: errs.append(str(e)))
+        q93.clock.install(time=datetime.datetime(2026, 11, 4, 12, 5, 0, tzinfo=BRT92))
+        q93.goto(URL + f'#/p/{g92}'); q93.wait_for_selector('#extraPainel', timeout=10000); q93.wait_for_timeout(300)
+        ok('Churrasco depois do jogo' in q93.inner_text('#extraPainel') and 'R$' in q93.inner_text('#extraPainel'),
+           'CT-KAN-228-03: o link mostra o extra, separado do jogo, com o valor por pessoa')
+        ok(q93.evaluate("document.querySelector('#extraPainel details.extra-todos').open"), 'CT-KAN-228-03: sem nome escolhido no aparelho, a lista do extra já vem aberta')
+        q93.click(f'#extraPainel [data-extra="{ja}"] [data-a=pubExtra][data-v=in]'); q93.wait_for_timeout(900)
+        e93 = q93.evaluate("(p)=>[(S.ext[p]||{}).s, (S.pres[p]||{}).s||null]", ja)
+        ok(e93 == ['in', None], f'CT-KAN-228-03: {na} vai só ao churrasco: a presença no jogo continua sem resposta ({e93})')
+        q93.click(f'#extraPainel [data-extra="{jc}"] [data-a=pubExtra][data-v=in]'); q93.wait_for_timeout(900)
+        ok(q93.evaluate("(p)=>(S.ext[p]||{}).s", jc) == 'in', f'CT-KAN-228-04: {nc}, afastado, também responde ao extra')
+        q93.click(f'#extraPainel [data-extra="{jb}"] [data-a=pubExtra][data-v=out]'); q93.wait_for_timeout(900)
+        # Convidados: até 3, com Enter
+        for i, nome in enumerate(['Primo', 'Cunhado', 'Vizinho']):
+            q93.click(f'#extraPainel [data-extra="{ja}"] [data-a=pubConvAbrir]'); q93.wait_for_timeout(250)
+            if i == 0:
+                ok(q93.evaluate("document.activeElement.id") == 'extraConv', 'CT-KAN-228-05: "+ Levar convidado" abre o campo com o cursor nele')
+            q93.fill('#extraConv', nome); q93.keyboard.press('Enter'); q93.wait_for_timeout(700)
+        cv93 = q93.evaluate("(p)=>S.ext[p].conv", ja)
+        ok(cv93 == ['Primo', 'Cunhado', 'Vizinho'] and q93.locator(f'#extraPainel [data-extra="{ja}"] [data-a=pubConvAbrir]').count() == 0,
+           f'CT-KAN-228-05: cada pessoa leva até 3 convidados; no limite, o botão some ({cv93})')
+        tot93 = q93.inner_text('#extraTotal')
+        ok('5 vão' in tot93 and '3 convidados' in tot93, f'CT-KAN-228-05: o total conta quem vai e os convidados ({tot93!r})')
+        for tema in ['light', 'dark']:
+            q93.emulate_media(color_scheme=tema); q93.wait_for_timeout(150)
+            ok(q93.evaluate("document.documentElement.scrollWidth<=innerWidth"), f'CT-KAN-228-03: em 360px ({tema}), o link com o extra não tem rolagem lateral')
+            contraste(q93, f'extra no link ({tema})')
+        q93.emulate_media(color_scheme='light')
+        q93.locator('#extraPainel').screenshot(path=f'{OUT}/92-extra-link.png')
+        alvo93 = q93.evaluate("Math.min(...[...document.querySelectorAll('#extraPainel [data-a=pubConvTirar],#extraPainel [data-a=pubExtra]')].map(e=>Math.round(Math.min(e.getBoundingClientRect().width,e.getBoundingClientRect().height))))")
+        ok(alvo93 >= 44, f'CT-KAN-228-03: os botões do extra no link (Vou, Não vou e ✕ do convidado) têm alvo de 44px ({alvo93})')
+        q93.click(f'#extraPainel [data-extra="{ja}"] [data-a=pubConvTirar][data-i="1"]'); q93.wait_for_timeout(700)
+        ok(q93.evaluate("(p)=>S.ext[p].conv", ja) == ['Primo', 'Vizinho'], 'CT-KAN-228-05: dá para tirar um convidado')
+        # Em inglês, o extra também aparece traduzido
+        q93.evaluate("localStorage.setItem('nj-idioma','en')"); q93.reload(); q93.wait_for_selector('#extraPainel', timeout=10000); q93.wait_for_timeout(500)
+        tx93 = q93.inner_text('#extraPainel')
+        ok('after the game' in tx93 and 'going' in tx93 and 'depois' not in tx93 and not q93.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>k.startsWith('extra.'))"),
+           f'CT-KAN-228-03: em English, o extra aparece traduzido ({tx93[:80]!r})')
+        # O banco da demonstração fica em cada navegador: as respostas do link voltam para o navegador da gestão
+        db93 = q93.evaluate("localStorage.getItem('pelada-demo-v2')")
+        c93.close()
+        p92.evaluate("(d)=>localStorage.setItem('pelada-demo-v2', d)", db93)
+        # Gestão: o painel atualiza, adiciona do elenco e de fora, tira e cria o rateio com quem vai
+        p92.reload(); p92.wait_for_selector('#extraRodada', timeout=10000); p92.wait_for_timeout(800)
+        t92 = p92.inner_text('#extraRodada')
+        ok(na in t92 and nc in t92 and 'Primo' in t92 and '4 vão' in t92 and '1 não vai' in t92,
+           f'CT-KAN-228-06: a gestão vê quem vai, os convidados e quem não vai ({t92[:160]!r})')
+        p92.evaluate("document.querySelector('#extraRodada details.extra-todos').open=true"); p92.wait_for_timeout(200)
+        p92.select_option('#exAdd', jb); p92.click('#extraRodada [data-a=extraAdd]'); p92.wait_for_timeout(700)
+        p92.fill('#exFora', 'Tio do Zé'); p92.click('#extraRodada [data-a=extraAddFora]'); p92.wait_for_timeout(700)
+        f92 = p92.evaluate("Object.entries(S.ext).filter(([,a])=>a.nome).map(([k,a])=>[a.nome,a.s])")
+        ok(p92.evaluate("(p)=>S.ext[p].s", jb) == 'in' and f92 == [['Tio do Zé', 'in']], f'CT-KAN-228-06: a gestão adiciona alguém do elenco e alguém de fora ({f92})')
+        p92.click(f'#extraRodada [data-a=extraTirar][data-p="{jc}"]'); p92.wait_for_timeout(700)
+        ok(p92.evaluate("(p)=>S.ext[p].s", jc) == 'out', 'CT-KAN-228-06: tirar alguém do elenco marca "não vai"')
+        if p92.locator('#extraRodada [data-a=extraRateio]').count():
+            p92.click('#extraRodada [data-a=extraRateio]'); p92.wait_for_selector('#rtn', timeout=10000); p92.wait_for_timeout(500)
+            ok(p92.input_value('#rtn').startswith('Churrasco') and p92.input_value('#rtv') == '30',
+               f'CT-KAN-228-07: o rateio do extra já vem com o nome e o valor por pessoa ({p92.input_value("#rtn")!r})')
+            p92.click('#dlg [data-a=ratSalvar]'); p92.wait_for_timeout(1000)
+            r92 = p92.evaluate("(()=>{const r=Object.values((S.pc||{}).rat||{}).find(r=>r.n.startsWith('Churrasco'));return r?[Object.keys(r.part).length,Object.values(r.fora||{}).sort()]:null})()")
+            ok(r92 and r92[0] == 5 and r92[1] == sorted(['Tio do Zé', f'Primo (convidado de {na})', f'Vizinho (convidado de {na})']),
+               f'CT-KAN-228-07: o rateio entra com quem vai, os de fora e os convidados ({r92})')
+        else:
+            ok(False, 'CT-KAN-228-07: o painel do extra tem "Criar rateio" (Caixa liberado na demonstração)')
+        # Desligar: o painel some e o convite volta ao normal
+        p92.click('[data-a=tab][data-v=rodada]'); p92.wait_for_timeout(600)
+        p92.click('#extraRodada [data-a=abrirExtra]'); p92.wait_for_selector('#exN', timeout=8000)
+        p92.click('#dlg [data-a=desligarExtra]'); confirmar_app(p92, True); p92.wait_for_timeout(900)
+        ok(p92.locator('#extraRodada').count() == 0 and not p92.evaluate("(i)=>S.rod[i].extra", rid92),
+           'CT-KAN-228-01: desligar tira o extra da rodada (com confirmação)')
+        ctx92.close()
         # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
         ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
         p7 = ctx7.new_page()

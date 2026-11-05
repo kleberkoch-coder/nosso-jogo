@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
-Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D41) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v91 (04/11/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D42) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
+Atualizado na pelada-v92 (04/11/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -23,6 +23,7 @@ Atualizado na pelada-v91 (04/11/2026). Toda entrega que mudar uma regra atualiza
 - Identificador vindo do link só com letras, números, `_` e `-` (KAN-76). Todo texto do banco é escapado antes da tela.
 - Pelo link: ninguém fura a ordem, troca o nome, a posição ou a marca de avulso de outro (KAN-78); presença só em jogos de ontem até 15 dias à frente (KAN-77).
 - Limites: 30 avulsos novos pelo link por rodada e 20 grupos criados por conta, por contadores nas regras; os números ficam em `sistema/limites` (KAN-89, KAN-134).
+- Extra da rodada pelo link (KAN-228): cada resposta em `rodadas/{id}/extra/{pessoa}` só com o sim ou não, a hora, o aparelho e até 3 convidados (nomes que somam até 125 letras); só para quem existe no elenco, nos avulsos ou na presença; o link não apaga nem grava nome de pessoa de fora (isso é só do administrador).
 - Tamanho do que o link grava (KAN-198, v66): na presença, nome até 40 letras, posição até 4 e a marca de avulso só sim ou não; no voto, cada categoria e cada escolhido é um identificador de até 64 letras (até 30 categorias). O resto o Firebase recusa.
 - Qualquer um lê um grupo pelo link; só o portal lista todos os grupos (KAN-133).
 - Sair apaga a cópia local dos dados; com algo sem enviar, pergunta antes (KAN-80).
@@ -99,6 +100,11 @@ Atualizado na pelada-v91 (04/11/2026). Toda entrega que mudar uma regra atualiza
 - Link: busca "Procure seu nome"; "Você vai?" antes dos times; cada nome aparece uma vez (KAN-127).
 - Gestão: uma lista com filtros Todos, Vão, Não vão e Sem resposta; "Sortear times" fixo no rodapé até o sorteio (KAN-71).
 - Ao abrir o grupo, as abas Rodada e Partida esperam rodadas e presença chegarem antes de desenhar (KAN-137).
+- **Extra da rodada** (KAN-228, v92; decisão do Kleber de 04/11): churrasco, pizzada, happy hour ou outro nome, ligado rodada a rodada pelo botão "🍖 Extra" da aba Rodada, com valor por pessoa opcional. Plano Grátis (o rateio do extra continua no Plano A, com o Caixa).
+  - A resposta é separada da do jogo: dá para ir só ao jogo, só ao extra ou aos dois. Responde no mesmo link quem está no elenco (mensalista, diarista e afastado) e os avulsos; cada um leva até 3 convidados (só o nome, até 40 letras).
+  - O link responde mesmo com a lista do jogo fechada; com o extra desligado ou a rodada cancelada, não. Desligar some com o extra do link, e as respostas ficam guardadas.
+  - Na gestão: total (com os convidados), quem não vai, adicionar alguém do elenco ou de fora, tirar e "Criar rateio", que abre o rateio novo já com o nome, o valor por pessoa e quem vai (de fora e convidados como pessoas de fora do rateio).
+  - O convite do WhatsApp ganha a linha "🍖 Depois tem {extra}: responda no mesmo link, separado do jogo."
 
 ## Sorteio
 - Equilibra nota média, posições (peso alto na posição-chave), craques (nota 9+), pares separados e parcerias repetidas.
@@ -249,6 +255,7 @@ Atualizado na pelada-v91 (04/11/2026). Toda entrega que mudar uma regra atualiza
 | Rateios | `telas/Rateios.tsx` (seção, cartões e janela; sob demanda com o Caixa), `telas/Caixa.tsx` (pendências e "Rateio (opcional)" no Lançar) | `acoes/rateio.ts` (ratNovo, ratEditar, ratSalvar, ratRecebi, ratCobrar, ratEncerrar, ratReabrir, ratApagar), `acoes/caixa.js` (payPend, saveLan) | `dominio/rateio.ts` (dividirRateio, valorFixo, situacao, pendenciasDeRateio, camposDoRateio; KAN-216: eDeFora, nomeNoRateio, limparNome), `nucleo/partidas.js` (aoLancar) | `privado/caixa` (rat, com fora), `caixa/{id}` (rat, fora) | `regras/rateio`, `testes_app.py` (CT-KAN-213, CT-KAN-216), `persistencia_app.py` (P29, P31) |
 | Avaliação de notas por link | `ui/AvaliacaoJanela.tsx` (janela do administrador, sob demanda), `ui/NotasAvaliacao.tsx` (lista de notas), `telas/PublicoAvaliacao.tsx` (link, sob demanda), `telas/Jogadores.tsx` (botão) | `acoes/avaliacao.ts` (aponta para `acoes/avaliacao-lote.ts`), `acoes/avaliacao-envio.ts` (avEnviar) | `dominio/avaliacao.ts` (média, mediana, resultado, respostas válidas), `carga/avaliacao.ts` (rota `a`), `nucleo/links.js` (linkAvaliacao) | `avaliacoes/{id}`, `avaliacoes/{id}/notas/{uid}`, `privado/ratings` (nivel) | `regras/avaliacao`, `regras-firebase` (KAN-214), `testes_app.py` (CT-KAN-214), `persistencia_app.py` (P30) |
 | Histórico | `telas/Historico.tsx` (busca, lista e detalhe; componente desde a v83, sob demanda por `abas/historico.ts`) | `abas/historico.ts` (histModo, histBuscar, histMais, histAbrir, histVoltar) | `dominio/grupo.js` | `rodadas` (consulta por data) | `testes_app.py` (histórico, CT-KAN-218) |
+| Extra da rodada (churrasco, pizzada…) | `telas/ExtraRodada.tsx` (janela e painel da Rodada, sob demanda), botão em `telas/Rodada.tsx`, `telas/PublicoExtra.tsx` (link, sob demanda; ligado em `telas/PublicoRodada.tsx`), estilos em `estilos/extra.css`, textos em `i18n/pt-BR-extra.ts` | `acoes/extra.ts` (aponta para `telas/ExtraRodada.tsx`: abrirExtra, salvarExtra, desligarExtra, extraAdd, extraAddFora, extraTirar, extraRateio); no link, `pubExtra`, `pubConvAbrir`, `pubConvSalvar`, `pubConvTirar` | `dominio/extra.ts` (resumo, convidados, participantes do rateio), `carga/rodada.ts` (subExtra), `nucleo/rateio-preparo.ts`, `dominio/whatsapp.js` (linha do convite) | `rodadas/{rid}.extra`, `rodadas/{rid}/extra/{pessoa}` | `regras/extra`, `regras-firebase` (KAN-228), `testes_app.py` (CT-KAN-228), `persistencia_app.py` (P33) |
 | Idiomas | `ui/menu-conta.ts` (Idioma) | `acoes/conta.js` (idiomaConta, setIdioma) | `i18n/idiomas.ts` (idiomas e pedaços sob demanda), `i18n/index.js` (tx, tc), `nucleo/idioma.ts`, `i18n/en/*.ts`, `i18n/es/*.ts`, `dominio/esportes.js` (aplicarCatalogo) | `usuarios/{uid}.idioma` | `regras/idiomas`, `testes_app.py` (CT-KAN-164), `persistencia_app.py` (P32) |
 | Apresentação | `telas/Apresentacao.tsx` (componente desde a v83, sob demanda; textos em `i18n/pt-BR-apresentacao.ts`) | — | — | — | `testes_app.py` (CT-KAN-217, CT-KAN-218) |
 | Estilos e tamanho (KAN-217) | `src/estilos/app.css` (link e gestão) e `src/estilos/<parte>.css` (só da parte sob demanda) | — | `ui/estilo.ts` (usarEstilo), `build.mjs` (cssComoTexto, limites de tamanho) | — | `testes_app.py` (CT-KAN-217, contraste nos dois temas), montagem (limite de 90 KB) |

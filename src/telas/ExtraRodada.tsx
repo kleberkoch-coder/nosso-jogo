@@ -203,6 +203,8 @@ export const acoes: Record<string, (el: El) => unknown> = {
   },
 };
 
+/* "Adicionar alguém" continua aberto depois de adicionar (para adicionar vários seguidos). */
+let addAberto = false;
 /* Painel da aba Rodada: quem vai (com os convidados), adicionar, tirar e o rateio. */
 export function PainelExtraRodada() {
   const e = extraDe();
@@ -263,7 +265,11 @@ export function PainelExtraRodada() {
       ) : (
         <p class="small muted">{tx('extra.ninguem')}</p>
       )}
-      <details class="extra-todos">
+      <details
+        class="extra-todos"
+        open={addAberto}
+        onToggle={ev => (addAberto = (ev.currentTarget as HTMLDetailsElement).open)}
+      >
         <summary>{tx('extra.adicionarTitulo', { n: e.n })}</summary>
         <div class="extra-novo">
           <select class="inp" id="exAdd" aria-label={tx('extra.escolhaNome')}>

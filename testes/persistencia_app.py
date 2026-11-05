@@ -753,6 +753,43 @@ with sync_playwright() as pw:
     ok(e33b == e33, f'CT-KAN-170-P33: e também depois de sair e entrar ({e33b})')
     c33.close()
 
+    # P34 cor de colete livre (KAN-235): escolher "Outra cor…" na paleta grava "#rrggbb|quadradinho|Nome" em
+    # rodadas/{rid}.cores.{time}. Confere depois de recarregar e de sair e entrar.
+    c34 = novo(); p34 = c34.new_page()
+    p34.on('pageerror', lambda e: errs.append(str(e)))
+    E34 = 'colete34@teste.com'
+    p34.goto(URL + '#/criar'); p34.wait_for_selector('#le', timeout=20000); p34.wait_for_timeout(300)
+    p34.fill('#le', E34); p34.fill('#lp', SENHA); p34.fill('#lp2', SENHA); p34.wait_for_timeout(200)
+    p34.click('[data-a=signup]'); p34.wait_for_selector('#ngn', timeout=20000)
+    p34.fill('#ngn', 'Colete FC'); p34.click('[data-a=createGroup]')
+    p34.wait_for_function("location.hash.startsWith('#/g/')", timeout=20000)
+    g34 = p34.url.split('#/g/')[1].split('/')[0]
+    pronto(p34, 'jogadores'); p34.click('[data-a=seed]'); p34.wait_for_timeout(1500)
+    gravou(p34); pronto(p34, 'rodada')
+    bt34 = p34.locator('[data-a=mark][data-v=in]')
+    for i in range(10):
+        bt34.nth(i).click(); p34.wait_for_timeout(250)
+    p34.click('[data-a=drawDlg]'); p34.wait_for_timeout(400); conf(p34)
+    p34.click('#drawGo'); p34.wait_for_timeout(2500); gravou(p34); pronto(p34, 'rodada'); p34.wait_for_timeout(800)
+    p34.locator('.team [data-a=color][data-v="0"]').click(); p34.wait_for_selector('#coletes [data-a=outraCor]', timeout=10000)
+    p34.click('#coletes [data-a=outraCor]'); p34.wait_for_selector('#paletaQuadro', timeout=10000); p34.wait_for_timeout(300)
+    bx34 = p34.locator('#paletaQuadro').bounding_box()
+    p34.mouse.click(bx34['x'] + bx34['width'] * 330 / 360, bx34['y'] + bx34['height'] * 0.4); p34.wait_for_timeout(200)
+    p34.fill('#corNome', 'Rosa da quadra'); p34.click('#dlg [data-a=usarCor]'); p34.wait_for_timeout(1000)
+    v34 = J(p34, "((S.rod[S.rid]||{}).cores||{})[0]")
+    gravou(p34); pronto(p34, 'rodada'); p34.wait_for_timeout(1000)
+    ler34 = "(()=>{const r=S.rod[S.rid]||{};return [((r.cores||{})[0])||null, document.querySelector('.team').innerText.toLowerCase().includes('colete rosa da quadra')]})()"
+    r34 = J(p34, ler34)
+    ok(isinstance(v34, str) and v34.endswith('|Rosa da quadra') and r34 == [v34, True],
+       f'CT-KAN-170-P34: a cor livre do colete continua depois de recarregar ({v34!r}, {r34})')
+    sair_e_esperar(p34)
+    p34.goto(URL + '#/entrar'); p34.wait_for_selector('#le', timeout=20000); p34.wait_for_timeout(300)
+    p34.fill('#le', E34); p34.fill('#lp', SENHA); p34.keyboard.press('Enter'); p34.wait_for_timeout(2500)
+    p34.goto(URL + '#/g/' + g34); pronto(p34, 'rodada'); p34.wait_for_timeout(1500)
+    r34b = J(p34, ler34)
+    ok(r34b == [v34, True], f'CT-KAN-170-P34: e também depois de sair e entrar ({r34b})')
+    c34.close()
+
     ok(not errs, 'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))
     b.close()
 

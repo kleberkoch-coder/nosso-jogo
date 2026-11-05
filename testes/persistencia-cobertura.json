@@ -10,7 +10,7 @@
   "privado/caixa": ["P05", "P08", "P20", "P26", "P27", "P29", "P31"],
   "privado/afast": ["P26"],
   "privado/contatos": ["P05"],
-  "rodadas": ["P12", "P22", "P23", "P33"],
+  "rodadas": ["P12", "P22", "P23", "P33", "P34"],
   "rodadas/extra": ["P33"],
   "rodadas/presencas": ["P10", "P11"],
   "avulsos": ["P11"],

@@ -2,6 +2,7 @@
    A caixa de texto tem rótulo para o leitor de tela. Os botões usam data-a (close, copy; copiar fica em acoes/conta.js). */
 import { render, type ComponentChildren } from 'preact';
 import { tx } from '../i18n/index.js';
+import { WA } from '../dominio/contato';
 import { dlg, openDlg } from './dialogos.js';
 
 /* "opcoes" (KAN-231): o que vem entre o título e a mensagem, como uma escolha que muda o texto. */
@@ -21,7 +22,7 @@ export function Compartilhar({ titulo, texto, opcoes }: { titulo: string; texto:
         <button class="btn" data-a="copy">
           {tx('compartilhar.copiar')}
         </button>
-        <a class="btn primary" target="_blank" rel="noopener" href={'https://wa.me/?text=' + encodeURIComponent(texto)}>
+        <a class="btn primary" target="_blank" rel="noopener" href={WA + '?text=' + encodeURIComponent(texto)}>
           {tx('compartilhar.whatsapp')}
         </a>
       </div>

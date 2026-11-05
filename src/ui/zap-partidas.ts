@@ -12,9 +12,9 @@ import { shareDlg } from './Compartilhar';
 
 juntarTextos(textos);
 
-type Time = { c: number; players: string[] };
+type Time = { c: number | string; players: string[] };
 type Rodada = { id: string; date: string; times?: Time[] | null };
-type Partida = PartidaResumo & { ca: number; cb: number };
+type Partida = PartidaResumo & { ca: number | string; cb: number | string };
 
 export function txtPartidas(
   r: Rodada,
@@ -24,8 +24,8 @@ export function txtPartidas(
 ): string {
   const SP = sport() as { e: string; pairs?: boolean },
     nomeTime = (m: PartidaResumo, lado: 'a' | 'b') => tnJogo(m, lado, r.times),
-    marca = (c: number) => (SP.pairs ? '' : col(c).e + ' '),
-    cor: Record<string, number> = {};
+    marca = (c: number | string) => (SP.pairs ? '' : col(c).e + ' '),
+    cor: Record<string, number | string> = {};
   let t = `${SP.e} *${tx('zappart.cabecalho', { data: fdate(r.date) })}*\n`;
   ms.forEach((m, i) => {
     cor[nomeTime(m, 'a')] = m.ca;

@@ -7,7 +7,7 @@
    - entrou: está confirmado agora, não estava na foto e não está em nenhum time.
    Quem foi desmarcado de propósito na tela do sorteio está na foto, então não gera aviso. */
 
-export type Time = { c: number; players: string[] };
+export type Time = { c: number | string; players: string[] };
 export type RodadaSorteio = { times?: Time[] | null; base?: string[] | null; info?: Record<string, unknown> | null };
 export type Presencas = Record<string, { s?: string; t?: number } | undefined>;
 export type Divergencia = { saiu: string[]; entrou: string[] };

@@ -199,6 +199,13 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D44. Cor de colete livre no mesmo campo das cores (05 nov. 2026, pelada-v94, KAN-235, KAN-234)
+- **Formato:** as 8 cores de sempre continuam números (0 a 7); a cor da paleta é o texto `"#rrggbb|quadradinho|Nome"` no mesmo campo (`cores.{time}` da rodada, `c` do time, `ca`/`cb` da partida e dos resumos). Assim, trocar de time, comparar cores, partidas antigas e o ranking não mudam. `col(c)` em `dominio/esportes.js` lê os dois tipos; `corClara` troca a comparação com o nome "Branco" (que falhava em inglês). As regras do Firebase não conferem o tipo da cor, então **não mudam**.
+- **Quadradinho guardado junto:** o emoji do WhatsApp é calculado uma vez, na paleta, e gravado no valor. O link do jogador só lê (`dominio/cores.ts`, poucas linhas); a classificação da cor e o nome sugerido (`cores-paleta.ts`) só baixam com a paleta.
+- **Recentes sem dado novo:** o atalho das últimas cores sai das rodadas já carregadas (`cores-recentes.ts`), sem lista nova no banco.
+- **Tamanho:** a janela do colete saiu da aba Rodada e baixa junto com a paleta (`ui/PaletaDeCor.tsx`, 3,0 KB) no primeiro toque no colete. Link do jogador 48,4 KB (+0,2); gestão 89,8 KB (+0,1).
+- **WhatsApp (KAN-234):** os links vão direto para `api.whatsapp.com/send` (`WA` em `dominio/contato.ts`). O `wa.me` redireciona para lá e, no caminho, troca os emojis por � no computador.
+
 ### D43. Mensagens e planilha fora do pedaço da gestão (05 nov. 2026, pelada-v93, KAN-229, KAN-231, KAN-232)
 - **Gols editáveis num componente só:** `telas/PartidaGols.tsx` tem a lista de gols por time (autor, gol contra, tirar, somar), usada no Editar da partida salva (KAN-176) e no Corrigir da partida em andamento (KAN-229). Saiu de `Partida.tsx`, que caiu de 660 para 555 linhas. A correção ao vivo só muda `S.live` (no aparelho); grava ao salvar a partida, como sempre.
 - **Onde fica cada parte:** a mensagem das partidas (`ui/zap-partidas.ts`, com a regra pura `dominio/resumo-rodada.ts` e os textos `i18n/pt-BR-zappartidas.ts`) chega com a aba Partida ou com o Histórico; o resultado da votação e a planilha (`telas/VotacaoZap.tsx`, `dominio/votacao-resultado.ts`) chegam com a aba Votação. As funções novas da votação ficaram fora de `dominio/votacao.ts` porque ele também vai no link do jogador: na primeira montagem, o link subiu 0,2 KB e a gestão foi a 89,9 KB; separadas, ficaram como na v92 (48,2 e 89,7 KB).

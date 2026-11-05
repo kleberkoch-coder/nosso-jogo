@@ -12,7 +12,7 @@ import { linkDaRodada, txtConvite, txtTimes } from '../dominio/whatsapp.js';
 import { shareDlg } from '../ui/Compartilhar';
 import { quemCobrar } from '../dominio/cobrar';
 import { limparMinimos } from '../dominio/posicoes';
-import { elencoDaRodada, minimosDoGrupo, montarColetes, montarMinimos, montarVagas } from '../telas/Rodada';
+import { elencoDaRodada, minimosDoGrupo, montarMinimos, montarVagas } from '../telas/Rodada';
 import { situacao, vagasValidas } from '../dominio/vagas';
 import { copyText } from '../eventos.js';
 import { B, setCAP, sleep } from '../nucleo/backend.js';
@@ -377,17 +377,23 @@ const acoes = {
   },
   /* Troca a cor do colete gravando só cores.{time} (KAN-108), sem regravar os jogadores. */
   /* v60: o nome do time é o número; a cor é só o colete. Abre a escolha da cor. */
-  color: el => {
-    openDlg('coleteRaiz');
-    dlg.setAttribute('aria-labelledby', 'coleteTitulo');
-    montarColetes(curRodada(), +el.dataset.v);
-    $('#coletes [aria-pressed=true]')?.focus();
-  },
+  /* A janela do colete e a paleta (KAN-235) baixam no primeiro toque (ui/PaletaDeCor.tsx). */
+  color: el =>
+    import('../ui/PaletaDeCor').then(
+      m => {
+        openDlg('coleteRaiz');
+        dlg.setAttribute('aria-labelledby', 'coleteTitulo');
+        m.montarColetes(curRodada(), +el.dataset.v);
+        $('#coletes [aria-pressed=true]')?.focus();
+      },
+      () => toast(tx('comum.naoCarregouTitulo') + '. ' + tx('comum.naoCarregou'))
+    ),
   /* Troca a cor gravando só cores.{time} (KAN-108). Se outro time usa a cor, os dois trocam. */
   pickColor: el => {
     const r = curRodada(),
       ti = +el.dataset.v,
-      c = +el.dataset.c2,
+      /* KAN-235: as 8 de sempre são números; a cor da paleta é o texto "#rrggbb|Nome". */
+      c = /^\d+$/.test(el.dataset.c2) ? +el.dataset.c2 : el.dataset.c2,
       antes = r.times[ti].c,
       outro = r.times.findIndex((t, i) => i !== ti && t.c === c);
     closeDlg();
@@ -401,6 +407,20 @@ const acoes = {
     Object.keys(novas).forEach(k => (campos['cores.' + k] = novas[k]));
     return w(GB.patch('rodadas/' + r.id, campos));
   },
+  /* KAN-235: "Outra cor" abre a paleta (baixa só agora). */
+  outraCor: el => {
+    const ti = +el.dataset.v,
+      r = curRodada();
+    return import('../ui/PaletaDeCor').then(
+      m => m.abrirPaleta(ti, r.times[ti].c),
+      () => toast(tx('comum.naoCarregouTitulo') + '. ' + tx('comum.naoCarregou'))
+    );
+  },
+  usarCor: () =>
+    import('../ui/PaletaDeCor').then(m => {
+      const e = m.confirmar();
+      if (e) return ACT.pickColor({ dataset: { v: String(e.ti), c2: e.valor } });
+    }),
   move: el => {
     const r = curRodada(),
       f = +el.dataset.v,

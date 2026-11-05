@@ -23,9 +23,9 @@ test('telefone inválido: letras, curto demais ou longo demais', () => {
   assert.deepEqual(normalizarTelefone(''), { ok: true, valor: '' });
 });
 
-test('link do WhatsApp: internacional certo e números antigos (sem +) continuam brasileiros', () => {
-  assert.equal(linkWhatsApp('+14155550100'), 'https://wa.me/14155550100');
-  assert.equal(linkWhatsApp('(11) 98765-4321'), 'https://wa.me/5511987654321');
+test('CT-KAN-234-01: link do WhatsApp direto em api.whatsapp.com (sem o wa.me), internacional certo e números antigos (sem +) continuam brasileiros', () => {
+  assert.equal(linkWhatsApp('+14155550100'), 'https://api.whatsapp.com/send?phone=14155550100');
+  assert.equal(linkWhatsApp('(11) 98765-4321'), 'https://api.whatsapp.com/send?phone=5511987654321');
   assert.equal(linkWhatsApp(''), '');
 });
 

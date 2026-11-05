@@ -3,7 +3,7 @@
    Ao abrir uma rodada: presença, times, partidas e votação daquela rodada. Só leitura.
    Baixa com a aba (abas/historico.ts); os botões usam data-a (histModo, histBuscar, histMais, histAbrir, histVoltar). */
 import { render } from 'preact';
-import { col, colete, posIdx, sport, tn, tnJogo } from '../dominio/esportes.js';
+import { col, colete, corClara, posIdx, sport, tn, tnJogo } from '../dominio/esportes.js';
 import { comCores, pname, ppos } from '../dominio/grupo.js';
 import { hora } from '../dominio/rodadas.js';
 import { tp, tx } from '../i18n/index.js';
@@ -25,7 +25,7 @@ type Rod = {
   matches?: Partida[];
   times?: Time[];
 };
-type Time = { c: number; players: string[]; res?: string[] };
+type Time = { c: number | string; players: string[]; res?: string[] };
 type Partida = {
   id?: string;
   at?: number;
@@ -170,7 +170,7 @@ function CartaoTime({ t, i }: { t: Time; i: number }) {
     ps = t.players.slice().sort((a, b) => rs(a) - rs(b) || posIdx(ppos(a)) - posIdx(ppos(b)));
   return (
     <div class="team">
-      <div class={'band' + (c.n === 'Branco' && !pares ? ' branco' : '')} style={{ background: c.c }}></div>
+      <div class={'band' + (corClara(c) && !pares ? ' branco' : '')} style={{ background: c.c }}></div>
       <div class="th">
         <b>{tn(i)}</b>
         <span class="tag">

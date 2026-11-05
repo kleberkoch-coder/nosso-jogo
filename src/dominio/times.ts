@@ -7,7 +7,7 @@
    quem confirmou por último naquele time. Ex.: 16 sorteados, 5 por time, 3 times → 6, 5 e 5,
    e no time de 6 uma pessoa é reserva. */
 
-export type TimeSorteado = { c: number; players: string[]; res?: string[] };
+export type TimeSorteado = { c: number | string; players: string[]; res?: string[] };
 
 /* Tamanhos dos times: o mais igual possível (16 em 3 → 6, 5, 5). */
 export function tamanhos(total: number, times: number): number[] {

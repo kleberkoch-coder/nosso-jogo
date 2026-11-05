@@ -1,6 +1,7 @@
 import { ppos } from './grupo.js';
 import { S } from '../nucleo/estado.js';
 import { tc, tx } from '../i18n/index.js';
+import { clara, ehCorLivre, lerCorLivre } from './cores';
 
 const POS = { GOL: 'Goleiro', DEF: 'Defesa', MEI: 'Meio', ATA: 'Ataque' };
 const APP = 'Nosso Jogo';
@@ -258,10 +259,10 @@ function timeDoJogo(m, lado, times) {
 }
 function tnJogo(m, lado, times) {
   const i = timeDoJogo(m, lado, times);
-  return i >= 0 ? tn(i) : COL[(m['c' + lado] || 0) % COL.length].n;
+  return i >= 0 ? tn(i) : col(m['c' + lado]).n;
 }
 /* "colete laranja" (sem colete nas duplas). */
-const colete = c => tx('time.colete', { cor: COL[(c || 0) % COL.length].n.toLowerCase() });
+const colete = c => tx('time.colete', { cor: col(c).n.toLowerCase() });
 const COL = [
   { n: 'Laranja', c: '#F4B183', e: '🟧' },
   { n: 'Azul', c: '#9DBBF0', e: '🟦' },
@@ -272,7 +273,10 @@ const COL = [
   { n: 'Verde', c: '#9ED3B1', e: '🟩' },
   { n: 'Preto', c: '#4A4A4A', e: '⬛' },
 ];
-const col = c => COL[(c || 0) % COL.length];
+/* KAN-235: além das 8 de sempre (número), a cor livre da paleta ("#rrggbb|Nome", dominio/cores.ts). */
+const col = c => (ehCorLivre(c) ? lerCorLivre(c) : COL[(+c || 0) % COL.length]);
+/* Cor clara (Branco ou uma livre clara): a bolinha e a faixa ganham borda. */
+const corClara = x => clara(x.c);
 /* KAN-164: os nomes do catálogo (esporte, posições, pontuação, palavra do placar, cores) ficam em português aqui e
    são trocados pelos do idioma da pessoa quando ele muda. Guarda os originais na primeira vez. */
 let ORIG = null;
@@ -310,6 +314,7 @@ export {
   SPORTS,
   basePos,
   col,
+  corClara,
   hasPos,
   posIdx,
   posKeys,

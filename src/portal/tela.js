@@ -110,7 +110,7 @@ function vLista() {
       (c.teste ? ` · ${tx('portal.teste', { d: dia(c.teste + 14 * 864e5) })}` : '');
     return `<li class="cli" data-busca="${esc(busca)}"${q && !busca.includes(q) ? ' hidden' : ''}><div class="pn"><b>${esc(c.email || tx('portal.semEmail'))}</b><br>
       <span class="tag">${plano}</span><br>
-      <span class="small muted">${tx('portal.grupos', { a: c.gruposAtivos, i: c.gruposInativos })}${c.nomesGrupos.length ? ': ' + esc(c.nomesGrupos.join(', ')) : ''}</span><br>
+      <span class="small muted">${tx('portal.grupos', { a: c.gruposAtivos, i: c.gruposInativos })}${c.nomesGrupos.length ? ': ' + esc(c.nomesGrupos.map(n => n || tx('portal.semNome')).join(', ')) : ''}</span><br>
       <span class="small muted">${tx('portal.acesso', { d: dia(c.acesso) })} · ${tx('portal.ultimaRodada', { d: dataIso(c.ultimaRodada) })}${c.criada ? ' · ' + tx('portal.desde', { d: dia(c.criada) }) : ''}</span></div></li>`;
   };
   return `<div class="stack">

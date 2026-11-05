@@ -73,6 +73,12 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo; **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v92)
+- **Extra da rodada** (KAN-228; `telas/PublicoExtra.tsx` e `telas/ExtraRodada.tsx`, classes `extra-painel`, `extra-total`, `extra-conv`, `extra-novo`, `extra-todos` em `estilos/extra.css`):
+  - No link, um `panel` depois da lista do jogo: título "🍖 {extra} depois do jogo", a linha "É separado do jogo…" com o valor por pessoa, o total em negrito ("5 vão (contando 3 convidados)"), a minha linha e os outros nomes recolhidos (`details`, aberto quando o aparelho ainda não escolheu um nome). Vou e Não vou são os mesmos do jogo (`mk lg`, 44px).
+  - Convidados em `tag` abaixo do nome, cada um com ✕ de 44px; "+ Levar convidado" (`btn sm ghost`) abre o campo com o cursor nele e Enter adiciona. No terceiro, o botão some.
+  - Na aba Rodada: "🍖 Extra" (`btn sm`) na linha de ações abre a janela (O que vai ter, nome quando é Outro, valor opcional; "Ligar extra" `primary`, "Desligar extra" `ghost danger` com confirmação). Com o extra ligado, o painel fica abaixo da presença, com "Editar extra", a lista de quem vai (✕ para tirar), "Adicionar alguém" recolhido (lista do elenco e campo para alguém de fora) e "Criar rateio" (`btn sm primary`, só com o Caixa).
+
 ## Componentes (pelada-v81)
 - **Rateio → pessoa de fora do elenco** (KAN-216; `telas/Rateios.tsx`, classes `rat-fora`, `rat-fora-nome`, `rat-tirar`, `rat-add-fora`; os estilos ficam no componente):
   - Na janela, depois do elenco: o subtítulo "De fora do elenco" (`rat-sub`), uma linha de 44px por pessoa com o nome e a `tag` "de fora" (que desce para baixo do nome quando não cabe), o campo do valor (108px) e "✕" (`btn sm ghost danger`, só enquanto não pagou).

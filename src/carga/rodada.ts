@@ -48,11 +48,24 @@ export const subLimCfg = () =>
   subRaw('limCfg', 'sistema/limites', d => {
     S.limCfg = d;
   });
+/* Respostas ao extra da rodada (KAN-228: churrasco, pizzada…): só lê quando o extra está ligado. */
+export function subExtra(r: { id?: string; extra?: unknown } | null | undefined) {
+  const id = r && r.extra && r.id ? r.id : null;
+  if (S.extRid === id) return;
+  S.extRid = id;
+  S.ext = {};
+  drop('ext');
+  if (id)
+    sub('ext', 'rodadas/' + id + '/extra', d => {
+      S.ext = d || {};
+    });
+}
 /* Presenças da rodada aberta na gestão: troca a assinatura quando a rodada muda. */
 export function ensurePres() {
   if (S.route.n === 'admin' && !(S.loaded.rodF && S.loaded.rodP)) return;
   const r = curRodada(),
     id = r ? r.id : null;
+  subExtra(r);
   if (S.presRid === id) return;
   S.presRid = id;
   S.pres = {};
@@ -73,6 +86,7 @@ export function resolveNext() {
   if (!S.loaded.app || !S.loaded.rods) return;
   const r = upcoming()[0],
     id = r ? r.id : null;
+  subExtra(r);
   if (S.route.id !== id || S.presRid !== id) {
     S.route.id = id;
     S.presRid = id;

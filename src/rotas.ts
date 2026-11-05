@@ -15,7 +15,7 @@ import { cargaLinkAvaliacao } from './carga/avaliacao';
 import { aplicarRegiao, gravarPaisConta, registrarAcesso, syncName, upMyGroup } from './carga/conta';
 import { startData } from './carga/gestao';
 import { syncPerm, syncVia } from './carga/permissoes';
-import { Q_PROX, dia, ensurePres, resolveNext, subLimAv, subLimCfg } from './carga/rodada';
+import { Q_PROX, dia, ensurePres, resolveNext, subExtra, subLimAv, subLimCfg } from './carga/rodada';
 import { cargaLinkVotacao, ensureVotos } from './carga/votacao';
 import { idiomaDaConta } from './nucleo/idioma';
 // O banco é JavaScript sem tipos e é trocado ao iniciar (setB): lido na hora.
@@ -80,6 +80,8 @@ const LIMPO = () => ({
   rodXid: null,
   hist: null,
   pres: {},
+  ext: {},
+  extRid: undefined,
   vot: {},
   votos: {},
   trocas: {},
@@ -144,6 +146,7 @@ function cargaLinkRodada(R: Rota) {
   sub('r', 'rodadas/' + id, d => {
     if (d) S.rod = { [id]: d };
     else S.rod = {};
+    subExtra(d ? Object.assign({ id }, d) : null);
   });
   S.presRid = id;
   sub('pres', 'rodadas/' + id + '/presencas', d => {

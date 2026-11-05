@@ -1,0 +1,41 @@
+/* Extra da rodada (KAN-228): churrasco, pizzada… no link e na aba Rodada. */
+.extra-painel .extra-total {
+  margin: 4px 0 10px;
+}
+.extra-painel .plist li {
+  flex-wrap: wrap;
+}
+.extra-conv {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin: 2px 0 4px;
+}
+.extra-conv .tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+/* ✕ de tirar (convidado ou pessoa): alvo de 44px, como os outros botões. */
+.extra-painel .linkbtn {
+  min-width: 44px;
+  min-height: 44px;
+}
+.extra-novo {
+  flex-basis: 100%;
+  display: flex;
+  gap: 8px;
+  margin: 4px 0;
+}
+.extra-novo .inp {
+  flex: 1;
+  min-width: 0;
+}
+.extra-todos > summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}

@@ -31,8 +31,10 @@ import { quality } from '../dominio/sorteio.js';
 import { tp, tx } from '../i18n/index.js';
 import { afastadoEm, afastamentoDe, compDe, confirmaramAfastados } from '../nucleo/afast';
 import { presAlterada } from '../nucleo/edicoes.js';
+import { parteExtra } from '../acoes/extra';
 import { S as estado } from '../nucleo/estado.js';
 import { fdate } from '../nucleo/util.js';
+import { changed } from '../ui/render.js';
 import { ComoChegar, Nota, Pos, PorPosicao, Segmentado, SeletorRodada, Tag, TextoCortado } from '../ui/componentes';
 import { rodadasProntas, temVotacao } from './rodada-partes.js';
 
@@ -48,6 +50,7 @@ type Rodada = {
   fixo?: boolean;
   times?: Time[] | null;
   vagas?: { aberta?: boolean; max?: number };
+  extra?: { n: string; v?: number } | null;
 };
 type Qualidade = { diff: number; gk?: number[]; nsep?: number; viol?: number; newPct?: number | null } | null;
 
@@ -629,6 +632,11 @@ function RodadaTela() {
           <button class="btn sm" data-a="lock">
             {tx(r.locked ? 'rodada.reabrir' : 'rodada.fechar')}
           </button>
+          {r.extra ? null : (
+            <button class="btn sm" data-a="abrirExtra">
+              {tx('rodada.extra')}
+            </button>
+          )}
           {r.fixo ? (
             <button class="btn sm ghost danger" data-a="cancelRod">
               {tx('rodada.cancelarData')}
@@ -644,12 +652,35 @@ function RodadaTela() {
       {carregou ? <PainelVagas r={r} /> : null}
       {carregou ? <Cobrar r={r} /> : null}
       <Presenca r={r} inn={a.inn} carregou={carregou} avs={avs} />
+      {r.extra ? <ExtraNaRodada /> : null}
       <Times r={r} inn={a.inn.length} />
       {r.times ? null : <BarraSortear k={a.inn.length} />}
     </div>
   );
 }
 
+/* KAN-228: extra da rodada (churrasco, pizzada…); o painel baixa sob demanda. */
+let modExtra: typeof import('./ExtraRodada') | null = null,
+  baixandoExtra = false;
+function ExtraNaRodada() {
+  if (!modExtra) {
+    if (!baixandoExtra) {
+      baixandoExtra = true;
+      parteExtra().then(
+        m => {
+          modExtra = m;
+          changed();
+        },
+        () => {
+          baixandoExtra = false;
+        }
+      );
+    }
+    return null;
+  }
+  const P = modExtra.PainelExtraRodada;
+  return <P />;
+}
 /* Mínimo para o jogo (KAN-179): total de jogadores (qualquer esporte) e, se houver posições, o mínimo de cada uma. */
 const minimosDoGrupo = (): Record<string, number> => (st().app?.cfg || {}).minPos || {};
 function Minimos() {

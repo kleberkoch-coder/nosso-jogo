@@ -250,7 +250,10 @@ const testesRegra = fs.existsSync('testes/regras')
    dentro de textos e HTML, sem os comentários. É uma medida aproximada, mas sempre igual: serve para ver se sobe ou desce.
    Desde a v84 (D35) não conta o que não é texto de tela: nomes do JavaScript (Object.assign, Math.max), mensagens do
    console (só para quem programa) e os catálogos de dados (esportes e planos), que terão um arquivo por idioma. */
-const RX_TEXTO = /(?<=['"`]|>\s*|\$\{[^}]*\}\s?)([A-ZÁÉÍÓÚÂÊÔÃÕ][a-zà-úç]+(?:[ ,.:?!][ ]?[A-Za-zà-úçÁÉÍÓÚ]+){1,})/g;
+/* Desde a v92 também conta frases depois de quebra de linha (\n), negrito do WhatsApp (*) e emoji, onde as frases
+   prontas do WhatsApp escapavam da conta. */
+const RX_TEXTO =
+  /(?<=['"`]|>\s*|\$\{[^}]*\}\s?|\\n|\*|\p{Extended_Pictographic}\uFE0F?\s?)([A-ZÁÉÍÓÚÂÊÔÃÕ][a-zà-úç]+(?:[ ,.:?!][ ]?[A-Za-zà-úçÁÉÍÓÚ]+){1,})/gu;
 const NOME_JS = /^[A-Z][a-z]+\.[a-z]\w*$/;
 const CATALOGOS = [path.join('src', 'dominio', 'esportes.js'), path.join('src', 'dominio', 'planos.ts')];
 const semComentario = t =>

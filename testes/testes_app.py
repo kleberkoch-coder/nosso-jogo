@@ -502,7 +502,7 @@ with sync_playwright() as pw:
         ct156 = pg.evaluate("(id)=>S.cont&&S.cont[id]", pid156)
         ok(not pg.evaluate("document.getElementById('dlg').open") and ct156 and ct156['tel'] == '+14155550100' and ct156['email'] == 'ana@clube.com.br',
            f'CT-KAN-156-02: número dos EUA gravado no formato internacional ({ct156})')
-        ok(pg.locator(f'a[href="https://wa.me/14155550100"]').count() >= 1, 'CT-KAN-156-02: link do WhatsApp abre o número dos EUA, sem o 55 na frente')
+        ok(pg.locator(f'a[href="https://api.whatsapp.com/send?phone=14155550100"]').count() >= 1, 'CT-KAN-156-02: link do WhatsApp abre o número dos EUA, sem o 55 na frente')
         pg.locator(f'[data-a=editPlayer][data-p="{pid156}"]').click(); pg.wait_for_timeout(300)
         # KAN-162: o combo do telefone voltou com os EUA (o número salvo); número brasileiro sem trocar o combo não salva errado
         ok(pg.input_value('#ppais') == 'US' and pg.input_value('#ptel') == '4155550100', 'CT-KAN-162-03: ao editar, o combo mostra o país do número salvo (+1) e o campo só o número')
@@ -511,7 +511,7 @@ with sync_playwright() as pw:
         pg.select_option('#ppais', 'BR'); pg.wait_for_timeout(100)
         ok(pg.get_attribute('#ptel', 'placeholder') == '(11) 98765-4321', 'CT-KAN-162-03: trocar o país do combo troca o exemplo do campo')
         pg.click('#dlg [data-a=savePlayer]'); pg.wait_for_timeout(600)
-        ok(pg.evaluate("(id)=>S.cont[id].tel", pid156) == '+5511987654321' and pg.locator('a[href="https://wa.me/5511987654321"]').count() >= 1,
+        ok(pg.evaluate("(id)=>S.cont[id].tel", pid156) == '+5511987654321' and pg.locator('a[href="https://api.whatsapp.com/send?phone=5511987654321"]').count() >= 1,
            'CT-KAN-156-01: número brasileiro com DDD vira +55 e o link do WhatsApp abre certo')
         pg.locator(f'[data-a=editPlayer][data-p="{pid156}"]').click(); pg.wait_for_timeout(300)
         ok(pg.input_value('#ptel') == '(11) 98765-4321', 'CT-KAN-156-01: ao editar, o número brasileiro aparece fácil de ler')
@@ -1210,7 +1210,7 @@ with sync_playwright() as pw:
         ok(pg.input_value('#ppais') == 'US' and '10 dígitos' in (pg.get_attribute('#ptel', 'placeholder') or ''), 'CT-KAN-162-03: telefone de jogador novo já vem com o combo nos EUA')
         pg.fill('#pnm', 'Mike Jones'); pg.fill('#ptel', '(212) 555-0142'); pg.click('#dlg [data-a=savePlayer]'); pg.wait_for_timeout(700)
         tel162 = pg.evaluate("()=>{const p=Object.entries(S.jog).find(([,x])=>x.name==='Mike Jones');return p&&S.cont[p[0]]&&S.cont[p[0]].tel}")
-        ok(tel162 == '+12125550142' and pg.locator('a[href="https://wa.me/12125550142"]').count() == 1, f'CT-KAN-162-03: número americano sem "+" vira +1 e o WhatsApp abre certo ({tel162})')
+        ok(tel162 == '+12125550142' and pg.locator('a[href="https://api.whatsapp.com/send?phone=12125550142"]').count() == 1, f'CT-KAN-162-03: número americano sem "+" vira +1 e o WhatsApp abre certo ({tel162})')
         pg.click('[data-a=addPlayer]'); pg.wait_for_timeout(300)
         pg.fill('#pnm', 'Mike Curto'); pg.fill('#ptel', '212 555 01'); pg.click('#dlg [data-a=savePlayer]'); pg.wait_for_timeout(400)
         ok('Estados Unidos' in pg.inner_text('#toast') and '10 dígitos' in pg.inner_text('#toast'), 'CT-KAN-162-03: número incompleto avisa quantos dígitos tem o número no país')
@@ -1747,7 +1747,7 @@ with sync_playwright() as pw:
         p9.click('#semResposta summary'); p9.wait_for_timeout(200)
         lnk = p9.locator(f'#cobrarLista a[aria-label="Cobrar {nome_tel} no WhatsApp"]')
         href = lnk.get_attribute('href') if lnk.count() else ''
-        ok(nome_tel in falta9 and href.startswith('https://wa.me/5511987654321?text=') and 'Confirme%20aqui' in href, f'CT-KAN-64-04: com telefone, "WhatsApp" abre a conversa da pessoa com a mensagem ({href[:60]})')
+        ok(nome_tel in falta9 and href.startswith('https://api.whatsapp.com/send?phone=5511987654321&text=') and 'Confirme%20aqui' in href, f'CT-KAN-64-04: com telefone, "WhatsApp" abre a conversa da pessoa com a mensagem ({href[:60]})')
         bb9 = lnk.bounding_box() if lnk.count() else {'height': 0}
         ok(bb9['height'] >= 36 and p9.locator('#cobrarLista li', has_text='sem telefone').count() >= 1, f'CT-KAN-64-05: botão de 36px; sem telefone aparece "sem telefone" ({bb9["height"]:.0f}px)')
         p9.click('[data-a=lock]'); p9.wait_for_timeout(300); confirmar_app(p9, True); p9.wait_for_timeout(500)
@@ -3952,6 +3952,9 @@ with sync_playwright() as pw:
         z93 = p93.input_value('#shtxt'); n93 = [p93.evaluate("(i)=>S.jog[i].name", x) for x in (outro93[2:], g0[2][1])]
         ok(z93.startswith('⚽ *Partidas — ') and f'*2 × 0*' in z93 and f'({n93[0]}, {n93[1]})' in z93 and '🏅 *Artilharia*:' in z93 and '🏆' not in z93 and 'Detalhes: ' in z93,
            f'CT-KAN-232-01: "Mandar no WhatsApp" das partidas traz o placar, quem marcou e a artilharia; com 2 times, sem classificação ({z93[:160]!r})')
+        hw93 = p93.get_attribute('#dlg a.btn.primary', 'href') or ''
+        ok(hw93.startswith('https://api.whatsapp.com/send?text=%E2%9A%BD%20') and '%F0%9F%9F%A7' in hw93 and 'wa.me' not in hw93,
+           f'CT-KAN-234-01: "Abrir no WhatsApp" vai direto para api.whatsapp.com com os emojis codificados, sem o wa.me ({hw93[:70]})')
         p93.click('#dlg [data-a=close]'); p93.wait_for_timeout(200)
         # Histórico: rodada antiga com 4 times e as 8 partidas da foto do Kleber
         ids93 = p93.evaluate("Object.keys(S.jog).sort((a,b)=>S.jog[a].name.localeCompare(S.jog[b].name))")

@@ -14,8 +14,13 @@ test('todo mundo respondeu: lista vazia', () => {
 
 test('link do WhatsApp leva a mensagem codificada; sem telefone, nada', () => {
   assert.equal(
-    linkCobrar('https://wa.me/5511987654321', 'Oi, Ana! Vai?'),
-    'https://wa.me/5511987654321?text=Oi%2C%20Ana!%20Vai%3F'
+    linkCobrar('https://api.whatsapp.com/send?phone=5511987654321', 'Oi, Ana! Vai?'),
+    'https://api.whatsapp.com/send?phone=5511987654321&text=Oi%2C%20Ana!%20Vai%3F'
+  );
+  /* KAN-234: emoji vai codificado em UTF-8 (o wa.me o trocava por � no redirecionamento). */
+  assert.equal(
+    linkCobrar('https://api.whatsapp.com/send?phone=5511987654321', '⚽ 🟧'),
+    'https://api.whatsapp.com/send?phone=5511987654321&text=%E2%9A%BD%20%F0%9F%9F%A7'
   );
   assert.equal(linkCobrar('', 'x'), '');
 });

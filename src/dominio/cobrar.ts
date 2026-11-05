@@ -9,7 +9,7 @@ export function semResposta(elenco: string[], pres: Pres): string[] {
 
 /* Link do WhatsApp com a mensagem pronta; sem telefone, nada. */
 export function linkCobrar(linkWa: string, mensagem: string): string {
-  return linkWa ? linkWa + '?text=' + encodeURIComponent(mensagem) : '';
+  return linkWa ? linkWa + (linkWa.includes('?') ? '&' : '?') + 'text=' + encodeURIComponent(mensagem) : '';
 }
 
 /* Quem cobrar (correção do KAN-64 com o KAN-63): com o controle de vagas ligado e as vagas fechadas (ou esgotadas),

@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D43) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v93 (05/11/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v94 (05/11/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -213,6 +213,7 @@ Atualizado na pelada-v93 (05/11/2026). Toda entrega que mudar uma regra atualiza
 - Menu da conta (KAN-166): quem tem conta vê, no canto do cabeçalho de todas as telas, um botão redondo com a inicial do e-mail. Ele abre o e-mail, "País e formatos", "Tema" e "Sair" (o Sair não fica mais solto no cabeçalho). Funciona como o menu do tema: setas, Esc e tocar fora.
 - Tema (KAN-169): com conta, fica no menu da conta ("Tema: Automático", que abre Automático, Claro e Escuro) e o botão 🌓 sai do cabeçalho. Sem conta (link do jogador, votação, login, apresentação), o botão 🌓 continua. A aba Grupo segue com o painel Aparência. Vale só para o aparelho.
 - Dias fixos do grupo: cada horário tem o rótulo em cima, "Início" e "Término (opcional)" (KAN-166).
+- Links do WhatsApp (KAN-234, v94): sempre direto em `api.whatsapp.com/send` (`?text=` para mensagem pronta; `?phone=…&text=` para a conversa de um jogador), nunca `wa.me`: o redirecionamento do wa.me troca os emojis por � no computador. O endereço fica num lugar só (`WA` em `dominio/contato.ts`).
 - Alvos de toque: 44px nos principais, 36px nos pequenos. Contraste WCAG AA nos temas claro e escuro.
 - Leitura com internet ruim (KAN-184, regra em `nucleo/carga.ts`, com teste):
   - "Não encontrado" só depois que o servidor confirmar. Com internet, a resposta vazia da cópia do aparelho não vale, e a tela continua em "Carregando…".

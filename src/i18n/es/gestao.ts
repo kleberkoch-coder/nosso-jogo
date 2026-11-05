@@ -965,6 +965,18 @@ export default {
   'votzap.colQuem': 'Quién votó',
   'votzap.colHora': 'Hora',
   'votzap.colTrocas': 'Cambios',
+  /* pt-BR-votpart.ts */
+  'votpart.titulo': 'Quién participa de la votación',
+  'votpart.mensalista': 'Jugadores mensuales',
+  'votpart.diarista': 'Jugadores por partido',
+  'votpart.avulso': 'Invitados',
+  'votpart.fora': 'Confirmados fuera del sorteo',
+  'votpart.foraEx': 'Confirmados fuera del sorteo (ej.: {pos} fijo)',
+  'votpart.padrao':
+    'Vale para votar y ser votado. Es el valor por defecto de las votaciones nuevas; cada una puede cambiarlo.',
+  'votpart.soEsta':
+    'Viene del valor por defecto del grupo (Grupo → Partidos y caja). Cambiarlo aquí vale solo para esta votación.',
+  'votpart.ninguem': 'Nadie participa con estas opciones. Marca al menos un tipo de jugador.',
   /* pt-BR-zappartidas.ts */
   'zappart.botao': 'Enviar por WhatsApp',
   'zappart.rotulo': 'Enviar los partidos de la jornada por WhatsApp',

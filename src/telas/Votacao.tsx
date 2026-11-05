@@ -10,6 +10,8 @@ import { fdate } from '../nucleo/util.js';
 import { textoRodada } from '../ui/componentes';
 import { tally } from '../dominio/votacao';
 import { QuemVotou } from './QuemVotou';
+import { lerParticipa } from '../dominio/votacao-participa';
+import { QuemParticipa } from '../ui/QuemParticipa';
 
 const st = () => estado;
 type Categoria = { id: string; name: string };
@@ -173,6 +175,8 @@ function NovaVotacao({ rs }: { rs: Rodada[] }) {
         <input type="checkbox" id="vsf" />
         <span>{tx('votacao.siMesmo')}</span>
       </label>
+      {/* KAN-230: vem com o padrão do grupo; mudar aqui vale só para esta votação. */}
+      <QuemParticipa p={lerParticipa(((st().app || {}).cfg || {}).votPart)} id="vpart" ajuda={tx('votpart.soEsta')} />
       <div class="dlg-f">
         <button class="btn" data-a="close">
           {tx('comum.cancelar')}

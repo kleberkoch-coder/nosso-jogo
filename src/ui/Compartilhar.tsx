@@ -1,13 +1,15 @@
 /* Janela de compartilhar no WhatsApp (KAN-131: virou componente; antes, HTML montado como texto em dominio/whatsapp.js).
    A caixa de texto tem rótulo para o leitor de tela. Os botões usam data-a (close, copy; copiar fica em acoes/conta.js). */
-import { render } from 'preact';
+import { render, type ComponentChildren } from 'preact';
 import { tx } from '../i18n/index.js';
 import { dlg, openDlg } from './dialogos.js';
 
-function Compartilhar({ titulo, texto }: { titulo: string; texto: string }) {
+/* "opcoes" (KAN-231): o que vem entre o título e a mensagem, como uma escolha que muda o texto. */
+export function Compartilhar({ titulo, texto, opcoes }: { titulo: string; texto: string; opcoes?: ComponentChildren }) {
   return (
     <>
       <h3 id="shTitulo">{titulo}</h3>
+      {opcoes}
       <label class="f">
         <span>{tx('compartilhar.rotulo')}</span>
         <textarea class="inp" id="shtxt" value={texto}></textarea>

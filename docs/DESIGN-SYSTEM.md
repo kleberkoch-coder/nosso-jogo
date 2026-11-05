@@ -73,6 +73,12 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo; **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v93)
+- **Corrigir o placar** (KAN-229; `telas/PartidaGols.tsx`, classe `gols-lado`): o mesmo desenho do Editar partida, um `panel` por time com a cor, o nome e o placar; cada gol com a lista do autor (`sel ed-autor`) e "✕" (`btn sm ghost danger`); embaixo, "+ Gol" (`btn sm ed-mais`). O cursor vem no 1º autor. Rodapé: Cancelar e "Aplicar: 2 × 0" (`primary`, mostra o placar que vai ficar). O botão "Corrigir" fica ao lado de "Desfazer último" no placar, desligado sem gol.
+- **Mandar no WhatsApp** (KAN-232): `btn sm` à direita do título em "Partidas desta rodada" (aba Partida) e no detalhe do Histórico (`row between`), só com partida salva; abre a janela de compartilhar.
+- **Compartilhar com opções** (KAN-231; `ui/Compartilhar.tsx`, `opcoes`): entre o título e a mensagem, uma caixa de marcar (`chk-linha`, 44px) que muda o texto. Quando ela expõe dado sensível, aparece o aviso `aviso-alerta` (fundo `out-soft`, borda `out-fill`, texto `ink`, "⚠️" e o texto), com contraste AA nos dois temas.
+- **Baixar planilha** (KAN-231): `btn sm` (`aud-baixar`) no topo de "Quem votou" aberto, só com voto.
+
 ## Componentes (pelada-v92)
 - **Extra da rodada** (KAN-228; `telas/PublicoExtra.tsx` e `telas/ExtraRodada.tsx`, classes `extra-painel`, `extra-total`, `extra-conv`, `extra-novo`, `extra-todos` em `estilos/extra.css`):
   - No link, um `panel` depois da lista do jogo: título "🍖 {extra} depois do jogo", a linha "É separado do jogo…" com o valor por pessoa, o total em negrito ("5 vão (contando 3 convidados)"), a minha linha e os outros nomes recolhidos (`details`, aberto quando o aparelho ainda não escolheu um nome). Vou e Não vou são os mesmos do jogo (`mk lg`, 44px).

@@ -57,4 +57,14 @@ export default {
   'aud.verTrocas.outros': 'Ver trocas ({n})',
   'aud.esconderTrocas': 'Esconder trocas',
   'aud.nenhum': 'Ninguém votou ainda.',
+  /* KAN-231 */
+  'votzap.nomeVotos': '{nome} ({n})',
+  'votzap.quemEmQuem': 'Quem votou em quem',
+  'votzap.incluir': 'Incluir quem votou em quem',
+  'votzap.aviso': 'Esta mensagem mostra o voto de cada um: mande só para o grupo dos administradores.',
+  'votzap.baixar': 'Baixar planilha',
+  'votzap.baixada': 'Planilha baixada.',
+  'votzap.colQuem': 'Quem votou',
+  'votzap.colHora': 'Hora',
+  'votzap.colTrocas': 'Trocas',
 };

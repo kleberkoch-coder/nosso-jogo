@@ -3907,6 +3907,121 @@ with sync_playwright() as pw:
         ok(p92.locator('#extraRodada').count() == 0 and not p92.evaluate("(i)=>S.rod[i].extra", rid92),
            'CT-KAN-228-01: desligar tira o extra da rodada (com confirmação)')
         ctx92.close()
+        # ---------- v93 (KAN-229, KAN-232, KAN-231): corrigir gol na partida; partidas e votação no WhatsApp; planilha da votação
+        BRT93 = datetime.timezone(datetime.timedelta(hours=-3))
+        ctx93 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo', accept_downloads=True)
+        p93 = ctx93.new_page(); p93.on('pageerror', lambda e: errs.append(str(e)))
+        p93.clock.install(time=datetime.datetime(2026, 11, 5, 20, 0, 0, tzinfo=BRT93))
+        abrir_entrada(p93, 'criar')
+        p93.fill('#le', 'v93@teste.com'); p93.fill('#lp', 'Jogo@2026'); p93.fill('#lp2', 'Jogo@2026'); p93.keyboard.press('Enter'); p93.wait_for_selector('#ngBox', timeout=12000)
+        p93.fill('#ngn', 'Placar FC'); p93.click('[data-a=pickSport][data-v=futebol]'); p93.click('[data-a=createGroup]')
+        p93.wait_for_function("location.hash.startsWith('#/g/')"); p93.wait_for_timeout(1500)
+        g93 = p93.url.split('#/g/')[1]
+        elenco_e_presenca(p93, 10); sortear(p93)
+        p93.click('[data-a=tab][data-v=partida]'); p93.wait_for_selector('[data-a=goal]', timeout=10000); p93.wait_for_timeout(400)
+        ok(p93.locator('[data-a=corrigirGols]').is_disabled(), 'CT-KAN-229-01: sem gol, "Corrigir" fica desligado')
+        def gol93(lado, n):
+            p93.locator(f'[data-a=goal][data-v={lado}]').first.click(); p93.wait_for_selector('[data-a=addGoal][data-p]', timeout=5000)
+            p93.locator('[data-a=addGoal][data-p]').nth(n).click(); p93.wait_for_timeout(300)
+        gol93('a', 0); gol93('b', 0); gol93('a', 1)
+        g0 = p93.evaluate("S.live.goals.map(g=>[g.t,g.pid])")
+        ok([x[0] for x in g0] == ['a', 'b', 'a'], f'CT-KAN-229-01: três gols marcados ({g0})')
+        p93.click('[data-a=corrigirGols]'); p93.wait_for_selector('#cgRaiz .gols-lado', timeout=5000); p93.wait_for_timeout(300)
+        for tema in ['light', 'dark']:
+            p93.emulate_media(color_scheme=tema); p93.wait_for_timeout(150)
+            v93 = p93.evaluate("(()=>{const d=document.getElementById('dlgBody');return [document.documentElement.scrollWidth<=innerWidth, d.scrollWidth<=d.clientWidth+1, document.activeElement.classList.contains('ed-autor'), Math.min(...[...d.querySelectorAll('button,select')].map(e=>Math.round(e.getBoundingClientRect().height)))]})()")
+            ok(v93[0] and v93[1] and v93[2] and v93[3] >= 36, f'CT-KAN-229-01: em 360px ({tema}), a janela Corrigir não tem rolagem lateral, o cursor vem no 1º autor e os botões têm alvo ({v93})')
+            contraste(p93, f'janela Corrigir o placar ({tema})')
+        p93.emulate_media(color_scheme='light')
+        p93.screenshot(path=f'{OUT}/93-corrigir.png')
+        # Trocar o autor do 1º gol do Time 1 e tirar o gol do Time 2 (o do meio)
+        outro93 = p93.evaluate("(()=>{const o=[...document.querySelectorAll('#cgRaiz [data-lado=a] .ed-autor')][0].options;return [...o].map(x=>x.value).find(v=>v.startsWith('p:')&&v.slice(2)!==S.live.goals[0].pid&&v.slice(2)!==S.live.goals[2].pid)})()")
+        p93.locator('#cgRaiz [data-lado=a] .ed-autor').first.select_option(outro93); p93.wait_for_timeout(200)
+        p93.locator('#cgRaiz [data-lado=b] .btn.danger').first.click(); p93.wait_for_timeout(200)
+        ok('Aplicar: 2 × 0' in p93.inner_text('#dlg [data-a=salvarCorrecao]'), 'CT-KAN-229-01: o botão mostra o placar corrigido (2 × 0) antes de aplicar')
+        p93.click('#dlg [data-a=salvarCorrecao]'); p93.wait_for_timeout(500)
+        g1 = p93.evaluate("S.live.goals.map(g=>[g.t,g.pid])")
+        ok(g1 == [['a', outro93[2:]], ['a', g0[2][1]]] and [s.strip() for s in p93.locator('.board .sc').all_inner_texts()] == ['2', '0'],
+           f'CT-KAN-229-01: o 1º gol troca de autor, o do meio sai e o 3º continua igual; o placar fica 2 × 0 ({g1})')
+        p93.click('[data-a=saveMatch]'); p93.wait_for_timeout(1000)
+        p93.reload(); p93.wait_for_timeout(1500); p93.click('[data-a=tab][data-v=partida]'); p93.wait_for_timeout(1200)
+        s93 = p93.evaluate("Object.values(S.parts||{}).filter(m=>m.tipo!=='art').map(m=>[m.ga,m.gb,m.goals.map(g=>g.pid)])")
+        ok(s93 == [[2, 0, [outro93[2:], g0[2][1]]]], f'CT-KAN-229-01: a partida salva guarda os gols corrigidos, depois de recarregar ({s93})')
+        # KAN-232: partidas desta rodada no WhatsApp
+        p93.click('[data-a=zapPartidas]'); p93.wait_for_selector('#shtxt', timeout=5000)
+        z93 = p93.input_value('#shtxt'); n93 = [p93.evaluate("(i)=>S.jog[i].name", x) for x in (outro93[2:], g0[2][1])]
+        ok(z93.startswith('⚽ *Partidas — ') and f'*2 × 0*' in z93 and f'({n93[0]}, {n93[1]})' in z93 and '🏅 *Artilharia*:' in z93 and '🏆' not in z93 and 'Detalhes: ' in z93,
+           f'CT-KAN-232-01: "Mandar no WhatsApp" das partidas traz o placar, quem marcou e a artilharia; com 2 times, sem classificação ({z93[:160]!r})')
+        p93.click('#dlg [data-a=close]'); p93.wait_for_timeout(200)
+        # Histórico: rodada antiga com 4 times e as 8 partidas da foto do Kleber
+        ids93 = p93.evaluate("Object.keys(S.jog).sort((a,b)=>S.jog[a].name.localeCompare(S.jog[b].name))")
+        nm93 = lambda i: p93.evaluate("(x)=>S.jog[x].name", ids93[i])
+        o93 = {f'grupos/{g93}/rodadas/rold': {'date': '2026-09-03', 'time': '20:00', 'place': 'Quadra 93', 'np': 8,
+               'times': [{'c': 0, 'players': ids93[0:3]}, {'c': 1, 'players': ids93[3:6]}, {'c': 2, 'players': ids93[6:9]}, {'c': 3, 'players': ids93[9:12]}]}}
+        jogos93 = [(0, 1, 1, 0, 0), (3, 2, 1, 0, 9), (2, 0, 0, 5, 1), (3, 1, 1, 1, 10), (3, 0, 3, 0, 9), (1, 2, 4, 1, 3), (1, 2, 1, 2, 6), (3, 0, 1, 2, 11)]
+        for k, (ta, tb, ga, gb, autor) in enumerate(jogos93):
+            gols = [{'t': 'a', 'pid': ids93[autor]}] * ga + [{'t': 'b', 'pid': ids93[(tb * 3)]}] * gb
+            o93[f'grupos/{g93}/rodadas/rold/partidas/m{k}'] = {'at': k + 1, 'ta': ta, 'tb': tb, 'ca': ta, 'cb': tb, 'ga': ga, 'gb': gb, 'goals': gols}
+        p93.evaluate(PUT, o93); p93.reload(); p93.wait_for_timeout(1500)
+        p93.click('[data-a=tab][data-v=historico]'); p93.wait_for_timeout(1200)
+        p93.fill('#hmes', '2026-09'); p93.click('[data-a=histBuscar]'); p93.wait_for_timeout(1200)
+        p93.click('[data-a=histAbrir][data-v=rold]'); p93.wait_for_selector('[data-a=histZap]', timeout=8000)
+        p93.click('[data-a=histZap]'); p93.wait_for_selector('#shtxt', timeout=5000)
+        h93 = p93.input_value('#shtxt')
+        tab93 = h93.split('🏆')[1] if '🏆' in h93 else ''
+        ok(h93.split('🏆')[0].count('\n1. ') == 1 and '\n8. ' in h93 and '*Classificação da rodada*' in tab93 and '1. 🟧 Time 1: 9 pts (3V 0E 1D, saldo +4)' in tab93 and '4. 🟥 Time 4' not in tab93 and '2. 🟥 Time 4: 7 pts (2V 1E 1D, saldo +3)' in tab93,
+           f'CT-KAN-232-02: no Histórico, a mensagem tem as 8 partidas e a classificação da rodada com 4 times ({tab93[:200]!r})')
+        ok(f'{nm93(1)} 4' not in h93 and '🏅 *Artilharia*:' in h93, 'CT-KAN-232-02: a artilharia da rodada antiga também vai na mensagem')
+        p93.click('#dlg [data-a=close]'); p93.wait_for_timeout(200)
+        # KAN-231: votação encerrada da rodada antiga, com 3 votos
+        p93.evaluate(PUT, {
+            f'grupos/{g93}/votacoes/v1': {'rid': 'rold', 'title': 'Destaques', 'open': False, 'createdAt': 1,
+                'cats': [{'id': 'best', 'name': 'Melhor jogador'}, {'id': 'bag', 'name': 'Bagre'}],
+                'resultado': {'best': {'winners': [ids93[1]], 'counts': {ids93[1]: 2, ids93[2]: 1}, 'total': 3}, 'bag': {'winners': [ids93[4]], 'counts': {ids93[4]: 1}, 'total': 1}}},
+            f'grupos/{g93}/votacoes/v1/votos/devA': {'pid': ids93[0], 'v': {'best': ids93[1], 'bag': ids93[4]}, 't': 1788000000000},
+            f'grupos/{g93}/votacoes/v1/votos/devB': {'pid': ids93[3], 'v': {'best': ids93[1]}, 't': 1788000060000},
+            f'grupos/{g93}/votacoes/v1/votos/devC': {'pid': ids93[5], 'v': {'best': ids93[2]}, 't': 1788000120000},
+        })
+        p93.reload(); p93.wait_for_timeout(1500)
+        p93.click('[data-a=tab][data-v=votacao]'); p93.wait_for_selector('[data-a=shareVote]', timeout=8000)
+        p93.click('[data-a=shareVote]'); p93.wait_for_selector('#votZapRaiz #shtxt', timeout=5000)
+        r93 = p93.input_value('#shtxt')
+        ok(f'🏅 *Melhor jogador*: {nm93(1)} (2) · {nm93(2)} (1)' in r93 and f'🏅 *Bagre*: {nm93(4)} (1)' in r93 and 'Quem votou em quem' not in r93
+           and not p93.is_checked('#votDetalhe') and p93.locator('#votAviso').count() == 0,
+           f'CT-KAN-231-01: o resultado no WhatsApp traz os mais votados com os votos, sem quem votou em quem ({r93[:160]!r})')
+        p93.check('#votDetalhe'); p93.wait_for_timeout(300)
+        r93b = p93.input_value('#shtxt')
+        ok(p93.locator('#votAviso').is_visible() and 'só para o grupo dos administradores' in p93.inner_text('#votAviso')
+           and '👀 *Quem votou em quem*' in r93b and f'• {nm93(0)}: Melhor jogador: {nm93(1)}; Bagre: {nm93(4)}' in r93b,
+           f'CT-KAN-231-01: marcando "Incluir quem votou em quem", aparece o aviso e a mensagem leva o voto de cada um ({r93b[-160:]!r})')
+        for tema in ['light', 'dark']:
+            p93.emulate_media(color_scheme=tema); p93.wait_for_timeout(150)
+            contraste(p93, f'resultado da votação no WhatsApp com aviso ({tema})')
+            ok(p93.evaluate("document.documentElement.scrollWidth<=innerWidth"), f'CT-KAN-231-01: em 360px ({tema}), a janela não tem rolagem lateral')
+        p93.emulate_media(color_scheme='light')
+        p93.screenshot(path=f'{OUT}/93-votacao-zap.png')
+        p93.click('#dlg [data-a=close]'); p93.wait_for_timeout(300)
+        p93.click('#quemVotou > summary'); p93.wait_for_selector('[data-a=baixarVotos]', timeout=5000)
+        with p93.expect_download() as d93:
+            p93.click('[data-a=baixarVotos]')
+        arq93 = d93.value; csv93 = open(arq93.path(), encoding='utf-8-sig', newline='').read().split('\r\n')
+        ok(arq93.suggested_filename == 'Destaques.csv' and csv93[0] == '"Quem votou";"Melhor jogador";"Bagre";"Hora";"Trocas"' and len(csv93) == 4
+           and any(l.startswith(f'"{nm93(0)}";"{nm93(1)}";"{nm93(4)}";') for l in csv93),
+           f'CT-KAN-231-02: "Baixar planilha" baixa Destaques.csv com uma coluna por categoria e uma linha por voto ({csv93[:2]})')
+        # Em inglês
+        p93.evaluate("localStorage.setItem('nj-idioma','en')"); p93.reload(); p93.wait_for_timeout(2000)
+        p93.click('[data-a=tab][data-v=votacao]'); p93.wait_for_selector('[data-a=shareVote]', timeout=8000)
+        p93.click('[data-a=shareVote]'); p93.wait_for_selector('#votZapRaiz #shtxt', timeout=5000); p93.check('#votDetalhe'); p93.wait_for_timeout(300)
+        e93 = p93.inner_text('#dlgBody') + p93.input_value('#shtxt')
+        p93.click('#dlg [data-a=close]'); p93.wait_for_timeout(200)
+        p93.click('[data-a=tab][data-v=historico]'); p93.wait_for_timeout(1200)
+        p93.fill('#hmes', '2026-09'); p93.click('[data-a=histBuscar]'); p93.wait_for_timeout(1200)
+        p93.click('[data-a=histAbrir][data-v=rold]'); p93.wait_for_selector('[data-a=histZap]', timeout=8000); p93.click('[data-a=histZap]'); p93.wait_for_selector('#shtxt', timeout=5000)
+        e93 += p93.input_value('#shtxt')
+        falta93 = p93.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(zappart|votzap|partida\\.corrig)/.test(k))")
+        ok('Who voted for whom' in e93 and "admins' group" in e93 and 'Matches — ' in e93 and 'Game day standings' in e93 and 'Classificação' not in e93 and not falta93,
+           f'CT-KAN-231/232: em English, as mensagens e o aviso saem traduzidos ({falta93})')
+        ctx93.close()
         # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
         ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
         p7 = ctx7.new_page()

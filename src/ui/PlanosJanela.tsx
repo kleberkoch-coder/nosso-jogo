@@ -26,7 +26,7 @@ const RECURSOS = [
   'votacao',
   'rankingAnual',
   'historico',
-].concat(['listaEspera', 'cobrarPendentes']);
+].concat(['listaEspera', 'cobrarPendentes', 'campeonato']);
 function PlanosJanela({ motivo }: { motivo?: string }) {
   const S = st(),
     s = S.gid ? situacaoDoGrupo() : minhaSituacao(),

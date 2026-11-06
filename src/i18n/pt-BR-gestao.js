@@ -289,6 +289,7 @@ export default {
   'plano.rec.historico': 'Histórico',
   'plano.rec.listaEspera': 'Lista de espera (controle de vagas)',
   'plano.rec.cobrarPendentes': 'Cobrar quem não respondeu',
+  'plano.rec.campeonato': 'Campeonato na rodada',
   'plano.desc.caixa': 'Mensalidade, diária, Pix, lançamentos, quem falta pagar e a cobrança.',
   'plano.desc.votacao': 'Destaques e bagres da rodada, votados pelo link, que entram no ranking.',
   'plano.desc.historico': 'Todas as rodadas que já aconteceram, com times e placares.',

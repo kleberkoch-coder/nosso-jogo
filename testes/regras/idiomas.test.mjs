@@ -12,7 +12,12 @@ const pt = {};
 for (const f of fs.readdirSync(DIR).filter(f => /^pt-BR.*\.(js|ts)$/.test(f))) Object.assign(pt, await carregar(f));
 const IDIOMAS = {};
 for (const id of ['en', 'es'])
-  IDIOMAS[id] = Object.assign({}, await carregar(id + '/base.ts'), await carregar(id + '/gestao.ts'));
+  IDIOMAS[id] = Object.assign(
+    {},
+    await carregar(id + '/base.ts'),
+    await carregar(id + '/gestao.ts'),
+    await carregar(id + '/partes.ts')
+  );
 const marcas = s => [...String(s).matchAll(/\{\w+\}|<\/?\w+>/g)].map(m => m[0]).sort();
 
 for (const [id, d] of Object.entries(IDIOMAS)) {

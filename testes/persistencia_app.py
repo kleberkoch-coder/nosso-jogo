@@ -826,6 +826,40 @@ with sync_playwright() as pw:
     ok(r35b == r35, f'CT-KAN-170-P35: e também depois de sair e entrar ({r35b})')
     c35.close()
 
+    # P36 campeonato da rodada (KAN-233): o campo camp da rodada (jogos na ordem e desempate).
+    # Confere depois de recarregar e de sair e entrar.
+    c36 = novo(); p36 = c36.new_page()
+    p36.on('pageerror', lambda e: errs.append(str(e)))
+    E36 = 'camp36@teste.com'
+    p36.goto(URL + '#/criar'); p36.wait_for_selector('#le', timeout=20000); p36.wait_for_timeout(300)
+    p36.fill('#le', E36); p36.fill('#lp', SENHA); p36.fill('#lp2', SENHA); p36.wait_for_timeout(200)
+    p36.click('[data-a=signup]'); p36.wait_for_selector('#ngn', timeout=20000)
+    p36.fill('#ngn', 'Copa FC'); p36.click('[data-a=createGroup]')
+    p36.wait_for_function("location.hash.startsWith('#/g/')", timeout=20000)
+    g36 = p36.url.split('#/g/')[1].split('/')[0]
+    pronto(p36, 'jogadores'); p36.click('[data-a=seed]'); p36.wait_for_timeout(1500)
+    gravou(p36); pronto(p36, 'rodada')
+    bt36 = p36.locator('[data-a=mark][data-v=in]')
+    for i in range(12):
+        bt36.nth(i).click(); p36.wait_for_timeout(250)
+    p36.click('[data-a=drawDlg]'); p36.wait_for_timeout(400); conf(p36)
+    p36.click('#drawBox [data-a=dN][data-v="4"]'); p36.wait_for_timeout(200)
+    p36.click('#drawGo'); p36.wait_for_timeout(2500); gravou(p36)
+    pronto(p36, 'partida'); p36.wait_for_selector('#fmtCamp', timeout=15000); p36.wait_for_timeout(500)
+    p36.click('#fmtCamp'); p36.wait_for_selector('#campCrit', timeout=10000); p36.wait_for_timeout(200)
+    p36.uncheck('#campCrit li[data-k=sorteio] input'); p36.click('#campOk'); p36.wait_for_timeout(1500); gravou(p36)
+    pronto(p36, 'partida'); p36.wait_for_timeout(1200)
+    ler36 = "(()=>{const c=(S.rod[S.live&&S.live.rid]||{}).camp||{};return [(c.jogos||[]).length, c.crit||null, c.n||0, !!document.getElementById('campPainel')]})()"
+    r36 = J(p36, ler36)
+    ok(r36 == [6, ['saldo', 'gp', 'cd'], 4, True], f'CT-KAN-170-P36: o campeonato da rodada continua depois de recarregar ({r36})')
+    sair_e_esperar(p36)
+    p36.goto(URL + '#/entrar'); p36.wait_for_selector('#le', timeout=20000); p36.wait_for_timeout(300)
+    p36.fill('#le', E36); p36.fill('#lp', SENHA); p36.keyboard.press('Enter'); p36.wait_for_timeout(2500)
+    p36.goto(URL + '#/g/' + g36); pronto(p36, 'partida'); p36.wait_for_timeout(1800)
+    r36b = J(p36, ler36)
+    ok(r36b == r36, f'CT-KAN-170-P36: e também depois de sair e entrar ({r36b})')
+    c36.close()
+
     ok(not errs, 'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))
     b.close()
 

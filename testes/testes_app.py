@@ -4155,6 +4155,118 @@ with sync_playwright() as pw:
         e95 = p95.inner_text('#vpart'); f95 = p95.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>k.startsWith('votpart.'))")
         ok('Who takes part in the vote' in e95 and 'Guests' in e95 and 'Avulsos' not in e95 and not f95, f'CT-KAN-230: em English, as opções saem traduzidas ({f95})')
         ctx95.close()
+        # ---------- v96 (KAN-233): campeonato da rodada (todos contra todos, classificação com desempate, Plano A)
+        ctx96 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, service_workers='block')
+        p96 = ctx96.new_page(); p96.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p96, 'criar')
+        p96.fill('#le', 'v96@teste.com'); p96.fill('#lp', 'Jogo@2026'); p96.fill('#lp2', 'Jogo@2026'); p96.keyboard.press('Enter'); p96.wait_for_selector('#ngBox', timeout=12000)
+        p96.fill('#ngn', 'Copa FC'); p96.click('[data-a=pickSport][data-v=futebol]'); p96.click('[data-a=createGroup]')
+        p96.wait_for_function("location.hash.startsWith('#/g/')"); p96.wait_for_timeout(1500)
+        g96 = p96.url.split('#/g/')[1]
+        elenco_e_presenca(p96, 12); sortear(p96)
+        p96.click('[data-a=tab][data-v=partida]'); p96.wait_for_selector('#formatoPainel', timeout=10000); p96.wait_for_timeout(300)
+        rid96 = p96.evaluate("S.live.rid")
+        doc96 = p96.evaluate(LER, f'grupos/{g96}/rodadas/{rid96}')
+        if len(doc96['times']) < 3:
+            ok(p96.locator('#fmtCamp').is_disabled() and 'pelo menos 3 times' in p96.inner_text('#campMinimo') and p96.get_attribute('#fmtLivre', 'aria-pressed') == 'true',
+               'CT-KAN-233-06: com 2 times, o formato fica Livre e Campeonato desligado, explicando que precisa de 3 times')
+        # 4 times de 3 (como a turma que joga em quadra pequena)
+        ids96 = p96.evaluate("Object.keys(S.jog).sort((a,b)=>S.jog[a].name.localeCompare(S.jog[b].name))")[:12]
+        doc96['times'] = [{'c': i, 'players': ids96[i * 3:(i + 1) * 3]} for i in range(4)]; doc96.pop('cores', None)
+        p96.evaluate(PUT, {f'grupos/{g96}/rodadas/{rid96}': doc96}); p96.reload(); p96.wait_for_timeout(1500)
+        p96.click('[data-a=tab][data-v=partida]'); p96.wait_for_selector('#formatoPainel', timeout=10000); p96.wait_for_timeout(300)
+        ok(not p96.locator('#fmtCamp').is_disabled() and p96.locator('#campPainel').count() == 0 and p96.locator('[data-trava=campeonato]').count() == 0,
+           'CT-KAN-233-06: com 4 times no Plano A, Campeonato fica disponível, sem cadeado; o formato começa Livre')
+        p96.click('#fmtCamp'); p96.wait_for_selector('#campCrit', timeout=5000); p96.wait_for_timeout(300)
+        m96 = p96.inner_text('#dlgBody')
+        ok('4 times, 6 jogos' in m96 and p96.evaluate("document.activeElement && document.activeElement.closest('#campCrit') !== null"),
+           f'CT-KAN-233-01: "Montar campeonato" explica 4 times e 6 jogos, com o cursor no primeiro critério ({m96[:90]!r})')
+        crit0 = p96.evaluate("[...document.querySelectorAll('#campCrit li')].map(l=>[l.dataset.k,l.querySelector('input').checked])")
+        ok(crit0 == [['saldo', True], ['gp', True], ['cd', True], ['sorteio', True]], f'CT-KAN-233-03: desempate padrão: saldo, gols a favor, confronto direto e sorteio ({crit0})')
+        ok('saldo de gols' in m96.lower() and 'gols a favor' in m96.lower(), 'CT-KAN-233-03: os critérios usam a palavra do esporte (gols)')
+        for tema in ['light', 'dark']:
+            p96.emulate_media(color_scheme=tema); p96.wait_for_timeout(150)
+            contraste(p96, f'janela Montar campeonato ({tema})')
+        p96.emulate_media(color_scheme='light')
+        p96.set_viewport_size({'width': 360, 'height': 740}); p96.wait_for_timeout(200)
+        a96 = p96.evaluate("(()=>{const d=document.getElementById('dlgBody');return [document.documentElement.scrollWidth<=innerWidth, d.scrollWidth<=d.clientWidth+1, Math.min(...[...d.querySelectorAll('button,.chk-linha')].map(e=>Math.round(e.getBoundingClientRect().height)))]})()")
+        ok(a96[0] and a96[1] and a96[2] >= 44, f'CT-KAN-233-01: em 360px, a janela não tem rolagem lateral e os alvos têm 44px ({a96})')
+        p96.screenshot(path=f'{OUT}/96-montar-360.png')
+        p96.set_viewport_size({'width': 390, 'height': 844})
+        # Gols a favor antes do saldo; sem sorteio
+        p96.click('#campCrit li[data-k=gp] .camp-subir'); p96.wait_for_timeout(150)
+        p96.uncheck('#campCrit li[data-k=sorteio] input'); p96.wait_for_timeout(150)
+        p96.click('#campOk'); p96.wait_for_selector('#campPainel', timeout=5000); p96.wait_for_timeout(800)
+        c96 = (p96.evaluate(LER, f'grupos/{g96}/rodadas/{rid96}') or {}).get('camp') or {}
+        ok(c96.get('jogos') == ['0-1', '2-3', '0-2', '1-3', '0-3', '1-2'] and c96.get('crit') == ['gp', 'saldo', 'cd'] and c96.get('n') == 4,
+           f'CT-KAN-233-01: o campeonato fica gravado na rodada com os 6 jogos na ordem e o desempate escolhido ({c96})')
+        ok(p96.get_attribute('#fmtCamp', 'aria-pressed') == 'true' and p96.locator('#campJogos li').count() == 6 and p96.locator('#campTabela tbody tr').count() == 4,
+           'CT-KAN-233-01: com o campeonato, o formato fica em Campeonato e aparecem a tabela (4 times) e os 6 jogos')
+        ok('Em quadra' in p96.inner_text('#campJogos li:nth-child(1)') and p96.evaluate("[S.live.a,S.live.b]") == [0, 1] and p96.locator('#naEspera').count() == 0,
+           'CT-KAN-233-02: o primeiro jogo (Time 1 × Time 2) já fica em quadra; a fila de espera do livre não aparece')
+        ok('ordem do campeonato' in p96.inner_text('#partidaRaiz'), 'CT-KAN-233-02: o aviso de sugestão fala da ordem do campeonato')
+        def gols96(lado, n):
+            for _ in range(n):
+                p96.locator(f'[data-a=goal][data-v={lado}]').first.click(); p96.wait_for_selector('[data-a=addGoal][data-p]', timeout=5000)
+                p96.locator('[data-a=addGoal][data-p]').first.click(); p96.wait_for_timeout(250)
+        placares96 = [(2, 0), (1, 0), (0, 0), (3, 0), (1, 1), (4, 1)]
+        esperado96 = [[0, 1], [2, 3], [0, 2], [1, 3], [0, 3], [1, 2]]
+        seguiu96 = []
+        for k, (ga, gb) in enumerate(placares96):
+            seguiu96.append(p96.evaluate("[S.live.a,S.live.b]"))
+            gols96('a', ga); gols96('b', gb)
+            p96.click('[data-a=saveMatch]'); p96.wait_for_timeout(900)
+            if k == 2:
+                p96.reload(); p96.wait_for_timeout(1500); p96.click('[data-a=tab][data-v=partida]'); p96.wait_for_selector('#campPainel', timeout=10000); p96.wait_for_timeout(600)
+                ok('Faltam 3 de 6 jogos' in p96.inner_text('#campPainel') and p96.locator('#campJogos li.feito').count() == 3,
+                   'CT-KAN-233-05: fechar e abrir o app no meio mantém o campeonato, a tabela e os jogos feitos')
+        ok(seguiu96 == esperado96, f'CT-KAN-233-02: depois de cada partida salva, o próximo jogo é o da ordem do campeonato ({seguiu96})')
+        tab96 = p96.evaluate("[...document.querySelectorAll('#campTabela tbody tr')].map(r=>[+r.dataset.t,+r.children[2].innerText])")
+        ok(tab96 == [[1, 6], [0, 5], [2, 4], [3, 1]], f'CT-KAN-233-03: classificação por pontos (vitória 3, empate 1): Time 2, Time 1, Time 3, Time 4 ({tab96})')
+        ok('Todos os jogos foram disputados' in p96.inner_text('#campPainel') and '1º lugar: Time 2' in p96.inner_text('#campLider'),
+           'CT-KAN-233-04: com todos os jogos disputados, o painel mostra o 1º lugar')
+        crit96 = p96.inner_text('#campCriterios')
+        ok('pontos (vitória 3, empate 1), gols a favor, saldo de gols, confronto direto' in crit96 and 'sorteio' not in crit96, f'CT-KAN-233-03: a ordem da classificação aparece embaixo da tabela ({crit96!r})')
+        # Mudar o desempate depois: abre com o que foi escolhido
+        p96.click('#campPainel [data-a=abrirCampeonato]'); p96.wait_for_selector('#campCrit', timeout=5000); p96.wait_for_timeout(200)
+        crit1 = p96.evaluate("[...document.querySelectorAll('#campCrit li')].map(l=>[l.dataset.k,l.querySelector('input').checked])")
+        ok(crit1 == [['gp', True], ['saldo', True], ['cd', True], ['sorteio', False]] and 'Salvar desempate' in p96.inner_text('#campOk'),
+           f'CT-KAN-233-03: "Desempate" abre com a ordem gravada e o botão Salvar desempate ({crit1})')
+        p96.check('#campCrit li[data-k=sorteio] input'); p96.click('#campOk'); p96.wait_for_timeout(700)
+        ok((p96.evaluate(LER, f'grupos/{g96}/rodadas/{rid96}') or {}).get('camp', {}).get('crit') == ['gp', 'saldo', 'cd', 'sorteio'], 'CT-KAN-233-03: o desempate mudado fica gravado, sem refazer os jogos')
+        for tema in ['light', 'dark']:
+            p96.emulate_media(color_scheme=tema); p96.wait_for_timeout(150)
+            contraste(p96, f'painel do campeonato ({tema})')
+        p96.emulate_media(color_scheme='light')
+        p96.set_viewport_size({'width': 360, 'height': 740}); p96.wait_for_timeout(200)
+        ok(p96.evaluate("document.documentElement.scrollWidth<=innerWidth"), 'CT-KAN-233-04: em 360px, o painel do campeonato não cria rolagem lateral (a tabela rola dentro)')
+        p96.locator('#formatoPainel').scroll_into_view_if_needed(); p96.screenshot(path=f'{OUT}/96-campeonato-360.png', full_page=True)
+        p96.set_viewport_size({'width': 390, 'height': 844})
+        # English
+        p96.evaluate("localStorage.setItem('nj-idioma','en')"); p96.reload(); p96.wait_for_timeout(1800)
+        p96.click('[data-a=tab][data-v=partida]'); p96.wait_for_selector('#campPainel', timeout=10000); p96.wait_for_timeout(500)
+        t96 = p96.inner_text('#formatoPainel') + ' ' + p96.inner_text('#campPainel')
+        sem96 = p96.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(camp\\.|plano\\.rec\\.campeonato)/.test(k))")
+        pt96 = [w for w in ['Campeonato', 'Faltam', 'Jogos', 'Saldo', 'Livre', 'vitória', 'confronto', 'lugar', 'Contra'] if w in t96]
+        ok(not sem96 and not pt96 and 'Championship' in t96 and 'goals scored' in t96, f'CT-KAN-233-07: em English, o formato e o campeonato saem sem palavras em português ({sem96}, {pt96})')
+        p96.evaluate("localStorage.setItem('nj-idioma','pt-BR')"); p96.reload(); p96.wait_for_timeout(1500)
+        p96.click('[data-a=tab][data-v=partida]'); p96.wait_for_selector('#campPainel', timeout=10000); p96.wait_for_timeout(400)
+        # Voltar ao livre: pergunta, apaga só o campeonato; as partidas continuam
+        p96.click('#fmtLivre'); ok(confirmar_app(p96, True), 'CT-KAN-233-08: voltar ao formato livre pergunta antes'); p96.wait_for_timeout(700)
+        d96 = p96.evaluate(LER, f'grupos/{g96}/rodadas/{rid96}') or {}
+        np96 = p96.evaluate("Object.values(S.parts||{}).filter(m=>m.tipo!=='art').length")
+        ok('camp' not in d96 and p96.locator('#campPainel').count() == 0 and np96 == 6 and p96.get_attribute('#fmtLivre', 'aria-pressed') == 'true',
+           f'CT-KAN-233-08: no formato livre, o campeonato sai da rodada e as 6 partidas continuam ({np96})')
+        # Grátis: cadeado
+        p96.evaluate(PUT, {'sistema/planos': {'transicaoAte': 1}}); p96.reload(); p96.wait_for_timeout(1500)
+        p96.click('[data-a=tab][data-v=partida]'); p96.wait_for_selector('#formatoPainel', timeout=10000); p96.wait_for_timeout(400)
+        ok(p96.locator('#fmtCamp').is_disabled() and '🔒' in p96.inner_text('#fmtCamp') and p96.locator('#formatoPainel [data-trava=campeonato]').count() == 1
+           and 'Plano A' in p96.inner_text('#formatoPainel [data-trava=campeonato]'),
+           'CT-KAN-233-06: no Grátis, Campeonato aparece com o cadeado e "faz parte do Plano A"')
+        p96.click('#formatoPainel [data-trava=campeonato] [data-a=planosDlg]'); p96.wait_for_timeout(600)
+        ok('Campeonato na rodada' in p96.inner_text('#dlgBody'), 'CT-KAN-233-06: a janela Planos lista o campeonato')
+        p96.evaluate(DEL, ['sistema/planos']); ctx96.close()
+
         # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
         ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
         p7 = ctx7.new_page()

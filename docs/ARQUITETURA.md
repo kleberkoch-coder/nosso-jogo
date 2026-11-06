@@ -199,6 +199,15 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D46. Campeonato no campo da rodada; partidas de sempre (05 nov. 2026, pelada-v96, KAN-233)
+- **Onde fica:** um campo `camp` na ficha da rodada (`em`, `n`, `jogos` como textos "0-1", `crit`, `sem`). As partidas continuam as de sempre: o jogo do campeonato é achado pelo par de times (`resultados` em `dominio/campeonato.ts`, com teste), a primeira partida salva depois de `em`. Assim, ranking, resumo do mês, edição e exclusão de partida não mudam, e a tabela se refaz sozinha quando uma partida é editada ou apagada.
+- **Regras do Firebase não mudam:** a ficha da rodada já é gravada só por administrador, sem lista de campos. O Plano A é conferido na tela (como o ranking do ano e a lista de espera), não nas regras.
+- **Jogos como texto:** o Firestore não aceita lista dentro de lista; "0-1" evita a conversão.
+- **Sorteio igual em todos os aparelhos:** o critério "sorteio" usa um número guardado (`sem`) e uma conta fixa, em vez de `Math.random` na hora.
+- **Ordem dos jogos:** busca com retrocesso por uma ordem sem time jogando duas seguidas, tentando primeiro os mais descansados, com limite de 20 mil passos; sem saída (3 e 4 times), fica a escolha gulosa.
+- **Tamanho:** tudo chega com a parte Partida (8,1 → 11,8 KB, limite 15). Gestão 89,9 KB e link 48,4 KB. Inglês e espanhol: a parte "gestao" chegou a 15,0 KB e foi dividida em `gestao` (dicionário da gestão, 6,6 KB) e `partes` (textos das partes sob demanda, 9,1 KB), baixadas juntas (`i18n/idiomas.ts`).
+- **Mata-mata (v97):** a chave sai da classificação; as partidas depois da fase de todos contra todos vão casar com a chave pelo mesmo par de times.
+
 ### D45. Quem participa da votação: a gestão calcula, a votação guarda a lista (05 nov. 2026, pelada-v95, KAN-230)
 - **Por que guardar a lista:** o tipo de cada jogador (mensalista, diarista, isento) fica em `privado/caixa`, que o link não lê. Então a gestão calcula, ao criar a votação, quem participa (`dominio/votacao-participa.ts`, com teste) e grava `quem` (ids) e `part` (as escolhas) no documento da votação. O link só usa a lista (`candidatos(…, quem)` em `dominio/votacao.ts`).
 - **Compatível:** sem `quem` (votações antigas ou no padrão), tudo como antes: quem está nos times.

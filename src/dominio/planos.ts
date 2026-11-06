@@ -19,7 +19,15 @@ export type Conta =
   | undefined;
 
 const BASICO = ['presenca', 'sorteio', 'placar', 'rankingMes'];
-const PLANO_A = BASICO.concat(['caixa', 'votacao', 'rankingAnual', 'historico', 'listaEspera', 'cobrarPendentes']);
+const PLANO_A = BASICO.concat([
+  'caixa',
+  'votacao',
+  'rankingAnual',
+  'historico',
+  'listaEspera',
+  'cobrarPendentes',
+  'campeonato',
+]);
 export const PLANOS_PADRAO: Catalogo = {
   gratis: { nome: 'Grátis', grupos: 1, admins: 1, recursos: BASICO },
   A: { nome: 'Plano A', grupos: 3, admins: 2, recursos: PLANO_A },

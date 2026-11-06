@@ -14,9 +14,10 @@ import { marcarAlterada } from '../ui/dialogos.js';
 import { rodadasProntas } from './rodada-partes.js';
 import { sumPts } from '../ui/placar.js';
 import { proximoJogo, type Proximo } from '../dominio/fila';
+import { Formato, PainelCampeonato, proximoDoCamp } from './Campeonato';
 
 type Time = { c: number | string; players: string[] };
-type Rodada = { id: string; date: string; time?: string; times?: Time[] | null };
+type Rodada = { id: string; date: string; time?: string; times?: Time[] | null; camp?: unknown };
 type Gol = { t: 'a' | 'b'; pid?: string | null; og?: boolean; pts?: number };
 type Partida = {
   id: string;
@@ -37,6 +38,9 @@ const LIMITES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 21, 25];
 
 /* Sugestão do próximo jogo (KAN-175), a partir dos jogos salvos desta rodada (dominio/fila.ts). */
 function sugestao(r: Rodada): Proximo {
+  /* KAN-233: no campeonato, o próximo jogo é o da ordem do campeonato; depois do último, volta a fila de sempre. */
+  const pc = proximoDoCamp(r);
+  if (pc) return { a: pc.a, b: pc.b, espera: [] };
   const times = r.times as Time[],
     pos = (m: Partida, l: 'a' | 'b') => timeDoJogo(m, l, times) as number;
   const jogos = (partidasDe(r.id) as Partida[])
@@ -167,7 +171,8 @@ function Placar({ r }: { r: Rodada }) {
 function Ajustes({ r }: { r: Rodada }) {
   const L = st().live!,
     times = r.times as Time[],
-    espera = times.length > 2 ? naEspera(r, L.a, L.b) : [];
+    camp = !!proximoDoCamp(r),
+    espera = times.length > 2 && !camp ? naEspera(r, L.a, L.b) : [];
   const opcoes = (sel: number, pula: number) =>
     times.map((t, i) => (
       <option key={i} value={i} selected={i === sel} disabled={i === pula}>
@@ -228,7 +233,7 @@ function Ajustes({ r }: { r: Rodada }) {
         <button class="btn primary" data-a="saveMatch">
           {tx('partida.salvar')}
         </button>
-        {times.length > 2 ? <span class="small muted">{tx('partida.sugestao')}</span> : null}
+        {times.length > 2 ? <span class="small muted">{tx(camp ? 'camp.sugestao' : 'partida.sugestao')}</span> : null}
       </div>
     </div>
   );
@@ -418,8 +423,10 @@ function PartidaTela() {
   return (
     <div class="stack">
       <SeletorRodada r={r} />
+      <Formato r={r} />
       <Placar r={r} />
       <Ajustes r={r} />
+      <PainelCampeonato r={r} />
       <Salvas r={r} />
       <Artilharia r={r} />
     </div>

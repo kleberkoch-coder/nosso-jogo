@@ -77,3 +77,49 @@
   color: var(--bib-ink);
   border-color: var(--bib);
 }
+/* Campeonato da rodada (KAN-233): formato, classificação, jogos na ordem e a janela do desempate. */
+.formato .formato-rotulo {
+  font: 700 15px var(--display);
+}
+.camp-lider {
+  margin: 0 0 8px;
+  font: 700 16px var(--display);
+}
+.camp-jogos {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.camp-jogos li.feito .pn {
+  color: var(--muted);
+}
+.camp-jogos li.agora .pn {
+  font-weight: 700;
+}
+.camp-crit ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.camp-crit li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.camp-crit li + li {
+  border-top: 1px solid var(--line);
+}
+.camp-crit .chk-linha {
+  flex: 1;
+}
+.camp-crit .camp-subir {
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  justify-content: center;
+}
+.camp-crit .chk-linha span {
+  display: inline-block;
+}
+.camp-crit .chk-linha span::first-letter {
+  text-transform: uppercase;
+}

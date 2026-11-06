@@ -1,6 +1,7 @@
 /* Idiomas do app (KAN-164). Cada pessoa escolhe o seu no menu da conta (fica na conta e no aparelho); o link do
-   jogador segue o idioma do celular. O português vem embutido; inglês e espanhol baixam em dois pedaços sob demanda:
-   "base" (link, apresentação, entrar, convite, avaliação e catálogo) e "gestao" (o resto, só para quem administra).
+   jogador segue o idioma do celular. O português vem embutido; inglês e espanhol baixam sob demanda:
+   "base" (link, apresentação, entrar, convite, avaliação e catálogo) e "gestao" (o resto, só para quem administra,
+   em dois arquivos: o dicionário da gestão e o das partes sob demanda).
    O idioma muda só os textos: moeda, formato das datas e fuso continuam os do grupo. */
 import { definirLocal } from './formatos.js';
 import { juntarIdioma } from './index.js';
@@ -13,9 +14,12 @@ export const IDIOMAS: { id: Idioma; nome: string }[] = [
   { id: 'es', nome: 'Español' },
 ];
 type Dic = { default: Record<string, string> };
+/* KAN-233 (pelada-v96): a gestão chega em dois pedaços (gestao e partes), para cada um ficar abaixo de 15 KB. */
+const juntos = (...ps: Promise<Dic>[]): Promise<Dic> =>
+  Promise.all(ps).then(ms => ({ default: Object.assign({}, ...ms.map(m => m.default)) }));
 const PEDACOS: Record<Exclude<Idioma, 'pt-BR'>, Record<Parte, () => Promise<Dic>>> = {
-  en: { base: () => import('./en/base'), gestao: () => import('./en/gestao') },
-  es: { base: () => import('./es/base'), gestao: () => import('./es/gestao') },
+  en: { base: () => import('./en/base'), gestao: () => juntos(import('./en/gestao'), import('./en/partes')) },
+  es: { base: () => import('./es/base'), gestao: () => juntos(import('./es/gestao'), import('./es/partes')) },
 };
 export const CHAVE_IDIOMA = 'nj-idioma';
 

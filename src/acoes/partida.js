@@ -3,7 +3,7 @@ import { sport, tn } from '../dominio/esportes.js';
 import { curRodada, pname } from '../dominio/grupo.js';
 import { tx } from '../i18n/index.js';
 import { addMatch, delMatch as apagarPartida, editMatch, salvarArtilharia } from '../nucleo/partidas.js';
-import { S } from '../nucleo/estado.js';
+import { GB, S, w } from '../nucleo/estado.js';
 import { $, esc, toast, uid } from '../nucleo/util.js';
 import { actx, beep, elapsed, setActx, sumPts } from '../ui/placar.js';
 import { artAtual, limiteAtingido, montarArtilharia, montarEscalacao, novaPartida, quadra } from '../telas/Partida';
@@ -12,8 +12,21 @@ import { artilhariaDe, partidasDe } from '../nucleo/partidas-lista.js';
 import { mandarPartidas } from '../ui/zap-partidas';
 import { closeDlg, confirmou, dlg, openDlg } from '../ui/dialogos.js';
 import { janelaPonto } from '../ui/JanelaPonto';
-import { render } from '../ui/render.js';
+import { changed, render } from '../ui/render.js';
 import { ACT } from '../acoes.js';
+import { campDe, desempateEscolhido, janelaCampeonato } from '../telas/Campeonato';
+import { MAX_TIMES, MIN_TIMES, novoCampeonato } from '../dominio/campeonato';
+import { recurso } from '../dominio/grupo.js';
+import { op } from '../nucleo/backend.js';
+
+/* KAN-233: grava o campeonato na ficha da rodada (campo camp), com a tela mudando na hora. */
+function gravarCamp(r, camp) {
+  const d = S.rod[r.id] || {};
+  S.rod[r.id] = Object.assign({}, d, { camp });
+  if (!camp) delete S.rod[r.id].camp;
+  changed();
+  return w(GB.patch('rodadas/' + r.id, { camp: camp || op.apagar() }));
+}
 
 /* KAN-75: título da janela do ponto, pelo catálogo do esporte.
    "+2" vira "+2 pontos"; "Gol" fica "Gol"; "TD" vira "TD (+6)"; "2 pts" fica como está. */
@@ -24,6 +37,49 @@ function nomePonto(sc, SP) {
 }
 
 const acoes = {
+  /* KAN-233: formato da rodada. Campeonato abre a janela (montar ou mudar o desempate); Livre desfaz, com confirmação. */
+  abrirCampeonato: () => {
+    const r = curRodada();
+    if (!r || !r.times) return;
+    const n = r.times.length;
+    if (!campDe(r) && (!recurso('campeonato') || n < MIN_TIMES || n > MAX_TIMES)) return;
+    openDlg(janelaCampeonato(r));
+    dlg.setAttribute('aria-labelledby', 'campDlgTitulo');
+    setTimeout(() => $('#campCrit input')?.focus(), 30);
+  },
+  comecarCampeonato: () => {
+    const r = curRodada();
+    if (!r || !r.times || campDe(r)) return closeDlg();
+    const c = novoCampeonato(r.times.length, desempateEscolhido(), Date.now(), Math.floor(Math.random() * 2 ** 31));
+    closeDlg();
+    /* O jogo em andamento que ainda não começou passa a ser o primeiro do campeonato. */
+    const L = S.live;
+    if (L && L.rid === r.id && !L.goals.length && !L.run && !L.el) L.auto = true;
+    toast(tx('camp.comecou', { n: c.jogos.length }));
+    return gravarCamp(r, c);
+  },
+  salvarDesempate: () => {
+    const r = curRodada(),
+      c = r && campDe(r);
+    if (!c) return closeDlg();
+    closeDlg();
+    toast(tx('camp.desempateSalvo'));
+    return gravarCamp(r, Object.assign({}, c, { crit: desempateEscolhido() }));
+  },
+  formatoLivre: el => {
+    const r = curRodada();
+    if (!r || !r.camp) return;
+    if (
+      confirmou(el, {
+        titulo: tx('camp.livreTitulo'),
+        texto: tx('camp.livreTexto'),
+        acao: tx('camp.livreAcao'),
+      }) !== 'sim'
+    )
+      return;
+    toast(tx('camp.voltouLivre'));
+    return gravarCamp(r, null);
+  },
   goal: el => {
     const r = curRodada(),
       L = S.live,

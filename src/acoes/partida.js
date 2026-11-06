@@ -112,6 +112,18 @@ const acoes = {
     });
   },
   quemPassou: el => abrirQuemPassou(curRodada(), el.dataset.v),
+  /* KAN-238: campeonato encerrado: jogar mais uma partida (fora do campeonato) ou voltar ao resultado. */
+  jogarFora: () => {
+    const r = curRodada();
+    if (!r) return;
+    S.campFora = r.id;
+    S.live = novaPartida(r, S.live);
+    render();
+  },
+  voltarCamp: () => {
+    S.campFora = null;
+    render();
+  },
   salvarQuemPassou: () => {
     const r = curRodada();
     return janelas().then(m => {

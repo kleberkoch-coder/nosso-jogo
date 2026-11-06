@@ -28,6 +28,12 @@ export type Chave = {
   campeao: number | null;
   vice: number | null;
   terceiro: number | null;
+  /* KAN-238: acabou (campeão definido) e, para cada partida salva (pela posição na lista), de que jogo ela foi:
+     'g' (todos contra todos), o jogo da chave ('s0', 'f', 't3'…) ou null (fora do campeonato). */
+  encerrado: boolean;
+  fases: (string | null)[];
+  /* Mata-mata parado: todos os jogos possíveis feitos, mas falta dizer quem passou num empate. */
+  esperando: Slot[];
 };
 
 const FASES: Record<number, Fase> = { 16: 'o', 8: 'q', 4: 's', 2: 'f' };
@@ -43,7 +49,7 @@ export function semeadura(k: number): number[] {
 }
 
 export function chave(c: Camp, ms: Jogo[]): Chave {
-  const usadas = new Set<number>(),
+  const usadas = new Map<number, string>(),
     grupo = resultados(c, ms, usadas),
     grupoAcabou = grupo.every(x => !!x),
     tabela = classificacao(c, ms),
@@ -57,7 +63,7 @@ export function chave(c: Camp, ms: Jogo[]): Chave {
   const jogo = (id: string, fase: Fase, oa: Origem, ob: Origem) => {
     const a = time(oa),
       b = time(ob),
-      res = a != null && b != null ? casar(c, ms, usadas, a, b) : null,
+      res = a != null && b != null ? casar(c, ms, usadas, a, b, id) : null,
       d = c.dec[id],
       dec = d && (d.p === a || d.p === b) ? d : null;
     let venc: number | null = null;
@@ -110,14 +116,20 @@ export function chave(c: Camp, ms: Jogo[]): Chave {
   }
   const f = porId.f,
     t = porId.t3;
-  const semMata = k < 2 && grupoAcabou;
+  const semMata = k < 2 && grupoAcabou,
+    proximo = grupoAcabou ? slots.find(s => s.a != null && s.b != null && !s.res) || null : null,
+    campeao = semMata ? tabela[0].t : f ? f.venc : null;
   return {
     grupoAcabou,
     tabela,
     slots,
-    proximo: grupoAcabou ? slots.find(s => s.a != null && s.b != null && !s.res) || null : null,
-    campeao: semMata ? tabela[0].t : f ? f.venc : null,
+    proximo,
+    campeao,
     vice: semMata ? (tabela[1] ? tabela[1].t : null) : f ? f.perd : null,
     terceiro: semMata ? (tabela[2] ? tabela[2].t : null) : t ? t.venc : null,
+    /* Com 3º lugar, só acaba quando ele também está decidido. */
+    encerrado: campeao != null && (!t || t.venc != null),
+    fases: ms.map((_, i) => usadas.get(i) || null),
+    esperando: grupoAcabou && !proximo ? slots.filter(s => s.falta) : [],
   };
 }

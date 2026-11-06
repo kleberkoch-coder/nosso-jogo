@@ -256,6 +256,8 @@ export type Estado = {
   ajVagas?: unknown;
   /* partidas e ranking */
   live: AoVivo | null;
+  /* KAN-238: rodada em que o campeonato acabou e o organizador quis jogar mais (partida fora do campeonato). */
+  campFora?: string | null;
   parts?: Mapa<Partida>;
   partsRid?: string | null;
   res?: Mapa<any> | null;

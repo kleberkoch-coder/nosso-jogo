@@ -17,7 +17,8 @@ import {
   type Jogo,
 } from '../dominio/campeonato';
 import { chave, type Origem, type Slot } from '../dominio/mata-mata';
-import { col, sport, timeDoJogo, tn } from '../dominio/esportes.js';
+import { col, sport, tn } from '../dominio/esportes.js';
+import { comoJogos, nomeFase } from '../ui/zap-partidas';
 import { recurso } from '../dominio/grupo.js';
 import { juntarTextos, tx } from '../i18n/index.js';
 import textos from '../i18n/pt-BR-campeonato';
@@ -29,31 +30,11 @@ juntarTextos(textos);
 
 type Time = { c: number | string; players: string[] };
 export type Rodada = { id: string; times?: Time[] | null; camp?: unknown };
-type Salva = {
-  ta?: number;
-  tb?: number;
-  ca: number | string;
-  cb: number | string;
-  ga: number;
-  gb: number;
-  at?: number;
-};
 
 /* Campeonato da rodada, se houver e valer para estes times. */
 export const campDe = (r: Rodada): Camp | null => (r.times ? lerCamp(r.camp, r.times.length) : null);
-/* Partidas salvas da rodada como jogos entre posições de times. */
-export function jogosDe(r: Rodada): Jogo[] {
-  const times = r.times || [];
-  return (partidasDe(r.id) as unknown as Salva[])
-    .map(m => ({
-      a: timeDoJogo(m, 'a', times) as number,
-      b: timeDoJogo(m, 'b', times) as number,
-      ga: m.ga,
-      gb: m.gb,
-      at: m.at,
-    }))
-    .filter(j => j.a >= 0 && j.b >= 0);
-}
+/* Partidas salvas da rodada como jogos entre posições de times, na ordem da lista (KAN-238: a posição diz a fase). */
+export const jogosDe = (r: Rodada): Jogo[] => comoJogos(partidasDe(r.id) as never, r.times);
 /* Próximo jogo pela ordem do campeonato: os de todos contra todos e, depois, os do mata-mata com os dois times já
    definidos (null: sem campeonato, acabou, ou esperando dizer quem passou). */
 export function proximoDoCamp(r: Rodada): { a: number; b: number } | null {
@@ -74,8 +55,7 @@ const pontos = () => (sport() as { word: string }).word.toLowerCase();
 export const nomeCrit = (k: string) => tx('camp.crit.' + k, { pontos: pontos() });
 const listaCrit = (c: string[]) => [tx('camp.crit.pts')].concat(c.map(nomeCrit)).join(', ');
 /* Nome da fase e de onde vem cada time ("1º colocado", "Vencedor da semifinal 1"). */
-export const nomeFase = (s: { fase: string; id: string }) =>
-  tx('mata.fase.' + s.fase, { n: s.id.length > 1 && s.fase !== 't3' ? +s.id.slice(1) + 1 : '' }).trim();
+export { nomeFase };
 const origem = (o: Origem, slots: Slot[]) => {
   if ('col' in o) return tx('mata.colocado', { n: o.col });
   const s = slots.find(x => x.id === ('venc' in o ? o.venc : o.perd));
@@ -264,6 +244,59 @@ export function PainelCampeonato({ r }: { r: Rodada }) {
           </ol>
         </>
       ) : null}
+    </div>
+  );
+}
+/* KAN-238: campeonato encerrado (ou parado esperando "Quem passou?"): no lugar do placar, o resultado e o convite
+   para jogar fora do campeonato. Quem quiser mais partidas toca em "Jogar partida fora do campeonato". */
+export function FimDoCampeonato({ r }: { r: Rodada }) {
+  const k = chaveDe(r);
+  if (!k) return null;
+  if (!k.encerrado)
+    return (
+      <div class="panel camp-fim" id="campEsperando">
+        <h3 style="margin:0 0 6px">{tx('camp.esperandoTitulo')}</h3>
+        <p class="small muted" style="margin:0 0 10px">
+          {tx('camp.esperandoTexto')}
+        </p>
+        <div class="row">
+          {k.esperando.map(s => (
+            <button key={s.id} class="btn primary" data-a="quemPassou" data-v={s.id}>
+              {tx('camp.decidir', { fase: nomeFase(s) })}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  return (
+    <div class="panel camp-fim" id="campFim">
+      <h3 style="margin:0 0 6px">{tx('camp.encerradoTitulo')}</h3>
+      <p class="camp-lider" style="margin:0 0 4px">
+        <span aria-hidden="true">🏆 </span>
+        {tx('mata.campeao', { time: tn(k.campeao as number) })}
+      </p>
+      <p class="small muted" style="margin:0 0 12px">
+        {[
+          k.vice != null ? tx('mata.vice', { time: tn(k.vice) }) : '',
+          k.terceiro != null && k.slots.some(s => s.id === 't3') ? tx('mata.terceiro', { time: tn(k.terceiro) }) : '',
+        ]
+          .filter(Boolean)
+          .join(' · ')}
+      </p>
+      <button class="btn" data-a="jogarFora" id="jogarFora">
+        {tx('camp.jogarFora')}
+      </button>
+    </div>
+  );
+}
+/* Aviso em cima do placar enquanto se joga fora do campeonato encerrado. */
+export function AvisoFora() {
+  return (
+    <div class="inbar info" id="campForaAviso">
+      <span>{tx('camp.foraAviso')}</span>
+      <button class="btn sm" data-a="voltarCamp">
+        {tx('camp.voltarCamp')}
+      </button>
     </div>
   );
 }

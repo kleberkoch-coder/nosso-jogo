@@ -4261,11 +4261,43 @@ with sync_playwright() as pw:
            f'CT-KAN-233-12: com a final, aparecem campeão, vice e 3º ({p96.inner_text("#campLider")!r})')
         p96.reload(); p96.wait_for_timeout(1500); p96.click('[data-a=tab][data-v=partida]'); p96.wait_for_selector('#campLider', timeout=10000); p96.wait_for_timeout(400)
         ok('Campeão: Time 2' in p96.inner_text('#campLider'), 'CT-KAN-233-12: campeão continua depois de recarregar')
+        # KAN-238: campeonato encerrado: sem placar nem sugestão; jogar fora do campeonato é opcional
+        ok(p96.locator('#campFim').count() == 1 and 'Campeonato encerrado' in p96.inner_text('#campFim') and 'Campeão: Time 2' in p96.inner_text('#campFim')
+           and p96.locator('.board').count() == 0 and p96.locator('[data-a=saveMatch]').count() == 0,
+           'CT-KAN-238-01: com o campeonato encerrado, o placar dá lugar a "Campeonato encerrado" com o campeão, e o app não sugere outro jogo')
+        tags96 = p96.evaluate("[...document.querySelectorAll('#partidaRaiz .fase-tag')].map(e=>e.textContent)")
+        ok(tags96 == ['Todos contra todos'] * 6 + ['3º lugar', 'Final'], f'CT-KAN-238-02: cada partida da lista mostra a fase ({tags96})')
+        for tema in ['light', 'dark']:
+            p96.emulate_media(color_scheme=tema); p96.wait_for_timeout(150)
+            contraste(p96, f'campeonato encerrado ({tema})')
+        p96.emulate_media(color_scheme='light')
+        p96.set_viewport_size({'width': 360, 'height': 740}); p96.wait_for_timeout(200)
+        ok(p96.evaluate("document.documentElement.scrollWidth<=innerWidth"), 'CT-KAN-238-01: em 360px, o fim do campeonato e as etiquetas não criam rolagem lateral')
+        p96.locator('#formatoPainel').scroll_into_view_if_needed(); p96.screenshot(path=f'{OUT}/98-encerrado-360.png', full_page=True)
+        p96.set_viewport_size({'width': 390, 'height': 844})
+        tab96b = p96.evaluate("[...document.querySelectorAll('#campTabela tbody tr')].map(r=>r.innerText)")
+        p96.click('#jogarFora'); p96.wait_for_selector('.board', timeout=5000); p96.wait_for_timeout(300)
+        ok(p96.locator('#campForaAviso').count() == 1, 'CT-KAN-238-01: "Jogar partida fora do campeonato" volta o placar, com o aviso de que não entra na tabela')
+        gols96('a', 1); p96.click('[data-a=saveMatch]'); p96.wait_for_timeout(900)
+        tags96b = p96.evaluate("[...document.querySelectorAll('#partidaRaiz .fase-tag')].map(e=>e.textContent)")
+        ok(tags96b[-1] == 'Fora do campeonato' and p96.evaluate("[...document.querySelectorAll('#campTabela tbody tr')].map(r=>r.innerText)") == tab96b and 'Campeão: Time 2' in p96.inner_text('#campLider'),
+           f'CT-KAN-238-01: a partida extra aparece como "Fora do campeonato" e não mexe na tabela nem no campeão ({tags96b[-1:]})')
+        p96.click('#campForaAviso [data-a=voltarCamp]'); p96.wait_for_selector('#campFim', timeout=5000)
+        # WhatsApp: por fase, pênaltis, classificação do campeonato e campeão
+        p96.click('[data-a=zapPartidas]'); p96.wait_for_selector('#shtxt', timeout=5000)
+        z96 = p96.input_value('#shtxt')
+        ok('*Todos contra todos*' in z96 and '*Mata-mata*' in z96 and '*Fora do campeonato*' in z96 and '7. 3º lugar: ' in z96 and '8. Final: ' in z96
+           and '(pênaltis 4 × 3, passou Time 3)' in z96 and '🏆 *Classificação do campeonato*' in z96 and 'Classificação da rodada' not in z96
+           and '🥇 *Campeão: Time 2*' in z96 and '🥈 Vice: Time 1' in z96 and '🥉 3º lugar: Time 3' in z96,
+           f'CT-KAN-238-03: a mensagem do WhatsApp separa as fases, traz os pênaltis, a classificação do campeonato e o campeão, o vice e o 3º ({z96[:200]!r})')
+        p96.click('#dlg [data-a=close]'); p96.wait_for_timeout(200)
         p96.click('[data-a=tab][data-v=historico]'); p96.wait_for_timeout(1200)
         p96.click('[data-a=histBuscar]'); p96.wait_for_timeout(1500)
         p96.locator(f'[data-a=histAbrir][data-v="{rid96}"]').first.click(); p96.wait_for_selector('#histCampeao', timeout=10000)
         hc96 = p96.inner_text('#histCampeao')
         ok('Campeão: Time 2' in hc96 and 'Vice: Time 1' in hc96, f'CT-KAN-233-13: campeão e vice ficam no Histórico da rodada ({hc96!r})')
+        th96 = p96.evaluate("[...document.querySelectorAll('.fase-tag')].map(e=>e.textContent)")
+        ok(th96 == ['Todos contra todos'] * 6 + ['3º lugar', 'Final', 'Fora do campeonato'], f'CT-KAN-238-02: no Histórico, cada partida mostra a fase ({th96})')
         p96.click('[data-a=tab][data-v=partida]'); p96.wait_for_selector('#campPainel', timeout=10000); p96.wait_for_timeout(400)
         crit96 = p96.inner_text('#campCriterios')
         ok('pontos (vitória 3, empate 1), gols a favor, saldo de gols, confronto direto' in crit96 and 'sorteio' not in crit96, f'CT-KAN-233-03: a ordem da classificação aparece embaixo da tabela ({crit96!r})')
@@ -4288,9 +4320,9 @@ with sync_playwright() as pw:
         # English
         p96.evaluate("localStorage.setItem('nj-idioma','en')"); p96.reload(); p96.wait_for_timeout(1800)
         p96.click('[data-a=tab][data-v=partida]'); p96.wait_for_selector('#campPainel', timeout=10000); p96.wait_for_timeout(500)
-        t96 = p96.inner_text('#formatoPainel') + ' ' + p96.inner_text('#campPainel')
-        sem96 = p96.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(camp\\.|mata\\.|plano\\.rec\\.campeonato)/.test(k))")
-        pt96 = [w for w in ['Campeonato', 'Faltam', 'Jogos', 'Saldo', 'Livre', 'vitória', 'confronto', 'lugar', 'Contra', 'Campeão', 'Vice', 'Mata-mata', 'pênaltis', 'passou'] if w in t96]
+        t96 = p96.inner_text('#formatoPainel') + ' ' + p96.inner_text('#campPainel') + ' ' + p96.inner_text('#campFim') + ' ' + p96.inner_text('#partidaRaiz .fase-tag >> nth=0')
+        sem96 = p96.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(camp\\.|mata\\.|zappart\\.|plano\\.rec\\.campeonato)/.test(k))")
+        pt96 = [w for w in ['Campeonato', 'Faltam', 'Jogos', 'Saldo', 'Livre', 'vitória', 'confronto', 'lugar', 'Contra', 'Campeão', 'Vice', 'Mata-mata', 'pênaltis', 'passou', 'encerrado', 'Todos contra'] if w in t96]
         ok(not sem96 and not pt96 and 'Championship' in t96 and 'goals scored' in t96 and 'Champion: Team 2' in t96 and 'Knockout' in t96, f'CT-KAN-233-07: em English, o formato e o campeonato saem sem palavras em português ({sem96}, {pt96})')
         p96.evaluate("localStorage.setItem('nj-idioma','pt-BR')"); p96.reload(); p96.wait_for_timeout(1500)
         p96.click('[data-a=tab][data-v=partida]'); p96.wait_for_selector('#campPainel', timeout=10000); p96.wait_for_timeout(400)
@@ -4298,8 +4330,8 @@ with sync_playwright() as pw:
         p96.click('#fmtLivre'); ok(confirmar_app(p96, True), 'CT-KAN-233-08: voltar ao formato livre pergunta antes'); p96.wait_for_timeout(700)
         d96 = p96.evaluate(LER, f'grupos/{g96}/rodadas/{rid96}') or {}
         np96 = p96.evaluate("Object.values(S.parts||{}).filter(m=>m.tipo!=='art').length")
-        ok('camp' not in d96 and p96.locator('#campPainel').count() == 0 and np96 == 8 and p96.get_attribute('#fmtLivre', 'aria-pressed') == 'true',
-           f'CT-KAN-233-08: no formato livre, o campeonato sai da rodada e as 8 partidas continuam ({np96})')
+        ok('camp' not in d96 and p96.locator('#campPainel').count() == 0 and np96 == 9 and p96.get_attribute('#fmtLivre', 'aria-pressed') == 'true',
+           f'CT-KAN-233-08: no formato livre, o campeonato sai da rodada e as 9 partidas continuam ({np96})')
         # Grátis: cadeado
         p96.evaluate(PUT, {'sistema/planos': {'transicaoAte': 1}}); p96.reload(); p96.wait_for_timeout(1500)
         p96.click('[data-a=tab][data-v=partida]'); p96.wait_for_selector('#formatoPainel', timeout=10000); p96.wait_for_timeout(400)

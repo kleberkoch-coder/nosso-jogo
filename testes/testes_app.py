@@ -4482,7 +4482,10 @@ with sync_playwright() as pw:
         me101 = p101.evaluate(LER, f'usuarios/{u101}') or {}
         me101.setdefault('grupos', {})['g-outro101'] = {'name': 'Outro FC', 'role': 'owner', 'ativo': True}
         p101.evaluate(PUT, {f'usuarios/{u101}': me101})
-        p101.goto(URL + '#/'); p101.reload(); p101.wait_for_timeout(1800)
+        p101.goto(URL + '#/'); p101.reload()
+        try: p101.wait_for_selector('#avisoContaBloqueada', timeout=10000)
+        except Exception: pass
+        p101.wait_for_timeout(300)
         if p101.locator('#dlg[open]').count(): p101.click('#dlg [data-a=close]'); p101.wait_for_timeout(300)
         ok(p101.locator('#avisoContaBloqueada').count() == 1 and p101.locator('[data-a=newGroup]').count() == 0,
            'CT-KAN-117-10: com a conta bloqueada, "Meus grupos" avisa e não oferece criar grupo')

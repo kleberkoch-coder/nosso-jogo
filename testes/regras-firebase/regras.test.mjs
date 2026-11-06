@@ -670,6 +670,34 @@ describe('planos e portal (KAN-115, KAN-116)', () => {
     await assertFails(setDoc(doc(db.portal(), 'contas/adm'), { acesso: 1 }, { merge: true }));
     await assertFails(setDoc(doc(db.portal(), 'contas/adm'), { ng: 0 }, { merge: true }));
   });
+  test('KAN-117: o portal grava o motivo do plano (só os 4 motivos conhecidos)', async () => {
+    for (const motivo of ['pago', 'cortesia', 'parceria', 'teste'])
+      await assertSucceeds(
+        setDoc(doc(db.portal(), 'contas/adm'), { plano: 'A', planoAte: Date.now() + 864e5, motivo }, { merge: true })
+      );
+    await assertSucceeds(
+      setDoc(doc(db.portal(), 'contas/adm'), { plano: 'gratis', planoAte: null, motivo: null }, { merge: true })
+    );
+    await assertFails(setDoc(doc(db.portal(), 'contas/adm'), { plano: 'A', motivo: 'amigo' }, { merge: true }));
+    await assertFails(setDoc(doc(db.admEmail(), 'contas/adm'), { motivo: 'cortesia' }, { merge: true }));
+  });
+  test('KAN-117: histórico das mudanças de plano: só o portal cria e lê; ninguém muda nem apaga', async () => {
+    const h = {
+      em: Date.now(),
+      por: 'portal@x.com',
+      de: { plano: 'gratis', ate: null, motivo: null },
+      para: { plano: 'A', ate: 1, motivo: 'cortesia' },
+      obs: 'amigo',
+    };
+    await assertSucceeds(setDoc(doc(db.portal(), 'contas/adm/historico/h1'), h));
+    await assertSucceeds(getDocs(collection(db.portal(), 'contas/adm/historico')));
+    await assertFails(updateDoc(doc(db.portal(), 'contas/adm/historico/h1'), { obs: 'outro' }));
+    await assertFails(deleteDoc(doc(db.portal(), 'contas/adm/historico/h1')));
+    await assertFails(getDocs(collection(db.admEmail(), 'contas/adm/historico')));
+    await assertFails(setDoc(doc(db.admEmail(), 'contas/adm/historico/h2'), h));
+    await assertFails(setDoc(doc(db.portal(), 'contas/adm/historico/h3'), { ...h, extra: 1 }));
+    await assertFails(setDoc(doc(db.portalSemConfirmar(), 'contas/adm/historico/h4'), h));
+  });
   test('KAN-133: qualquer pessoa lê um grupo pelo link, mas só o administrador do portal lista todos', async () => {
     await assertSucceeds(getDoc(doc(db.semLogin(), G)));
     await assertFails(getDocs(collection(db.semLogin(), 'grupos')));

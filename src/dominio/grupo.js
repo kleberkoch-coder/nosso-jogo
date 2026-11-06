@@ -42,8 +42,10 @@ function freq(a) {
 }
 function grpAtivo(a) {
   a = a || S.app;
-  return !a || a.ativo !== false;
+  return !a || (a.ativo !== false && !a.bloq);
 }
+/* KAN-117: grupo de conta bloqueada pela administração (portal): indisponível, só para consulta. */
+const grpBloq = a => !!(a || S.app || {}).bloq;
 const fdia = ts =>
   ts ? new Date(ts).toLocaleDateString(FORMATO, { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
 const normName = x =>
@@ -209,6 +211,7 @@ export {
   freq,
   gname,
   grpAtivo,
+  grpBloq,
   isAdmin,
   isAvulso,
   isOwnerMe,

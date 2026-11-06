@@ -4416,7 +4416,85 @@ with sync_playwright() as pw:
             c99b = p99.evaluate(LER, 'contas/u-ficha99') or {}
             ok(c99b.get('plano') == 'gratis' and c99b.get('planoAte') is None and c99b.get('motivo') is None and p99.locator('#fHist li').count() == 4,
                f'CT-KAN-117-02: voltar ao Grátis (com Enter) limpa a validade e o motivo e soma uma linha no histórico ({c99b})')
-            p99.evaluate(DEL, ['sistema/planos']); ctx99.close()
+            # ---------- v101 (KAN-117, 2ª parte): bloquear e desbloquear a conta; limites contra abuso pela tela
+            p99.evaluate(PUT, {'grupos/g-ficha99/membros/u-ficha99': {'uid': 'u-ficha99', 'role': 'owner'}})
+            ok(p99.locator('#bloqPainel').count() == 1 and '1 grupo' in p99.inner_text('#bloqPainel') and p99.locator('#bloqConfirma').count() == 0,
+               'CT-KAN-117-06: a ficha mostra o painel de bloqueio, com quantos grupos a conta tem')
+            p99.fill('#bloqMotivo', 'spam no link'); p99.click('#bloqBotao'); p99.wait_for_selector('#bloqConfirma', timeout=3000)
+            ok('Bloquear a conta e os 1 grupo(s)' in p99.inner_text('#bloqConfirma') and (p99.evaluate(LER, 'contas/u-ficha99') or {}).get('bloq') is None,
+               'CT-KAN-117-06: bloquear pede confirmação antes de gravar')
+            p99.click('#bloqConfirmar'); p99.wait_for_selector('#bloqOk', timeout=5000); p99.wait_for_timeout(300)
+            c101 = p99.evaluate(LER, 'contas/u-ficha99') or {}
+            g101 = p99.evaluate(LER, 'grupos/g-ficha99') or {}
+            h101 = [v for k, v in p99.evaluate("(()=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2'));return Object.entries(s).filter(([k])=>k.startsWith('contas/u-ficha99/historico/'))})()") if v.get('acao')]
+            ok(isinstance(c101.get('bloq'), (int, float)) and g101.get('bloq') is True and len(h101) == 1 and h101[0]['acao'] == 'bloquear' and h101[0].get('obs') == 'spam no link'
+               and 'Bloqueada' in p99.inner_text('#bloqPainel') and 'Conta bloqueada' in p99.inner_text('#fHist'),
+               f'CT-KAN-117-07: o bloqueio marca a conta e os grupos dela e vai para o histórico com o motivo ({c101.get("bloq")}, {g101.get("bloq")}, {h101[:1]})')
+            for tema in ['light', 'dark']:
+                p99.emulate_media(color_scheme=tema); p99.wait_for_timeout(150)
+                contraste(p99, f'bloqueio da conta no portal ({tema})')
+            p99.emulate_media(color_scheme='light')
+            p99.screenshot(path=f'{OUT}/101-bloqueio.png', full_page=True)
+            p99.click('[data-p=voltar]'); p99.wait_for_selector('li.cli', timeout=5000)
+            ok('Bloqueada' in p99.locator('li.cli', has_text='ficha@teste.com').inner_text(), 'CT-KAN-117-07: na lista, a conta aparece como "Bloqueada"')
+            # Limites contra abuso
+            p99.fill('#limAvulsos', '0'); p99.click('#limSalvar'); p99.wait_for_timeout(300)
+            ok('números inteiros de 1 a 500' in p99.inner_text('#limErro') and p99.evaluate(LER, 'sistema/limites') is None, 'CT-KAN-117-08: limite fora de 1 a 500 é recusado')
+            p99.fill('#limAvulsos', '40'); p99.fill('#limGrupos', '10')
+            ld101 = p99.evaluate("(()=>{const b=document.getElementById('limSalvar');b.click();return b.classList.contains('busy')})()")
+            p99.wait_for_selector('#limOk', timeout=5000)
+            ok(ld101 and p99.evaluate(LER, 'sistema/limites') == {'avulsosPorRodada': 40, 'gruposPorConta': 10},
+               'CT-KAN-117-08: "Salvar limites" mostra carregando e grava os dois limites em sistema/limites')
+            # No app: grupo bloqueado (só consulta, aviso) e o link indisponível
+            p99.evaluate(PUT, {'grupos/g-ficha99/rodadas/r101': {'date': '2026-12-01', 'time': '20:00', 'place': 'Quadra'}})
+            q101 = ctx99.new_page(); q101.on('pageerror', lambda e: errs.append('link v101: ' + str(e)))
+            q101.goto(URL + '#/p/g-ficha99/r101'); q101.wait_for_timeout(1800)
+            ok('indisponível' in q101.inner_text('main') and q101.locator('[data-a=mark]').count() == 0,
+               'CT-KAN-117-09: o link de um grupo bloqueado mostra "grupo indisponível" e não aceita confirmação')
+            q101.close()
+            # Desbloquear: volta tudo na hora
+            p99.locator('li.cli', has_text='ficha@teste.com').locator('[data-p=ficha]').click(); p99.wait_for_selector('#bloqPainel', timeout=5000)
+            p99.click('#bloqBotao'); p99.wait_for_selector('#bloqOk', timeout=5000); p99.wait_for_timeout(300)
+            ok((p99.evaluate(LER, 'contas/u-ficha99') or {}).get('bloq') is None and (p99.evaluate(LER, 'grupos/g-ficha99') or {}).get('bloq') is False
+               and p99.locator('#bloqConfirma').count() == 0 and 'Conta desbloqueada' in p99.inner_text('#fHist'),
+               'CT-KAN-117-07: desbloquear é direto, libera a conta e os grupos e também vai para o histórico')
+            p99.evaluate(DEL, ['sistema/planos', 'sistema/limites']); ctx99.close()
+        # No app do organizador: grupo bloqueado só para consulta e conta bloqueada sem "Novo grupo"
+        ctx101 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, service_workers='block')
+        p101 = ctx101.new_page(); p101.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p101, 'criar')
+        p101.fill('#le', 'v101@teste.com'); p101.fill('#lp', 'Jogo@2026'); p101.fill('#lp2', 'Jogo@2026'); p101.keyboard.press('Enter'); p101.wait_for_selector('#ngBox', timeout=12000)
+        p101.fill('#ngn', 'Bloqueado FC'); p101.click('[data-a=pickSport][data-v=futebol]'); p101.click('[data-a=createGroup]')
+        p101.wait_for_function("location.hash.startsWith('#/g/')"); p101.wait_for_timeout(1500)
+        g101b = p101.url.split('#/g/')[1]; u101 = p101.evaluate("S.user.uid")
+        conta101 = p101.evaluate(LER, f'contas/{u101}') or {}
+        grupo101 = p101.evaluate(LER, f'grupos/{g101b}') or {}
+        p101.evaluate(PUT, {f'contas/{u101}': dict(conta101, bloq=int(time.time() * 1000)), f'grupos/{g101b}': dict(grupo101, bloq=True)})
+        p101.reload(); p101.wait_for_timeout(1800)
+        ok(p101.locator('#avisoBloqueado').count() == 1 and 'bloqueado pela administração' in p101.inner_text('#avisoBloqueado')
+           and p101.evaluate("document.body.classList.contains('so-ver')") and p101.locator('#avisoSoVer').count() == 0,
+           'CT-KAN-117-09: no app, o grupo bloqueado mostra o aviso e fica só para consulta')
+        p101.click('[data-a=tab][data-v=jogadores]'); p101.wait_for_timeout(400)
+        p101.locator('[data-a=seed]').first.click() if p101.locator('[data-a=seed]').count() else None; p101.wait_for_timeout(800)
+        jog101 = p101.evaluate("(()=>Object.keys(JSON.parse(localStorage.getItem('pelada-demo-v2'))).filter(k=>k.includes('/jogadores/')&&k.includes('" + g101b + "')).length)()")
+        ok(jog101 == 0, f'CT-KAN-117-09: no grupo bloqueado, tocar em gravar não grava nada ({jog101})')
+        # Conta bloqueada: com 2 grupos, "Meus grupos" aparece (com 1 grupo, o app abre direto o grupo)
+        me101 = p101.evaluate(LER, f'usuarios/{u101}') or {}
+        me101.setdefault('grupos', {})['g-outro101'] = {'name': 'Outro FC', 'role': 'owner', 'ativo': True}
+        p101.evaluate(PUT, {f'usuarios/{u101}': me101})
+        p101.goto(URL + '#/'); p101.reload()
+        try: p101.wait_for_selector('#avisoContaBloqueada', timeout=10000)
+        except Exception: pass
+        p101.wait_for_timeout(300)
+        if p101.locator('#dlg[open]').count(): p101.click('#dlg [data-a=close]'); p101.wait_for_timeout(300)
+        ok(p101.locator('#avisoContaBloqueada').count() == 1 and p101.locator('[data-a=newGroup]').count() == 0,
+           'CT-KAN-117-10: com a conta bloqueada, "Meus grupos" avisa e não oferece criar grupo')
+        contraste(p101, 'aviso de conta bloqueada')
+        p101.goto(URL + '#/g/' + g101b); p101.wait_for_timeout(1500)
+        p101.click('#topright [data-a=groupsDlg]'); p101.wait_for_selector('#dlg[open]', timeout=5000); p101.wait_for_timeout(300)
+        ok(p101.locator('#dlg [data-a=newGroup]').count() == 0, 'CT-KAN-117-10: a janela "Seus grupos" também não oferece criar grupo')
+        ctx101.close()
+
 
         # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
         ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')

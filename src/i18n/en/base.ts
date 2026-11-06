@@ -588,6 +588,8 @@ export default {
   'extra.rateio': 'Create split: {n}',
   'extra.rateioNome': '{n} {data}',
   'extra.editar': 'Edit extra',
+  'publico.grupoIndisponivel': 'This group is unavailable right now.',
+  'render.bloqueado': 'Group blocked by the Nosso Jogo administration: view only. Contact support.',
   /* catálogo: esportes, posições, pontuação, cores do colete e nomes dos planos (tc() em i18n/index.js) */
   'cat.Futebol': 'Soccer',
   'cat.Society': 'Society (7-a-side)',

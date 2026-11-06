@@ -26,6 +26,7 @@ import {
   type Mudanca,
   type Motivo,
 } from '../dominio/planos.ts';
+import { PADRAO as LIMITES_PADRAO, limite, type Chave } from '../dominio/limites.ts';
 import { tx } from './textos.js';
 import { LOCAL } from '../i18n/formatos.js';
 import { today } from '../nucleo/util.js';
@@ -37,8 +38,9 @@ type Conta = {
   obs?: string;
   teste?: number;
   email?: string;
+  bloq?: number | null;
 };
-type Historico = { id: string; em: number; por: string; de: Mudanca; para: Mudanca; obs?: string };
+type Historico = { id: string; em: number; por: string; de: Mudanca; para: Mudanca; obs?: string; acao?: string };
 type Banco = any; // FirebaseBackend ou LocalBackend (JavaScript sem tipos)
 
 const P = {
@@ -60,6 +62,14 @@ const P = {
   fichaOk: '',
   /* Plano escolhido no formulário (KAN-240): no Grátis, validade e motivo ficam desligados. */
   planoForm: null as string | null,
+  /* KAN-117, 2ª parte (pelada-v101): grupos (para bloquear os da conta), limites contra abuso e a confirmação do bloqueio. */
+  grupos: {} as Record<string, { owner?: string; name?: string; bloq?: boolean }>,
+  limites: null as Record<string, unknown> | null,
+  limErro: '',
+  limOk: '',
+  confirmarBloq: false,
+  bloqErro: '',
+  bloqOk: '',
 };
 const $ = (s: string) => document.querySelector(s) as HTMLElement | null;
 const dia = (ts: number | null | undefined) =>
@@ -79,11 +89,14 @@ async function carregar() {
     desenhar();
   }
   try {
-    const [contas, grupos, cfg] = await Promise.all([
+    const [contas, grupos, cfg, lims] = await Promise.all([
       B.get('contas'),
       B.get('grupos'),
       B.get('sistema/planos').catch(() => null),
+      B.get('sistema/limites').catch(() => null),
     ]);
+    P.grupos = grupos || {};
+    P.limites = lims;
     const donos = [
       ...new Set(
         Object.values((grupos || {}) as Record<string, { owner?: string }>)
@@ -192,6 +205,12 @@ function Cartao({ c, q }: { c: Cliente; q: string }) {
           {c.teste ? ` · ${tx('portal.teste', { d: dia(c.teste + 14 * 864e5) })}` : ''}
           {c.plano !== 'gratis' && motivo ? ` · ${tx('ficha.motivo.' + motivo)}` : ''}
         </span>
+        {P.contas[c.uid] && P.contas[c.uid]!.bloq ? (
+          <>
+            {' '}
+            <span class="tag alt tag-bloq">{tx('bloq.tag')}</span>
+          </>
+        ) : null}
         <br />
         <span class="small muted">
           {tx('portal.grupos', { a: c.gruposAtivos, i: c.gruposInativos })}
@@ -268,8 +287,61 @@ function Lista() {
           )}
         </ul>
       </div>
+      <Limites />
       <p class="small muted">{tx('portal.atualizado', { d: new Date(P.em).toLocaleString(LOCAL) })}</p>
     </div>
+  );
+}
+
+/* Limites contra abuso (KAN-117, KAN-89): os números de sistema/limites, que valem na hora para todos. */
+function Limites() {
+  const v = (k: Chave) => String(limite(P.limites as never, k));
+  return (
+    <form class="panel" id="limitesForm">
+      <h3 style="margin:0 0 6px">{tx('lim.titulo')}</h3>
+      <p class="small muted" style="margin:0 0 10px">
+        {tx('lim.ajuda', { a: LIMITES_PADRAO.avulsosPorRodada, g: LIMITES_PADRAO.gruposPorConta })}
+      </p>
+      <div class="row" style="gap:8px;flex-wrap:wrap">
+        <label class="f" style="margin:0;flex:1;min-width:150px">
+          <span>{tx('lim.avulsos')}</span>
+          <input
+            class="inp"
+            id="limAvulsos"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={500}
+            defaultValue={v('avulsosPorRodada')}
+          />
+        </label>
+        <label class="f" style="margin:0;flex:1;min-width:150px">
+          <span>{tx('lim.grupos')}</span>
+          <input
+            class="inp"
+            id="limGrupos"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={500}
+            defaultValue={v('gruposPorConta')}
+          />
+        </label>
+      </div>
+      <p class="err" id="limErro" role="alert">
+        {P.limErro}
+      </p>
+      {P.limOk ? (
+        <p class="small" id="limOk" role="status">
+          {P.limOk}
+        </p>
+      ) : null}
+      <div class="row">
+        <button class="btn" type="submit" data-p="salvarLimites" id="limSalvar">
+          {tx('lim.salvar')}
+        </button>
+      </div>
+    </form>
   );
 }
 
@@ -366,6 +438,7 @@ function Ficha() {
           </button>
         </div>
       </form>
+      <Bloqueio uid={uid} conta={conta} />
       <div class="panel">
         <h3 style="margin:0 0 8px">{tx('ficha.historico')}</h3>
         {P.hist == null ? (
@@ -379,7 +452,13 @@ function Ficha() {
                     {new Date(h.em).toLocaleString(LOCAL)} · {h.por}
                   </span>
                   <br />
-                  {linhaMudanca(h.de)} → <b>{linhaMudanca(h.para)}</b>
+                  {h.acao ? (
+                    <b>{tx('bloq.acao.' + h.acao)}</b>
+                  ) : (
+                    <>
+                      {linhaMudanca(h.de)} → <b>{linhaMudanca(h.para)}</b>
+                    </>
+                  )}
                   {h.obs ? <span class="small muted">{' · ' + h.obs}</span> : null}
                 </span>
               </li>
@@ -389,6 +468,63 @@ function Ficha() {
           <p class="small muted">{tx('ficha.semHistorico')}</p>
         )}
       </div>
+    </div>
+  );
+}
+
+/* Bloqueio da conta (KAN-117, 2ª parte): a conta não cria nem muda nada, e os links dos grupos dela ficam indisponíveis.
+   Bloquear pede confirmação (é sério e vale na hora); desbloquear é direto. Nada é apagado. */
+function Bloqueio({ uid, conta }: { uid: string; conta: Conta }) {
+  const gs = Object.values(P.grupos).filter(g => g && g.owner === uid).length;
+  return (
+    <div class="panel" id="bloqPainel">
+      <h3 style="margin:0 0 6px">{tx('bloq.titulo')}</h3>
+      {conta.bloq ? (
+        <>
+          <p style="margin:0 0 10px" id="bloqSituacao">
+            <span class="tag alt tag-bloq">{tx('bloq.tag')}</span>{' '}
+            {tx('bloq.desde', { d: new Date(conta.bloq).toLocaleString(LOCAL) })}
+          </p>
+          <button class="btn primary" data-p="desbloquear" id="bloqBotao">
+            {tx('bloq.desbloquear')}
+          </button>
+        </>
+      ) : (
+        <>
+          <p class="small muted" style="margin:0 0 10px">
+            {tx('bloq.ajuda', { n: gs })}
+          </p>
+          <label class="f">
+            <span>{tx('bloq.motivo')}</span>
+            <input class="inp" id="bloqMotivo" maxLength={200} autocomplete="off" />
+          </label>
+          {P.confirmarBloq ? (
+            <div class="inbar" id="bloqConfirma">
+              <span>{tx('bloq.confirmaTexto', { n: gs })}</span>
+              <span class="row">
+                <button class="btn sm" data-p="cancelarBloq">
+                  {tx('bloq.cancelar')}
+                </button>
+                <button class="btn sm danger" data-p="bloquear" id="bloqConfirmar">
+                  {tx('bloq.confirmar')}
+                </button>
+              </span>
+            </div>
+          ) : (
+            <button class="btn danger" data-p="pedirBloq" id="bloqBotao">
+              {tx('bloq.bloquear')}
+            </button>
+          )}
+        </>
+      )}
+      <p class="err" id="bloqErro" role="alert">
+        {P.bloqErro}
+      </p>
+      {P.bloqOk ? (
+        <p class="small" id="bloqOk" role="status">
+          {P.bloqOk}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -449,6 +585,9 @@ async function abrirFicha(uid: string) {
   P.fichaErro = '';
   P.fichaOk = '';
   P.planoForm = null;
+  P.confirmarBloq = false;
+  P.bloqErro = '';
+  P.bloqOk = '';
   desenhar();
   window.scrollTo(0, 0);
   try {
@@ -518,6 +657,69 @@ function linhaDoCliente(uid: string): Partial<Cliente> {
   return { plano: efetivo, planoNome: nomePlano(efetivo), ate: vencido ? null : ate, vencido };
 }
 
+/* Bloqueia ou desbloqueia a conta e todos os grupos dela, com a linha do histórico, num lote só. */
+async function mudarBloqueio(bloquear: boolean) {
+  const uid = P.sel as string,
+    conta = P.contas[uid] || {},
+    motivo = bloquear ? (($('#bloqMotivo') as HTMLInputElement | null)?.value || '').trim().slice(0, 200) : '',
+    atual = mudancaAtual(conta as never),
+    bloq = bloquear ? Date.now() : null,
+    gids = Object.keys(P.grupos).filter(g => P.grupos[g] && P.grupos[g]!.owner === uid),
+    B = P.B,
+    id = B.newId(),
+    h: Record<string, unknown> = {
+      em: Date.now(),
+      por: (P.user && P.user.email) || '',
+      de: atual,
+      para: atual,
+      acao: bloquear ? 'bloquear' : 'desbloquear',
+    };
+  if (motivo) h.obs = motivo;
+  const ops: { tipo: string; p: string; o: unknown }[] = [{ tipo: 'patch', p: 'contas/' + uid, o: { bloq } }];
+  gids.forEach(g => ops.push({ tipo: 'patch', p: 'grupos/' + g, o: { bloq: bloquear } }));
+  ops.push({ tipo: 'set', p: 'contas/' + uid + '/historico/' + id, o: h });
+  try {
+    await B.lote(ops);
+  } catch (e) {
+    console.warn('bloqueio', e);
+    P.bloqErro = tx('ficha.erroGravar');
+    return desenhar();
+  }
+  P.contas[uid] = Object.assign({}, conta, { bloq });
+  gids.forEach(g => (P.grupos[g] = Object.assign({}, P.grupos[g], { bloq: bloquear })));
+  P.hist = [Object.assign({ id }, h) as Historico].concat(P.hist || []);
+  P.confirmarBloq = false;
+  P.bloqErro = '';
+  P.fichaOk = '';
+  P.bloqOk = tx(bloquear ? 'bloq.bloqueada' : 'bloq.desbloqueada', { n: gids.length });
+  desenhar();
+}
+
+/* Salva os limites contra abuso (inteiros de 1 a 500). */
+async function salvarLimites() {
+  const n = (id: string) => Number((($('#' + id) as HTMLInputElement | null)?.value || '').trim()),
+    a = n('limAvulsos'),
+    g = n('limGrupos'),
+    ok = (x: number) => Number.isInteger(x) && x >= 1 && x <= 500;
+  P.limOk = '';
+  if (!ok(a) || !ok(g)) {
+    P.limErro = tx('lim.erro');
+    return desenhar();
+  }
+  const o = { avulsosPorRodada: a, gruposPorConta: g };
+  try {
+    await P.B.set('sistema/limites', o);
+  } catch (e) {
+    console.warn('limites', e);
+    P.limErro = tx('ficha.erroGravar');
+    return desenhar();
+  }
+  P.limites = o;
+  P.limErro = '';
+  P.limOk = tx('lim.salvo', { a, g });
+  desenhar();
+}
+
 function ligar(B: Banco) {
   P.B = B;
   document.addEventListener('click', e => {
@@ -553,6 +755,20 @@ function ligar(B: Banco) {
     } else if (a === 'salvarPlano') {
       e.preventDefault();
       ocupado(el, salvarPlano);
+    } else if (a === 'salvarLimites') {
+      e.preventDefault();
+      ocupado(el, salvarLimites);
+    } else if (a === 'pedirBloq') {
+      P.confirmarBloq = true;
+      P.bloqOk = '';
+      desenhar();
+      setTimeout(() => ($('#bloqConfirmar') as HTMLElement | null)?.focus(), 0);
+    } else if (a === 'cancelarBloq') {
+      P.confirmarBloq = false;
+      desenhar();
+    } else if (a === 'bloquear') ocupado(el, () => mudarBloqueio(true));
+    else if (a === 'desbloquear') {
+      ocupado(el, () => mudarBloqueio(false));
     } else if (a === 'copiar') {
       const t = (P.user && P.user.uid) || '';
       (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject())
@@ -564,10 +780,11 @@ function ligar(B: Banco) {
   });
   /* Enter no formulário da ficha salva (padrão do app). */
   document.addEventListener('submit', e => {
-    if ((e.target as HTMLElement).id !== 'fichaForm') return;
+    const id = (e.target as HTMLElement).id;
+    if (id !== 'fichaForm' && id !== 'limitesForm') return;
     e.preventDefault();
-    const b = $('#fSalvar') as HTMLButtonElement | null;
-    if (b && !b.disabled) ocupado(b, salvarPlano);
+    const b = $(id === 'fichaForm' ? '#fSalvar' : '#limSalvar') as HTMLButtonElement | null;
+    if (b && !b.disabled) ocupado(b, id === 'fichaForm' ? salvarPlano : salvarLimites);
   });
   document.addEventListener('input', e => {
     if ((e.target as HTMLElement).id !== 'ptq') return;

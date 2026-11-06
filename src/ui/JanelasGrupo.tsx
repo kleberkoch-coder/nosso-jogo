@@ -4,6 +4,7 @@
 import { SPORTS } from '../dominio/esportes.js';
 import { PERMISSOES } from '../dominio/permissoes';
 import { tx } from '../i18n/index.js';
+import { S } from '../nucleo/estado.js';
 import { openDlg } from './dialogos.js';
 import { Opcoes } from './Campos';
 import { listaPais } from './regiao.ts';
@@ -142,9 +143,12 @@ export function janelaSeusGrupos(gs: [string, Meu][], aberto: string | null) {
         <a class="btn" href="#/">
           {tx('admgrupo.verTodos')}
         </a>
-        <button class="btn primary" data-a="newGroup">
-          {tx('admgrupo.novo')}
-        </button>
+        {/* KAN-117: conta bloqueada não cria grupo. */}
+        {S.conta && S.conta.bloq ? null : (
+          <button class="btn primary" data-a="newGroup">
+            {tx('admgrupo.novo')}
+          </button>
+        )}
       </div>
     </>
   );

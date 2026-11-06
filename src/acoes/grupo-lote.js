@@ -13,7 +13,7 @@ import { editApp } from '../nucleo/edicoes.js';
 import { GB, S, clean, w } from '../nucleo/estado.js';
 import { $, cl, esc, toast, uid } from '../nucleo/util.js';
 import { upMyGroup } from '../rotas';
-import { closeDlg, confirmou, dlg, val } from '../ui/dialogos.js';
+import { avisar, closeDlg, confirmou, dlg, val } from '../ui/dialogos.js';
 import { changed } from '../ui/render.js';
 import { LOCAL } from '../i18n/formatos.js';
 import { contaRegiao } from '../ui/regiao.ts';
@@ -89,6 +89,8 @@ const proprias = {
     /* KAN-222 (achado no roteiro de gravação): o automático só abre se a pessoa ainda está na página inicial;
        se ela já criou o grupo (ou abriu outra tela) enquanto esta parte baixava, não abre por cima. */
     if (el && el.dataset && el.dataset.auto && (S.route.n !== 'home' || dlg.open)) return;
+    /* KAN-117: conta bloqueada pela administração não cria grupo (as regras do Firebase também recusam). */
+    if (S.conta && S.conta.bloq) return avisar(tx('inicio.contaBloqueadaTitulo'), tx('inicio.contaBloqueada'));
     if (avisoLimiteGrupos()) return; // KAN-119: o plano já está cheio de grupos ativos
     janelaGrupo(null);
     return carregarForm().then(m => {

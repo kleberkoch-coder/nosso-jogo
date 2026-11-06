@@ -389,4 +389,6 @@ export default {
   'sorteio.quemEntraDepois': ' of {total})',
   'sorteio.sortear': 'Draw',
   'avulso.confirmado': '{nome} confirmed.',
+  'inicio.contaBloqueadaTitulo': 'Account blocked',
+  'inicio.contaBloqueada': 'Account blocked by the Nosso Jogo administration: view only. Contact support.',
 };

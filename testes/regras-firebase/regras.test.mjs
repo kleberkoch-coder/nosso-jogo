@@ -715,6 +715,63 @@ describe('planos e portal (KAN-115, KAN-116)', () => {
   });
 });
 
+describe('bloqueio de conta e limites pelo portal (KAN-117, pelada-v101)', () => {
+  const semRegras = fn => env.withSecurityRulesDisabled(async ctx => fn(ctx.firestore()));
+  test('o portal bloqueia a conta e os grupos dela; o histórico guarda a ação', async () => {
+    const f = db.portal(),
+      b = writeBatch(f);
+    b.set(doc(f, 'contas/dono'), { bloq: Date.now(), obs: 'abuso' }, { merge: true });
+    b.update(doc(f, G), { bloq: true });
+    b.set(doc(f, 'contas/dono/historico/h1'), {
+      em: Date.now(),
+      por: 'portal@x.com',
+      de: { plano: 'gratis', ate: null, motivo: null },
+      para: { plano: 'gratis', ate: null, motivo: null },
+      obs: 'abuso',
+      acao: 'bloquear',
+    });
+    await assertSucceeds(b.commit());
+    await assertFails(
+      setDoc(doc(f, 'contas/dono/historico/h2'), {
+        em: 1,
+        por: 'x',
+        de: { plano: 'gratis' },
+        para: { plano: 'gratis' },
+        acao: 'apagar',
+      })
+    );
+  });
+  test('ninguém além do portal mexe no bloqueio (nem o organizador)', async () => {
+    await assertFails(updateDoc(doc(db.dono(), G), { bloq: true }));
+    await assertFails(setDoc(doc(db.dono(), 'contas/dono'), { bloq: null }, { merge: true }));
+    await assertFails(updateDoc(doc(db.portal(), G), { bloq: true, name: 'Outro' }));
+  });
+  test('grupo bloqueado: administradores não gravam e o link não aceita presença', async () => {
+    await semRegras(f => setDoc(doc(f, G), { bloq: true }, { merge: true }));
+    await assertFails(updateDoc(doc(db.dono(), G + '/rodadas/r1'), { place: 'Outro lugar' }));
+    await assertFails(updateDoc(doc(db.adm(), G + '/rodadas/r1'), { place: 'Outro lugar' }));
+    const pres = { s: 'in', t: Date.now(), by: 'anon1', dev: 'anon1' };
+    await assertFails(setDoc(doc(db.anon(), G + '/rodadas/r1/presencas/j1'), pres));
+    await semRegras(f => setDoc(doc(f, G), { bloq: false }, { merge: true }));
+    await assertSucceeds(setDoc(doc(db.anon(), G + '/rodadas/r1/presencas/j1'), pres));
+    await assertSucceeds(getDoc(doc(db.dono(), G + '/rodadas/r1')));
+  });
+  test('conta bloqueada não cria grupo nem grava como administrador em outro grupo', async () => {
+    await semRegras(f => setDoc(doc(f, 'contas/adm'), { bloq: Date.now() }, { merge: true }));
+    await assertFails(updateDoc(doc(db.adm(), G + '/rodadas/r1'), { place: 'Outro lugar' }));
+    await assertFails(setDoc(doc(db.adm(), 'grupos/gx'), { name: 'X', owner: 'adm', ativo: true, createdAt: 1 }));
+    await semRegras(f => setDoc(doc(f, 'contas/adm'), { bloq: null }, { merge: true }));
+    await assertSucceeds(updateDoc(doc(db.adm(), G + '/rodadas/r1'), { place: 'Outro lugar' }));
+  });
+  test('o portal muda os limites contra abuso; ninguém mais', async () => {
+    await assertSucceeds(setDoc(doc(db.portal(), 'sistema/limites'), { avulsosPorRodada: 40, gruposPorConta: 10 }));
+    await assertFails(setDoc(doc(db.portal(), 'sistema/limites'), { avulsosPorRodada: 0, gruposPorConta: 10 }));
+    await assertFails(setDoc(doc(db.portal(), 'sistema/limites'), { avulsosPorRodada: 40, outro: 1 }));
+    await assertFails(setDoc(doc(db.portal(), 'sistema/planos'), { transicaoAte: 1 }));
+    await assertFails(setDoc(doc(db.dono(), 'sistema/limites'), { avulsosPorRodada: 40, gruposPorConta: 10 }));
+  });
+});
+
 describe('administradores (membros)', () => {
   test('o próprio administrador grava como entrou (via)', async () => {
     await assertSucceeds(updateDoc(doc(db.adm(), G + '/membros/adm'), { via: 'google' }));

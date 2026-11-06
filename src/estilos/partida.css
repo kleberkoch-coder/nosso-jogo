@@ -144,3 +144,10 @@
 .camp-pen .inp {
   min-height: var(--touch-min);
 }
+/* KAN-238: fase de cada partida na lista e o fim do campeonato. */
+.fase-tag {
+  margin-right: 6px;
+}
+.camp-fim {
+  border: 2px solid var(--primary);
+}

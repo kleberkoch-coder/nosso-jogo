@@ -1,4 +1,5 @@
-/* Textos da mensagem das partidas da rodada no WhatsApp (KAN-232). Chegam com a aba Partida ou com o Histórico. */
+/* Textos da mensagem das partidas da rodada no WhatsApp (KAN-232) e a fase de cada partida do campeonato (KAN-238),
+   que aparece também na lista da aba Partida e no Histórico. Chegam com a aba Partida ou com o Histórico. */
 export default {
   'zappart.botao': 'Mandar no WhatsApp',
   'zappart.rotulo': 'Mandar as partidas da rodada no WhatsApp',
@@ -6,4 +7,18 @@ export default {
   'zappart.cabecalho': 'Partidas — {data}',
   'zappart.tabela': 'Classificação da rodada',
   'zappart.linhaTabela': '{pos}. {time}: {pts} pts ({v}V {e}E {d}D, saldo {saldo})',
+  'mata.fase.o': 'Oitavas {n}',
+  'mata.fase.q': 'Quartas {n}',
+  'mata.fase.s': 'Semifinal {n}',
+  'mata.fase.f': 'Final',
+  'mata.fase.t3': '3º lugar',
+  'zappart.faseG': 'Todos contra todos',
+  'zappart.fora': 'Fora do campeonato',
+  'zappart.mata': 'Mata-mata',
+  'zappart.tabelaCamp': 'Classificação do campeonato',
+  'zappart.penaltis': 'pênaltis {a} × {b}',
+  'zappart.passou': 'passou {time}',
+  'zappart.campeao': 'Campeão: {time}',
+  'zappart.vice': 'Vice: {time}',
+  'zappart.terceiro': '3º lugar: {time}',
 };

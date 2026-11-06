@@ -14,7 +14,8 @@ import { marcarAlterada } from '../ui/dialogos.js';
 import { rodadasProntas } from './rodada-partes.js';
 import { sumPts } from '../ui/placar.js';
 import { proximoJogo, type Proximo } from '../dominio/fila';
-import { Formato, PainelCampeonato, proximoDoCamp } from './Campeonato';
+import { AvisoFora, FimDoCampeonato, Formato, PainelCampeonato, chaveDe, proximoDoCamp } from './Campeonato';
+import { rotuloFase } from '../ui/zap-partidas';
 
 type Time = { c: number | string; players: string[] };
 type Rodada = { id: string; date: string; time?: string; times?: Time[] | null; camp?: unknown };
@@ -242,7 +243,9 @@ function Ajustes({ r }: { r: Rodada }) {
 function Salvas({ r }: { r: Rodada }) {
   const S = st(),
     ms = partidasDe(r.id) as Partida[],
-    carregou = S.partsRid === r.id && S.loaded.parts;
+    carregou = S.partsRid === r.id && S.loaded.parts,
+    /* KAN-238: com campeonato, a fase de cada partida (todos contra todos, mata-mata ou fora). */
+    k = chaveDe(r);
   const autores = (m: Partida) =>
     m.goals
       .filter(g => g.pid && !g.og)
@@ -264,6 +267,7 @@ function Salvas({ r }: { r: Rodada }) {
             <li key={m.id}>
               <span class="num">{i + 1}</span>
               <span class="pn">
+                {k ? <span class="tag fase-tag">{rotuloFase(k.fases[i] ?? null)}</span> : null}
                 <span class="dot" style={{ background: col(m.ca).c }}></span> {tnJogo(m, 'a', r.times)}{' '}
                 <b>
                   {m.ga} × {m.gb}
@@ -420,12 +424,19 @@ function PartidaTela() {
     L.a = s.a;
     L.b = s.b;
   }
+  /* KAN-238: campeonato encerrado (ou esperando "Quem passou?"): sem placar nem sugestão, até o organizador pedir
+     uma partida fora do campeonato. */
+  const k = chaveDe(r),
+    parado = !!k && (k.encerrado || k.esperando.length > 0),
+    fora = parado && S.campFora === r.id;
   return (
     <div class="stack">
       <SeletorRodada r={r} />
       <Formato r={r} />
-      <Placar r={r} />
-      <Ajustes r={r} />
+      {parado && !fora ? <FimDoCampeonato r={r} /> : null}
+      {fora ? <AvisoFora /> : null}
+      {parado && !fora ? null : <Placar r={r} />}
+      {parado && !fora ? null : <Ajustes r={r} />}
       <PainelCampeonato r={r} />
       <Salvas r={r} />
       <Artilharia r={r} />

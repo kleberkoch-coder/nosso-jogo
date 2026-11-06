@@ -121,3 +121,26 @@ test('CT-KAN-233-12: 8 times: quartas 1×8, 4×5, 2×7, 3×6; sem mata-mata, o c
   const sem = chave(camp(8, { k: 0, t3: false }), ms);
   assert.deepEqual([sem.slots.length, sem.campeao, sem.vice, sem.terceiro], [0, 0, 1, 2]);
 });
+
+test('CT-KAN-238-01: o campeonato acaba com a final (e o 3º lugar) decididos; sem mata-mata, com o último jogo da tabela', () => {
+  const c = camp(4);
+  assert.equal(chave(c, grupo4).encerrado, false);
+  const soFinal = chave(c, grupo4.concat(j(1, 0, 1, 0, 3000)));
+  assert.deepEqual([soFinal.encerrado, soFinal.proximo.id], [false, 't3'], 'final antes do 3º: ainda falta o 3º lugar');
+  const fim = chave(c, grupo4.concat(j(2, 3, 1, 0, 3000), j(1, 0, 1, 0, 3001)));
+  assert.deepEqual([fim.encerrado, fim.proximo], [true, null]);
+  const sem = camp(4, { k: 0, t3: false });
+  assert.equal(chave(sem, grupo4.slice(0, 5)).encerrado, false);
+  assert.equal(chave(sem, grupo4).encerrado, true);
+});
+
+test('CT-KAN-238-01: empate sem quem passou e nenhum jogo possível: o mata-mata fica esperando a decisão', () => {
+  const k = chave(camp(4, { k: 4, t3: false }), grupo4.concat(j(1, 3, 0, 0, 3000), j(0, 2, 2, 1, 3001)));
+  assert.deepEqual([k.proximo, k.encerrado, k.esperando.map(s => s.id)], [null, false, ['s0']]);
+});
+
+test('CT-KAN-238-02: de que jogo é cada partida: todos contra todos, mata-mata ou fora do campeonato', () => {
+  const antes = j(0, 1, 9, 9, 500);
+  const ms = [antes].concat(grupo4, j(3, 2, 2, 1, 3000), j(0, 1, 3, 2, 3001), j(0, 1, 1, 1, 4000));
+  assert.deepEqual(chave(camp(4), ms).fases, [null, 'g', 'g', 'g', 'g', 'g', 'g', 't3', 'f', null]);
+});

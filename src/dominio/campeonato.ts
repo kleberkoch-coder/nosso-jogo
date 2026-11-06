@@ -135,17 +135,25 @@ export function lerCamp(c: unknown, nTimes: number): Camp | null {
   };
 }
 
-/* A primeira partida salva ainda não usada, depois do início, entre os dois times; marca como usada.
+/* A primeira partida salva ainda não usada, depois do início, entre os dois times; marca como usada, com o rótulo
+   do jogo ('g' = todos contra todos; no mata-mata, o jogo da chave).
    O resultado vem sempre do ponto de vista do jogo (a × b), mesmo que tenham entrado trocados. */
-export function casar(c: Camp, ms: Jogo[], usadas: Set<number>, a: number, b: number): Jogo | null {
+export function casar(
+  c: Camp,
+  ms: Jogo[],
+  usadas: Map<number, string>,
+  a: number,
+  b: number,
+  rotulo = 'g'
+): Jogo | null {
   const i = ms.findIndex((m, k) => !usadas.has(k) && (m.at == null || m.at >= c.em) && par(m.a, m.b) === par(a, b));
   if (i < 0) return null;
-  usadas.add(i);
+  usadas.set(i, rotulo);
   const m = ms[i];
   return m.a === a ? m : { a, b, ga: m.gb, gb: m.ga, at: m.at };
 }
 /* Qual partida salva vale para cada jogo de todos contra todos (as seguintes ficam para o mata-mata). */
-export function resultados(c: Camp, ms: Jogo[], usadas = new Set<number>()): (Jogo | null)[] {
+export function resultados(c: Camp, ms: Jogo[], usadas = new Map<number, string>()): (Jogo | null)[] {
   return c.jogos.map(j => {
     const [a, b] = lerPar(j);
     return casar(c, ms, usadas, a, b);

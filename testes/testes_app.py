@@ -4342,7 +4342,7 @@ with sync_playwright() as pw:
         ok('Campeonato na rodada' in p96.inner_text('#dlgBody'), 'CT-KAN-233-06: a janela Planos lista o campeonato')
         p96.evaluate(DEL, ['sistema/planos']); ctx96.close()
 
-        # ---------- v99 (KAN-117): ficha do cliente no portal (mudar plano, validade, motivo e histórico)
+        # ---------- v99 (KAN-117): ficha do cliente no portal (mudar plano, validade, motivo e histórico); v100 (KAN-240): Grátis sem validade nem motivo
         if TEM_PORTAL:
             ctx99 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, service_workers='block')
             p99 = ctx99.new_page(); p99.on('pageerror', lambda e: errs.append('portal v99: ' + str(e)))
@@ -4359,10 +4359,18 @@ with sync_playwright() as pw:
             f99 = p99.inner_text('#ficha')
             ok('ficha@teste.com' in f99 and 'Plano em vigor: Grátis' in f99 and 'Nenhuma mudança feita pelo portal ainda' in f99,
                f'CT-KAN-117-01: a ficha mostra o e-mail, o plano em vigor e o histórico vazio ({f99[:120]!r})')
-            # Plano pago sem motivo: recusa com explicação
-            p99.select_option('#fPlano', 'A'); p99.click('#fSalvar'); p99.wait_for_timeout(400)
+            # KAN-240: no Grátis, validade e motivo ficam desligados, com a explicação; com A ou B, ligam
+            ok(p99.locator('#fAte').is_disabled() and p99.locator('#fMotivo').is_disabled() and 'No Grátis não há validade nem motivo' in p99.inner_text('#fichaForm'),
+               'CT-KAN-240-01: com o plano em Grátis, "Válido até" e "Motivo" ficam desligados e a ficha explica por quê')
+            # Plano pago sem motivo: recusa com explicação (e o que foi digitado continua no formulário)
+            p99.select_option('#fPlano', 'A'); p99.wait_for_timeout(200)
+            ok(not p99.locator('#fAte').is_disabled() and not p99.locator('#fMotivo').is_disabled() and 'No Grátis' not in p99.inner_text('#fichaForm'),
+               'CT-KAN-240-01: ao escolher o Plano A, validade e motivo ligam na hora')
+            p99.fill('#fObs', 'rascunho'); p99.click('#fSalvar'); p99.wait_for_timeout(400)
             ok('Escolha o motivo' in p99.inner_text('#fErro') and 'plano' not in (p99.evaluate(LER, 'contas/u-ficha99') or {}),
                'CT-KAN-117-01: plano pago sem motivo não grava e explica')
+            ok(p99.input_value('#fObs') == 'rascunho' and p99.input_value('#fPlano') == 'A' and not p99.locator('#fAte').is_disabled(),
+               'CT-KAN-240-02: depois do aviso de erro, o que foi digitado e escolhido continua no formulário')
             # Data passada: recusa
             p99.evaluate("(()=>{const i=document.getElementById('fAte');i.removeAttribute('min');i.value='2020-01-10'})()")
             p99.select_option('#fMotivo', 'cortesia'); p99.click('#fSalvar'); p99.wait_for_timeout(400)
@@ -4393,6 +4401,11 @@ with sync_playwright() as pw:
             p99.click('#fSalvar'); p99.wait_for_timeout(500)
             n99 = p99.evaluate("Object.keys(JSON.parse(localStorage.getItem('pelada-demo-v2'))).filter(k=>k.startsWith('contas/u-ficha99/historico/')).length")
             ok('Nada mudou' in p99.inner_text('#fErro') and n99 == 1, 'CT-KAN-117-04: salvar sem mudar nada avisa e não cria outra linha no histórico')
+            # KAN-240: mudar só o motivo (no Plano A) salva e entra no histórico
+            p99.select_option('#fMotivo', 'parceria'); p99.click('#fSalvar'); p99.wait_for_selector('#fOk', timeout=5000); p99.wait_for_timeout(300)
+            ok((p99.evaluate(LER, 'contas/u-ficha99') or {}).get('motivo') == 'parceria' and p99.locator('#fHist li').count() == 2,
+               'CT-KAN-240-02: mudar só o motivo salva e soma uma linha no histórico')
+            p99.select_option('#fMotivo', 'cortesia'); p99.click('#fSalvar'); p99.wait_for_selector('#fOk', timeout=5000); p99.wait_for_timeout(300)
             # Voltar à lista: o cliente aparece com Plano A, validade e o motivo
             p99.click('[data-p=voltar]'); p99.wait_for_selector('li.cli', timeout=5000)
             l99 = p99.locator('li.cli', has_text='ficha@teste.com').inner_text()
@@ -4401,7 +4414,7 @@ with sync_playwright() as pw:
             p99.locator('li.cli', has_text='ficha@teste.com').locator('[data-p=ficha]').click(); p99.wait_for_selector('#fHist', timeout=5000)
             p99.select_option('#fPlano', 'gratis'); p99.focus('#fObs'); p99.keyboard.press('Enter'); p99.wait_for_selector('#fOk', timeout=5000); p99.wait_for_timeout(300)
             c99b = p99.evaluate(LER, 'contas/u-ficha99') or {}
-            ok(c99b.get('plano') == 'gratis' and c99b.get('planoAte') is None and c99b.get('motivo') is None and p99.locator('#fHist li').count() == 2,
+            ok(c99b.get('plano') == 'gratis' and c99b.get('planoAte') is None and c99b.get('motivo') is None and p99.locator('#fHist li').count() == 4,
                f'CT-KAN-117-02: voltar ao Grátis (com Enter) limpa a validade e o motivo e soma uma linha no histórico ({c99b})')
             p99.evaluate(DEL, ['sistema/planos']); ctx99.close()
 

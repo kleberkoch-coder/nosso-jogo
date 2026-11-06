@@ -56,6 +56,8 @@ const T = {
   'ficha.motivo.teste': 'Teste estendido',
   'ficha.ajuda':
     'Sem data, o plano vale até alguém mudar. Com data, vale até o fim desse dia e depois volta sozinho ao Grátis, sem apagar nada. Para cortesia ou teste estendido, escolha o plano, a data e o motivo.',
+  'ficha.gratisAviso':
+    'No Grátis não há validade nem motivo. Para cortesia, parceria ou teste estendido, escolha o Plano A ou B.',
   'ficha.obs': 'Observação (opcional)',
   'ficha.salvar': 'Salvar plano',
   'ficha.salvo': 'Salvo: {plano}. Vale na próxima vez que o organizador abrir o app.',

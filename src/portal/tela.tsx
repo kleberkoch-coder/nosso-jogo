@@ -58,6 +58,8 @@ const P = {
   hist: null as Historico[] | null,
   fichaErro: '',
   fichaOk: '',
+  /* Plano escolhido no formulário (KAN-240): no Grátis, validade e motivo ficam desligados. */
+  planoForm: null as string | null,
 };
 const $ = (s: string) => document.querySelector(s) as HTMLElement | null;
 const dia = (ts: number | null | undefined) =>
@@ -281,7 +283,8 @@ function Ficha() {
     c = P.clientes.find(x => x.uid === uid),
     conta = P.contas[uid] || {},
     s = situacao(conta as never, P.cat, Date.now(), transicaoAte(P.cfg)),
-    atual = mudancaAtual(conta as never);
+    atual = mudancaAtual(conta as never),
+    gratis = (P.planoForm || atual.plano) === 'gratis';
   return (
     <div class="stack" id="ficha">
       <div class="row">
@@ -305,7 +308,8 @@ function Ficha() {
           </p>
         ) : null}
       </div>
-      <form class="panel" id="fichaForm">
+      {/* key: cada cliente recomeça o formulário; os campos não voltam ao gravado quando a tela redesenha (erro, plano). */}
+      <form class="panel" id="fichaForm" key={uid}>
         <h3 style="margin:0 0 10px">{tx('ficha.mudarTitulo')}</h3>
         <div class="row" style="gap:8px;flex-wrap:wrap">
           <label class="f" style="margin:0;flex:1;min-width:140px">
@@ -320,11 +324,18 @@ function Ficha() {
           </label>
           <label class="f" style="margin:0;flex:1;min-width:140px">
             <span>{tx('ficha.validade')}</span>
-            <input class="inp" type="date" id="fAte" value={diaDaValidade(atual.ate)} min={today()} />
+            <input
+              class="inp"
+              type="date"
+              id="fAte"
+              defaultValue={diaDaValidade(atual.ate)}
+              min={today()}
+              disabled={gratis}
+            />
           </label>
           <label class="f" style="margin:0;flex:1;min-width:160px">
             <span>{tx('ficha.motivoRotulo')}</span>
-            <select class="sel" id="fMotivo">
+            <select class="sel" id="fMotivo" disabled={gratis}>
               <option value="">{tx('ficha.escolha')}</option>
               {MOTIVOS.map(m => (
                 <option key={m} value={m} selected={m === atual.motivo}>
@@ -335,11 +346,11 @@ function Ficha() {
           </label>
         </div>
         <p class="small muted" style="margin:6px 0 10px">
-          {tx('ficha.ajuda')}
+          {tx(gratis ? 'ficha.gratisAviso' : 'ficha.ajuda')}
         </p>
         <label class="f">
           <span>{tx('ficha.obs')}</span>
-          <input class="inp" id="fObs" maxLength={200} value={conta.obs || ''} autocomplete="off" />
+          <input class="inp" id="fObs" maxLength={200} defaultValue={conta.obs || ''} autocomplete="off" />
         </label>
         <p class="err" id="fErro" role="alert">
           {P.fichaErro}
@@ -437,6 +448,7 @@ async function abrirFicha(uid: string) {
   P.hist = null;
   P.fichaErro = '';
   P.fichaOk = '';
+  P.planoForm = null;
   desenhar();
   window.scrollTo(0, 0);
   try {
@@ -569,6 +581,11 @@ function ligar(B: Banco) {
     const t = e.target as HTMLSelectElement;
     if (t.id === 'ptf') {
       P.filtro = t.value as Filtro;
+      desenhar();
+    } else if (t.id === 'fPlano') {
+      /* KAN-240: no Grátis, validade e motivo não valem; ficam desligados, com a explicação. */
+      P.planoForm = t.value;
+      P.fichaErro = '';
       desenhar();
     }
   });

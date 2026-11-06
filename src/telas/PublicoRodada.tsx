@@ -9,6 +9,7 @@ import {
   fixos,
   gname,
   grpAtivo,
+  grpBloq,
   isAvulso,
   normName,
   players,
@@ -209,7 +210,8 @@ function PublicoRodada() {
   if (!carregou) return <Carregando />;
   desde = 0;
   if (!S.app) return <Aviso titulo={tx('publico.grupoNaoEncontrado')} texto={tx('publico.grupoNaoEncontradoTexto')} />;
-  if (!grpAtivo()) return <Aviso titulo={gname()} texto={tx('publico.grupoInativo')} />;
+  if (!grpAtivo())
+    return <Aviso titulo={gname()} texto={tx(grpBloq() ? 'publico.grupoIndisponivel' : 'publico.grupoInativo')} />;
   if (!r && S.route.next) return <Aviso titulo={tx('publico.semJogo')} texto={tx('publico.semJogoTexto')} />;
   if (r && r.cancelada)
     return (

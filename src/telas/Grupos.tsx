@@ -55,15 +55,25 @@ function GruposTela() {
       </div>
     );
   const ativos = todos.filter(([, g]) => g.ativo !== false),
-    inativos = todos.filter(([, g]) => g.ativo === false);
+    inativos = todos.filter(([, g]) => g.ativo === false),
+    /* KAN-117: conta bloqueada pela administração: avisa e não oferece criar grupo (as regras recusam). */
+    bloqueada = !!(S.conta && S.conta.bloq);
   return (
     <div class="stack">
-      <AvisosPlano />
+      {bloqueada ? (
+        <div class="inbar" id="avisoContaBloqueada">
+          <span>{tx('inicio.contaBloqueada')}</span>
+        </div>
+      ) : (
+        <AvisosPlano />
+      )}
       <div class="row between">
         <h2>{tx('inicio.meusGrupos')}</h2>
-        <button class="btn primary" data-a="newGroup">
-          {tx('inicio.novoGrupo')}
-        </button>
+        {bloqueada ? null : (
+          <button class="btn primary" data-a="newGroup">
+            {tx('inicio.novoGrupo')}
+          </button>
+        )}
       </div>
       {ativos.length ? (
         <div class="panel">

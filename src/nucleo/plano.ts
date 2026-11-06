@@ -50,6 +50,8 @@ export const limiteAdmins = (): number | null => situacaoDoGrupo().plano.admins;
 /* Quem está usando é convidado além do limite (só vê)? */
 export function euSoVejo(): boolean {
   const S = st();
+  /* KAN-117: grupo bloqueado pela administração: todos só veem (as regras do Firebase recusam qualquer gravação). */
+  if (S.app && S.app.bloq) return true;
   if (!S.app || !S.user || isOwnerMe()) return false;
   return soVe(S.user.uid, S.app.adms, limiteAdmins());
 }

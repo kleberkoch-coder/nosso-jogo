@@ -600,6 +600,8 @@ export default {
   'extra.rateio': 'Crear división: {n}',
   'extra.rateioNome': '{n} {data}',
   'extra.editar': 'Editar extra',
+  'publico.grupoIndisponivel': 'Este grupo no está disponible en este momento.',
+  'render.bloqueado': 'Grupo bloqueado por la administración de Nosso Jogo: solo para consulta. Contacta al soporte.',
   /* catálogo: esportes, posições, pontuação, cores do colete e nomes dos planos (tc() em i18n/index.js) */
   'cat.Futebol': 'Fútbol',
   'cat.Society': 'Fútbol 7',

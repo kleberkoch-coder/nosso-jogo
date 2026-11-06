@@ -1,5 +1,16 @@
 import { APP, sport, sportName } from '../dominio/esportes.js';
-import { curRodada, fdia, gname, grpAtivo, isAdmin, isOwnerMe, posso, recurso, soVer } from '../dominio/grupo.js';
+import {
+  curRodada,
+  fdia,
+  gname,
+  grpAtivo,
+  grpBloq,
+  isAdmin,
+  isOwnerMe,
+  posso,
+  recurso,
+  soVer,
+} from '../dominio/grupo.js';
 import { hora } from '../dominio/rodadas.js';
 import { B, applyBusy } from '../nucleo/backend.js';
 import { S } from '../nucleo/estado.js';
@@ -215,12 +226,17 @@ function renderCore() {
   const soVe = soVer();
   document.body.classList.toggle('so-ver', soVe);
   const partes = [lugar('avisosPlanoRaiz')];
-  if (soVe) {
+  /* KAN-117: grupo bloqueado pela administração: um aviso só, no lugar do "só vê" e do "inativo". */
+  if (grpBloq()) {
+    const b = el('div', 'inbar', '', { id: 'avisoBloqueado' });
+    b.append(el('span', '', tx('render.bloqueado')));
+    partes.push(b);
+  } else if (soVe) {
     const b = el('div', 'inbar info', '', { id: 'avisoSoVer' });
     b.append(el('span', '', tx('soVer.aviso')));
     partes.push(b);
   }
-  if (!grpAtivo()) {
+  if (!grpAtivo() && !grpBloq()) {
     const b = el('div', 'inbar');
     b.append(el('span', '', tx('render.inativo', { data: fdia(S.app.inativadoEm) })));
     if (isOwnerMe()) b.append(el('button', 'btn sm', tx('render.reativar'), { 'data-a': 'toggleAtivo' }));

@@ -3,7 +3,7 @@
 import { render } from 'preact';
 import { useState } from 'preact/hooks';
 import { aberta, diaDoPrazo, type Avaliacao } from '../dominio/avaliacao';
-import { gname, grpAtivo, pname } from '../dominio/grupo.js';
+import { gname, grpAtivo, grpBloq, pname } from '../dominio/grupo.js';
 import { FORMATO, FUSO, LOCAL } from '../i18n/formatos.js';
 import { juntarTextos, tx } from '../i18n/index.js';
 import textos from '../i18n/pt-BR-aval';
@@ -65,7 +65,8 @@ function Pagina() {
     ) : (
       <div class="empty muted">{tx('comum.carregando')}</div>
     );
-  if (!grpAtivo()) return <Aviso titulo={gname()} texto={tx('voto.grupoInativo')} />;
+  if (!grpAtivo())
+    return <Aviso titulo={gname()} texto={tx(grpBloq() ? 'publico.grupoIndisponivel' : 'voto.grupoInativo')} />;
   if (!a) return <Aviso titulo={tx('aval.naoEncontrada')} texto={tx('aval.naoEncontradaTexto')} />;
   if (!aberta(a, Date.now()))
     return (

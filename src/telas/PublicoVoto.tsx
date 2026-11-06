@@ -2,7 +2,7 @@
    categoria; encerrada, mostra os vencedores. Baixa só quando o link de votação é aberto (KAN-183). Os botões usam
    data-a (pubVote, acoes/publico.js). */
 import { render } from 'preact';
-import { gname, grpAtivo, pname, ppos, rodDoc } from '../dominio/grupo.js';
+import { gname, grpAtivo, grpBloq, pname, ppos, rodDoc } from '../dominio/grupo.js';
 import { candidatos, type Categoria, type Votacao } from '../dominio/votacao';
 import { LOCAL } from '../i18n/formatos.js';
 import { tp, tx } from '../i18n/index.js';
@@ -55,7 +55,8 @@ function Pagina() {
     ) : (
       <div class="empty muted">{tx('comum.carregando')}</div>
     );
-  if (!grpAtivo()) return <Aviso titulo={gname()} texto={tx('voto.grupoInativo')} />;
+  if (!grpAtivo())
+    return <Aviso titulo={gname()} texto={tx(grpBloq() ? 'publico.grupoIndisponivel' : 'voto.grupoInativo')} />;
   if (!v) return <Aviso titulo={tx('voto.naoEncontrada')} texto={tx('voto.naoEncontradaTexto')} />;
   const r = S.rod[v.rid],
     my = S.myVote || {},

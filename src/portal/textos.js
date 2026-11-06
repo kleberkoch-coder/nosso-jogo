@@ -69,6 +69,32 @@ const T = {
   'ficha.erroValidade': 'A validade precisa ser hoje ou depois.',
   'ficha.nadaMudou': 'Nada mudou: o plano, a validade, o motivo e a observação são os mesmos.',
   'ficha.erroGravar': 'Não foi possível salvar. Verifique a conexão e tente de novo.',
+  /* Bloqueio da conta e limites contra abuso (KAN-117, 2ª parte) */
+  'bloq.titulo': 'Bloqueio da conta',
+  'bloq.tag': 'Bloqueada',
+  'bloq.desde':
+    'desde {d}. A conta não cria nem muda nada, e os links dos grupos dela mostram "grupo indisponível". Nada foi apagado.',
+  'bloq.ajuda':
+    'Use só em caso de abuso. A conta continua vendo tudo, mas não cria nem muda nada, e os links dos {n} grupo(s) dela passam a mostrar "grupo indisponível". Nada é apagado e dá para desbloquear quando quiser.',
+  'bloq.motivo': 'Motivo do bloqueio (vai para o histórico)',
+  'bloq.bloquear': 'Bloquear conta',
+  'bloq.confirmaTexto':
+    'Bloquear a conta e os {n} grupo(s) dela agora? Vale na hora para o organizador e os administradores.',
+  'bloq.cancelar': 'Cancelar',
+  'bloq.confirmar': 'Bloquear',
+  'bloq.desbloquear': 'Desbloquear conta',
+  'bloq.bloqueada': 'Conta bloqueada, com {n} grupo(s).',
+  'bloq.desbloqueada': 'Conta desbloqueada, com {n} grupo(s). Tudo volta a funcionar na hora.',
+  'bloq.acao.bloquear': 'Conta bloqueada',
+  'bloq.acao.desbloquear': 'Conta desbloqueada',
+  'lim.titulo': 'Limites contra abuso',
+  'lim.ajuda':
+    'Valem na hora para todos os grupos. Padrão: {a} avulsos novos pelo link por rodada e {g} grupos por conta.',
+  'lim.avulsos': 'Avulsos novos pelo link, por rodada',
+  'lim.grupos': 'Grupos que cada conta pode criar',
+  'lim.salvar': 'Salvar limites',
+  'lim.erro': 'Use números inteiros de 1 a 500.',
+  'lim.salvo': 'Limites salvos: {a} avulsos por rodada e {g} grupos por conta.',
 };
 function tx(chave, vars) {
   let s = T[chave];

@@ -63,4 +63,18 @@ export default {
   'pc.soAdmins': 'Valores e chave Pix só aparecem para administradores.',
   'pc.salvo': 'Configurações salvas.',
   'pc.negativo': 'O valor não pode ser negativo.',
+  /* Permissões dos administradores (vieram do dicionário da gestão na pelada-v101, para a gestão caber em 90 KB) */
+  'perm.titulo': 'O que este administrador pode fazer',
+  'perm.ajuda': 'Para {email}. O dia a dia (rodada, presença, sorteio, placar e votação) vale sempre.',
+  'perm.sempre': 'Sem Notas, o sorteio continua equilibrado: as notas só ficam escondidas na tela.',
+  'perm.salvar': 'Salvar permissões',
+  'perm.salvo': 'Permissões salvas.',
+  'perm.nome.caixa': 'Caixa',
+  'perm.nome.notas': 'Notas dos jogadores',
+  'perm.nome.elenco': 'Elenco e contatos',
+  'perm.nome.config': 'Configurações do grupo',
+  'perm.desc.caixa': 'Ver e lançar pagamentos, mensalidade, diária, Pix e tipo de cada jogador.',
+  'perm.desc.notas': 'Ver e mudar as notas e os pares que não jogam no mesmo time.',
+  'perm.desc.elenco': 'Cadastrar, editar e importar jogadores, e ver telefone e e-mail.',
+  'perm.desc.config': 'Editar o grupo, posições, mínimo e vagas, e convidar administradores.',
 };

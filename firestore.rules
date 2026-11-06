@@ -38,7 +38,11 @@ service cloud.firestore {
       return a == null || (a.hasAny([request.auth.uid]) && (a.size() <= 1 || noTopo(a, g.owner)));
     }
     // Administrador que pode gravar: o organizador, ou um convidado dentro do limite do plano.
-    function adminAtivo(gid) { return isMember(gid) && (isOwner(gid) || dentroDoLimite(gid)); }
+    // KAN-117: nem em grupo bloqueado, nem com a própria conta bloqueada.
+    function adminAtivo(gid) {
+      return isMember(gid) && (isOwner(gid) || dentroDoLimite(gid))
+        && get(grp(gid)).data.get('bloq', false) != true && !contaBloq();
+    }
     // Convidado entrando pelo link: o mesmo lote cria o cadastro dele e o põe no fim da lista, dentro do limite.
     function entrouNaLista(gid) {
       let velho = resource.data.get('adms', []);
@@ -68,7 +72,15 @@ service cloud.firestore {
         && request.resource.data.get('cfg', {}).diff(resource.data.get('cfg', {})).affectedKeys()
           .hasOnly(['place', 'time', 'novelty', 'foraPos']);
     }
-    function grpAtivo(gid) { return get(grp(gid)).data.get('ativo', true) == true; }
+    // KAN-117 (pelada-v101): grupo de conta bloqueada pelo portal (bloq) fica indisponível: o link não aceita nada.
+    function grpAtivo(gid) {
+      return get(grp(gid)).data.get('ativo', true) == true && get(grp(gid)).data.get('bloq', false) != true;
+    }
+    // Conta bloqueada pelo portal (contas/{uid}.bloq): não cria grupo nem grava como administrador.
+    function contaBloq() {
+      return exists(/databases/$(database)/documents/contas/$(request.auth.uid))
+        && get(/databases/$(database)/documents/contas/$(request.auth.uid)).data.get('bloq', null) != null;
+    }
     // KAN-224: o voto do próprio aparelho antes e depois do lote (vazio se ainda não votou).
     function votoPath(gid, vid) { return /databases/$(database)/documents/grupos/$(gid)/votacoes/$(vid)/votos/$(request.auth.uid); }
     function votoAntes(gid, vid) { return exists(votoPath(gid, vid)) ? get(votoPath(gid, vid)).data : {}; }
@@ -284,10 +296,16 @@ service cloud.firestore {
       return !(campo in request.resource.data) || (request.resource.data[campo] is string && request.resource.data[campo].size() <= 40);
     }
 
-    // Configuração dos limites: todos leem (o app avisa antes de chegar no limite); só o console do Firebase grava.
+    // Configuração dos limites: todos leem (o app avisa antes de chegar no limite).
+    // KAN-117 (pelada-v101): o administrador do portal muda os limites contra abuso pela tela (números de 1 a 500).
     match /sistema/{doc} {
       allow read: if true;
-      allow write: if false;
+      allow write: if adminPortal() && doc == 'limites'
+        && request.resource.data.keys().hasOnly(['avulsosPorRodada', 'gruposPorConta'])
+        && request.resource.data.get('avulsosPorRodada', 30) is int
+        && request.resource.data.get('avulsosPorRodada', 30) >= 1 && request.resource.data.get('avulsosPorRodada', 30) <= 500
+        && request.resource.data.get('gruposPorConta', 20) is int
+        && request.resource.data.get('gruposPorConta', 20) >= 1 && request.resource.data.get('gruposPorConta', 20) <= 500;
     }
 
     // Ficha de cada conta: contador de grupos (KAN-89), último acesso (KAN-116) e plano (KAN-115).
@@ -298,7 +316,9 @@ service cloud.firestore {
       allow create, update: if realUser() && request.auth.uid == uid && (contadorOk(uid) || acessoOk() || testeOk() || ativosOk(uid));
       // O plano (KAN-115) só é gravado pelo administrador do portal (e, no futuro, pelo servidor de pagamento).
       // KAN-117 (pelada-v99): com o motivo (pago por fora, cortesia, parceria ou teste estendido), para a conversa da cobrança.
-      allow create, update: if adminPortal() && camposMudados().hasOnly(['plano', 'planoAte', 'obs', 'motivo'])
+      // KAN-117 (pelada-v101): bloqueio da conta (bloq = quando bloqueou; nulo = desbloqueada).
+      allow create, update: if adminPortal() && camposMudados().hasOnly(['plano', 'planoAte', 'obs', 'motivo', 'bloq'])
+        && (!('bloq' in request.resource.data) || request.resource.data.bloq == null || request.resource.data.bloq is int)
         && request.resource.data.get('plano', 'gratis') is string && request.resource.data.get('plano', 'gratis').size() <= 20
         && (!('planoAte' in request.resource.data) || request.resource.data.planoAte == null || request.resource.data.planoAte is int)
         && (!('obs' in request.resource.data) || (request.resource.data.obs is string && request.resource.data.obs.size() <= 200))
@@ -311,7 +331,8 @@ service cloud.firestore {
       match /historico/{hid} {
         allow read: if adminPortal();
         allow create: if adminPortal() && idValido(hid)
-          && request.resource.data.keys().hasOnly(['em', 'por', 'de', 'para', 'obs'])
+          && request.resource.data.keys().hasOnly(['em', 'por', 'de', 'para', 'obs', 'acao'])
+          && (!('acao' in request.resource.data) || request.resource.data.acao in ['bloquear', 'desbloquear'])
           && request.resource.data.em is int
           && request.resource.data.por is string && request.resource.data.por.size() <= 100
           && request.resource.data.de is map && request.resource.data.para is map
@@ -334,7 +355,8 @@ service cloud.firestore {
       allow list: if adminPortal();
       // Grupo novo conta no limite de grupos por conta (KAN-89); nome com até 40 letras.
       // Grupo novo conta no limite de grupos por conta (KAN-89); obrigatório de novo desde a pelada-v28 (KAN-134).
-      allow create: if realUser() && request.resource.data.owner == request.auth.uid && caixaOk()
+      allow create: if realUser() && request.resource.data.owner == request.auth.uid && caixaOk() && !contaBloq()
+        && !('bloq' in request.resource.data)
         && nomeOk('name') && grupoContado(gid) && cabeNoPlano(gid, request.auth.uid)
         && (request.resource.data.get('cfg', {}).get('vagasCtrl', false) != true || planoPago(request.auth.uid));
       // Dono e data de criação não mudam; só o organizador ativa ou inativa o grupo.
@@ -352,7 +374,12 @@ service cloud.firestore {
             || resource.data.get('cfg', {}).get('vagasCtrl', false) == true || pago(gid))
         && espelhoOk()
         // KAN-204: a lista de convidados (adms) só o organizador arruma; quem entra ou sai pelo convite usa as regras abaixo.
-        && (!('adms' in request.resource.data.diff(resource.data).affectedKeys()) || isOwner(gid));
+        && (!('adms' in request.resource.data.diff(resource.data).affectedKeys()) || isOwner(gid))
+        // KAN-117: o bloqueio (bloq) só o portal muda.
+        && !('bloq' in request.resource.data.diff(resource.data).affectedKeys());
+      // KAN-117 (pelada-v101): o administrador do portal bloqueia e desbloqueia os grupos de uma conta (só o campo bloq).
+      allow update: if adminPortal() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bloq'])
+        && request.resource.data.get('bloq', false) is bool;
       allow update: if entrouNaLista(gid) || saiuDaLista(gid);
       allow delete: if isOwner(gid);
 

@@ -391,4 +391,7 @@ export default {
   'sorteio.quemEntraDepois': ' de {total})',
   'sorteio.sortear': 'Sortear',
   'avulso.confirmado': '{nome} confirmado.',
+  'inicio.contaBloqueadaTitulo': 'Cuenta bloqueada',
+  'inicio.contaBloqueada':
+    'Cuenta bloqueada por la administración de Nosso Jogo: solo para consulta. Contacta al soporte.',
 };

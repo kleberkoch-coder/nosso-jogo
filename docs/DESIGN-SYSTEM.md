@@ -73,6 +73,13 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo; **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v99)
+- **Ficha do cliente (portal)** (KAN-117; `src/portal/tela.tsx`, sem classe nova):
+  - "Voltar à lista" (`btn sm`) e um painel com o e-mail (`h2`), os grupos e "Plano em vigor: Plano A · dado pelo portal · até 26/11/2026"; embaixo, o gravado e a observação em `small muted`.
+  - Painel "Mudar o plano": Plano (`sel`), Válido até (`inp` de data, opcional) e Motivo (`sel`), lado a lado no computador e empilhados no celular; a ajuda em `small muted`; Observação (`inp`); o erro em `err` e o "Salvo" em `small`; "Salvar plano" (`primary`, com carregando; Enter também salva).
+  - Painel "Histórico de mudanças": lista (`plist wrap`) com data e hora e quem em `small muted`, e "Grátis → **Plano A · até … · Cortesia**".
+  - Na lista de clientes, cada cartão ganhou o botão "Ficha" (`btn sm`) e o motivo depois do plano.
+
 ## Componentes (pelada-v98)
 - **Campeonato encerrado** (KAN-238; `FimDoCampeonato` em `telas/Campeonato.tsx`; classe `camp-fim`, borda de 2px na cor `primary`): no lugar do placar, título "Campeonato encerrado", "🏆 Campeão: Time" (`camp-lider`), vice e 3º em `small muted` e o botão "Jogar partida fora do campeonato" (`btn`). Parado num empate: título "Falta dizer quem passou", texto em `small muted` e um botão `primary` "Quem passou? (Semifinal 1)" por jogo.
 - **Aviso fora do campeonato** (`AvisoFora`, `inbar info`): "Partida fora do campeonato: não entra na tabela nem na chave." com o botão "Ver o resultado" (`btn sm`).

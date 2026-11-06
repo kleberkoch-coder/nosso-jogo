@@ -4342,6 +4342,69 @@ with sync_playwright() as pw:
         ok('Campeonato na rodada' in p96.inner_text('#dlgBody'), 'CT-KAN-233-06: a janela Planos lista o campeonato')
         p96.evaluate(DEL, ['sistema/planos']); ctx96.close()
 
+        # ---------- v99 (KAN-117): ficha do cliente no portal (mudar plano, validade, motivo e histórico)
+        if TEM_PORTAL:
+            ctx99 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, service_workers='block')
+            p99 = ctx99.new_page(); p99.on('pageerror', lambda e: errs.append('portal v99: ' + str(e)))
+            PORTAL99 = URL.rsplit('/', 1)[0] + '/portal.html'
+            p99.goto(PORTAL99); p99.wait_for_timeout(600)
+            agora99 = int(time.time() * 1000)
+            p99.evaluate(PUT, {'contas/u-ficha99': {'email': 'ficha@teste.com', 'acesso': agora99, 'criada': agora99 - 5 * 864e5},
+                               'grupos/g-ficha99': {'name': 'Pelada da Ficha', 'owner': 'u-ficha99', 'ativo': True, 'createdAt': 1},
+                               'sistema/planos': {'transicaoAte': 1}})
+            p99.reload(); p99.wait_for_timeout(600); p99.click('[data-p=google]'); p99.wait_for_selector('li.cli', timeout=8000); p99.wait_for_timeout(300)
+            cli99 = p99.locator('li.cli', has_text='ficha@teste.com')
+            ok(cli99.count() == 1 and cli99.locator('[data-p=ficha]').count() == 1, 'CT-KAN-117-01: cada cliente da lista tem o botão "Ficha"')
+            cli99.locator('[data-p=ficha]').click(); p99.wait_for_selector('#ficha', timeout=5000); p99.wait_for_timeout(400)
+            f99 = p99.inner_text('#ficha')
+            ok('ficha@teste.com' in f99 and 'Plano em vigor: Grátis' in f99 and 'Nenhuma mudança feita pelo portal ainda' in f99,
+               f'CT-KAN-117-01: a ficha mostra o e-mail, o plano em vigor e o histórico vazio ({f99[:120]!r})')
+            # Plano pago sem motivo: recusa com explicação
+            p99.select_option('#fPlano', 'A'); p99.click('#fSalvar'); p99.wait_for_timeout(400)
+            ok('Escolha o motivo' in p99.inner_text('#fErro') and 'plano' not in (p99.evaluate(LER, 'contas/u-ficha99') or {}),
+               'CT-KAN-117-01: plano pago sem motivo não grava e explica')
+            # Data passada: recusa
+            p99.evaluate("(()=>{const i=document.getElementById('fAte');i.removeAttribute('min');i.value='2020-01-10'})()")
+            p99.select_option('#fMotivo', 'cortesia'); p99.click('#fSalvar'); p99.wait_for_timeout(400)
+            ok('A validade precisa ser hoje ou depois' in p99.inner_text('#fErro'), 'CT-KAN-117-01: validade no passado é recusada')
+            # Cortesia do Plano A até daqui a 20 dias
+            ate99 = p99.evaluate("(()=>{const d=new Date(Date.now()+20*864e5-3*36e5);return d.toISOString().slice(0,10)})()")
+            p99.fill('#fAte', ate99); p99.fill('#fObs', 'amigo do grupo de segunda'); p99.wait_for_timeout(100)
+            ld99 = p99.evaluate("(()=>{const b=document.getElementById('fSalvar');b.click();return b.classList.contains('busy')&&b.disabled})()")
+            p99.wait_for_selector('#fOk', timeout=5000); p99.wait_for_timeout(300)
+            c99 = p99.evaluate(LER, 'contas/u-ficha99') or {}
+            esp_ate = p99.evaluate("(d)=>{const [y,m,x]=d.split('-').map(Number);return Date.UTC(y,m-1,x+1,3)}", ate99)
+            ok(ld99 and c99.get('plano') == 'A' and c99.get('planoAte') == esp_ate and c99.get('motivo') == 'cortesia' and c99.get('obs') == 'amigo do grupo de segunda',
+               f'CT-KAN-117-02: "Salvar plano" mostra carregando e grava Plano A até o fim do dia escolhido, com o motivo cortesia e a observação ({c99})')
+            h99 = [v for k, v in p99.evaluate("(()=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2'));return Object.entries(s).filter(([k])=>k.startsWith('contas/u-ficha99/historico/'))})()")]
+            ok(len(h99) == 1 and h99[0]['de'] == {'plano': 'gratis', 'ate': None, 'motivo': None} and h99[0]['para'] == {'plano': 'A', 'ate': esp_ate, 'motivo': 'cortesia'}
+               and h99[0]['por'] and h99[0]['obs'] == 'amigo do grupo de segunda',
+               f'CT-KAN-117-04: a mudança vai para o histórico: quem, quando, de qual para qual plano, motivo e observação ({h99[:1]})')
+            fh99 = p99.inner_text('#fHist')
+            ok('Grátis → Plano A' in fh99.replace('\n', ' ') and 'Cortesia' in fh99 and 'Plano em vigor: Plano A' in p99.inner_text('#fichaAgora'),
+               f'CT-KAN-117-04: o histórico aparece na ficha e o plano em vigor muda na hora ({fh99[:120]!r})')
+            ok(p99.locator('#fichaAgora').count() == 1 and p99.evaluate("document.documentElement.scrollWidth<=innerWidth"), 'CT-KAN-117-05: a ficha cabe em 390px sem rolagem lateral')
+            for tema in ['light', 'dark']:
+                p99.emulate_media(color_scheme=tema); p99.wait_for_timeout(150)
+                contraste(p99, f'ficha do cliente no portal ({tema})')
+            p99.emulate_media(color_scheme='light')
+            p99.screenshot(path=f'{OUT}/99-ficha.png', full_page=True)
+            # Salvar de novo sem mudar nada: avisa e não grava outro histórico
+            p99.click('#fSalvar'); p99.wait_for_timeout(500)
+            n99 = p99.evaluate("Object.keys(JSON.parse(localStorage.getItem('pelada-demo-v2'))).filter(k=>k.startsWith('contas/u-ficha99/historico/')).length")
+            ok('Nada mudou' in p99.inner_text('#fErro') and n99 == 1, 'CT-KAN-117-04: salvar sem mudar nada avisa e não cria outra linha no histórico')
+            # Voltar à lista: o cliente aparece com Plano A, validade e o motivo
+            p99.click('[data-p=voltar]'); p99.wait_for_selector('li.cli', timeout=5000)
+            l99 = p99.locator('li.cli', has_text='ficha@teste.com').inner_text()
+            ok('Plano A' in l99 and 'até' in l99 and 'Cortesia' in l99, f'CT-KAN-117-03: na lista, o cliente aparece com o Plano A, a validade e o motivo ({l99[:90]!r})')
+            # Voltar ao Grátis: validade e motivo somem; Enter no formulário salva
+            p99.locator('li.cli', has_text='ficha@teste.com').locator('[data-p=ficha]').click(); p99.wait_for_selector('#fHist', timeout=5000)
+            p99.select_option('#fPlano', 'gratis'); p99.focus('#fObs'); p99.keyboard.press('Enter'); p99.wait_for_selector('#fOk', timeout=5000); p99.wait_for_timeout(300)
+            c99b = p99.evaluate(LER, 'contas/u-ficha99') or {}
+            ok(c99b.get('plano') == 'gratis' and c99b.get('planoAte') is None and c99b.get('motivo') is None and p99.locator('#fHist li').count() == 2,
+               f'CT-KAN-117-02: voltar ao Grátis (com Enter) limpa a validade e o motivo e soma uma linha no histórico ({c99b})')
+            p99.evaluate(DEL, ['sistema/planos']); ctx99.close()
+
         # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
         ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
         p7 = ctx7.new_page()

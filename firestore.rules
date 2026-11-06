@@ -297,11 +297,29 @@ service cloud.firestore {
       // A própria conta grava só o contador de grupos (KAN-89) ou o último acesso (KAN-116). Nunca o plano.
       allow create, update: if realUser() && request.auth.uid == uid && (contadorOk(uid) || acessoOk() || testeOk() || ativosOk(uid));
       // O plano (KAN-115) só é gravado pelo administrador do portal (e, no futuro, pelo servidor de pagamento).
-      allow create, update: if adminPortal() && camposMudados().hasOnly(['plano', 'planoAte', 'obs'])
+      // KAN-117 (pelada-v99): com o motivo (pago por fora, cortesia, parceria ou teste estendido), para a conversa da cobrança.
+      allow create, update: if adminPortal() && camposMudados().hasOnly(['plano', 'planoAte', 'obs', 'motivo'])
         && request.resource.data.get('plano', 'gratis') is string && request.resource.data.get('plano', 'gratis').size() <= 20
         && (!('planoAte' in request.resource.data) || request.resource.data.planoAte == null || request.resource.data.planoAte is int)
-        && (!('obs' in request.resource.data) || (request.resource.data.obs is string && request.resource.data.obs.size() <= 200));
+        && (!('obs' in request.resource.data) || (request.resource.data.obs is string && request.resource.data.obs.size() <= 200))
+        && (!('motivo' in request.resource.data) || request.resource.data.motivo == null
+          || request.resource.data.motivo in ['pago', 'cortesia', 'parceria', 'teste']);
       allow delete: if false;
+
+      // Histórico das mudanças de plano feitas pelo portal (KAN-117): só o administrador do portal cria e lê;
+      // ninguém muda nem apaga (quem, quando, de qual para qual plano, motivo e observação).
+      match /historico/{hid} {
+        allow read: if adminPortal();
+        allow create: if adminPortal() && idValido(hid)
+          && request.resource.data.keys().hasOnly(['em', 'por', 'de', 'para', 'obs'])
+          && request.resource.data.em is int
+          && request.resource.data.por is string && request.resource.data.por.size() <= 100
+          && request.resource.data.de is map && request.resource.data.para is map
+          && request.resource.data.de.keys().hasOnly(['plano', 'ate', 'motivo'])
+          && request.resource.data.para.keys().hasOnly(['plano', 'ate', 'motivo'])
+          && (!('obs' in request.resource.data) || (request.resource.data.obs is string && request.resource.data.obs.size() <= 200));
+        allow update, delete: if false;
+      }
     }
 
     // Lista "Meus grupos" de cada conta: só a própria pessoa lê e grava.

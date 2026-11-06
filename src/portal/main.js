@@ -2,7 +2,7 @@
    mas nenhuma tela do app dos clientes: só o login com o Google e a lista de clientes. */
 import '../estilos/app.css';
 import { FirebaseBackend, LocalBackend } from '../nucleo/backend.js';
-import { ligar } from './tela.js';
+import { ligar } from './tela';
 
 function loadScript(src) {
   return new Promise((res, rej) => {

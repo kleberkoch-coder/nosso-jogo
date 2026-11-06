@@ -269,3 +269,44 @@ export function listaDeConvidados(membros: Record<string, MembroLista> | null | 
 }
 export const mesmaLista = (a: unknown, b: string[]) =>
   Array.isArray(a) && a.length === b.length && a.every((x, i) => x === b[i]);
+
+/* ---------- Ficha do cliente no portal (KAN-117, pelada-v99) ----------
+   Decisões do Kleber (06/11/2026): mudar o plano com validade opcional, dar cortesia, estender o teste e guardar o
+   histórico; cada plano dado pelo portal tem um motivo, para a conversa da cobrança depois. Bloquear conta fica para a
+   2ª entrega. "Teste estendido" é um plano com validade e o motivo "teste" (o teste de 14 dias do app não muda). */
+export const MOTIVOS = ['pago', 'cortesia', 'parceria', 'teste'] as const;
+export type Motivo = (typeof MOTIVOS)[number];
+export type Mudanca = { plano: string; ate: number | null; motivo: Motivo | null };
+/* A validade escolhida num dia vale até o fim desse dia em Brasília (como a transição: 28/11 vale o dia 28 inteiro). */
+export function fimDoDia(iso: string): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+  return m ? Date.UTC(+m[1]!, +m[2]! - 1, +m[3]! + 1, 3) : null;
+}
+/* Dia (AAAA-MM-DD, em Brasília) que aparece no campo de validade para um "ate" gravado. */
+export function diaDaValidade(ate: number | null | undefined): string {
+  if (ate == null) return '';
+  const d = new Date(ate - 1 - 3 * 36e5);
+  return d.toISOString().slice(0, 10);
+}
+/* Confere a mudança antes de gravar: plano do catálogo; plano pago pede motivo; validade, se houver, no futuro.
+   Devolve a chave do texto do erro, ou null. */
+export function erroDaMudanca(m: Mudanca, cat: Catalogo, agora: number): string | null {
+  if (!cat[m.plano]) return 'ficha.erroPlano';
+  if (m.plano !== 'gratis' && !m.motivo) return 'ficha.erroMotivo';
+  if (m.motivo && !MOTIVOS.includes(m.motivo)) return 'ficha.erroMotivo';
+  if (m.plano !== 'gratis' && m.ate != null && m.ate <= agora) return 'ficha.erroValidade';
+  return null;
+}
+/* Campos gravados na ficha da conta: Grátis limpa a validade e o motivo. */
+export function camposDaMudanca(m: Mudanca, obs: string): Record<string, unknown> {
+  const g = m.plano === 'gratis';
+  return { plano: m.plano, planoAte: g ? null : m.ate, motivo: g ? null : m.motivo, obs: obs.trim().slice(0, 200) };
+}
+/* O que a conta tinha antes (para o histórico). */
+export function mudancaAtual(
+  c: { plano?: string; planoAte?: number | null; motivo?: unknown } | null | undefined
+): Mudanca {
+  const motivo = c && MOTIVOS.includes(c.motivo as Motivo) ? (c.motivo as Motivo) : null;
+  return { plano: (c && c.plano) || 'gratis', ate: c && typeof c.planoAte === 'number' ? c.planoAte : null, motivo };
+}
+export const mesmaMudanca = (a: Mudanca, b: Mudanca) => a.plano === b.plano && a.ate === b.ate && a.motivo === b.motivo;

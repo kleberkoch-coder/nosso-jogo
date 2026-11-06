@@ -73,6 +73,9 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo; **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v100)
+- **Ficha do cliente (portal), ajuste (KAN-240):** com Grátis escolhido no Plano, "Válido até" e "Motivo" ficam desligados (`disabled`), e a ajuda troca para "No Grátis não há validade nem motivo. Para cortesia, parceria ou teste estendido, escolha o Plano A ou B." Os campos ligam ao escolher A ou B.
+
 ## Componentes (pelada-v99)
 - **Ficha do cliente (portal)** (KAN-117; `src/portal/tela.tsx`, sem classe nova):
   - "Voltar à lista" (`btn sm`) e um painel com o e-mail (`h2`), os grupos e "Plano em vigor: Plano A · dado pelo portal · até 26/11/2026"; embaixo, o gravado e a observação em `small muted`.

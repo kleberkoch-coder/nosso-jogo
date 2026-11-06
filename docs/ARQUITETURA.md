@@ -199,6 +199,12 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D48. Fim do campeonato e fase de cada partida, calculados (06 nov. 2026, pelada-v98, KAN-238)
+- **Fase de cada partida:** `chave()` devolve `fases`, um rótulo para cada partida salva, na ordem da lista: `'g'` (todos contra todos), o jogo da chave ou `null` (fora do campeonato). Sai da mesma conta que casa as partidas com os jogos (`casar` grava o rótulo), então lista, Histórico e WhatsApp sempre concordam com a tabela e a chave. Por isso as partidas não são mais filtradas antes da conta (`comoJogos` em `ui/zap-partidas.ts`): a posição na lista importa.
+- **Fim:** `encerrado` (campeão definido e, com 3º lugar, ele também) e `esperando` (jogos empatados sem "quem passou", quando nenhum outro jogo é possível). "Jogar fora do campeonato" é só da tela (`S.campFora`, por rodada, some ao recarregar): não grava nada.
+- **WhatsApp:** `txtPartidas` usa a chave para separar as fases, mostrar os pênaltis, trocar a classificação da rodada pela do campeonato e fechar com campeão, vice e 3º. Os nomes das fases (`mata.fase.*`) foram para o dicionário do WhatsApp (`i18n/pt-BR-zappartidas.ts`), que chega com a Partida e com o Histórico.
+- **Regras do Firebase não mudam.** Tamanho: Partida 9,4 KB, Histórico 3,2 KB; gestão e link iguais.
+
 ### D47. Mata-mata calculado, só as decisões gravadas (06 nov. 2026, pelada-v97, KAN-233)
 - **Nada de chave gravada:** a chave é calculada da classificação e das partidas (`chave` em `dominio/mata-mata.ts`, com teste). Cada jogo do mata-mata é a primeira partida ainda não usada entre os dois times, na ordem dos jogos (todos contra todos primeiro, depois a chave, com o 3º lugar antes da final). Editar ou apagar uma partida refaz a chave sozinha.
 - **Gravado no campeonato:** `mm` (`k` = quantos se classificam, 0/2/4/8/16; `t3` = disputa de 3º) e `dec` (por jogo da chave: `p` = time que passou, `a`/`b` = pênaltis opcionais). "Quem passou" grava só `camp.dec.<jogo>` e Ajustes só `camp.crit` e `camp.mm` (campos com ponto), para não desfazer o que outro aparelho gravou. Escolha de um time que não está no jogo é ignorada. Campeonatos da v96 (sem `mm`) ganham o padrão.

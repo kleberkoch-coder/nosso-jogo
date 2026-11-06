@@ -73,6 +73,11 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo; **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v98)
+- **Campeonato encerrado** (KAN-238; `FimDoCampeonato` em `telas/Campeonato.tsx`; classe `camp-fim`, borda de 2px na cor `primary`): no lugar do placar, título "Campeonato encerrado", "🏆 Campeão: Time" (`camp-lider`), vice e 3º em `small muted` e o botão "Jogar partida fora do campeonato" (`btn`). Parado num empate: título "Falta dizer quem passou", texto em `small muted` e um botão `primary` "Quem passou? (Semifinal 1)" por jogo.
+- **Aviso fora do campeonato** (`AvisoFora`, `inbar info`): "Partida fora do campeonato: não entra na tabela nem na chave." com o botão "Ver o resultado" (`btn sm`).
+- **Fase da partida** (`fase-tag` + `tag`): etiqueta antes do jogo, na lista "Partidas desta rodada" e no Histórico: "Todos contra todos", "Semifinal 1", "Final", "3º lugar" ou "Fora do campeonato". Só aparece em rodada com campeonato.
+
 ## Componentes (pelada-v97)
 - **Chave do mata-mata** (KAN-233; `PainelCampeonato`; classes `camp-chave`, `camp-fase`): depois de "Jogos", o título "Mata-mata" e uma lista (`plist wrap`) com a fase em cima de cada jogo (`camp-fase`, `muted`, 600) e os dois lados: time com a bolinha ou, antes de definido, de onde vem ("1º da tabela", "Semifinal 1: vencedor") em `muted`. Placar em negrito; com empate decidido, "· pênaltis 4 × 3, passou Time 3" em `small muted`. À direita: "Quem passou?" (`btn sm`) no empate sem decisão, "Em quadra" (`tag`) ou "Próximo" (`tag alt`).
 - **Campeão** (`camp-lider`): "🏆 Campeão: Time 2" e, em `small muted`, "· Vice: Time 1 · 3º: Time 3". Antes do mata-mata: "Todos contra todos encerrado. Agora é o mata-mata." em `small`. No Histórico (`#histCampeao`, 700): "🏆 Campeão: … · Vice: …".

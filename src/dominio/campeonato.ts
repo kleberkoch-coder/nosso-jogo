@@ -1,5 +1,5 @@
 /* Campeonato da rodada (KAN-233, pelada-v96): todos contra todos em turno único e a classificação com os critérios
-   de desempate escolhidos. Regra pura, sem tela (telas/Campeonato.tsx). O mata-mata entra na pelada-v97.
+   de desempate escolhidos. Regra pura, sem tela (telas/Campeonato.tsx). O mata-mata fica em mata-mata.ts (pelada-v97).
    Decisões do Kleber (05/11/2026): Plano A; sem tempo por fase (cada partida já tem o seu); só turno único.
    Times são as posições na lista de times da rodada (0 = primeiro do sorteio). */
 export type Criterio = 'saldo' | 'gp' | 'cd' | 'sorteio';
@@ -9,7 +9,13 @@ export type Camp = {
   jogos: string[]; // "0-1", "2-3"… na ordem em que vão acontecer
   crit: Criterio[]; // depois dos pontos, na ordem
   sem: number; // número para o critério "sorteio" dar o mesmo resultado em todos os aparelhos
+  mm: Mata; // mata-mata depois da fase de todos contra todos (pelada-v97)
+  dec: Record<string, Dec>; // empate no mata-mata: quem passou (e os pênaltis, se anotados), por jogo da chave
 };
+/* Mata-mata: quantos se classificam (0 = sem mata-mata; 2 = final; 4 = semifinais; 8 = quartas; 16 = oitavas)
+   e se há disputa de 3º lugar. */
+export type Mata = { k: number; t3: boolean };
+export type Dec = { p: number; a?: number; b?: number };
 export type Jogo = { a: number; b: number; ga: number; gb: number; at?: number };
 export type Linha = {
   t: number;
@@ -79,8 +85,38 @@ export function ordemDosJogos(n: number): string[] {
   return feitos.map(i => pares[i].join('-'));
 }
 
-export function novoCampeonato(n: number, crit: Criterio[], agora: number, sem: number): Camp {
-  return { em: agora, n, jogos: ordemDosJogos(n), crit: crit.filter(c => CRITERIOS.includes(c)), sem };
+/* Padrão decidido pelo Kleber (05/11/2026): 3 times, final 1º × 2º; 4 times, final e 3º lugar (3º × 4º);
+   5 a 7, semifinais (1º × 4º, 2º × 3º) e final; 8 ou mais, quartas, semifinais e final. */
+export function mataPadrao(n: number): Mata {
+  if (n <= 3) return { k: 2, t3: false };
+  if (n === 4) return { k: 2, t3: true };
+  if (n < 8) return { k: 4, t3: false };
+  return { k: 8, t3: false };
+}
+/* Mata-matas possíveis com n times, do menor para o maior. 3º lugar: com a final direta, precisa de 4 times. */
+export function mataOpcoes(n: number): Mata[] {
+  const o: Mata[] = [{ k: 0, t3: false }];
+  [2, 4, 8, 16]
+    .filter(k => k <= n)
+    .forEach(k => {
+      o.push({ k, t3: false });
+      if (k >= 4 || n >= 4) o.push({ k, t3: true });
+    });
+  return o;
+}
+export const mataOk = (m: unknown, n: number): m is Mata =>
+  !!m && mataOpcoes(n).some(o => o.k === (m as Mata).k && o.t3 === (m as Mata).t3);
+
+export function novoCampeonato(n: number, crit: Criterio[], agora: number, sem: number, mm?: Mata): Camp {
+  return {
+    em: agora,
+    n,
+    jogos: ordemDosJogos(n),
+    crit: crit.filter(c => CRITERIOS.includes(c)),
+    sem,
+    mm: mataOk(mm, n) ? { k: mm.k, t3: mm.t3 } : mataPadrao(n),
+    dec: {},
+  };
 }
 
 /* Campeonato gravado e ainda válido para estes times. */
@@ -93,20 +129,26 @@ export function lerCamp(c: unknown, nTimes: number): Camp | null {
     jogos: x.jogos.filter(j => typeof j === 'string'),
     crit: Array.isArray(x.crit) ? x.crit.filter(k => CRITERIOS.includes(k)) : [],
     sem: typeof x.sem === 'number' ? x.sem : 0,
+    /* Campeonato da v96 (sem mm): vale o padrão. */
+    mm: mataOk(x.mm, nTimes) ? x.mm : mataPadrao(nTimes),
+    dec: x.dec && typeof x.dec === 'object' ? x.dec : {},
   };
 }
 
-/* Qual partida salva vale para cada jogo do campeonato: a primeira, depois do início, entre os dois times. */
-export function resultados(c: Camp, ms: Jogo[]): (Jogo | null)[] {
-  const usadas = new Set<number>();
+/* A primeira partida salva ainda não usada, depois do início, entre os dois times; marca como usada.
+   O resultado vem sempre do ponto de vista do jogo (a × b), mesmo que tenham entrado trocados. */
+export function casar(c: Camp, ms: Jogo[], usadas: Set<number>, a: number, b: number): Jogo | null {
+  const i = ms.findIndex((m, k) => !usadas.has(k) && (m.at == null || m.at >= c.em) && par(m.a, m.b) === par(a, b));
+  if (i < 0) return null;
+  usadas.add(i);
+  const m = ms[i];
+  return m.a === a ? m : { a, b, ga: m.gb, gb: m.ga, at: m.at };
+}
+/* Qual partida salva vale para cada jogo de todos contra todos (as seguintes ficam para o mata-mata). */
+export function resultados(c: Camp, ms: Jogo[], usadas = new Set<number>()): (Jogo | null)[] {
   return c.jogos.map(j => {
     const [a, b] = lerPar(j);
-    const i = ms.findIndex((m, k) => !usadas.has(k) && (m.at == null || m.at >= c.em) && par(m.a, m.b) === par(a, b));
-    if (i < 0) return null;
-    usadas.add(i);
-    const m = ms[i];
-    /* Sempre do ponto de vista do jogo da tabela (a × b), mesmo que tenham entrado trocados. */
-    return m.a === a ? m : { a, b, ga: m.gb, gb: m.ga, at: m.at };
+    return casar(c, ms, usadas, a, b);
   });
 }
 

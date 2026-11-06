@@ -14,7 +14,7 @@ import { closeDlg, confirmou, dlg, openDlg } from '../ui/dialogos.js';
 import { janelaPonto } from '../ui/JanelaPonto';
 import { changed, render } from '../ui/render.js';
 import { ACT } from '../acoes.js';
-import { campDe, desempateEscolhido, janelaCampeonato } from '../telas/Campeonato';
+import { campDe, chaveDe } from '../telas/Campeonato';
 import { MAX_TIMES, MIN_TIMES, novoCampeonato } from '../dominio/campeonato';
 import { recurso } from '../dominio/grupo.js';
 import { op } from '../nucleo/backend.js';
@@ -26,6 +26,38 @@ function gravarCamp(r, camp) {
   if (!camp) delete S.rod[r.id].camp;
   changed();
   return w(GB.patch('rodadas/' + r.id, { camp: camp || op.apagar() }));
+}
+/* Só alguns campos do campeonato (ajustes, quem passou): não desfaz o que outro aparelho gravou nos outros. */
+function gravarNoCamp(r, campos) {
+  const d = S.rod[r.id] || {},
+    c = Object.assign({}, d.camp);
+  Object.entries(campos).forEach(([k, v]) => {
+    const [a, b] = k.split('.');
+    if (b) c[a] = Object.assign({}, c[a], { [b]: v });
+    else c[a] = v;
+  });
+  S.rod[r.id] = Object.assign({}, d, { camp: c });
+  changed();
+  const o = {};
+  Object.entries(campos).forEach(([k, v]) => (o['camp.' + k] = v));
+  return w(GB.patch('rodadas/' + r.id, o));
+}
+/* As janelas do campeonato baixam só quando abertas (telas/CampeonatoJanelas.tsx). */
+const janelas = () =>
+  import('../telas/CampeonatoJanelas').catch(e => {
+    toast(tx('comum.naoCarregouTitulo') + '. ' + tx('comum.naoCarregou'));
+    throw e;
+  });
+/* Empate no mata-mata (KAN-233): abre "Quem passou?" para o jogo da chave. */
+function abrirQuemPassou(r, id) {
+  const k = chaveDe(r),
+    s = k && k.slots.find(x => x.id === id && x.res && x.res.ga === x.res.gb);
+  if (!s) return;
+  return janelas().then(m => {
+    openDlg(m.janelaQuemPassou(s));
+    dlg.setAttribute('aria-labelledby', 'passouTitulo');
+    setTimeout(() => $('#passouTimes button')?.focus(), 30);
+  });
 }
 
 /* KAN-75: título da janela do ponto, pelo catálogo do esporte.
@@ -43,28 +75,52 @@ const acoes = {
     if (!r || !r.times) return;
     const n = r.times.length;
     if (!campDe(r) && (!recurso('campeonato') || n < MIN_TIMES || n > MAX_TIMES)) return;
-    openDlg(janelaCampeonato(r));
-    dlg.setAttribute('aria-labelledby', 'campDlgTitulo');
-    setTimeout(() => $('#campCrit input')?.focus(), 30);
+    return janelas().then(m => {
+      openDlg(m.janelaCampeonato(r));
+      dlg.setAttribute('aria-labelledby', 'campDlgTitulo');
+      setTimeout(() => $('#campMata')?.focus(), 30);
+    });
   },
   comecarCampeonato: () => {
     const r = curRodada();
     if (!r || !r.times || campDe(r)) return closeDlg();
-    const c = novoCampeonato(r.times.length, desempateEscolhido(), Date.now(), Math.floor(Math.random() * 2 ** 31));
-    closeDlg();
-    /* O jogo em andamento que ainda não começou passa a ser o primeiro do campeonato. */
-    const L = S.live;
-    if (L && L.rid === r.id && !L.goals.length && !L.run && !L.el) L.auto = true;
-    toast(tx('camp.comecou', { n: c.jogos.length }));
-    return gravarCamp(r, c);
+    return janelas().then(m => {
+      const c = novoCampeonato(
+        r.times.length,
+        m.desempateEscolhido(),
+        Date.now(),
+        Math.floor(Math.random() * 2 ** 31),
+        m.mataEscolhido()
+      );
+      closeDlg();
+      /* O jogo em andamento que ainda não começou passa a ser o primeiro do campeonato. */
+      const L = S.live;
+      if (L && L.rid === r.id && !L.goals.length && !L.run && !L.el) L.auto = true;
+      toast(tx('camp.comecou', { n: c.jogos.length }));
+      return gravarCamp(r, c);
+    });
   },
+  /* Ajustes depois de montar: mata-mata e desempate (os jogos de todos contra todos não mudam). */
   salvarDesempate: () => {
     const r = curRodada(),
       c = r && campDe(r);
     if (!c) return closeDlg();
-    closeDlg();
-    toast(tx('camp.desempateSalvo'));
-    return gravarCamp(r, Object.assign({}, c, { crit: desempateEscolhido() }));
+    return janelas().then(m => {
+      closeDlg();
+      toast(tx('camp.desempateSalvo'));
+      return gravarNoCamp(r, { crit: m.desempateEscolhido(), mm: m.mataEscolhido() || c.mm });
+    });
+  },
+  quemPassou: el => abrirQuemPassou(curRodada(), el.dataset.v),
+  salvarQuemPassou: () => {
+    const r = curRodada();
+    return janelas().then(m => {
+      const e = m.decisaoEscolhida();
+      if (!r || !e || !e.d) return;
+      closeDlg();
+      toast(tx('mata.passouSalvo', { time: tn(e.d.p) }));
+      return gravarNoCamp(r, { ['dec.' + e.id]: e.d });
+    });
   },
   formatoLivre: el => {
     const r = curRodada();
@@ -196,6 +252,12 @@ const acoes = {
     /* KAN-175: o próximo jogo sai dos jogos salvos (quem ganha fica, entra quem espera há mais tempo). */
     S.live = novaPartida(r, L);
     toast(tx('partida.salva', { a: tn(L.a), ga, gb, b: tn(L.b) }));
+    /* KAN-233: empate num jogo do mata-mata pergunta na hora quem passou. */
+    if (ga === gb) {
+      const k = chaveDe(r),
+        s = k && k.slots.find(x => x.falta && ((x.a === L.a && x.b === L.b) || (x.a === L.b && x.b === L.a)));
+      if (s) return abrirQuemPassou(r, s.id);
+    }
   },
   /* KAN-178: artilharia da rodada (só o total de gols de cada jogador). */
   abrirArtilharia: () => {

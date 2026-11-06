@@ -4155,7 +4155,7 @@ with sync_playwright() as pw:
         e95 = p95.inner_text('#vpart'); f95 = p95.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>k.startsWith('votpart.'))")
         ok('Who takes part in the vote' in e95 and 'Guests' in e95 and 'Avulsos' not in e95 and not f95, f'CT-KAN-230: em English, as opções saem traduzidas ({f95})')
         ctx95.close()
-        # ---------- v96 (KAN-233): campeonato da rodada (todos contra todos, classificação com desempate, Plano A)
+        # ---------- v96 (KAN-233): campeonato da rodada (todos contra todos, classificação com desempate, Plano A); v97: mata-mata, quem passou, campeão no Histórico
         ctx96 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, service_workers='block')
         p96 = ctx96.new_page(); p96.on('pageerror', lambda e: errs.append(str(e)))
         abrir_entrada(p96, 'criar')
@@ -4179,8 +4179,12 @@ with sync_playwright() as pw:
            'CT-KAN-233-06: com 4 times no Plano A, Campeonato fica disponível, sem cadeado; o formato começa Livre')
         p96.click('#fmtCamp'); p96.wait_for_selector('#campCrit', timeout=5000); p96.wait_for_timeout(300)
         m96 = p96.inner_text('#dlgBody')
-        ok('4 times, 6 jogos' in m96 and p96.evaluate("document.activeElement && document.activeElement.closest('#campCrit') !== null"),
-           f'CT-KAN-233-01: "Montar campeonato" explica 4 times e 6 jogos, com o cursor no primeiro critério ({m96[:90]!r})')
+        mm96 = p96.evaluate("[...document.querySelectorAll('#campMata option')].map(o=>[o.textContent,o.selected])")
+        ok('4 times, 6 jogos' in m96 and p96.evaluate("document.activeElement && document.activeElement.id === 'campMata'"),
+           f'CT-KAN-233-01: "Montar campeonato" explica 4 times e 6 jogos, com o cursor no mata-mata ({m96[:90]!r})')
+        ok([x[0] for x in mm96] == ['Sem mata-mata (campeão é o 1º da tabela)', 'Final (1º × 2º)', 'Final (1º × 2º) e 3º lugar (3º × 4º)', 'Semifinais (1º × 4º, 2º × 3º) e final', 'Semifinais (1º × 4º, 2º × 3º), final e 3º lugar']
+           and [x[0] for x in mm96 if x[1]] == ['Final (1º × 2º) e 3º lugar (3º × 4º)'],
+           f'CT-KAN-233-09: com 4 times, o mata-mata oferece as opções que cabem e vem no padrão: final e 3º lugar ({mm96})')
         crit0 = p96.evaluate("[...document.querySelectorAll('#campCrit li')].map(l=>[l.dataset.k,l.querySelector('input').checked])")
         ok(crit0 == [['saldo', True], ['gp', True], ['cd', True], ['sorteio', True]], f'CT-KAN-233-03: desempate padrão: saldo, gols a favor, confronto direto e sorteio ({crit0})')
         ok('saldo de gols' in m96.lower() and 'gols a favor' in m96.lower(), 'CT-KAN-233-03: os critérios usam a palavra do esporte (gols)')
@@ -4223,15 +4227,54 @@ with sync_playwright() as pw:
         ok(seguiu96 == esperado96, f'CT-KAN-233-02: depois de cada partida salva, o próximo jogo é o da ordem do campeonato ({seguiu96})')
         tab96 = p96.evaluate("[...document.querySelectorAll('#campTabela tbody tr')].map(r=>[+r.dataset.t,+r.children[2].innerText])")
         ok(tab96 == [[1, 6], [0, 5], [2, 4], [3, 1]], f'CT-KAN-233-03: classificação por pontos (vitória 3, empate 1): Time 2, Time 1, Time 3, Time 4 ({tab96})')
-        ok('Todos os jogos foram disputados' in p96.inner_text('#campPainel') and '1º lugar: Time 2' in p96.inner_text('#campLider'),
-           'CT-KAN-233-04: com todos os jogos disputados, o painel mostra o 1º lugar')
+        ok('Todos os jogos foram disputados' in p96.inner_text('#campPainel') and 'Agora é o mata-mata' in p96.inner_text('#campMataAviso') and p96.locator('#campLider').count() == 0,
+           'CT-KAN-233-04: com todos os jogos de todos contra todos disputados, o painel avisa que começa o mata-mata')
+        ch96 = p96.evaluate("[...document.querySelectorAll('#campChave li')].map(l=>[l.dataset.s,l.innerText.replace(/\\s+/g,' ').trim()])")
+        ok([x[0] for x in ch96] == ['t3', 'f'] and 'Time 3' in ch96[0][1] and 'Time 4' in ch96[0][1] and 'Time 2' in ch96[1][1] and 'Time 1' in ch96[1][1]
+           and 'Em quadra' in ch96[0][1] and p96.evaluate("[S.live.a,S.live.b]") == [2, 3],
+           f'CT-KAN-233-10: a chave se preenche pela tabela: 3º lugar (Time 3 × Time 4) já em quadra, depois a final (Time 2 × Time 1) ({ch96})')
+        # 3º lugar empata: "Quem passou?" abre na hora; os pênaltis escolhem o time
+        gols96('a', 1); gols96('b', 1)
+        p96.click('[data-a=saveMatch]'); p96.wait_for_selector('#passouTimes', timeout=5000); p96.wait_for_timeout(300)
+        qp96 = p96.inner_text('#dlgBody')
+        ok('Empate: quem passou?' in qp96 and '3º lugar: Time 3 1 × 1 Time 4' in qp96 and p96.locator('#passouOk').is_disabled(),
+           f'CT-KAN-233-11: empate no mata-mata abre "Quem passou?" com o placar; Confirmar só depois de escolher ({qp96[:80]!r})')
+        for tema in ['light', 'dark']:
+            p96.emulate_media(color_scheme=tema); p96.wait_for_timeout(150)
+            contraste(p96, f'janela Quem passou ({tema})')
+        p96.emulate_media(color_scheme='light')
+        p96.fill('#pena', '4'); p96.fill('#penb', '3'); p96.wait_for_timeout(200)
+        ok(p96.get_attribute('#passouTimes [data-t="2"]', 'aria-pressed') == 'true' and not p96.locator('#passouOk').is_disabled(),
+           'CT-KAN-233-11: com os pênaltis 4 × 3, quem fez mais já fica escolhido')
+        p96.set_viewport_size({'width': 360, 'height': 740}); p96.wait_for_timeout(200)
+        a96b = p96.evaluate("(()=>{const d=document.getElementById('dlgBody');return [d.scrollWidth<=d.clientWidth+1, Math.min(...[...d.querySelectorAll('button,input')].map(e=>Math.round(e.getBoundingClientRect().height)))]})()")
+        ok(a96b[0] and a96b[1] >= 44, f'CT-KAN-233-11: em 360px, "Quem passou?" cabe e os alvos têm 44px ({a96b})')
+        p96.screenshot(path=f'{OUT}/97-quem-passou-360.png'); p96.set_viewport_size({'width': 390, 'height': 844})
+        p96.click('#passouOk'); p96.wait_for_timeout(800)
+        dec96 = ((p96.evaluate(LER, f'grupos/{g96}/rodadas/{rid96}') or {}).get('camp') or {}).get('dec')
+        ok(dec96 == {'t3': {'p': 2, 'a': 4, 'b': 3}} and 'pênaltis 4 × 3, passou Time 3' in p96.inner_text('#campChave li[data-s=t3]'),
+           f'CT-KAN-233-11: quem passou fica gravado no campeonato e aparece na chave com os pênaltis ({dec96})')
+        # Final: Time 2 × Time 1
+        ok(p96.evaluate("[S.live.a,S.live.b]") == [1, 0], 'CT-KAN-233-10: depois do 3º lugar, a final entra em quadra (Time 2 × Time 1)')
+        gols96('a', 2); p96.click('[data-a=saveMatch]'); p96.wait_for_timeout(900)
+        ok(p96.locator('#passouTimes').count() == 0 and 'Campeão: Time 2' in p96.inner_text('#campLider') and 'Vice: Time 1' in p96.inner_text('#campLider') and '3º: Time 3' in p96.inner_text('#campLider'),
+           f'CT-KAN-233-12: com a final, aparecem campeão, vice e 3º ({p96.inner_text("#campLider")!r})')
+        p96.reload(); p96.wait_for_timeout(1500); p96.click('[data-a=tab][data-v=partida]'); p96.wait_for_selector('#campLider', timeout=10000); p96.wait_for_timeout(400)
+        ok('Campeão: Time 2' in p96.inner_text('#campLider'), 'CT-KAN-233-12: campeão continua depois de recarregar')
+        p96.click('[data-a=tab][data-v=historico]'); p96.wait_for_timeout(1200)
+        p96.click('[data-a=histBuscar]'); p96.wait_for_timeout(1500)
+        p96.locator(f'[data-a=histAbrir][data-v="{rid96}"]').first.click(); p96.wait_for_selector('#histCampeao', timeout=10000)
+        hc96 = p96.inner_text('#histCampeao')
+        ok('Campeão: Time 2' in hc96 and 'Vice: Time 1' in hc96, f'CT-KAN-233-13: campeão e vice ficam no Histórico da rodada ({hc96!r})')
+        p96.click('[data-a=tab][data-v=partida]'); p96.wait_for_selector('#campPainel', timeout=10000); p96.wait_for_timeout(400)
         crit96 = p96.inner_text('#campCriterios')
         ok('pontos (vitória 3, empate 1), gols a favor, saldo de gols, confronto direto' in crit96 and 'sorteio' not in crit96, f'CT-KAN-233-03: a ordem da classificação aparece embaixo da tabela ({crit96!r})')
         # Mudar o desempate depois: abre com o que foi escolhido
         p96.click('#campPainel [data-a=abrirCampeonato]'); p96.wait_for_selector('#campCrit', timeout=5000); p96.wait_for_timeout(200)
         crit1 = p96.evaluate("[...document.querySelectorAll('#campCrit li')].map(l=>[l.dataset.k,l.querySelector('input').checked])")
-        ok(crit1 == [['gp', True], ['saldo', True], ['cd', True], ['sorteio', False]] and 'Salvar desempate' in p96.inner_text('#campOk'),
-           f'CT-KAN-233-03: "Desempate" abre com a ordem gravada e o botão Salvar desempate ({crit1})')
+        ok(crit1 == [['gp', True], ['saldo', True], ['cd', True], ['sorteio', False]] and 'Salvar ajustes' in p96.inner_text('#campOk')
+           and p96.evaluate("document.querySelector('#campMata').selectedOptions[0].textContent") == 'Final (1º × 2º) e 3º lugar (3º × 4º)',
+           f'CT-KAN-233-03: "Ajustes" abre com o mata-mata e a ordem do desempate gravados ({crit1})')
         p96.check('#campCrit li[data-k=sorteio] input'); p96.click('#campOk'); p96.wait_for_timeout(700)
         ok((p96.evaluate(LER, f'grupos/{g96}/rodadas/{rid96}') or {}).get('camp', {}).get('crit') == ['gp', 'saldo', 'cd', 'sorteio'], 'CT-KAN-233-03: o desempate mudado fica gravado, sem refazer os jogos')
         for tema in ['light', 'dark']:
@@ -4246,17 +4289,17 @@ with sync_playwright() as pw:
         p96.evaluate("localStorage.setItem('nj-idioma','en')"); p96.reload(); p96.wait_for_timeout(1800)
         p96.click('[data-a=tab][data-v=partida]'); p96.wait_for_selector('#campPainel', timeout=10000); p96.wait_for_timeout(500)
         t96 = p96.inner_text('#formatoPainel') + ' ' + p96.inner_text('#campPainel')
-        sem96 = p96.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(camp\\.|plano\\.rec\\.campeonato)/.test(k))")
-        pt96 = [w for w in ['Campeonato', 'Faltam', 'Jogos', 'Saldo', 'Livre', 'vitória', 'confronto', 'lugar', 'Contra'] if w in t96]
-        ok(not sem96 and not pt96 and 'Championship' in t96 and 'goals scored' in t96, f'CT-KAN-233-07: em English, o formato e o campeonato saem sem palavras em português ({sem96}, {pt96})')
+        sem96 = p96.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(camp\\.|mata\\.|plano\\.rec\\.campeonato)/.test(k))")
+        pt96 = [w for w in ['Campeonato', 'Faltam', 'Jogos', 'Saldo', 'Livre', 'vitória', 'confronto', 'lugar', 'Contra', 'Campeão', 'Vice', 'Mata-mata', 'pênaltis', 'passou'] if w in t96]
+        ok(not sem96 and not pt96 and 'Championship' in t96 and 'goals scored' in t96 and 'Champion: Team 2' in t96 and 'Knockout' in t96, f'CT-KAN-233-07: em English, o formato e o campeonato saem sem palavras em português ({sem96}, {pt96})')
         p96.evaluate("localStorage.setItem('nj-idioma','pt-BR')"); p96.reload(); p96.wait_for_timeout(1500)
         p96.click('[data-a=tab][data-v=partida]'); p96.wait_for_selector('#campPainel', timeout=10000); p96.wait_for_timeout(400)
         # Voltar ao livre: pergunta, apaga só o campeonato; as partidas continuam
         p96.click('#fmtLivre'); ok(confirmar_app(p96, True), 'CT-KAN-233-08: voltar ao formato livre pergunta antes'); p96.wait_for_timeout(700)
         d96 = p96.evaluate(LER, f'grupos/{g96}/rodadas/{rid96}') or {}
         np96 = p96.evaluate("Object.values(S.parts||{}).filter(m=>m.tipo!=='art').length")
-        ok('camp' not in d96 and p96.locator('#campPainel').count() == 0 and np96 == 6 and p96.get_attribute('#fmtLivre', 'aria-pressed') == 'true',
-           f'CT-KAN-233-08: no formato livre, o campeonato sai da rodada e as 6 partidas continuam ({np96})')
+        ok('camp' not in d96 and p96.locator('#campPainel').count() == 0 and np96 == 8 and p96.get_attribute('#fmtLivre', 'aria-pressed') == 'true',
+           f'CT-KAN-233-08: no formato livre, o campeonato sai da rodada e as 8 partidas continuam ({np96})')
         # Grátis: cadeado
         p96.evaluate(PUT, {'sistema/planos': {'transicaoAte': 1}}); p96.reload(); p96.wait_for_timeout(1500)
         p96.click('[data-a=tab][data-v=partida]'); p96.wait_for_selector('#formatoPainel', timeout=10000); p96.wait_for_timeout(400)

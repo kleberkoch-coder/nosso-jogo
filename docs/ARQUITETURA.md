@@ -199,6 +199,13 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D49. Ficha do cliente no portal: plano com motivo e histórico sem servidor (06 nov. 2026, pelada-v99, KAN-117)
+- **Gravado:** `contas/{uid}` ganha `motivo` (`pago`, `cortesia`, `parceria`, `teste` ou nulo), além de `plano`, `planoAte` e `obs`. Cada mudança grava, no mesmo lote, `contas/{uid}/historico/{id}` com `em`, `por` (e-mail de quem mudou), `de`, `para` e `obs`. As regras aceitam só do administrador do portal, conferem campos e tamanhos, e não deixam mudar nem apagar o histórico.
+- **⚠️ Regras do Firebase mudam:** `motivo` na lista de campos do portal e a coleção nova do histórico (5 casos novos no emulador).
+- **Validade:** o dia escolhido vale até o fim dele em Brasília (`fimDoDia` em `dominio/planos.ts`, com teste), como a transição. O app continua lendo só `plano` e `planoAte`; o motivo serve para o portal e para a conversa da cobrança.
+- **Portal virou componente:** `src/portal/tela.tsx` em Preact (era HTML em texto). O portal passou de 46 para 66 KB, porque agora leva o Preact; ele só é aberto pela administração e não tem limite próprio. Os textos do portal continuam só em português (é usado só pela administração).
+- **Sem servidor:** quando houver cobrança automática (KAN-120), o servidor de pagamento grava os mesmos campos com `motivo: 'pago'` e a mesma linha de histórico.
+
 ### D48. Fim do campeonato e fase de cada partida, calculados (06 nov. 2026, pelada-v98, KAN-238)
 - **Fase de cada partida:** `chave()` devolve `fases`, um rótulo para cada partida salva, na ordem da lista: `'g'` (todos contra todos), o jogo da chave ou `null` (fora do campeonato). Sai da mesma conta que casa as partidas com os jogos (`casar` grava o rótulo), então lista, Histórico e WhatsApp sempre concordam com a tabela e a chave. Por isso as partidas não são mais filtradas antes da conta (`comoJogos` em `ui/zap-partidas.ts`): a posição na lista importa.
 - **Fim:** `encerrado` (campeão definido e, com 3º lugar, ele também) e `esperando` (jogos empatados sem "quem passou", quando nenhum outro jogo é possível). "Jogar fora do campeonato" é só da tela (`S.campFora`, por rodada, some ao recarregar): não grava nada.

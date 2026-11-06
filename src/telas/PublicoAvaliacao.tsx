@@ -101,7 +101,13 @@ function Pagina() {
       </div>
       {me ? (
         <div class="panel">
-          <NotasAvaliacao key={aid + ':' + me} jogs={a.jogs} inicial={inicial} />
+          {/* As notas já enviadas podem chegar depois do nome guardado no aparelho: a chave muda quando elas chegam,
+              e a lista recomeça com elas (antes ficava em branco se o nome viesse primeiro). */}
+          <NotasAvaliacao
+            key={aid + ':' + me + (minha && minha.pid === me ? ':enviadas' : '')}
+            jogs={a.jogs}
+            inicial={inicial}
+          />
           <div class="dlg-f">
             <button class="btn primary" data-a="avEnviar" data-v={aid} data-p={me} id="avEnviar">
               {tx(minha && minha.pid === me ? 'aval.atualizar' : 'aval.enviar')}

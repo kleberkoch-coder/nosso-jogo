@@ -3,16 +3,20 @@
    Ao abrir uma rodada: presença, times, partidas e votação daquela rodada. Só leitura.
    Baixa com a aba (abas/historico.ts); os botões usam data-a (histModo, histBuscar, histMais, histAbrir, histVoltar). */
 import { render } from 'preact';
-import { col, colete, corClara, posIdx, sport, tn, tnJogo } from '../dominio/esportes.js';
+import { lerCamp } from '../dominio/campeonato';
+import { col, colete, corClara, posIdx, sport, timeDoJogo, tn, tnJogo } from '../dominio/esportes.js';
+import { chave } from '../dominio/mata-mata';
 import { comCores, pname, ppos } from '../dominio/grupo.js';
 import { hora } from '../dominio/rodadas.js';
-import { tp, tx } from '../i18n/index.js';
+import { juntarTextos, tp, tx } from '../i18n/index.js';
+import textosCampeao from '../i18n/pt-BR-campeao';
 import * as banco from '../nucleo/backend.js';
 import { S as estado, gp } from '../nucleo/estado.js';
 import { $, fdate, fmonth, toast, today } from '../nucleo/util.js';
 import { changed } from '../ui/render.js';
 import { Pos } from '../ui/componentes';
 
+juntarTextos(textosCampeao);
 const st = () => estado;
 const bk = (): any => (banco as any).B;
 const POR_PAGINA = 20;
@@ -24,11 +28,14 @@ type Rod = {
   np?: number;
   matches?: Partida[];
   times?: Time[];
+  camp?: unknown;
 };
 type Time = { c: number | string; players: string[]; res?: string[] };
 type Partida = {
   id?: string;
   at?: number;
+  ta?: number;
+  tb?: number;
   tipo?: string;
   ga: number;
   gb: number;
@@ -310,6 +317,22 @@ function Detalhe({ h }: { h: Hist }) {
       >
     ).filter(([, v]) => v.rid === id);
   const nomeP = (pid: string) => (pres && pres[pid] && pres[pid].nome) || pname(pid);
+  /* KAN-233: campeão e vice do campeonato da rodada (mata-mata, ou o 1º e o 2º da tabela sem mata-mata). */
+  const camp = r.times && h.parts ? lerCamp(r.camp, r.times.length) : null,
+    ko = camp
+      ? chave(
+          camp,
+          ms
+            .map(m => ({
+              a: timeDoJogo(m, 'a', r.times) as number,
+              b: timeDoJogo(m, 'b', r.times) as number,
+              ga: m.ga,
+              gb: m.gb,
+              at: m.at,
+            }))
+            .filter(j => j.a >= 0 && j.b >= 0)
+        )
+      : null;
   return (
     <div class="stack">
       <div class="row">
@@ -369,6 +392,13 @@ function Detalhe({ h }: { h: Hist }) {
             </button>
           ) : null}
         </div>
+        {ko && ko.campeao != null ? (
+          <p id="histCampeao" style="margin:8px 0 0;font-weight:700">
+            <span aria-hidden="true">🏆 </span>
+            {tx('hist.campeao', { time: tn(ko.campeao) })}
+            {ko.vice != null ? <span class="small muted">{' · ' + tx('hist.vice', { time: tn(ko.vice) })}</span> : null}
+          </p>
+        ) : null}
         {!h.parts ? (
           <p class="muted small">{tx('comum.carregando')}</p>
         ) : ms.length ? (

@@ -199,6 +199,13 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D47. Mata-mata calculado, só as decisões gravadas (06 nov. 2026, pelada-v97, KAN-233)
+- **Nada de chave gravada:** a chave é calculada da classificação e das partidas (`chave` em `dominio/mata-mata.ts`, com teste). Cada jogo do mata-mata é a primeira partida ainda não usada entre os dois times, na ordem dos jogos (todos contra todos primeiro, depois a chave, com o 3º lugar antes da final). Editar ou apagar uma partida refaz a chave sozinha.
+- **Gravado no campeonato:** `mm` (`k` = quantos se classificam, 0/2/4/8/16; `t3` = disputa de 3º) e `dec` (por jogo da chave: `p` = time que passou, `a`/`b` = pênaltis opcionais). "Quem passou" grava só `camp.dec.<jogo>` e Ajustes só `camp.crit` e `camp.mm` (campos com ponto), para não desfazer o que outro aparelho gravou. Escolha de um time que não está no jogo é ignorada. Campeonatos da v96 (sem `mm`) ganham o padrão.
+- **Semeadura:** 1º e 2º só se cruzam na final (1×4, 2×3; 1×8, 4×5, 2×7, 3×6; o mesmo dobrando até 16).
+- **Regras do Firebase não mudam** (mesmo campo da rodada da D46).
+- **Tamanho:** as janelas de montar e de "Quem passou?" saíram para `telas/CampeonatoJanelas.tsx`, que baixa só quando aberta (1,6 KB). Partida 9,2 KB e pedaços compartilhados; Histórico 3,2 KB (lê o campeão com a mesma regra). Gestão 89,9 KB e link 48,4 KB.
+
 ### D46. Campeonato no campo da rodada; partidas de sempre (05 nov. 2026, pelada-v96, KAN-233)
 - **Onde fica:** um campo `camp` na ficha da rodada (`em`, `n`, `jogos` como textos "0-1", `crit`, `sem`). As partidas continuam as de sempre: o jogo do campeonato é achado pelo par de times (`resultados` em `dominio/campeonato.ts`, com teste), a primeira partida salva depois de `em`. Assim, ranking, resumo do mês, edição e exclusão de partida não mudam, e a tabela se refaz sozinha quando uma partida é editada ou apagada.
 - **Regras do Firebase não mudam:** a ficha da rodada já é gravada só por administrador, sem lista de campos. O Plano A é conferido na tela (como o ranking do ano e a lista de espera), não nas regras.
@@ -206,7 +213,7 @@ Medido a cada versão, no celular de 390px:
 - **Sorteio igual em todos os aparelhos:** o critério "sorteio" usa um número guardado (`sem`) e uma conta fixa, em vez de `Math.random` na hora.
 - **Ordem dos jogos:** busca com retrocesso por uma ordem sem time jogando duas seguidas, tentando primeiro os mais descansados, com limite de 20 mil passos; sem saída (3 e 4 times), fica a escolha gulosa.
 - **Tamanho:** tudo chega com a parte Partida (8,1 → 11,8 KB, limite 15). Gestão 89,9 KB e link 48,4 KB. Inglês e espanhol: a parte "gestao" chegou a 15,0 KB e foi dividida em `gestao` (dicionário da gestão, 6,6 KB) e `partes` (textos das partes sob demanda, 9,1 KB), baixadas juntas (`i18n/idiomas.ts`).
-- **Mata-mata (v97):** a chave sai da classificação; as partidas depois da fase de todos contra todos vão casar com a chave pelo mesmo par de times.
+- **Mata-mata (v97):** ver D47.
 
 ### D45. Quem participa da votação: a gestão calcula, a votação guarda a lista (05 nov. 2026, pelada-v95, KAN-230)
 - **Por que guardar a lista:** o tipo de cada jogador (mensalista, diarista, isento) fica em `privado/caixa`, que o link não lê. Então a gestão calcula, ao criar a votação, quem participa (`dominio/votacao-participa.ts`, com teste) e grava `quem` (ids) e `part` (as escolhas) no documento da votação. O link só usa a lista (`candidatos(…, quem)` em `dominio/votacao.ts`).

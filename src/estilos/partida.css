@@ -123,3 +123,24 @@
 .camp-crit .chk-linha span::first-letter {
   text-transform: uppercase;
 }
+/* Mata-mata (KAN-233, pelada-v97): a fase em cima de cada jogo da chave e a escolha de quem passou. */
+.camp-chave .camp-fase {
+  display: block;
+  color: var(--muted);
+  font-weight: 600;
+}
+.camp-passou {
+  display: flex;
+  width: 100%;
+}
+.camp-passou button {
+  flex: 1;
+}
+.camp-pen {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.camp-pen .inp {
+  min-height: var(--touch-min);
+}

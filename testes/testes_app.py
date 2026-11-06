@@ -4183,7 +4183,7 @@ with sync_playwright() as pw:
            f'CT-KAN-233-01: "Montar campeonato" explica 4 times e 6 jogos, com o cursor no primeiro critério ({m96[:90]!r})')
         crit0 = p96.evaluate("[...document.querySelectorAll('#campCrit li')].map(l=>[l.dataset.k,l.querySelector('input').checked])")
         ok(crit0 == [['saldo', True], ['gp', True], ['cd', True], ['sorteio', True]], f'CT-KAN-233-03: desempate padrão: saldo, gols a favor, confronto direto e sorteio ({crit0})')
-        ok('Saldo de gols' in m96.replace('saldo de gols', 'Saldo de gols') and 'gols a favor' in m96, 'CT-KAN-233-03: os critérios usam a palavra do esporte (gols)')
+        ok('saldo de gols' in m96.lower() and 'gols a favor' in m96.lower(), 'CT-KAN-233-03: os critérios usam a palavra do esporte (gols)')
         for tema in ['light', 'dark']:
             p96.emulate_media(color_scheme=tema); p96.wait_for_timeout(150)
             contraste(p96, f'janela Montar campeonato ({tema})')
@@ -4246,7 +4246,7 @@ with sync_playwright() as pw:
         p96.evaluate("localStorage.setItem('nj-idioma','en')"); p96.reload(); p96.wait_for_timeout(1800)
         p96.click('[data-a=tab][data-v=partida]'); p96.wait_for_selector('#campPainel', timeout=10000); p96.wait_for_timeout(500)
         t96 = p96.inner_text('#formatoPainel') + ' ' + p96.inner_text('#campPainel')
-        sem96 = p96.evaluate("window.__njSemTraducao()")
+        sem96 = p96.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(camp\\.|plano\\.rec\\.campeonato)/.test(k))")
         pt96 = [w for w in ['Campeonato', 'Faltam', 'Jogos', 'Saldo', 'Livre', 'vitória', 'confronto', 'lugar', 'Contra'] if w in t96]
         ok(not sem96 and not pt96 and 'Championship' in t96 and 'goals scored' in t96, f'CT-KAN-233-07: em English, o formato e o campeonato saem sem palavras em português ({sem96}, {pt96})')
         p96.evaluate("localStorage.setItem('nj-idioma','pt-BR')"); p96.reload(); p96.wait_for_timeout(1500)

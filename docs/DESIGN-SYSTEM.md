@@ -73,6 +73,11 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo; **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v101)
+- **Bloqueio da conta (portal)** (KAN-117; `Bloqueio` em `src/portal/tela.tsx`): painel na ficha, antes do histórico. Liberada: ajuda em `small muted`, "Motivo do bloqueio" (`inp`) e **Bloquear conta** (`btn danger`), que abre a confirmação (`inbar` com "Cancelar" e "Bloquear" `btn sm danger`, o foco vai para "Bloquear"). Bloqueada: etiqueta "Bloqueada" (`tag alt tag-bloq`) com a data e o efeito, e **Desbloquear conta** (`primary`). Na lista, a conta bloqueada ganha a mesma etiqueta; no histórico, "Conta bloqueada" / "Conta desbloqueada" em negrito, com o motivo.
+- **Limites contra abuso (portal)** (`Limites`): painel na lista, com dois campos numéricos lado a lado (avulsos por rodada e grupos por conta), a ajuda com os padrões, erro em `err`, "Salvo" em `small` e **Salvar limites** (`btn`, com carregando; Enter salva).
+- **Grupo bloqueado (app)**: aviso `inbar` no topo do grupo (`#avisoBloqueado`), no lugar do "só vê" e do "inativo"; o grupo fica só para consulta. **Conta bloqueada:** aviso `inbar` em "Meus grupos" (`#avisoContaBloqueada`), sem "Novo grupo" (também na janela "Seus grupos"). No link: o aviso de grupo indisponível.
+
 ## Componentes (pelada-v100)
 - **Ficha do cliente (portal), ajuste (KAN-240):** com Grátis escolhido no Plano, "Válido até" e "Motivo" ficam desligados (`disabled`), e a ajuda troca para "No Grátis não há validade nem motivo. Para cortesia, parceria ou teste estendido, escolha o Plano A ou B." Os campos ligam ao escolher A ou B.
 

@@ -199,6 +199,13 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D50. Bloqueio de conta e limites pelo portal, nas regras (06 nov. 2026, pelada-v101, KAN-117, 2ª parte)
+- **Dois campos:** `contas/{uid}.bloq` (quando bloqueou; nulo = liberada) e `grupos/{gid}.bloq` (verdadeiro/falso) em cada grupo da conta, gravados juntos pelo portal com a linha do histórico (`acao`: `bloquear` ou `desbloquear`).
+- **⚠️ Regras do Firebase mudam:** `grpAtivo()` também exige `bloq` falso (o link para de aceitar presença, extra, voto e avaliação, que já dependiam dele); `adminAtivo()` também exige o grupo sem `bloq` e a própria conta sem bloqueio (`contaBloq()`, uma leitura da ficha da conta a mais por gravação de administrador); criar grupo exige a conta sem bloqueio; o organizador não mexe em `bloq` (só o portal, que só pode mudar esse campo nos grupos); `sistema/limites` passa a aceitar gravação do portal, só com os dois números (1 a 500).
+- **Por que marcar os grupos e não só a conta:** o link e os convidados não leem a ficha do dono; o campo no grupo custa uma leitura que as regras já faziam (o grupo) e o app já recebe o grupo aberto.
+- **No app:** `grpAtivo()` e `grpBloq()` em `dominio/grupo.js`; o grupo bloqueado vira "só ver" (`euSoVejo`), com aviso próprio; a conta bloqueada não vê "Novo grupo" e a ação recusa.
+- **Tamanho:** a gestão chegou a 90,2 KB; os textos das permissões (`perm.*`, só da aba Grupo) foram do dicionário da gestão para `i18n/pt-BR-grupo.ts`, e a gestão ficou em 89,9 KB. O portal foi a 72,5 KB.
+
 ### D49. Ficha do cliente no portal: plano com motivo e histórico sem servidor (06 nov. 2026, pelada-v99, KAN-117)
 - **Gravado:** `contas/{uid}` ganha `motivo` (`pago`, `cortesia`, `parceria`, `teste` ou nulo), além de `plano`, `planoAte` e `obs`. Cada mudança grava, no mesmo lote, `contas/{uid}/historico/{id}` com `em`, `por` (e-mail de quem mudou), `de`, `para` e `obs`. As regras aceitam só do administrador do portal, conferem campos e tamanhos, e não deixam mudar nem apagar o histórico.
 - **⚠️ Regras do Firebase mudam:** `motivo` na lista de campos do portal e a coleção nova do histórico (5 casos novos no emulador).

@@ -199,6 +199,13 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D45. Quem participa da votação: a gestão calcula, a votação guarda a lista (05 nov. 2026, pelada-v95, KAN-230)
+- **Por que guardar a lista:** o tipo de cada jogador (mensalista, diarista, isento) fica em `privado/caixa`, que o link não lê. Então a gestão calcula, ao criar a votação, quem participa (`dominio/votacao-participa.ts`, com teste) e grava `quem` (ids) e `part` (as escolhas) no documento da votação. O link só usa a lista (`candidatos(…, quem)` em `dominio/votacao.ts`).
+- **Compatível:** sem `quem` (votações antigas ou no padrão), tudo como antes: quem está nos times.
+- **Padrão do grupo:** `grupos/{gid}.cfg.votPart`, gravado na janela Partidas e caixa com a permissão de configurações. As regras do Firebase não mudam: a votação já é criada só por administrador (sem lista de campos) e o voto nunca conferiu os candidatos.
+- **Confirmados fora do sorteio:** vêm da presença da rodada da votação (da memória, se for a rodada aberta; senão, uma leitura).
+- **Tamanho:** o fieldset (`ui/QuemParticipa.tsx`) e os textos (`i18n/pt-BR-votpart.ts`) chegam com a aba Votação ou com a aba Grupo; gestão e link continuam em 89,8 e 48,4 KB.
+
 ### D44. Cor de colete livre no mesmo campo das cores (05 nov. 2026, pelada-v94, KAN-235, KAN-234)
 - **Formato:** as 8 cores de sempre continuam números (0 a 7); a cor da paleta é o texto `"#rrggbb|quadradinho|Nome"` no mesmo campo (`cores.{time}` da rodada, `c` do time, `ca`/`cb` da partida e dos resumos). Assim, trocar de time, comparar cores, partidas antigas e o ranking não mudam. `col(c)` em `dominio/esportes.js` lê os dois tipos; `corClara` troca a comparação com o nome "Branco" (que falhava em inglês). As regras do Firebase não conferem o tipo da cor, então **não mudam**.
 - **Quadradinho guardado junto:** o emoji do WhatsApp é calculado uma vez, na paleta, e gravado no valor. O link do jogador só lê (`dominio/cores.ts`, poucas linhas); a classificação da cor e o nome sugerido (`cores-paleta.ts`) só baixam com a paleta.

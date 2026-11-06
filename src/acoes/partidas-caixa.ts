@@ -8,6 +8,8 @@ import { S as estado } from '../nucleo/estado.js';
 import { $, toast, today } from '../nucleo/util.js';
 import { montarPartidasCaixa } from '../telas/PartidasCaixa';
 import { closeDlg, dlg, openDlg, val } from '../ui/dialogos.js';
+import { lerMarcados } from '../ui/QuemParticipa';
+import { lerParticipa } from '../dominio/votacao-participa';
 
 const st = () => estado;
 
@@ -40,14 +42,19 @@ export const acoes = {
         })
       );
     }
-    const mn = $('#cmin') ? +val('cmin') || 10 : (cfg() as { minutes: number }).minutes;
+    const mn = $('#cmin') ? +val('cmin') || 10 : (cfg() as { minutes: number }).minutes,
+      /* KAN-230: padrão de quem participa da votação (só com a permissão de configurações, como os minutos). */
+      vp = $('#gvpart') ? lerMarcados('gvpart') : null,
+      cfgAtual = ((S.app || {}).cfg || {}) as Record<string, unknown>,
+      vpMudou = !!vp && JSON.stringify(lerParticipa(cfgAtual.votPart)) !== JSON.stringify(vp);
     if (
       $('#cmin') &&
-      ((cfg() as { minutes: number }).minutes !== mn || CAIXA_K.some((k: string) => k in ((S.app || {}).cfg || {})))
+      ((cfg() as { minutes: number }).minutes !== mn || CAIXA_K.some((k: string) => k in cfgAtual) || vpMudou)
     )
       ps.push(
         editApp((a: { cfg: Record<string, unknown> }) => {
           a.cfg.minutes = mn;
+          if (vp) a.cfg.votPart = vp;
           CAIXA_K.forEach((k: string) => delete a.cfg[k]);
         })
       );

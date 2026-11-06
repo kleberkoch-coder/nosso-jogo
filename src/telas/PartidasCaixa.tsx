@@ -12,6 +12,8 @@ import { tx } from '../i18n/index.js';
 import { ciclo, fdm, mesHoje } from '../nucleo/afast';
 import { periodo } from '../dominio/ciclo';
 import { fmonth, today } from '../nucleo/util.js';
+import { lerParticipa } from '../dominio/votacao-participa';
+import { QuemParticipa } from '../ui/QuemParticipa';
 
 const DIAS = Array.from({ length: 28 }, (_, i) => i + 1);
 const nome = (m: string) => fmonth(m).toLowerCase();
@@ -121,6 +123,14 @@ function Janela() {
         <p class="small muted" style="margin-top:-4px">
           {tx('pc.soAdmins')}
         </p>
+      ) : null}
+      {/* KAN-230: padrão do grupo para quem participa da votação; cada votação pode mudar só para ela. */}
+      {comConfig ? (
+        <QuemParticipa
+          p={lerParticipa((c as { votPart?: unknown }).votPart)}
+          id="gvpart"
+          ajuda={tx('votpart.padrao')}
+        />
       ) : null}
       <div class="dlg-f">
         <button class="btn" data-a="close">

@@ -790,6 +790,42 @@ with sync_playwright() as pw:
     ok(r34b == [v34, True], f'CT-KAN-170-P34: e também depois de sair e entrar ({r34b})')
     c34.close()
 
+    # P35 quem participa da votação (KAN-230): o padrão do grupo (cfg.votPart) e a lista gravada na votação
+    # (votacoes.quem e part). Confere depois de recarregar e de sair e entrar.
+    c35 = novo(); p35 = c35.new_page()
+    p35.on('pageerror', lambda e: errs.append(str(e)))
+    E35 = 'votpart35@teste.com'
+    p35.goto(URL + '#/criar'); p35.wait_for_selector('#le', timeout=20000); p35.wait_for_timeout(300)
+    p35.fill('#le', E35); p35.fill('#lp', SENHA); p35.fill('#lp2', SENHA); p35.wait_for_timeout(200)
+    p35.click('[data-a=signup]'); p35.wait_for_selector('#ngn', timeout=20000)
+    p35.fill('#ngn', 'Votação FC'); p35.click('[data-a=createGroup]')
+    p35.wait_for_function("location.hash.startsWith('#/g/')", timeout=20000)
+    g35 = p35.url.split('#/g/')[1].split('/')[0]
+    pronto(p35, 'jogadores'); p35.click('[data-a=seed]'); p35.wait_for_timeout(1500)
+    gravou(p35); pronto(p35, 'rodada')
+    bt35 = p35.locator('[data-a=mark][data-v=in]')
+    for i in range(10):
+        bt35.nth(i).click(); p35.wait_for_timeout(250)
+    p35.click('[data-a=drawDlg]'); p35.wait_for_timeout(400); conf(p35)
+    p35.click('#drawGo'); p35.wait_for_timeout(2500); gravou(p35)
+    pronto(p35, 'grupo'); p35.click('[data-a=settings]'); p35.wait_for_selector('#gvpart', timeout=10000)
+    p35.uncheck('#gvpart .vpart[value=avulso]'); p35.check('#gvpart .vpart[value=fora]')
+    p35.click('#dlg [data-a=saveSettings]'); p35.wait_for_timeout(1000); gravou(p35)
+    pronto(p35, 'votacao'); p35.click('[data-a=newVote]'); p35.wait_for_selector('#vpart', timeout=10000)
+    p35.click('#dlg [data-a=saveVote]'); p35.wait_for_timeout(2000); gravou(p35)
+    ler35 = "(()=>{const v=Object.values(S.vot||{})[0]||{};return [(S.app.cfg||{}).votPart||null, v.part||null, (v.quem||[]).length]})()"
+    pronto(p35, 'votacao'); p35.wait_for_timeout(1000)
+    r35 = J(p35, ler35)
+    esp35 = {'mensalista': True, 'diarista': True, 'avulso': False, 'fora': True}
+    ok(r35 == [esp35, esp35, 10], f'CT-KAN-170-P35: o padrão do grupo e quem participa da votação continuam depois de recarregar ({r35})')
+    sair_e_esperar(p35)
+    p35.goto(URL + '#/entrar'); p35.wait_for_selector('#le', timeout=20000); p35.wait_for_timeout(300)
+    p35.fill('#le', E35); p35.fill('#lp', SENHA); p35.keyboard.press('Enter'); p35.wait_for_timeout(2500)
+    p35.goto(URL + '#/g/' + g35); pronto(p35, 'votacao'); p35.wait_for_timeout(1500)
+    r35b = J(p35, ler35)
+    ok(r35b == r35, f'CT-KAN-170-P35: e também depois de sair e entrar ({r35b})')
+    c35.close()
+
     ok(not errs, 'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))
     b.close()
 

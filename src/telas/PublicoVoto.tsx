@@ -13,7 +13,7 @@ import { DEMORA_MS } from '../nucleo/carga';
 
 /* Candidatos de uma categoria (regra em dominio/votacao.ts) com os dados da rodada. */
 const candidates = (v: Votacao, c: Categoria) =>
-  candidatos((rodDoc(v.rid) as { times?: { players: string[] }[] } | null)?.times, c, ppos, pname, LOCAL);
+  candidatos((rodDoc(v.rid) as { times?: { players: string[] }[] } | null)?.times, c, ppos, pname, LOCAL, v.quem);
 
 const st = () => estado;
 type Vot = {
@@ -23,6 +23,7 @@ type Vot = {
   selfVote?: boolean;
   cats: Categoria[];
   resultado?: Record<string, { winners: string[]; counts: Record<string, number> }>;
+  quem?: string[] | null;
 };
 
 let desde = 0;
@@ -88,7 +89,8 @@ function Pagina() {
       </div>
     );
   }
-  const played: string[] = r && r.times ? r.times.flatMap((t: { players: string[] }) => t.players) : [];
+  /* KAN-230: quem participa vem da votação (quem); nas antigas, quem jogou a rodada. */
+  const played: string[] = v.quem || (r && r.times ? r.times.flatMap((t: { players: string[] }) => t.players) : []);
   const voters = [...new Set(played)].sort((a, b) => pname(a).localeCompare(pname(b), LOCAL));
   return (
     <div class="stack">

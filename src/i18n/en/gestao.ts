@@ -962,6 +962,17 @@ export default {
   'votzap.colQuem': 'Who voted',
   'votzap.colHora': 'Time',
   'votzap.colTrocas': 'Changes',
+  /* pt-BR-votpart.ts */
+  'votpart.titulo': 'Who takes part in the vote',
+  'votpart.mensalista': 'Monthly players',
+  'votpart.diarista': 'Per-game players',
+  'votpart.avulso': 'Guests',
+  'votpart.fora': 'Confirmed but left out of the draw',
+  'votpart.foraEx': 'Confirmed but left out of the draw (e.g., regular {pos})',
+  'votpart.padrao': "Applies to voting and being voted for. It's the default for new votes; each one can change it.",
+  'votpart.soEsta':
+    'Comes from the group default (Group → Matches and funds). Changing it here applies only to this vote.',
+  'votpart.ninguem': 'Nobody takes part with these choices. Check at least one type of player.',
   /* pt-BR-zappartidas.ts */
   'zappart.botao': 'Send on WhatsApp',
   'zappart.rotulo': "Send this game day's matches on WhatsApp",

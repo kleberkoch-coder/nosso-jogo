@@ -4087,6 +4087,74 @@ with sync_playwright() as pw:
         f94 = p94.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(paleta|cor\\.|colete\\.outra)/.test(k))")
         ok('Another color for Team 1' in e94 and 'Light and dark' in e94 and 'Claro' not in e94 and not f94, f'CT-KAN-235-02: em English, a paleta sai traduzida ({f94})')
         ctx94.close()
+        # ---------- v95 (KAN-230): quem participa da votação (tipos de jogador e confirmados fora do sorteio)
+        ctx95 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+        p95 = ctx95.new_page(); p95.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p95, 'criar')
+        p95.fill('#le', 'v95@teste.com'); p95.fill('#lp', 'Jogo@2026'); p95.fill('#lp2', 'Jogo@2026'); p95.keyboard.press('Enter'); p95.wait_for_selector('#ngBox', timeout=12000)
+        p95.fill('#ngn', 'Votação FC'); p95.click('[data-a=pickSport][data-v=futebol]'); p95.click('[data-a=createGroup]')
+        p95.wait_for_function("location.hash.startsWith('#/g/')"); p95.wait_for_timeout(1500)
+        g95 = p95.url.split('#/g/')[1]
+        elenco_e_presenca(p95, 12)
+        rid95 = p95.evaluate("S.rid")
+        conf95 = p95.evaluate("Object.keys(S.pres).filter(id=>S.pres[id].s==='in')")
+        gol95 = [x for x in conf95 if p95.evaluate("(i)=>(S.jog[i]||{}).pos", x) == 'GOL']
+        dia95 = [x for x in conf95 if x not in gol95][0]
+        # Um diarista (tipo privado), um avulso confirmado e os goleiros fora do sorteio
+        p95.evaluate(PUT, {f'grupos/{g95}/privado/caixa': {**(p95.evaluate(LER, f'grupos/{g95}/privado/caixa') or {}), 'tipos': {dia95: 'diarista'}},
+                           f'grupos/{g95}/rodadas/{rid95}/presencas/avx95': {'s': 'in', 't': 99, 'nome': 'Avulso Teste'},
+                           f'grupos/{g95}': {**(p95.evaluate(LER, f'grupos/{g95}') or {}), 'cfg': {**((p95.evaluate(LER, f'grupos/{g95}') or {}).get('cfg') or {}), 'foraPos': ['GOL']}}})
+        p95.reload(); p95.wait_for_timeout(1800)
+        sortear(p95)
+        nos95 = p95.evaluate("[].concat(...(S.rod[S.rid].times||[]).map(t=>t.players))")
+        ok(gol95 and not any(x in nos95 for x in gol95) and 'avx95' in nos95 and dia95 in nos95,
+           f'CT-KAN-230: preparação: goleiros confirmados fora do sorteio ({len(gol95)}), avulso e diarista nos times')
+        # Padrão do grupo: sem diaristas e avulsos, com os confirmados fora do sorteio
+        p95.click('[data-a=tab][data-v=grupo]'); p95.wait_for_timeout(900); p95.click('[data-a=settings]'); p95.wait_for_selector('#gvpart', timeout=8000)
+        mk95 = p95.evaluate("[...document.querySelectorAll('#gvpart .vpart')].map(i=>[i.value,i.checked])")
+        ok(mk95 == [['mensalista', True], ['diarista', True], ['avulso', True], ['fora', False]],
+           f'CT-KAN-230-01: em Partidas e caixa, "Quem participa da votação" começa com todos os tipos e sem os de fora do sorteio ({mk95})')
+        for tema in ['light', 'dark']:
+            p95.emulate_media(color_scheme=tema); p95.wait_for_timeout(150)
+            h95 = p95.evaluate("Math.min(...[...document.querySelectorAll('#gvpart .chk-linha')].map(e=>Math.round(e.getBoundingClientRect().height)))")
+            ok(h95 >= 44 and p95.evaluate("document.documentElement.scrollWidth<=innerWidth"), f'CT-KAN-230-01: em 360px ({tema}), as opções têm 44px e não há rolagem lateral ({h95})')
+            contraste(p95, f'Quem participa da votação ({tema})')
+        p95.emulate_media(color_scheme='light')
+        p95.uncheck('#gvpart .vpart[value=diarista]'); p95.uncheck('#gvpart .vpart[value=avulso]'); p95.check('#gvpart .vpart[value=fora]')
+        p95.click('#dlg [data-a=saveSettings]'); p95.wait_for_timeout(900)
+        vp95 = p95.evaluate("(S.app.cfg||{}).votPart")
+        ok(vp95 == {'mensalista': True, 'diarista': False, 'avulso': False, 'fora': True}, f'CT-KAN-230-01: o padrão do grupo fica gravado ({vp95})')
+        p95.reload(); p95.wait_for_timeout(1500)
+        ok(p95.evaluate("(S.app.cfg||{}).votPart") == vp95, 'CT-KAN-230-01: o padrão continua depois de recarregar')
+        # Nova votação: vem com o padrão
+        p95.click('[data-a=tab][data-v=votacao]'); p95.wait_for_timeout(900); p95.click('[data-a=newVote]'); p95.wait_for_selector('#vpart', timeout=8000)
+        nv95 = p95.evaluate("[...document.querySelectorAll('#vpart .vpart')].map(i=>[i.value,i.checked])")
+        ok(nv95 == [['mensalista', True], ['diarista', False], ['avulso', False], ['fora', True]] and 'só para esta votação' in p95.inner_text('#vpart'),
+           f'CT-KAN-230-02: a janela Nova votação vem com o padrão do grupo e avisa que mudar ali vale só para ela ({nv95})')
+        p95.click('#dlg [data-a=saveVote]'); p95.wait_for_timeout(1500)
+        v95 = p95.evaluate("S.vid"); q95 = p95.evaluate("(S.vot[S.vid]||{}).quem||[]")
+        ok(all(x in q95 for x in gol95) and dia95 not in q95 and 'avx95' not in q95 and len(q95) == len(conf95) - 1,
+           f'CT-KAN-230-02: a votação grava quem participa: os goleiros fora do sorteio entram; o diarista e o avulso, não ({len(q95)} de {len(conf95)+1} confirmados)')
+        p95.click('#dlg [data-a=close]'); p95.wait_for_timeout(200)
+        # Link da votação, sem conta
+        est95 = ctx95.storage_state()
+        c96 = b.new_context(viewport={'width': 360, 'height': 740}, service_workers='block', timezone_id='America/Sao_Paulo', storage_state=est95)
+        c96.add_init_script("if(!sessionStorage.getItem('saiu')){localStorage.removeItem('pelada-demo-v2-u');sessionStorage.setItem('saiu','1')}")
+        q96 = c96.new_page(); q96.on('pageerror', lambda e: errs.append(str(e)))
+        q96.goto(URL + f'#/p/{g95}/v/{v95}'); q96.wait_for_selector('[data-c=voter]', timeout=10000); q96.wait_for_timeout(500)
+        vt96 = q96.evaluate("[...document.querySelectorAll('[data-c=voter] option')].map(o=>o.value).filter(Boolean)")
+        ok(sorted(vt96) == sorted(q95), f'CT-KAN-230-02: no link, "Quem é você?" lista só quem participa ({len(vt96)})')
+        q96.select_option('[data-c=voter]', q95[0]); q96.wait_for_timeout(600)
+        cd96 = q96.evaluate("[...new Set([...document.querySelectorAll('[data-a=pubVote]')].map(b=>b.dataset.p||b.dataset.v))]")
+        ok(any(x in cd96 for x in gol95) and dia95 not in cd96 and 'avx95' not in cd96,
+           f'CT-KAN-230-02: as opções de voto incluem o goleiro fora do sorteio e não têm o diarista nem o avulso ({len(cd96)})')
+        c96.close()
+        # Em inglês
+        p95.evaluate("localStorage.setItem('nj-idioma','en')"); p95.reload(); p95.wait_for_timeout(2000)
+        p95.click('[data-a=tab][data-v=votacao]'); p95.wait_for_timeout(900); p95.click('[data-a=newVote]'); p95.wait_for_selector('#vpart', timeout=8000)
+        e95 = p95.inner_text('#vpart'); f95 = p95.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>k.startsWith('votpart.'))")
+        ok('Who takes part in the vote' in e95 and 'Guests' in e95 and 'Avulsos' not in e95 and not f95, f'CT-KAN-230: em English, as opções saem traduzidas ({f95})')
+        ctx95.close()
         # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
         ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
         p7 = ctx7.new_page()

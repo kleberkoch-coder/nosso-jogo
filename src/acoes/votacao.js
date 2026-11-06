@@ -1,10 +1,13 @@
 /* Ações: Votação: criar, encerrar e compartilhar. Fazem parte de ACT (src/acoes.js). */
 import { posLabel, sport } from '../dominio/esportes.js';
-import { rodById, rodadas } from '../dominio/grupo.js';
+import { isAvulso, rodById, rodadas } from '../dominio/grupo.js';
 import { shareDlg } from '../ui/Compartilhar';
 import { B } from '../nucleo/backend.js';
 import { gravarVotacao } from '../nucleo/partidas.js';
-import { GB, S, w } from '../nucleo/estado.js';
+import { GB, S, gp, w } from '../nucleo/estado.js';
+import { cfg, ptipo } from '../dominio/caixa.js';
+import { ehPadrao, lerParticipa, quemParticipa } from '../dominio/votacao-participa';
+import { lerMarcados } from '../ui/QuemParticipa';
 import { linkVoto } from '../nucleo/links.js';
 import { $, cl, toast, uid } from '../nucleo/util.js';
 import { auditoria, tally } from '../dominio/votacao';
@@ -15,6 +18,9 @@ import { changed } from '../ui/render.js';
 import { ACT } from '../acoes.js';
 import { tx } from '../i18n/index.js';
 
+/* Tipo de cada um para a votação (KAN-230): avulso (fora do elenco), diarista ou mensalista (isento conta junto). */
+const tipoNaVotacao = id => (isAvulso(id) ? 'avulso' : ptipo(id) === 'diarista' ? 'diarista' : 'mensalista');
+
 const acoes = {
   /* KAN-195: a janela é um componente (telas/Votacao.tsx). */
   newVote: () => {
@@ -24,7 +30,7 @@ const acoes = {
     dlg.setAttribute('aria-labelledby', 'novaVotTitulo');
     montarNovaVotacao(rs);
   },
-  saveVote: () => {
+  saveVote: async () => {
     const sel = [...dlg.querySelectorAll('.vc:checked')].map(x => x.value),
       cats = [];
     if (sel.includes('best')) cats.push({ id: 'best', name: tx('votacao.catMelhor'), pos: null, neg: false });
@@ -46,15 +52,37 @@ const acoes = {
       return;
     }
     const id = B.newId(),
+      rid = val('vr'),
+      r = rodById(rid) || {},
       o = {
-        rid: val('vr'),
-        rdate: (rodById(val('vr')) || {}).date || '',
+        rid,
+        rdate: r.date || '',
         title: val('vt') || tx('votacao.semTitulo'),
         cats,
         open: true,
         selfVote: $('#vsf').checked,
         createdAt: Date.now(),
       };
+    /* KAN-230: quem participa (vota e pode ser votado). Fora do padrão, a lista vai gravada na votação, porque o
+       link não conhece o tipo de cada jogador (é privado). Os confirmados vêm da presença daquela rodada. */
+    const part = $('#vpart') ? lerMarcados('vpart') : lerParticipa((cfg() || {}).votPart);
+    if (!ehPadrao(part)) {
+      const pres = part.fora
+        ? S.presRid === rid
+          ? S.pres
+          : await B.get(gp('rodadas/' + rid + '/presencas')).catch(() => ({}))
+        : {};
+      const confirmados = Object.entries(pres || {})
+        .filter(([, p]) => p && p.s === 'in')
+        .sort((a, b) => (a[1].t || 0) - (b[1].t || 0))
+        .map(([pid]) => pid);
+      o.part = part;
+      o.quem = quemParticipa(r.times, confirmados, tipoNaVotacao, part);
+      if (!o.quem.length) {
+        toast(tx('votpart.ninguem'));
+        return;
+      }
+    }
     S.vot[id] = o;
     S.vid = id;
     changed();

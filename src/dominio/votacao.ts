@@ -2,11 +2,12 @@
    Pura: não lê a memória do app (KAN-220). Testada em testes/regras/votacao.test.mjs.
    - Cada aparelho vota uma vez por categoria; voto com id inválido ou em categoria que não existe não conta.
    - Ganha quem tem mais votos; empate: todos os empatados. Sem votos, ninguém ganha.
-   - Candidatos: quem jogou a rodada (titulares e reservas); categoria com posição, só quem é dessa posição. */
+   - Candidatos: quem jogou a rodada (titulares e reservas) ou, desde a v95, a lista da votação (KAN-230, quem participa);
+     categoria com posição, só quem é dessa posição. */
 const idOk = (s: unknown) => typeof s === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(s);
 
 export type Categoria = { id: string; name?: string; pos?: string | null };
-export type Votacao = { rid: string; cats: Categoria[] };
+export type Votacao = { rid: string; cats: Categoria[]; quem?: string[] | null };
 export type Votos = Record<string, { v?: Record<string, string> } | null | undefined>;
 export type Resultado = Record<string, { counts: Record<string, number>; total: number; winners: string[] }>;
 
@@ -36,10 +37,12 @@ export function candidatos(
   c: Categoria,
   pos: (id: string) => string | undefined,
   nome: (id: string) => string,
-  local = 'pt-BR'
+  local = 'pt-BR',
+  quem?: string[] | null
 ): string[] {
-  if (!times) return [];
-  let ids = times.flatMap(t => t.players);
+  /* KAN-230: a votação pode trazer a lista de quem participa (gravada pela gestão); sem ela, quem está nos times. */
+  if (!times && !quem) return [];
+  let ids = quem || (times || []).flatMap(t => t.players);
   if (c.pos) ids = ids.filter(id => pos(id) === c.pos);
   return ids.sort((a, b) => nome(a).localeCompare(nome(b), local));
 }

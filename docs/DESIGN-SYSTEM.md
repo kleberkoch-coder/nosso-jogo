@@ -73,6 +73,9 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo; **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v95)
+- **Quem participa da votação** (KAN-230; `ui/QuemParticipa.tsx`): `fieldset` com a legenda "Quem participa da votação" (`lbl`) e 4 caixas de marcar (`chk-linha`, 44px): Mensalistas, Diaristas, Avulsos e "Confirmados fora do sorteio (ex.: goleiros fixos)", e uma linha de ajuda em `small muted`. Aparece na janela Partidas e caixa (padrão do grupo, depois do Pix) e na janela Nova votação (depois de "Pode votar em si mesmo"), com a ajuda dizendo que mudar ali vale só para ela.
+
 ## Componentes (pelada-v94)
 - **Colete: outra cor** (KAN-235; `ui/PaletaDeCor.tsx`, classes `paleta`, `paleta-mira`, `paleta-brilho`, `paleta-fim`, `paleta-amostra`, `dot-paleta` em `estilos/paleta.css`):
   - Na janela do colete, depois das 8 cores e das livres recentes (mesmo `opt`), "Outra cor…" com a bolinha de arco-íris (`dot-paleta`).

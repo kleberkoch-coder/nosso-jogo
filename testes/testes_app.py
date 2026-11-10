@@ -4008,9 +4008,9 @@ with sync_playwright() as pw:
         with p93.expect_download() as d93:
             p93.click('[data-a=baixarVotos]')
         arq93 = d93.value; csv93 = open(arq93.path(), encoding='utf-8-sig', newline='').read().split('\r\n')
-        ok(arq93.suggested_filename == 'Destaques.csv' and csv93[0] == '"Quem votou";"Melhor jogador";"Bagre";"Hora";"Trocas"' and len(csv93) == 4
+        ok(arq93.suggested_filename == 'Destaques.csv' and csv93[0] == '"Quem votou";"Melhor jogador";"Bagre";"Hora";"Trocas";"Origem"' and len(csv93) == 4 and all(l.endswith(';"link"') for l in csv93[1:])
            and any(l.startswith(f'"{nm93(0)}";"{nm93(1)}";"{nm93(4)}";') for l in csv93),
-           f'CT-KAN-231-02: "Baixar planilha" baixa Destaques.csv com uma coluna por categoria e uma linha por voto ({csv93[:2]})')
+           f'CT-KAN-231-02: "Baixar planilha" baixa Destaques.csv com uma coluna por categoria e uma linha por voto, com a origem (KAN-254) ({csv93[:2]})')
         # Em inglês
         p93.evaluate("localStorage.setItem('nj-idioma','en')"); p93.reload(); p93.wait_for_timeout(2000)
         p93.click('[data-a=tab][data-v=votacao]'); p93.wait_for_selector('[data-a=shareVote]', timeout=8000)

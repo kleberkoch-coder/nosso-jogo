@@ -16,6 +16,7 @@ import { sumPts } from '../ui/placar.js';
 import { proximoJogo, type Proximo } from '../dominio/fila';
 import { AvisoFora, FimDoCampeonato, Formato, PainelCampeonato, chaveDe, proximoDoCamp } from './Campeonato';
 import { rotuloFase } from '../ui/zap-partidas';
+import { chaveAoVivo, paraGuardar, paraVoltar } from '../dominio/ao-vivo';
 
 type Time = { c: number | string; players: string[] };
 type Rodada = { id: string; date: string; time?: string; times?: Time[] | null; camp?: unknown };
@@ -416,6 +417,8 @@ function PartidaTela() {
       </div>
     );
   }
+  /* KAN-236: partida em andamento guardada no aparelho (recarregou ou o celular fechou o app no meio do jogo). */
+  if (!S.live) S.live = paraVoltar(lerAoVivo(), r.id, r.times) as typeof S.live;
   const L = S.live;
   if (!L || L.rid !== r.id || L.a >= r.times.length || L.b >= r.times.length) S.live = novaPartida(r, L);
   else if (L.auto && !L.goals.length && !L.run && !L.el) {
@@ -563,9 +566,36 @@ function montarEscalacao(t: 'a' | 'b', redesenharTela: () => void) {
 
 /* A gestão desenha as abas com texto; a Partida entra num lugar reservado (#partidaRaiz), como Rodada e Caixa. */
 const vPartida = () => 'partidaRaiz';
+/* KAN-236: guarda a partida em andamento no aparelho a cada desenho da aba e quando a página some (recarregar, trocar
+   de app, fechar), porque o cronômetro muda sem redesenhar. Sem armazenamento (aba anônima), segue só na memória. */
+const lerAoVivo = () => {
+  try {
+    return localStorage.getItem(chaveAoVivo(st().gid || ''));
+  } catch {
+    return null;
+  }
+};
+function guardarAoVivo() {
+  const S = st(),
+    L = S.live;
+  if (!S.gid || !L) return;
+  const r = (S.rod as Record<string, Rodada>)[L.rid];
+  try {
+    localStorage.setItem(chaveAoVivo(S.gid), paraGuardar(L as any, r && (r.times as Time[]))!);
+  } catch {
+    /* sem armazenamento: continua só na memória */
+  }
+}
+let ouvindo = false;
 function montarPartida() {
+  if (!ouvindo) {
+    ouvindo = true;
+    addEventListener('pagehide', guardarAoVivo);
+    document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && guardarAoVivo());
+  }
   const el = document.getElementById('partidaRaiz');
   if (el) render(<PartidaTela />, el);
+  guardarAoVivo();
 }
 
 export { artAtual, limiteAtingido, montarArtilharia, montarEscalacao, montarPartida, novaPartida, quadra, vPartida };

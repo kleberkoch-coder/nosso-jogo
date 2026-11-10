@@ -35,6 +35,9 @@ export default {
   'vagas.abertasToast.outros': '{n} spots open for per-game players and guests.',
   'vagas.abertasSemLimiteToast': 'Spots open for per-game players and guests, no limit.',
   'vagas.fechadasToast': 'Spots for per-game players and guests closed.',
+  'vagas.aguardando': 'Waiting for a spot',
+  'vagas.blocoFechadas': 'Per game players (spots closed)',
+  'vagas.blocoEsgotadas': 'Per game players (spots full)',
   'minimo.dlgTitulo': 'Minimum for the game',
   'minimo.dlgAjuda':
     'How many the group needs for the game to happen. Applies to every game day; the app warns when people are missing. Leave 0 to not track it.',

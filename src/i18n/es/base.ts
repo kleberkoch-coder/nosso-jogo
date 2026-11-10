@@ -116,6 +116,7 @@ export default {
   'voto.semVotos': 'Sin votos',
   'voto.votos.um': '{n} voto',
   'voto.votos.outros': '{n} votos',
+  'voto.participacao': '{n} de {total} votaron',
   'voto.e': ' y',
   'voto.regra': 'un voto por dispositivo, puedes cambiarlo hasta que cierre la votación',
   'voto.quemEVoce': '¿Quién eres?',

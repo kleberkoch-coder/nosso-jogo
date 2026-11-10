@@ -3,16 +3,26 @@
    Vem com a aba Votação. */
 import { render } from 'preact';
 import { useState } from 'preact/hooks';
-import { pname } from '../dominio/grupo.js';
+import { pname, rodDoc } from '../dominio/grupo.js';
 import type { Categoria } from '../dominio/votacao';
-import { auditoria, tally, type LinhaAuditoria } from '../dominio/votacao-contagem';
-import { emCsv, linhasDaPlanilha, maisVotados } from '../dominio/votacao-resultado';
+import { auditoria, tally, votosQueValem, type LinhaAuditoria } from '../dominio/votacao-contagem';
+import { emCsv, linhasDaPlanilha, maisVotados, participacao, percentual, textoPct } from '../dominio/votacao-resultado';
+import { quemVota } from '../dominio/votacao-rapida';
 import { FORMATO, FUSO, LOCAL } from '../i18n/formatos.js';
 import { tx } from '../i18n/index.js';
 import { Compartilhar } from '../ui/Compartilhar';
 import { dlg, openDlg } from '../ui/dialogos.js';
 
-type Votacao = { title: string; rid: string; open?: boolean; cats: Categoria[]; resultado?: Record<string, any> };
+type Votacao = {
+  title: string;
+  rid: string;
+  open?: boolean;
+  cats: Categoria[];
+  resultado?: Record<string, any>;
+  quem?: string[] | null;
+  votaram?: number;
+  podiam?: number | null;
+};
 type Votos = Record<string, { pid?: string; v?: Record<string, string>; t?: number } | null>;
 
 export function textoResultado(v: Votacao, votos: Votos, comDetalhe: boolean): string {
@@ -23,9 +33,23 @@ export function textoResultado(v: Votacao, votos: Votos, comDetalhe: boolean): s
     t +=
       `\n🏅 *${c.name}*: ` +
       (top.length
-        ? top.map(([p, n]) => tx('votzap.nomeVotos', { nome: pname(p), n })).join(' · ')
+        ? top
+            .map(([p, n]) =>
+              tx('votzap.nomeVotos', {
+                nome: pname(p),
+                n,
+                pct: textoPct(percentual(n, (res[c.id] || {}).total || 0), LOCAL),
+              })
+            )
+            .join(' · ')
         : tx('votacao.semVotosCurto'));
   });
+  /* KAN-257: quantos votaram de quantos podiam (o que ficou gravado ao encerrar; senão, contado agora). */
+  const pt =
+    v.podiam != null && v.votaram != null && !v.open
+      ? { n: v.votaram, de: v.podiam }
+      : participacao(votosQueValem(votos), quemVota(v.quem, (rodDoc(v.rid) as any)?.times, pname, LOCAL));
+  if (pt.de != null) t += '\n\n' + tx('votzap.votaram', { n: pt.n, total: pt.de });
   if (comDetalhe) {
     const linhas = auditoria(votos, {}).sort((a, b) => pname(a.pid).localeCompare(pname(b.pid), LOCAL));
     t += `\n\n👀 *${tx('votzap.quemEmQuem')}*`;

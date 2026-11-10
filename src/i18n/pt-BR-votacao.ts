@@ -58,7 +58,7 @@ export default {
   'aud.esconderTrocas': 'Esconder trocas',
   'aud.nenhum': 'Ninguém votou ainda.',
   /* KAN-231 */
-  'votzap.nomeVotos': '{nome} ({n})',
+  'votzap.nomeVotos': '{nome} ({n} · {pct})',
   'votzap.quemEmQuem': 'Quem votou em quem',
   'votzap.incluir': 'Incluir quem votou em quem',
   'votzap.aviso': 'Esta mensagem mostra o voto de cada um: mande só para o grupo dos administradores.',
@@ -90,6 +90,8 @@ export default {
   'rapida.proximo': 'Próximo',
   'rapida.encerrada': 'A votação foi encerrada. Saia para ver o resultado.',
   'votzap.colOrigem': 'Origem',
+  'votacao.votosPct': '{n} · {pct}',
+  'votzap.votaram': 'Votaram {n} de {total}',
   'aud.rapida': 'votação rápida',
   'aud.link': 'link',
   'aud.vezes.um': 'votou 1 vez',

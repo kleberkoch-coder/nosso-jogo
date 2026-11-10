@@ -358,8 +358,9 @@ describe('votação rápida no aparelho do administrador (KAN-254, pelada-v102)'
   const voto = (n, extra = {}) => ({ pid: 'j1', v: { best: 'j2' }, t: 1, o: 'r', n, em: serverTimestamp(), ...extra });
   beforeEach(async () => {
     await env.withSecurityRulesDisabled(async ctx => {
-      await setDoc(doc(ctx.firestore(), V), { open: true, cats: [{ id: 'best' }] });
-      await setDoc(doc(ctx.firestore(), V + '/votos/anon1'), { pid: 'j1', v: { best: 'j3' }, t: 1 });
+      const f = ctx.firestore();
+      await setDoc(doc(f, V), { open: true, cats: [{ id: 'best' }] });
+      await setDoc(doc(f, V + '/votos/anon1'), { pid: 'j1', v: { best: 'j3' }, t: 1 });
     });
   });
   test('administrador grava o voto de cada pessoa em r_{jogador}; votar de novo sobe o contador de 1 em 1', async () => {

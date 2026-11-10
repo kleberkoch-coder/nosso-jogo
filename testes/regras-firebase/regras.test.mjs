@@ -370,9 +370,10 @@ describe('votação rápida no aparelho do administrador (KAN-254, pelada-v102)'
     await assertFails(setDoc(doc(db.adm(), V + '/votos/r_j1'), voto(5)));
   });
   test('no mesmo lote, o voto da pessoa pelo link sai', async () => {
-    const b = writeBatch(db.adm());
-    b.set(doc(db.adm(), V + '/votos/r_j1'), voto(1));
-    b.delete(doc(db.adm(), V + '/votos/anon1'));
+    const f = db.adm(),
+      b = writeBatch(f);
+    b.set(doc(f, V + '/votos/r_j1'), voto(1));
+    b.delete(doc(f, V + '/votos/anon1'));
     await assertSucceeds(b.commit());
   });
   test('voto fora do formato é recusado: outro nome, sem a hora do servidor, sem escolha, campo a mais, sem a origem', async () => {

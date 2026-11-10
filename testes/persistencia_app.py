@@ -860,6 +860,52 @@ with sync_playwright() as pw:
     ok(r36b == r36, f'CT-KAN-170-P36: e também depois de sair e entrar ({r36b})')
     c36.close()
 
+    # P37 votação rápida (KAN-254): o administrador vota por duas pessoas no próprio aparelho (votos/r_{jogador}, com a
+    # hora do servidor e o contador) e uma delas vota de novo. Confere depois de recarregar e de sair e entrar.
+    c37 = novo(); p37 = c37.new_page()
+    p37.on('pageerror', lambda e: errs.append(str(e)))
+    E37 = 'rapida37@teste.com'
+    p37.goto(URL + '#/criar'); p37.wait_for_selector('#le', timeout=20000); p37.wait_for_timeout(300)
+    p37.fill('#le', E37); p37.fill('#lp', SENHA); p37.fill('#lp2', SENHA); p37.wait_for_timeout(200)
+    p37.click('[data-a=signup]'); p37.wait_for_selector('#ngn', timeout=20000)
+    p37.fill('#ngn', 'Roda FC'); p37.click('[data-a=createGroup]')
+    p37.wait_for_function("location.hash.startsWith('#/g/')", timeout=20000)
+    g37 = p37.url.split('#/g/')[1].split('/')[0]
+    pronto(p37, 'jogadores'); p37.click('[data-a=seed]'); p37.wait_for_timeout(1500)
+    gravou(p37); pronto(p37, 'rodada')
+    bt37 = p37.locator('[data-a=mark][data-v=in]')
+    for i in range(10):
+        bt37.nth(i).click(); p37.wait_for_timeout(250)
+    p37.click('[data-a=drawDlg]'); p37.wait_for_timeout(400); conf(p37)
+    p37.click('#drawGo'); p37.wait_for_timeout(2500); gravou(p37)
+    pronto(p37, 'votacao'); p37.click('[data-a=newVote]'); p37.wait_for_selector('#vpart', timeout=10000)
+    p37.click('#dlg [data-a=saveVote]'); p37.wait_for_timeout(2000); gravou(p37)
+    pronto(p37, 'votacao'); p37.wait_for_selector('#vrAbrir', timeout=15000)
+
+    def vota37(i, j, de_novo=False):
+        p37.locator('.vr-nome').nth(i).click(); p37.wait_for_timeout(300)
+        if de_novo:
+            conf(p37)
+        p37.wait_for_selector('#vrConfirmar', timeout=10000)
+        p37.locator('#votRapida [data-a=rapidaEscolher]').nth(j).click(); p37.wait_for_timeout(200)
+        p37.click('#vrConfirmar'); p37.wait_for_selector('#vrProximo', timeout=15000)
+        p37.click('#vrProximo'); p37.wait_for_selector('.vr-nome', timeout=10000)
+
+    p37.click('#vrAbrir'); p37.wait_for_selector('.vr-nome', timeout=10000)
+    vota37(0, 0); vota37(1, 1); vota37(0, 2, True)
+    gravou(p37)
+    ler37 = "(()=>{const v=S.votos||{};const ks=Object.keys(v).filter(k=>k.startsWith('r_')).sort();return [ks.length, ks.map(k=>v[k].n), ks.map(k=>v[k].o), ks.every(k=>v[k].em!=null&&Object.keys(v[k].v||{}).length===1)]})()"
+    pronto(p37, 'votacao'); p37.wait_for_timeout(1500)
+    r37 = J(p37, ler37)
+    ok(r37[0] == 2 and sorted(r37[1]) == [1, 2] and r37[2] == ['r', 'r'] and r37[3], f'CT-KAN-170-P37: os votos da votação rápida, com o contador e a hora, continuam depois de recarregar ({r37})')
+    sair_e_esperar(p37)
+    p37.goto(URL + '#/entrar'); p37.wait_for_selector('#le', timeout=20000); p37.wait_for_timeout(300)
+    p37.fill('#le', E37); p37.fill('#lp', SENHA); p37.keyboard.press('Enter'); p37.wait_for_timeout(2500)
+    p37.goto(URL + '#/g/' + g37); pronto(p37, 'votacao'); p37.wait_for_timeout(1800)
+    r37b = J(p37, ler37)
+    ok(r37b == r37, f'CT-KAN-170-P37: e também depois de sair e entrar ({r37b})')
+    c37.close()
+
     ok(not errs, 'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))
     b.close()
 

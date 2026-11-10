@@ -4,7 +4,8 @@
 import { render } from 'preact';
 import { useState } from 'preact/hooks';
 import { pname } from '../dominio/grupo.js';
-import { auditoria, tally, type Categoria, type LinhaAuditoria } from '../dominio/votacao';
+import type { Categoria } from '../dominio/votacao';
+import { auditoria, tally, type LinhaAuditoria } from '../dominio/votacao-contagem';
 import { emCsv, linhasDaPlanilha, maisVotados } from '../dominio/votacao-resultado';
 import { FORMATO, FUSO, LOCAL } from '../i18n/formatos.js';
 import { tx } from '../i18n/index.js';
@@ -90,6 +91,9 @@ export function baixarPlanilha(v: Votacao, linhas: LinhaAuditoria[]) {
         hora: tx('votzap.colHora'),
         trocas: tx('votzap.colTrocas'),
         repetido: tx('aud.repetido'),
+        origem: tx('votzap.colOrigem'),
+        rapida: tx('aud.rapida'),
+        link: tx('aud.link'),
       },
       quando
     ),

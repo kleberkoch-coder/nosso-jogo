@@ -4494,6 +4494,96 @@ with sync_playwright() as pw:
         p101.click('#topright [data-a=groupsDlg]'); p101.wait_for_selector('#dlg[open]', timeout=5000); p101.wait_for_timeout(300)
         ok(p101.locator('#dlg [data-a=newGroup]').count() == 0, 'CT-KAN-117-10: a janela "Seus grupos" também não oferece criar grupo')
         ctx101.close()
+        # ---------- v102 (KAN-254): votação rápida no aparelho do administrador (passa de mão em mão)
+        ctx102 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+        p102 = ctx102.new_page(); p102.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p102, 'criar')
+        p102.fill('#le', 'v102@teste.com'); p102.fill('#lp', 'Jogo@2026'); p102.fill('#lp2', 'Jogo@2026'); p102.keyboard.press('Enter'); p102.wait_for_selector('#ngBox', timeout=12000)
+        p102.fill('#ngn', 'Roda FC'); p102.click('[data-a=pickSport][data-v=futebol]'); p102.click('[data-a=createGroup]')
+        p102.wait_for_function("location.hash.startsWith('#/g/')"); p102.wait_for_timeout(1500)
+        g102 = p102.url.split('#/g/')[1]
+        elenco_e_presenca(p102, 10); sortear(p102)
+        rid102 = p102.evaluate("S.rid")
+        js102 = p102.evaluate("[...new Set([].concat(...(S.rod[S.rid].times||[]).map(t=>t.players)))].sort((a,b)=>S.jog[a].name.localeCompare(S.jog[b].name,'pt-BR'))")
+        nm102 = lambda i: p102.evaluate("(x)=>S.jog[x].name", js102[i])
+        V102 = f'grupos/{g102}/votacoes/v102'
+        p102.evaluate(PUT, {V102: {'rid': rid102, 'title': 'Destaques', 'open': True, 'createdAt': 5, 'selfVote': False,
+                                   'cats': [{'id': 'best', 'name': 'Melhor jogador', 'pos': None}, {'id': 'bag', 'name': 'Bagre', 'pos': None}]},
+                            V102 + '/votos/devA': {'pid': js102[0], 'v': {'best': js102[2]}, 't': 1000}})
+        p102.reload(); p102.wait_for_timeout(1500)
+        p102.click('[data-a=tab][data-v=votacao]'); p102.wait_for_selector('#vrAbrir', timeout=8000)
+        ok(p102.inner_text('#vrAbrir').strip() == 'Votação rápida', 'CT-KAN-254-07: com a votação aberta, a aba Votação tem o botão "Votação rápida"')
+        p102.click('#vrAbrir'); p102.wait_for_selector('#votRapida', timeout=5000); p102.wait_for_timeout(300)
+        cobre = p102.evaluate("(()=>{const t=document.querySelector('#tabsnav');const r=t.getBoundingClientRect();const e=document.elementFromPoint(r.left+20,r.top+r.height/2);return !!(e&&e.closest('#votRapida'))})()")
+        ok(cobre and 'Quem vai votar?' in p102.inner_text('#votRapida'), 'CT-KAN-254-07: a votação rápida cobre a tela inteira (as abas ficam por baixo) e pergunta "Quem vai votar?"')
+        ok(p102.inner_text('#vrConta').strip() == f'1 de {len(js102)} votaram', f'CT-KAN-254-07: o contador mostra quem já votou, inclusive pelo link ({p102.inner_text("#vrConta")!r})')
+        ok(p102.locator(f'.vr-nome.feito[data-p="{js102[0]}"]').count() == 1 and p102.locator('.vr-nome.feito').count() == 1 and 'já votou' in p102.inner_text(f'.vr-nome[data-p="{js102[0]}"]'),
+           'CT-KAN-254-07: quem votou pelo link aparece com ✓ "já votou"')
+        for tema in ['light', 'dark']:
+            p102.emulate_media(color_scheme=tema); p102.wait_for_timeout(150)
+            a102 = p102.evaluate("Math.min(...[...document.querySelectorAll('#votRapida button')].map(e=>Math.round(e.getBoundingClientRect().height)))")
+            ok(a102 >= 44 and p102.evaluate("document.documentElement.scrollWidth<=innerWidth && document.getElementById('votRapida').scrollWidth<=innerWidth"),
+               f'CT-KAN-254-07: em 360px ({tema}), sem rolagem lateral e botões com pelo menos 44px ({a102})')
+            contraste(p102, f'votação rápida: quem vai votar ({tema})')
+        p102.emulate_media(color_scheme='light'); p102.screenshot(path=f'{OUT}/102-votacao-rapida.png')
+        # Pessoa nova vota
+        p102.click(f'.vr-nome[data-p="{js102[1]}"]'); p102.wait_for_selector('#vrConfirmar', timeout=5000); p102.wait_for_timeout(200)
+        ok(p102.inner_text('.vr-quem').strip() == f'Voto de {nm102(1)}' and p102.locator('#vrConfirmar').is_disabled(),
+           'CT-KAN-254-08: escolhido o nome, aparece "Voto de …" e "Confirmar voto" fica desligado até escolher alguém')
+        ok(p102.locator(f'#votRapida [data-a=rapidaEscolher][data-p="{js102[1]}"]').count() == 0, 'CT-KAN-254-08: ninguém vota em si mesmo (regra da votação)')
+        for tema in ['light', 'dark']:
+            p102.emulate_media(color_scheme=tema); p102.wait_for_timeout(150); contraste(p102, f'votação rápida: votar ({tema})')
+        p102.emulate_media(color_scheme='light')
+        p102.click(f'#votRapida [data-a=rapidaEscolher][data-c2=best][data-p="{js102[3]}"]'); p102.wait_for_timeout(150)
+        p102.click('#vrConfirmar'); p102.wait_for_selector('#vrProximo', timeout=6000)
+        d102 = p102.evaluate(LER, V102 + f'/votos/r_{js102[1]}') or {}
+        ok('Voto registrado' in p102.inner_text('#votRapida') and d102.get('o') == 'r' and d102.get('n') == 1 and d102.get('v') == {'best': js102[3]} and isinstance(d102.get('em'), (int, float)),
+           f'CT-KAN-254-08: confirmar grava o voto em r_{{jogador}} com a origem, o contador e a hora, e a tela mostra "Voto registrado" ({d102})')
+        ok(js102[3] not in p102.inner_text('#votRapida') and nm102(3) not in p102.inner_text('#votRapida'), 'CT-KAN-254-08: depois de confirmar, a tela limpa (o voto não fica à vista do próximo)')
+        p102.click('#vrProximo'); p102.wait_for_selector('.vr-nome', timeout=5000)
+        ok(p102.inner_text('#vrConta').strip() == f'2 de {len(js102)} votaram' and p102.locator(f'.vr-nome.feito[data-p="{js102[1]}"]').count() == 1,
+           'CT-KAN-254-08: "Próximo" volta para "Quem vai votar?", com o contador e o ✓ de quem votou')
+        # Alterar o voto de quem votou pelo link
+        p102.click(f'.vr-nome[data-p="{js102[0]}"]'); p102.wait_for_selector('#dlg .conf', timeout=4000)
+        dt102 = p102.inner_text('#dlg .conf')
+        ok(f'{nm102(0)} já votou' in dt102 and 'O voto anterior será substituído' in dt102, f'CT-KAN-254-09: tocar em quem já votou pergunta antes de votar de novo ({dt102[:90]!r})')
+        confirmar_app(p102, True); p102.wait_for_selector('#vrConfirmar', timeout=5000)
+        ok(p102.locator('#votRapida [aria-pressed=true]').count() == 0, 'CT-KAN-254-09: o voto anterior não aparece para quem está votando')
+        p102.click(f'#votRapida [data-a=rapidaEscolher][data-c2=bag][data-p="{js102[4]}"]'); p102.wait_for_timeout(100)
+        p102.click('#vrConfirmar'); p102.wait_for_selector('#vrProximo', timeout=6000)
+        v102 = [p102.evaluate(LER, V102 + '/votos/devA'), p102.evaluate(LER, V102 + f'/votos/r_{js102[0]}')]
+        ok(v102[0] is None and v102[1] and v102[1].get('v') == {'bag': js102[4]}, f'CT-KAN-254-09: o voto novo substitui o do link (o do link sai no mesmo lote) ({v102})')
+        # Votar de novo na votação rápida: o voto inteiro é substituído e o contador sobe
+        p102.click('#vrProximo'); p102.wait_for_selector('.vr-nome', timeout=5000)
+        p102.click(f'.vr-nome[data-p="{js102[1]}"]'); confirmar_app(p102, True); p102.wait_for_selector('#vrConfirmar', timeout=5000)
+        p102.click(f'#votRapida [data-a=rapidaEscolher][data-c2=bag][data-p="{js102[5]}"]'); p102.wait_for_timeout(100)
+        p102.click('#vrConfirmar'); p102.wait_for_selector('#vrProximo', timeout=6000)
+        d102b = p102.evaluate(LER, V102 + f'/votos/r_{js102[1]}') or {}
+        ok(d102b.get('n') == 2 and d102b.get('v') == {'bag': js102[5]}, f'CT-KAN-254-09: votar de novo troca o voto inteiro e o contador vai a 2 ({d102b})')
+        # Sair pede confirmação
+        p102.click('#vrSair'); p102.wait_for_selector('#dlg .conf', timeout=4000)
+        ok('Sair da votação rápida?' in p102.inner_text('#dlg .conf'), 'CT-KAN-254-10: sair da votação rápida pede confirmação')
+        p102.click('#dlg .conf [data-a=confSim]'); p102.wait_for_timeout(500)
+        ok(p102.locator('#votRapida').count() == 0 and '2 votos' in p102.inner_text('#votRaiz'), f'CT-KAN-254-10: depois de sair, a aba Votação conta os 2 votos (um por pessoa)')
+        p102.click('#quemVotou > summary'); p102.wait_for_timeout(300)
+        q102 = p102.inner_text('#quemVotou')
+        tg102 = p102.locator('#quemVotou .aud-origem').all_inner_texts()
+        ok(sorted(tg102) == ['votação rápida', 'votação rápida'] and 'votou 2 vezes' in q102, f'CT-KAN-254-10: "Quem votou" mostra a origem (votação rápida) e quantas vezes a pessoa votou ({q102[:160]!r})')
+        # Pelo link, a votação continua igual
+        p102.evaluate(PUT, {V102 + '/votos/devB': {'pid': js102[6], 'v': {'best': js102[1]}, 't': 2000}}); p102.reload(); p102.wait_for_timeout(1500)
+        p102.click('[data-a=tab][data-v=votacao]'); p102.wait_for_selector('#vrAbrir', timeout=8000)
+        ok('3 votos' in p102.inner_text('#votRaiz'), 'CT-KAN-254-10: votos pelo link e na votação rápida contam juntos')
+        # Em inglês
+        p102.evaluate("localStorage.setItem('nj-idioma','en')"); p102.reload(); p102.wait_for_timeout(2000)
+        p102.click('[data-a=tab][data-v=votacao]'); p102.wait_for_selector('#vrAbrir', timeout=8000)
+        p102.click('#vrAbrir'); p102.wait_for_selector('#votRapida', timeout=5000); p102.wait_for_timeout(300)
+        e102 = p102.inner_text('#votRapida')
+        p102.click(f'.vr-nome[data-p="{js102[7]}"]'); p102.wait_for_selector('#vrConfirmar', timeout=5000); e102 += p102.inner_text('#votRapida')
+        falta102 = p102.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(rapida|aud|votzap|votacao)/.test(k))")
+        ok('Who is voting?' in e102 and 'voted' in e102 and 'Confirm vote' in e102 and 'Quem vai' not in e102 and 'Confirmar' not in e102 and not falta102,
+           f'CT-KAN-254-07: em English, a votação rápida sai traduzida ({falta102})')
+        ctx102.close()
+
 
 
         # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)

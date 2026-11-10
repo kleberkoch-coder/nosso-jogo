@@ -1,7 +1,8 @@
 /* Regra "votação dos destaques" (uma das 5 da D12; KAN-220). Roda com: npm run regras */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { LIMITE_TROCAS, auditoria, candidatos, proximoVoto, tally } from '../../src/dominio/votacao.ts';
+import { LIMITE_TROCAS, candidatos, proximoVoto } from '../../src/dominio/votacao.ts';
+import { auditoria, tally } from '../../src/dominio/votacao-contagem.ts';
 
 const vot = { rid: 'r1', cats: [{ id: 'best' }, { id: 'worst' }, { id: 'pGOL', pos: 'GOL' }] };
 
@@ -64,6 +65,8 @@ test('KAN-222: auditoria: voto final, hora do servidor da última troca e as tro
     doServidor: false,
     trocas: [],
     repetido: false,
+    roda: false,
+    n: 0,
   });
   assert.equal(l[1].quando, 200);
   assert.equal(l[1].doServidor, true);

@@ -10,6 +10,9 @@ import { fdate } from '../nucleo/util.js';
 import { textoRodada } from '../ui/componentes';
 import { tally, votosQueValem } from '../dominio/votacao-contagem';
 import { R, VotacaoRapida } from './VotacaoRapida';
+import { quemVota } from '../dominio/votacao-rapida';
+import { participacao, percentual, textoPct } from '../dominio/votacao-resultado';
+import { LOCAL } from '../i18n/formatos.js';
 import { QuemVotou } from './QuemVotou';
 import { lerParticipa } from '../dominio/votacao-participa';
 import { QuemParticipa } from '../ui/QuemParticipa';
@@ -68,7 +71,9 @@ function CategoriaResultado({ c, R }: { c: Categoria; R: Resultado }) {
             <span class="bar">
               <i style={{ width: (n / R.total) * 100 + '%' }}></i>
             </span>
-            <span class="small">{n}</span>
+            <span class="small vt-n">
+              {tx('votacao.votosPct', { n, pct: textoPct(percentual(n, R.total), LOCAL) })}
+            </span>
           </li>
         ))}
         {linhas.length ? null : <li class="muted small">{tx('votacao.semVotos')}</li>}
@@ -87,7 +92,9 @@ function VotacaoTela() {
   S.vid = v.id;
   const r = rodDoc(v.rid) as Rodada | null,
     res = (v.open ? tally(v, S.votos) : v.resultado || tally(v, S.votos)) as Record<string, Resultado>,
-    nv = Object.keys(votosQueValem(S.votos)).length;
+    nv = Object.keys(votosQueValem(S.votos)).length,
+    /* KAN-257: "4 de 12 votaram" (quem participa); sem a lista ou com gente de fora dela, "N votos". */
+    pt = participacao(votosQueValem(S.votos), quemVota((v as any).quem, (r as any)?.times, pname, LOCAL));
   return (
     <div class="stack">
       <div class="row between">
@@ -109,7 +116,10 @@ function VotacaoTela() {
         <h2>{v.title}</h2>
         <p class="muted small">
           {r ? tx('votacao.rodadaDe', { data: fdate(r.date) }) + ' · ' : ''}
-          {tx(v.open ? 'votacao.aberta' : 'votacao.encerrada')} · {tp('votacao.votos', nv)}
+          {tx(v.open ? 'votacao.aberta' : 'votacao.encerrada')} ·{' '}
+          <span id="votPart">
+            {pt.de != null ? tx('rapida.contador', { n: pt.n, total: pt.de }) : tp('votacao.votos', nv)}
+          </span>
         </p>
         <div class="row" style="margin-top:10px">
           <button class="btn sm primary" data-a="shareVote">

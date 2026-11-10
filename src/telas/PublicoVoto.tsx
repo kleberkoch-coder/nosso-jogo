@@ -4,6 +4,7 @@
 import { render } from 'preact';
 import { gname, grpAtivo, grpBloq, pname, ppos, rodDoc } from '../dominio/grupo.js';
 import { candidatos, type Categoria, type Votacao } from '../dominio/votacao';
+import { percentual, textoPct } from '../dominio/votacao-resultado';
 import { LOCAL } from '../i18n/formatos.js';
 import { tp, tx } from '../i18n/index.js';
 import { S as estado } from '../nucleo/estado.js';
@@ -22,8 +23,10 @@ type Vot = {
   open?: boolean;
   selfVote?: boolean;
   cats: Categoria[];
-  resultado?: Record<string, { winners: string[]; counts: Record<string, number> }>;
+  resultado?: Record<string, { winners: string[]; counts: Record<string, number>; total?: number }>;
   quem?: string[] | null;
+  votaram?: number;
+  podiam?: number | null;
 };
 
 let desde = 0;
@@ -71,10 +74,17 @@ function Pagina() {
           <p class="muted small">
             {rodadaDe}
             {tx('voto.encerrada')}
+            {/* KAN-257: quantos votaram de quantos podiam (gravado ao encerrar). */}
+            {v.podiam != null && v.votaram != null
+              ? ' · ' + tx('voto.participacao', { n: v.votaram, total: v.podiam })
+              : ''}
           </p>
         </div>
         {v.cats.map(c => {
-          const R = res[c.id] || { winners: [], counts: {} };
+          const R: { winners: string[]; counts: Record<string, number>; total?: number } = res[c.id] || {
+            winners: [],
+            counts: {},
+          };
           return (
             <div class="panel" key={c.id}>
               <h3>{c.name}</h3>
@@ -83,7 +93,12 @@ function Pagina() {
                   <span class="muted small">{tx('voto.semVotos')}</span>
                 )}
               </p>
-              {R.winners.length ? <p class="small muted">{tp('voto.votos', R.counts[R.winners[0]!])}</p> : null}
+              {R.winners.length ? (
+                <p class="small muted">
+                  {tp('voto.votos', R.counts[R.winners[0]!])}
+                  {R.total ? ' · ' + textoPct(percentual(R.counts[R.winners[0]!]!, R.total), LOCAL) : ''}
+                </p>
+              ) : null}
             </div>
           );
         })}

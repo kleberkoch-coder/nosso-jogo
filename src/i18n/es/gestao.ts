@@ -35,6 +35,9 @@ export default {
   'vagas.abertasToast.outros': '{n} cupos abiertos para jugadores por partido e invitados.',
   'vagas.abertasSemLimiteToast': 'Cupos abiertos para jugadores por partido e invitados, sin límite.',
   'vagas.fechadasToast': 'Cupos para jugadores por partido e invitados cerrados.',
+  'vagas.aguardando': 'Esperando cupo',
+  'vagas.blocoFechadas': 'Por partido (cupos cerrados)',
+  'vagas.blocoEsgotadas': 'Por partido (cupos agotados)',
   'minimo.dlgTitulo': 'Mínimo para el partido',
   'minimo.dlgAjuda':
     'Cuántos necesita el grupo para que haya partido. Vale para todas las jornadas; la app avisa cuando falte gente. Deja 0 para no seguirlo.',

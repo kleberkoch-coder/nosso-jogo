@@ -6,8 +6,8 @@ import { linkCobrar, quemCobrar } from '../dominio/cobrar';
 import { linkWhatsApp } from '../dominio/contato';
 import { linkDaRodada } from '../dominio/whatsapp.js';
 import { col, colete, corClara, hasPos, posIdx, posKeys, posLabel, siglaTela, sport, tn } from '../dominio/esportes.js';
-import { TOTAL, faltaTotal, minimoValido } from '../dominio/posicoes';
-import { situacao } from '../dominio/vagas';
+import { TOTAL, faltaTotal, minimoValido, porPosicao } from '../dominio/posicoes';
+import { precisaVaga, situacao } from '../dominio/vagas';
 import {
   attendance,
   curRodada,
@@ -348,8 +348,15 @@ function Presenca({ r, inn, carregou, avs }: { r: Rodada; inn: string[]; carrego
     out: ids.filter(id => statusDe(id) === 'out').length,
     sem: ids.filter(id => !statusDe(id)).length,
   };
-  const vis =
+  const todosVis =
     f === 'in' ? inn : f === 'todos' ? ids : ids.filter(id => (f === 'out' ? statusDe(id) === 'out' : !statusDe(id)));
+  /* KAN-253: com as vagas fechadas ou esgotadas, o diarista que não confirmou não consegue entrar pelo link: vai
+     para o fim, num bloco próprio, com "Aguardando vaga". O administrador continua confirmando por aqui. */
+  const sitV = situacao(controleVagas(), r.vagas, S.limVg),
+    espera = (id: string) =>
+      !r.locked && controleVagas() && !sitV.podeEntrar && statusDe(id) !== 'in' && precisaVaga((S.jog || {})[id]),
+    vis = todosVis.filter(id => !espera(id)),
+    aguardando = todosVis.filter(espera);
   const vazio = !carregou
     ? tx('comum.carregando')
     : !ids.length
@@ -378,6 +385,12 @@ function Presenca({ r, inn, carregou, avs }: { r: Rodada; inn: string[]; carrego
             </>
           ) : null}
           {presAlterada(id) ? <TAG_MUDADO /> : null}
+          {espera(id) ? (
+            <>
+              {' '}
+              <Tag classe="alt tag-espera">{tx('vagas.aguardando')}</Tag>
+            </>
+          ) : null}
         </span>
         {isAvulso(id) && s === 'in' ? (
           <button class="btn sm" data-a="editAvulso" data-p={id}>
@@ -455,8 +468,18 @@ function Presenca({ r, inn, carregou, avs }: { r: Rodada; inn: string[]; carrego
       ) : null}
       <Lista class="plist" id="presLista">
         {carregou ? vis.map(linha) : null}
-        {!carregou || !vis.length ? <li class="muted small">{vazio}</li> : null}
+        {!carregou || (!vis.length && !aguardando.length) ? <li class="muted small">{vazio}</li> : null}
       </Lista>
+      {carregou && aguardando.length ? (
+        <>
+          <h4 class="pres-bloco" id="presAguardandoTitulo">
+            {tx(sitV.aberta ? 'vagas.blocoEsgotadas' : 'vagas.blocoFechadas')}
+          </h4>
+          <ul class="plist" id="presAguardando" aria-labelledby="presAguardandoTitulo">
+            {aguardando.map(linha)}
+          </ul>
+        </>
+      ) : null}
     </div>
   );
 }
@@ -683,6 +706,26 @@ function ExtraNaRodada() {
 }
 /* Mínimo para o jogo (KAN-179): total de jogadores (qualquer esporte) e, se houver posições, o mínimo de cada uma. */
 const minimosDoGrupo = (): Record<string, number> => (st().app?.cfg || {}).minPos || {};
+/* KAN-255: as listas da mensagem da rodada (ui/ConviteZap.tsx): quem não vai, quem ainda não respondeu (as mesmas
+   regras de "Cobrar quem não respondeu") e o que falta para o mínimo. Com a lista fechada, só quem não vai. */
+export function listasDoConvite(r: Rodada): { naoVao: string[]; sem: string[]; faltas: string[] } {
+  const S = st(),
+    a = attendance(),
+    naoVao = a.out.map(pname);
+  if (r.locked) return { naoVao, sem: [], faltas: [] };
+  const m = minimosDoGrupo(),
+    tot = faltaTotal(a.inn.length, m),
+    pos = hasPos() ? porPosicao(posKeys(), a.inn, id => ppos(id) as string, m) : [];
+  return {
+    naoVao,
+    sem: quemCobrar(elencoDaRodada(r), S.pres, S.jog || {}, situacao(controleVagas(), r.vagas, S.limVg).podeEntrar).map(
+      pname
+    ),
+    faltas: (tot.falta ? [tp('porpos.faltaTotal', tot.falta)] : []).concat(
+      pos.filter(x => x.falta).map(x => tp('porpos.falta', x.falta, { pos: siglaTela(x.k) }))
+    ),
+  };
+}
 function Minimos() {
   const m = minimosDoGrupo(),
     campo = (k: string, rotulo: string, titulo?: string) => (

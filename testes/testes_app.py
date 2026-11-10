@@ -3989,9 +3989,9 @@ with sync_playwright() as pw:
         p93.click('[data-a=tab][data-v=votacao]'); p93.wait_for_selector('[data-a=shareVote]', timeout=8000)
         p93.click('[data-a=shareVote]'); p93.wait_for_selector('#votZapRaiz #shtxt', timeout=5000)
         r93 = p93.input_value('#shtxt')
-        ok(f'🏅 *Melhor jogador*: {nm93(1)} (2) · {nm93(2)} (1)' in r93 and f'🏅 *Bagre*: {nm93(4)} (1)' in r93 and 'Quem votou em quem' not in r93
+        ok(f'🏅 *Melhor jogador*: {nm93(1)} (2 · 67%) · {nm93(2)} (1 · 33%)' in r93 and f'🏅 *Bagre*: {nm93(4)} (1 · 100%)' in r93 and 'Quem votou em quem' not in r93
            and not p93.is_checked('#votDetalhe') and p93.locator('#votAviso').count() == 0,
-           f'CT-KAN-231-01: o resultado no WhatsApp traz os mais votados com os votos, sem quem votou em quem ({r93[:160]!r})')
+           f'CT-KAN-231-01: o resultado no WhatsApp traz os mais votados com os votos e o percentual (KAN-257), sem quem votou em quem ({r93[:160]!r})')
         p93.check('#votDetalhe'); p93.wait_for_timeout(300)
         r93b = p93.input_value('#shtxt')
         ok(p93.locator('#votAviso').is_visible() and 'só para o grupo dos administradores' in p93.inner_text('#votAviso')
@@ -4564,7 +4564,7 @@ with sync_playwright() as pw:
         p102.click('#vrSair'); p102.wait_for_selector('#dlg .conf', timeout=4000)
         ok('Sair da votação rápida?' in p102.inner_text('#dlg .conf'), 'CT-KAN-254-10: sair da votação rápida pede confirmação')
         p102.click('#dlg .conf [data-a=confSim]'); p102.wait_for_timeout(500)
-        ok(p102.locator('#votRapida').count() == 0 and '2 votos' in p102.inner_text('#votRaiz'), f'CT-KAN-254-10: depois de sair, a aba Votação conta os 2 votos (um por pessoa)')
+        ok(p102.locator('#votRapida').count() == 0 and f'2 de {len(js102)} votaram' in p102.inner_text('#votRaiz'), f'CT-KAN-254-10: depois de sair, a aba Votação conta os 2 votos (um por pessoa)')
         p102.click('#quemVotou > summary'); p102.wait_for_timeout(300)
         q102 = p102.inner_text('#quemVotou')
         tg102 = p102.locator('#quemVotou .aud-origem').all_inner_texts()
@@ -4572,7 +4572,7 @@ with sync_playwright() as pw:
         # Pelo link, a votação continua igual
         p102.evaluate(PUT, {V102 + '/votos/devB': {'pid': js102[6], 'v': {'best': js102[1]}, 't': 2000}}); p102.reload(); p102.wait_for_timeout(1500)
         p102.click('[data-a=tab][data-v=votacao]'); p102.wait_for_selector('#vrAbrir', timeout=8000)
-        ok('3 votos' in p102.inner_text('#votRaiz'), 'CT-KAN-254-10: votos pelo link e na votação rápida contam juntos')
+        ok(f'3 de {len(js102)} votaram' in p102.inner_text('#votRaiz'), 'CT-KAN-254-10: votos pelo link e na votação rápida contam juntos')
         # Em inglês
         p102.evaluate("localStorage.setItem('nj-idioma','en')"); p102.reload(); p102.wait_for_timeout(2000)
         p102.click('[data-a=tab][data-v=votacao]'); p102.wait_for_selector('#vrAbrir', timeout=8000)
@@ -4585,6 +4585,125 @@ with sync_playwright() as pw:
         ctx102.close()
 
 
+
+        # ---------- v103 (KAN-253, KAN-255, KAN-236, KAN-257): diaristas aguardando vaga; lista completa no WhatsApp;
+        # placar guardado no aparelho; percentual e "N de M votaram"
+        ctx103 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+        p103 = ctx103.new_page(); p103.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p103, 'criar')
+        p103.fill('#le', 'v103@teste.com'); p103.fill('#lp', 'Jogo@2026'); p103.fill('#lp2', 'Jogo@2026'); p103.keyboard.press('Enter'); p103.wait_for_selector('#ngBox', timeout=12000)
+        p103.fill('#ngn', 'Pacote FC'); p103.click('[data-a=pickSport][data-v=futebol]'); p103.click('[data-a=createGroup]')
+        p103.wait_for_function("location.hash.startsWith('#/g/')"); p103.wait_for_timeout(1500)
+        g103 = p103.url.split('#/g/')[1]
+        p103.click('[data-a=tab][data-v=jogadores]'); p103.wait_for_timeout(300); p103.click('[data-a=seed]'); p103.wait_for_timeout(1500)
+        p103.click('[data-a=tab][data-v=rodada]'); p103.wait_for_timeout(700)
+        dia103 = p103.evaluate("Object.keys(S.pc.tipos).filter(id=>S.pc.tipos[id]==='diarista'&&S.jog[id]&&S.jog[id].ativo!==false)")
+        # KAN-253: sem o controle, nada muda
+        ok(p103.locator('#presAguardando').count() == 0, 'CT-KAN-253-04: com o controle de vagas desligado, a lista fica como antes (sem bloco de diaristas)')
+        p103.click('#porPosicao [data-a=abrirMinimos]'); p103.wait_for_timeout(400)
+        p103.fill('#minRaiz .minp[data-k="_total"]', '14')
+        p103.check('#vagasCtrl'); p103.click('#dlg [data-a=salvarMinimos]'); p103.wait_for_timeout(1200)
+        ag103 = p103.evaluate("[...document.querySelectorAll('#presAguardando [data-a=mark][data-v=in]')].map(b=>b.dataset.p)")
+        pr103 = p103.evaluate("[...document.querySelectorAll('#presLista [data-a=mark][data-v=in]')].map(b=>b.dataset.p)")
+        ok(sorted(ag103) == sorted(dia103) and not any(x in pr103 for x in dia103) and 'Diaristas (vagas fechadas)' in p103.inner_text('#presAguardandoTitulo'),
+           f'CT-KAN-253-01: com as vagas fechadas, os diaristas vão para o bloco "Diaristas (vagas fechadas)" no fim da lista ({len(ag103)} de {len(dia103)})')
+        ok(p103.locator('#presAguardando .tag-espera').count() == len(dia103) and 'Aguardando vaga' in p103.inner_text('#presAguardando'),
+           'CT-KAN-253-01: cada diarista do bloco tem a etiqueta "Aguardando vaga"')
+        for tema in ['light', 'dark']:
+            p103.emulate_media(color_scheme=tema); p103.wait_for_timeout(150); contraste(p103, f'diaristas aguardando vaga ({tema})')
+        p103.emulate_media(color_scheme='light')
+        p103.wait_for_timeout(300); p103.screenshot(path=f'{OUT}/103-aguardando-vaga.png', full_page=True)
+        d0 = dia103[0]
+        p103.click(f'#presAguardando [data-a=mark][data-v=in][data-p="{d0}"]'); p103.wait_for_timeout(900)
+        ok(p103.locator(f'#presLista [data-a=mark][data-v=in][data-p="{d0}"]').count() == 1 and p103.locator(f'#presAguardando [data-p="{d0}"]').count() == 0
+           and p103.get_attribute(f'#presLista [data-a=mark][data-v=in][data-p="{d0}"]', 'aria-pressed') == 'true',
+           'CT-KAN-253-02: o administrador confirma o diarista pelo bloco, e ele passa para a lista, sem a etiqueta')
+        # Presença: 9 mensalistas confirmados, 1 "não vou" e o resto sem resposta
+        men103 = [x for x in pr103 if x not in dia103]
+        for x in men103[:9]:
+            p103.click(f'#presLista [data-a=mark][data-v=in][data-p="{x}"]'); p103.wait_for_timeout(300)
+        for x in men103[9:10]:
+            p103.click(f'#presLista [data-a=mark][data-v=out][data-p="{x}"]'); p103.wait_for_timeout(300)
+        p103.wait_for_timeout(600)
+        nm103 = lambda i: p103.evaluate("(x)=>S.jog[x].name", i)
+        # KAN-255: mensagem do WhatsApp com quem não vai, quem não respondeu e o que falta
+        p103.click('[data-a=shareConvite]'); p103.wait_for_selector('#shtxt', timeout=8000); p103.wait_for_timeout(300)
+        z103 = p103.input_value('#shtxt')
+        sem103 = [x for x in men103[10:] if p103.evaluate("(x)=>S.jog[x].ativo!==false", x)]
+        ok('✅ *Confirmados (10)*' in z103 and '❌ *Não vão (1)*' in z103 and nm103(men103[9]) in z103.split('❌')[1].split('⏳')[0],
+           f'CT-KAN-255-01: a mensagem traz quem não vai, com os nomes ({z103[-220:]!r})')
+        bloco_sem = z103.split('⏳')[1] if '⏳' in z103 else ''
+        ok(f'*Ainda não responderam ({len(sem103)})*' in bloco_sem and all(nm103(x) in bloco_sem for x in sem103) and not any(nm103(x) in bloco_sem for x in dia103[1:]),
+           f'CT-KAN-255-02: "Ainda não responderam" lista o elenco sem resposta, sem os diaristas com as vagas fechadas ({len(sem103)})')
+        ok('⚠️ Faltam 4 jogadores' in z103, 'CT-KAN-255-01: a mensagem diz o que falta para o mínimo do jogo')
+        ok(p103.is_checked('#zapNaoVao') and p103.is_checked('#zapSemResposta'), 'CT-KAN-255-03: as duas caixas vêm marcadas')
+        for tema in ['light', 'dark']:
+            p103.emulate_media(color_scheme=tema); p103.wait_for_timeout(150)
+            ok(p103.evaluate("document.documentElement.scrollWidth<=innerWidth"), f'CT-KAN-255-03: em 360px ({tema}), a janela não tem rolagem lateral')
+            contraste(p103, f'janela da mensagem da rodada ({tema})')
+        p103.emulate_media(color_scheme='light')
+        p103.uncheck('#zapSemResposta'); p103.wait_for_timeout(300)
+        z103b = p103.input_value('#shtxt')
+        ok('⏳' not in z103b and '❌ *Não vão (1)*' in z103b, 'CT-KAN-255-03: desmarcando "Quem ainda não respondeu", a lista sai da mensagem')
+        p103.click('#dlg [data-a=close]'); p103.wait_for_timeout(300)
+        p103.click('[data-a=shareConvite]'); p103.wait_for_selector('#shtxt', timeout=8000); p103.wait_for_timeout(300)
+        ok(not p103.is_checked('#zapSemResposta') and '⏳' not in p103.input_value('#shtxt'), 'CT-KAN-255-03: a escolha fica lembrada no aparelho')
+        p103.check('#zapSemResposta'); p103.wait_for_timeout(200)
+        p103.click('#dlg [data-a=close]'); p103.wait_for_timeout(300)
+        # KAN-236: partida em andamento guardada no aparelho
+        sortear(p103)
+        p103.click('[data-a=tab][data-v=partida]'); p103.wait_for_selector('[data-a=goal]', timeout=10000); p103.wait_for_timeout(400)
+        def gol103(lado, n):
+            p103.locator(f'[data-a=goal][data-v={lado}]').first.click(); p103.wait_for_selector('[data-a=addGoal][data-p]', timeout=5000)
+            p103.locator('[data-a=addGoal][data-p]').nth(n).click(); p103.wait_for_timeout(300)
+        gol103('a', 0); gol103('b', 0); gol103('a', 1)
+        p103.click('#clockBtn'); p103.wait_for_timeout(1500)
+        g103a = p103.evaluate("[S.live.a,S.live.b,S.live.goals.map(g=>[g.t,g.pid])]")
+        p103.reload(); p103.wait_for_timeout(1800); p103.click('[data-a=tab][data-v=partida]'); p103.wait_for_selector('[data-a=goal]', timeout=10000); p103.wait_for_timeout(600)
+        g103b = p103.evaluate("[S.live.a,S.live.b,S.live.goals.map(g=>[g.t,g.pid])]")
+        sc103 = [s.strip() for s in p103.locator('.board .sc').all_inner_texts()]
+        rel103 = p103.evaluate("[S.live.run, S.live.el + (S.live.run ? (Date.now()-S.live.st)/1000 : 0)]")
+        ok(g103b == g103a and sc103 == ['2', '1'] and not p103.locator('[data-a=corrigirGols]').is_disabled(),
+           f'CT-KAN-236-01: depois de recarregar, o placar, os gols com os autores e os times em quadra voltam ({sc103}, {len(g103b[2])} gols)')
+        ok(rel103[0] is True and rel103[1] >= 1.5, f'CT-KAN-236-01: o cronômetro continua contando depois de recarregar ({rel103})')
+        p103.click('[data-a=saveMatch]'); p103.wait_for_timeout(1200)
+        p103.reload(); p103.wait_for_timeout(1800); p103.click('[data-a=tab][data-v=partida]'); p103.wait_for_selector('[data-a=goal]', timeout=10000); p103.wait_for_timeout(600)
+        sc103b = [s.strip() for s in p103.locator('.board .sc').all_inner_texts()]
+        ok(sc103b == ['0', '0'] and p103.evaluate("S.live.goals.length") == 0, f'CT-KAN-236-02: depois de "Encerrar e salvar partida", a partida guardada não volta ({sc103b})')
+        # KAN-257: percentual e "N de M votaram"
+        js103 = p103.evaluate("[...new Set([].concat(...(S.rod[S.rid].times||[]).map(t=>t.players)))]")
+        rid103 = p103.evaluate("S.rid")
+        V103 = f'grupos/{g103}/votacoes/v103'
+        p103.evaluate(PUT, {V103: {'rid': rid103, 'title': 'Destaques', 'open': True, 'createdAt': 5, 'cats': [{'id': 'best', 'name': 'Melhor jogador', 'pos': None}]},
+                            V103 + '/votos/d1': {'pid': js103[0], 'v': {'best': js103[5]}, 't': 1},
+                            V103 + '/votos/d2': {'pid': js103[1], 'v': {'best': js103[5]}, 't': 2},
+                            V103 + '/votos/d3': {'pid': js103[2], 'v': {'best': js103[6]}, 't': 3},
+                            V103 + '/votos/r_' + js103[2]: {'pid': js103[2], 'v': {'best': js103[6]}, 't': 4, 'o': 'r', 'n': 1, 'em': 4}})
+        p103.reload(); p103.wait_for_timeout(1500)
+        p103.click('[data-a=tab][data-v=votacao]'); p103.wait_for_selector('#votPart', timeout=8000); p103.wait_for_timeout(300)
+        vp103 = p103.inner_text('#votPart')
+        ok(vp103.strip() == f'3 de {len(js103)} votaram', f'CT-KAN-257-02: o cabeçalho mostra "3 de {len(js103)} votaram" (a mesma pessoa no link e na votação rápida conta uma vez) ({vp103!r})')
+        pc103 = sorted(p103.locator('#votRaiz .vt-n').all_inner_texts())
+        ok(pc103 == ['1 · 33%', '2 · 67%'], f'CT-KAN-257-01: cada nome mostra os votos e o percentual da categoria ({pc103})')
+        p103.click('[data-a=toggleVote]'); p103.wait_for_timeout(1200)
+        dv103 = p103.evaluate(LER, V103) or {}
+        ok(dv103.get('votaram') == 3 and dv103.get('podiam') == len(js103), f'CT-KAN-257-02: ao encerrar, fica gravado quantos votaram de quantos podiam ({dv103.get("votaram")}, {dv103.get("podiam")})')
+        p103.click('[data-a=shareVote]'); p103.wait_for_selector('#votZapRaiz #shtxt', timeout=5000)
+        r103 = p103.input_value('#shtxt')
+        ok(f'{nm103(js103[5])} (2 · 67%)' in r103 and f'Votaram 3 de {len(js103)}' in r103, f'CT-KAN-257-04: o resultado no WhatsApp traz o percentual e "Votaram 3 de {len(js103)}" ({r103[:160]!r})')
+        p103.click('#dlg [data-a=close]'); p103.wait_for_timeout(200)
+        p103.goto(URL + f'#/p/{g103}/v/v103'); p103.wait_for_timeout(2500)
+        lk103 = p103.inner_text('#main') if p103.locator('#main').count() else p103.inner_text('body')
+        ok(f'3 de {len(js103)} votaram' in lk103 and '67%' in lk103, f'CT-KAN-257-03: o link da votação encerrada mostra o percentual e quantos votaram ({lk103[:160]!r})')
+        # Em inglês
+        p103.evaluate("localStorage.setItem('nj-idioma','en')"); p103.goto(URL + '#/g/' + g103); p103.reload(); p103.wait_for_timeout(2000)
+        p103.click('[data-a=tab][data-v=votacao]'); p103.wait_for_selector('#votPart', timeout=8000)
+        e103 = p103.inner_text('#votPart')
+        p103.click('[data-a=shareVote]'); p103.wait_for_selector('#votZapRaiz #shtxt', timeout=5000); e103 += p103.input_value('#shtxt')
+        p103.click('#dlg [data-a=close]'); p103.wait_for_timeout(200)
+        falta103 = p103.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(zaplista|vagas\\.(aguardando|bloco)|votzap|votacao\\.votosPct|voto\\.participacao)/.test(k))")
+        ok(f'of {len(js103)} voted' in e103 and 'Votaram' not in e103 and not falta103, f'CT-KAN-257: em English, a participação e o resultado saem traduzidos ({falta103})')
+        ctx103.close()
 
         # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
         ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')

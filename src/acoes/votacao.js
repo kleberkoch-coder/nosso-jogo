@@ -10,10 +10,12 @@ import { ehPadrao, lerParticipa, quemParticipa } from '../dominio/votacao-partic
 import { lerMarcados } from '../ui/QuemParticipa';
 import { linkVoto } from '../nucleo/links.js';
 import { $, cl, toast, uid } from '../nucleo/util.js';
-import { auditoria, tally } from '../dominio/votacao-contagem';
-import { jaVotaram, loteVotoRapido } from '../dominio/votacao-rapida';
+import { auditoria, tally, votosQueValem } from '../dominio/votacao-contagem';
+import { participacao } from '../dominio/votacao-resultado';
+import { jaVotaram, loteVotoRapido, quemVota } from '../dominio/votacao-rapida';
 import { R } from '../telas/VotacaoRapida';
-import { pname } from '../dominio/grupo.js';
+import { pname, rodDoc } from '../dominio/grupo.js';
+import { LOCAL } from '../i18n/formatos.js';
 import { baixarPlanilha, mandarResultado } from '../telas/VotacaoZap';
 import { montarNovaVotacao } from '../telas/Votacao';
 import { confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
@@ -168,6 +170,10 @@ const acoes = {
     if (v.open) {
       v.open = false;
       v.resultado = tally(v, S.votos);
+      /* KAN-257: quantos votaram de quantos podiam, para o link encerrado mostrar (o link não lê os votos). */
+      const pt = participacao(votosQueValem(S.votos), quemVota(v.quem, (rodDoc(v.rid) || {}).times, pname, LOCAL));
+      v.votaram = pt.n;
+      v.podiam = pt.de;
     } else v.open = true;
     S.vot[S.vid] = v;
     return gravarVotacao(S.vid, antes, v);

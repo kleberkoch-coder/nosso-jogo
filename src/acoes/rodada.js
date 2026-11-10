@@ -1,5 +1,6 @@
 /* Ações: Rodada: datas, presença, sorteio, times, lista × times e histórico. Os avulsos ficam em acoes/avulsos.ts
    (v87). Fazem parte de ACT (src/acoes.js). */
+import { LOCAL } from '../i18n/formatos.js';
 import { horaTexto } from '../dominio/rodadas.js';
 import { cfg } from '../dominio/caixa.js';
 import { hasPos, porTime, posKeys, sport, tn } from '../dominio/esportes.js';
@@ -7,12 +8,13 @@ import { attendance, curRodada, fixos, gname, isAvulso, players, pname, ppos, ro
 import { draw } from '../dominio/sorteio.js';
 import { foraDosTimes } from '../dominio/divergencia.ts';
 import { reservas, sugerirTimes, titulares } from '../dominio/times.ts';
-import { tp, tx } from '../i18n/index.js';
+import { juntarTextos, tp, tx } from '../i18n/index.js';
+import { render as desenhar } from 'preact';
 import { linkDaRodada, txtConvite, txtTimes } from '../dominio/whatsapp.js';
-import { shareDlg } from '../ui/Compartilhar';
+import { Compartilhar, shareDlg } from '../ui/Compartilhar';
 import { quemCobrar } from '../dominio/cobrar';
 import { limparMinimos } from '../dominio/posicoes';
-import { elencoDaRodada, minimosDoGrupo, montarMinimos, montarVagas } from '../telas/Rodada';
+import { elencoDaRodada, listasDoConvite, minimosDoGrupo, montarMinimos, montarVagas } from '../telas/Rodada';
 import { situacao, vagasValidas } from '../dominio/vagas';
 import { copyText } from '../eventos.js';
 import { B, setCAP, sleep } from '../nucleo/backend.js';
@@ -177,7 +179,31 @@ const acoes = {
       x.locked = !x.locked;
     });
   },
-  shareConvite: () => shareDlg(tx('rodadm.conviteTitulo'), txtConvite(curRodada())),
+  /* KAN-255: com quem não vai, quem não respondeu e o que falta (ui/ConviteZap.tsx, sob demanda). */
+  shareConvite: () =>
+    import('../ui/ConviteZap').then(
+      m => {
+        const r = curRodada();
+        openDlg('shRaiz');
+        dlg.setAttribute('aria-labelledby', 'shTitulo');
+        juntarTextos(m.textos);
+        m.mandarConvite(
+          Object.assign(
+            {
+              titulo: tx('rodadm.conviteTitulo'),
+              texto: txtConvite(r),
+              Compartilhar,
+              local: LOCAL,
+              tx,
+              render: desenhar,
+            },
+            listasDoConvite(r)
+          ),
+          document.getElementById('shRaiz')
+        );
+      },
+      () => toast(tx('comum.naoCarregouTitulo') + '. ' + tx('comum.naoCarregou'))
+    ),
   copyLink: () => copyText(linkRodada(curRodada().id)),
   /* KAN-179: mínimo para o jogo (total e por posição), salvo no grupo e válido para todas as rodadas. */
   abrirMinimos: () => {

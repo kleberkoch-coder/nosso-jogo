@@ -39,6 +39,9 @@ export default {
   'vagas.abertasToast.outros': '{n} vagas abertas para diaristas e avulsos.',
   'vagas.abertasSemLimiteToast': 'Vagas abertas para diaristas e avulsos, sem limite.',
   'vagas.fechadasToast': 'Vagas para diaristas e avulsos fechadas.',
+  'vagas.aguardando': 'Aguardando vaga',
+  'vagas.blocoFechadas': 'Diaristas (vagas fechadas)',
+  'vagas.blocoEsgotadas': 'Diaristas (vagas esgotadas)',
   'minimo.dlgTitulo': 'Mínimo para o jogo',
   'minimo.dlgAjuda':
     'Quantos o grupo precisa para o jogo acontecer. Vale para todas as rodadas; o app avisa quando faltar. Deixe 0 para não acompanhar.',

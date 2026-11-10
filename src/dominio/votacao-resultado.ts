@@ -1,6 +1,7 @@
 /* Resultado da votação para fora do app (KAN-231): os mais votados de cada categoria (WhatsApp) e a planilha de
    "Quem votou". Regra pura; fica fora de dominio/votacao.ts para não pesar no link do jogador. */
-import type { Categoria, LinhaAuditoria } from './votacao';
+import type { Categoria } from './votacao';
+import type { LinhaAuditoria } from './votacao-contagem';
 
 /* KAN-231: os mais votados de uma categoria (até n), com os votos; empate na ordem alfabética do nome. */
 export function maisVotados(
@@ -21,16 +22,26 @@ export function linhasDaPlanilha(
   linhas: LinhaAuditoria[],
   cats: Categoria[],
   nome: (id: string) => string,
-  cab: { quem: string; hora: string; trocas: string; repetido: string },
+  cab: {
+    quem: string;
+    hora: string;
+    trocas: string;
+    repetido: string;
+    origem?: string;
+    rapida?: string;
+    link?: string;
+  },
   quando: (ms: number) => string
 ): string[][] {
   return [
-    [cab.quem, ...cats.map(c => c.name || c.id), cab.hora, cab.trocas],
+    [cab.quem, ...cats.map(c => c.name || c.id), cab.hora, cab.trocas, ...(cab.origem ? [cab.origem] : [])],
     ...linhas.map(l => [
       nome(l.pid) + (l.repetido ? ' (' + cab.repetido + ')' : ''),
       ...cats.map(c => (l.v[c.id] ? nome(l.v[c.id]!) : '')),
       l.quando ? quando(l.quando) : '',
       String(l.trocas.length),
+      /* KAN-254: origem do voto, quando quem chama pede a coluna. */
+      ...(cab.origem ? [(l.roda ? cab.rapida : cab.link) || ''] : []),
     ]),
   ];
 }

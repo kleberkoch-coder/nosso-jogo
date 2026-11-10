@@ -125,6 +125,16 @@ service cloud.firestore {
     }
     // Identificador gerado pelo app: só letras, números, _ e - (KAN-76: impede injetar código pelo nome do documento).
     function idValido(id) { return id is string && id.matches('[A-Za-z0-9_-]{1,64}'); }
+    // Escolhas de um voto (v): até 30 categorias. KAN-198: cada categoria e cada escolhido é um identificador curto
+    // (até 64 letras), nunca um texto enorme. Juntos, não passam de 2.000 letras (30 categorias de 64, com folga).
+    function escolhasValidas() {
+      return request.resource.data.get('v', {}) is map && request.resource.data.get('v', {}).size() <= 30
+        && (request.resource.data.get('v', {}).size() == 0
+          || (request.resource.data.v.keys().join('|').size() <= 2000
+            && request.resource.data.v.values().join('|').size() <= 2000
+            && request.resource.data.v.keys().join('|').matches('[A-Za-z0-9_-]{1,64}([|][A-Za-z0-9_-]{1,64})*')
+            && request.resource.data.v.values().join('|').matches('[A-Za-z0-9_-]{1,64}([|][A-Za-z0-9_-]{1,64})*')));
+    }
     function presencaValida() {
       return request.resource.data.keys().hasOnly(['s', 't', 'by', 'dev', 'nome', 'avulso', 'pos'])
         && request.resource.data.s in ['in', 'out']
@@ -614,21 +624,30 @@ service cloud.firestore {
             && grpAtivo(gid)
             && get(/databases/$(database)/documents/grupos/$(gid)/votacoes/$(vid)).data.open == true
             && request.resource.data.keys().hasOnly(['pid', 'v', 't', 'nt'])
+            && escolhasValidas()
             && idValido(request.resource.data.get('pid', ''))
             // KAN-224: contador de trocas do aparelho. Sobe de 1 em 1 (ou fica igual), nunca passa de 50.
             && request.resource.data.get('nt', 0) is int
             && request.resource.data.get('nt', 0) <= 50
             && (request.resource.data.get('nt', 0) == (resource == null ? 0 : resource.data.get('nt', 0))
               || request.resource.data.get('nt', 0) == (resource == null ? 0 : resource.data.get('nt', 0)) + 1)
-            && request.resource.data.get('v', {}) is map && request.resource.data.get('v', {}).size() <= 30
-            // KAN-198: cada categoria e cada escolhido é um identificador curto (até 64 letras), nunca um texto enorme.
-            // Juntos, não passam de 2.000 letras (30 categorias de até 64 letras, com folga).
-            && (request.resource.data.get('v', {}).size() == 0
-              || (request.resource.data.v.keys().join('|').size() <= 2000
-                && request.resource.data.v.values().join('|').size() <= 2000
-                && request.resource.data.v.keys().join('|').matches('[A-Za-z0-9_-]{1,64}([|][A-Za-z0-9_-]{1,64})*')
-                && request.resource.data.v.values().join('|').matches('[A-Za-z0-9_-]{1,64}([|][A-Za-z0-9_-]{1,64})*')))
             && request.resource.data.get('t', 0) is int;
+          // KAN-254 (pelada-v102): votação rápida. O administrador grava, do próprio aparelho, o voto de cada pessoa em
+          // votos/r_{jogador}, com a origem (o: 'r'), quantas vezes ela votou ali (n, sobe de 1 em 1) e a hora do servidor.
+          // Os votos dessa pessoa pelo link saem no mesmo lote (allow delete abaixo). O link não muda.
+          allow create, update: if adminAtivo(gid) && grpAtivo(gid)
+            && uid.matches('r_[A-Za-z0-9_-]{1,64}')
+            && get(/databases/$(database)/documents/grupos/$(gid)/votacoes/$(vid)).data.open == true
+            && request.resource.data.keys().hasOnly(['pid', 'v', 't', 'o', 'n', 'em'])
+            && request.resource.data.keys().hasAll(['pid', 'v', 't', 'o', 'n', 'em'])
+            && idValido(request.resource.data.pid) && uid == 'r_' + request.resource.data.pid
+            && request.resource.data.o == 'r'
+            && request.resource.data.em == request.time
+            && request.resource.data.t is int
+            && request.resource.data.n is int
+            && request.resource.data.n == (resource == null ? 0 : resource.data.get('n', 0)) + 1
+            && request.resource.data.v.size() > 0
+            && escolhasValidas();
           allow delete: if adminAtivo(gid);
         }
 

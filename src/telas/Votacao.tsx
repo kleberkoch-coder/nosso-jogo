@@ -8,7 +8,8 @@ import { tp, tx } from '../i18n/index.js';
 import { S as estado } from '../nucleo/estado.js';
 import { fdate } from '../nucleo/util.js';
 import { textoRodada } from '../ui/componentes';
-import { tally } from '../dominio/votacao';
+import { tally, votosQueValem } from '../dominio/votacao-contagem';
+import { R, VotacaoRapida } from './VotacaoRapida';
 import { QuemVotou } from './QuemVotou';
 import { lerParticipa } from '../dominio/votacao-participa';
 import { QuemParticipa } from '../ui/QuemParticipa';
@@ -86,7 +87,7 @@ function VotacaoTela() {
   S.vid = v.id;
   const r = rodDoc(v.rid) as Rodada | null,
     res = (v.open ? tally(v, S.votos) : v.resultado || tally(v, S.votos)) as Record<string, Resultado>,
-    nv = Object.keys(S.votos).length;
+    nv = Object.keys(votosQueValem(S.votos)).length;
   return (
     <div class="stack">
       <div class="row between">
@@ -114,6 +115,11 @@ function VotacaoTela() {
           <button class="btn sm primary" data-a="shareVote">
             {tx(v.open ? 'votacao.mandarLink' : 'votacao.mandarResultado')}
           </button>
+          {v.open ? (
+            <button class="btn sm" data-a="rapidaAbrir" id="vrAbrir">
+              {tx('rapida.abrir')}
+            </button>
+          ) : null}
           <button class="btn sm" data-a="toggleVote">
             {tx(v.open ? 'votacao.encerrar' : 'votacao.reabrir')}
           </button>
@@ -126,6 +132,7 @@ function VotacaoTela() {
         <CategoriaResultado key={c.id} c={c} R={res[c.id] || { counts: {}, total: 0, winners: [] }} />
       ))}
       <QuemVotou key={v.id} vid={v.id} cats={v.cats} votos={S.votos} trocas={S.trocas || {}} />
+      {R.on ? <VotacaoRapida v={v} votos={S.votos} /> : null}
     </div>
   );
 }

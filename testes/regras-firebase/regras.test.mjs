@@ -353,6 +353,50 @@ describe('auditoria da votação: trocas com a hora do servidor (KAN-222, KAN-22
   });
 });
 
+describe('votação rápida no aparelho do administrador (KAN-254, pelada-v102)', () => {
+  const V = G + '/votacoes/v1';
+  const voto = (n, extra = {}) => ({ pid: 'j1', v: { best: 'j2' }, t: 1, o: 'r', n, em: serverTimestamp(), ...extra });
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async ctx => {
+      const f = ctx.firestore();
+      await setDoc(doc(f, V), { open: true, cats: [{ id: 'best' }] });
+      await setDoc(doc(f, V + '/votos/anon1'), { pid: 'j1', v: { best: 'j3' }, t: 1 });
+    });
+  });
+  test('administrador grava o voto de cada pessoa em r_{jogador}; votar de novo sobe o contador de 1 em 1', async () => {
+    await assertSucceeds(setDoc(doc(db.adm(), V + '/votos/r_j1'), voto(1)));
+    await assertSucceeds(setDoc(doc(db.dono(), V + '/votos/r_j1'), voto(2, { v: { best: 'j4' } })));
+    await assertFails(setDoc(doc(db.adm(), V + '/votos/r_j1'), voto(2)));
+    await assertFails(setDoc(doc(db.adm(), V + '/votos/r_j1'), voto(5)));
+  });
+  test('no mesmo lote, o voto da pessoa pelo link sai', async () => {
+    const f = db.adm(),
+      b = writeBatch(f);
+    b.set(doc(f, V + '/votos/r_j1'), voto(1));
+    b.delete(doc(f, V + '/votos/anon1'));
+    await assertSucceeds(b.commit());
+  });
+  test('voto fora do formato é recusado: outro nome, sem a hora do servidor, sem escolha, campo a mais, sem a origem', async () => {
+    await assertFails(setDoc(doc(db.adm(), V + '/votos/r_j1'), voto(1, { pid: 'j2' })));
+    await assertFails(setDoc(doc(db.adm(), V + '/votos/r_j1'), voto(1, { em: 5 })));
+    await assertFails(setDoc(doc(db.adm(), V + '/votos/r_j1'), voto(1, { v: {} })));
+    await assertFails(setDoc(doc(db.adm(), V + '/votos/r_j1'), voto(1, { x: 1 })));
+    await assertFails(setDoc(doc(db.adm(), V + '/votos/r_j1'), voto(1, { o: 'l' })));
+    await assertFails(setDoc(doc(db.adm(), V + '/votos/r_j1'), voto(1, { v: { best: '<b>x' } })));
+    await assertFails(setDoc(doc(db.adm(), V + '/votos/x_j1'), voto(1)));
+  });
+  test('jogador pelo link, administrador de outro grupo e votação encerrada: recusado', async () => {
+    await assertFails(setDoc(doc(db.anon(), V + '/votos/r_j1'), voto(1)));
+    await assertFails(setDoc(doc(db.outro(), V + '/votos/r_j1'), voto(1)));
+    await env.withSecurityRulesDisabled(ctx => updateDoc(doc(ctx.firestore(), V), { open: false }));
+    await assertFails(setDoc(doc(db.adm(), V + '/votos/r_j1'), voto(1)));
+  });
+  test('o link continua como antes: o aparelho grava só o próprio voto', async () => {
+    await assertSucceeds(setDoc(doc(db.anon(), V + '/votos/anon1'), { pid: 'j1', v: { best: 'j2' }, t: 2 }));
+    await assertFails(setDoc(doc(db.anon(), V + '/votos/anon2'), { pid: 'j1', v: { best: 'j2' }, t: 2 }));
+  });
+});
+
 describe('vagas para diaristas e avulsos (KAN-63)', () => {
   const R = G + '/rodadas/r1',
     CV = R + '/limites/vagas',

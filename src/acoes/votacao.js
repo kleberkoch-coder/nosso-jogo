@@ -2,7 +2,7 @@
 import { posLabel, sport } from '../dominio/esportes.js';
 import { isAvulso, rodById, rodadas } from '../dominio/grupo.js';
 import { shareDlg } from '../ui/Compartilhar';
-import { B } from '../nucleo/backend.js';
+import { B, op } from '../nucleo/backend.js';
 import { gravarVotacao } from '../nucleo/partidas.js';
 import { GB, S, gp, w } from '../nucleo/estado.js';
 import { cfg, ptipo } from '../dominio/caixa.js';
@@ -10,7 +10,10 @@ import { ehPadrao, lerParticipa, quemParticipa } from '../dominio/votacao-partic
 import { lerMarcados } from '../ui/QuemParticipa';
 import { linkVoto } from '../nucleo/links.js';
 import { $, cl, toast, uid } from '../nucleo/util.js';
-import { auditoria, tally } from '../dominio/votacao';
+import { auditoria, tally } from '../dominio/votacao-contagem';
+import { jaVotaram, loteVotoRapido } from '../dominio/votacao-rapida';
+import { R } from '../telas/VotacaoRapida';
+import { pname } from '../dominio/grupo.js';
 import { baixarPlanilha, mandarResultado } from '../telas/VotacaoZap';
 import { montarNovaVotacao } from '../telas/Votacao';
 import { confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
@@ -21,7 +24,74 @@ import { tx } from '../i18n/index.js';
 /* Tipo de cada um para a votação (KAN-230): avulso (fora do elenco), diarista ou mensalista (isento conta junto). */
 const tipoNaVotacao = id => (isAvulso(id) ? 'avulso' : ptipo(id) === 'diarista' ? 'diarista' : 'mensalista');
 
+/* KAN-254: votação rápida (telas/VotacaoRapida.tsx). */
+const rapida = (etapa, pid = '') => {
+  Object.assign(R, { etapa, pid, v: {} });
+  changed();
+  window.scrollTo(0, 0);
+  const t = document.getElementById('votRapida');
+  if (t) t.scrollTop = 0;
+};
+
 const acoes = {
+  rapidaAbrir: () => {
+    R.on = true;
+    rapida('quem');
+  },
+  rapidaSair: el => {
+    if (
+      confirmou(el, {
+        titulo: tx('rapida.sairTitulo'),
+        texto: tx('rapida.sairTexto'),
+        acao: tx('rapida.sairAcao'),
+      }) !== 'sim'
+    )
+      return;
+    R.on = false;
+    rapida('quem');
+  },
+  rapidaQuem: el => {
+    const pid = el.dataset.p;
+    /* Já votou (pelo link ou aqui): pode votar de novo; o voto anterior não aparece para ninguém. */
+    if (
+      jaVotaram(S.votos).has(pid) &&
+      confirmou(el, {
+        titulo: tx('rapida.jaVotouTitulo', { nome: pname(pid) }),
+        texto: tx('rapida.jaVotouTexto'),
+        acao: tx('rapida.votarDeNovo'),
+      }) !== 'sim'
+    )
+      return;
+    rapida('votar', pid);
+  },
+  rapidaEscolher: el => {
+    const c = el.dataset.c2,
+      p = el.dataset.p;
+    R.v = Object.assign({}, R.v, { [c]: R.v[c] === p ? '' : p });
+    changed();
+  },
+  rapidaVoltar: () => rapida('quem'),
+  rapidaProximo: () => rapida('quem'),
+  rapidaConfirmar: () => {
+    const v = S.vot[S.vid];
+    if (!v || !R.pid) return;
+    const ops = loteVotoRapido(
+      'votacoes/' + S.vid + '/votos/',
+      S.votos,
+      R.pid,
+      R.v,
+      Date.now(),
+      v.cats.map(c => c.id),
+      op
+    );
+    if (!ops) return toast(tx('rapida.escolhaUm'));
+    const g = w(GB.lote(ops));
+    /* Sem sinal, o voto fica na fila do aparelho e sobe sozinho: depois de alguns segundos a tela segue em frente. */
+    return Promise.race([g, new Promise(ok => setTimeout(ok, 4000))]).then(
+      () => rapida('ok'),
+      () => {}
+    );
+  },
   /* KAN-195: a janela é um componente (telas/Votacao.tsx). */
   newVote: () => {
     const rs = rodadas().filter(r => r.times);
@@ -131,7 +201,15 @@ const acoes = {
   baixarVotos: () => {
     const v = S.vot[S.vid];
     if (!v) return;
-    const linhas = auditoria(S.votos, {});
+    const linhas = auditoria(
+      Object.fromEntries(
+        Object.entries(S.votos).map(([k, d]) => [
+          k,
+          d && d.em != null && typeof d.em !== 'number' ? { ...d, em: d.em.toMillis ? d.em.toMillis() : null } : d,
+        ])
+      ),
+      {}
+    );
     if (!linhas.length) return toast(tx('aud.nenhum'));
     baixarPlanilha(v, linhas);
     toast(tx('votzap.baixada'));

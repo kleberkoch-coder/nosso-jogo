@@ -3,7 +3,8 @@
    dominio/votacao.ts (auditoria), testada em testes/regras/votacao.test.mjs. Vem com a aba Votação. */
 import { useState } from 'preact/hooks';
 import { pname } from '../dominio/grupo.js';
-import { auditoria, type Categoria, type LinhaAuditoria, type Troca } from '../dominio/votacao';
+import type { Categoria } from '../dominio/votacao';
+import { auditoria, type LinhaAuditoria, type Troca } from '../dominio/votacao-contagem';
 import { FORMATO, FUSO } from '../i18n/formatos.js';
 import { tp, tx } from '../i18n/index.js';
 
@@ -44,7 +45,9 @@ function Linha({ l, cats }: { l: LinhaAuditoria; cats: Categoria[] }) {
     <li class="aud-linha" data-u={l.u}>
       <div class="row between aud-topo">
         <span class="pn">
-          <b>{pname(l.pid)}</b>
+          <b>{pname(l.pid)}</b>{' '}
+          {/* KAN-254: de onde veio o voto (votação rápida no aparelho do administrador ou link). */}
+          <span class={'tag aud-origem' + (l.roda ? ' alt' : '')}>{tx(l.roda ? 'aud.rapida' : 'aud.link')}</span>
           {l.repetido ? (
             <>
               {' '}
@@ -62,6 +65,7 @@ function Linha({ l, cats }: { l: LinhaAuditoria; cats: Categoria[] }) {
           l.v[c.id] ? <li key={c.id}>{tx('aud.escolha', { cat: nomeCat(c.id), nome: pname(l.v[c.id]!) })}</li> : null
         )}
         {Object.keys(l.v).some(k => l.v[k]) ? null : <li class="muted">{tx('aud.semEscolha')}</li>}
+        {l.roda && l.n > 1 ? <li class="muted">{tp('aud.vezes', l.n)}</li> : null}
       </ul>
       {l.trocas.length ? (
         <>
@@ -102,7 +106,10 @@ export function QuemVotou({
   const ts: Record<string, Troca> = {};
   for (const [k, x] of Object.entries(trocas || {}))
     if (x) ts[k] = { u: x.u, pid: x.pid, c: x.c, p: x.p, em: emMs(x.em) };
-  const linhas = auditoria(votos, ts);
+  /* KAN-254: o voto da votação rápida traz a hora do servidor (em). */
+  const vs: Record<string, any> = {};
+  for (const [k, d] of Object.entries(votos || {})) vs[k] = d && d.em != null ? { ...d, em: emMs(d.em) } : d;
+  const linhas = auditoria(vs, ts);
   return (
     <details
       class="panel aud-painel"

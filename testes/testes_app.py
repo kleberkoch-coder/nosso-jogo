@@ -3989,9 +3989,9 @@ with sync_playwright() as pw:
         p93.click('[data-a=tab][data-v=votacao]'); p93.wait_for_selector('[data-a=shareVote]', timeout=8000)
         p93.click('[data-a=shareVote]'); p93.wait_for_selector('#votZapRaiz #shtxt', timeout=5000)
         r93 = p93.input_value('#shtxt')
-        ok(f'🏅 *Melhor jogador*: {nm93(1)} (2) · {nm93(2)} (1)' in r93 and f'🏅 *Bagre*: {nm93(4)} (1)' in r93 and 'Quem votou em quem' not in r93
+        ok(f'🏅 *Melhor jogador*: {nm93(1)} (2 · 67%) · {nm93(2)} (1 · 33%)' in r93 and f'🏅 *Bagre*: {nm93(4)} (1 · 100%)' in r93 and 'Quem votou em quem' not in r93
            and not p93.is_checked('#votDetalhe') and p93.locator('#votAviso').count() == 0,
-           f'CT-KAN-231-01: o resultado no WhatsApp traz os mais votados com os votos, sem quem votou em quem ({r93[:160]!r})')
+           f'CT-KAN-231-01: o resultado no WhatsApp traz os mais votados com os votos e o percentual (KAN-257), sem quem votou em quem ({r93[:160]!r})')
         p93.check('#votDetalhe'); p93.wait_for_timeout(300)
         r93b = p93.input_value('#shtxt')
         ok(p93.locator('#votAviso').is_visible() and 'só para o grupo dos administradores' in p93.inner_text('#votAviso')
@@ -4564,7 +4564,7 @@ with sync_playwright() as pw:
         p102.click('#vrSair'); p102.wait_for_selector('#dlg .conf', timeout=4000)
         ok('Sair da votação rápida?' in p102.inner_text('#dlg .conf'), 'CT-KAN-254-10: sair da votação rápida pede confirmação')
         p102.click('#dlg .conf [data-a=confSim]'); p102.wait_for_timeout(500)
-        ok(p102.locator('#votRapida').count() == 0 and '2 votos' in p102.inner_text('#votRaiz'), f'CT-KAN-254-10: depois de sair, a aba Votação conta os 2 votos (um por pessoa)')
+        ok(p102.locator('#votRapida').count() == 0 and f'2 de {len(js102)} votaram' in p102.inner_text('#votRaiz'), f'CT-KAN-254-10: depois de sair, a aba Votação conta os 2 votos (um por pessoa)')
         p102.click('#quemVotou > summary'); p102.wait_for_timeout(300)
         q102 = p102.inner_text('#quemVotou')
         tg102 = p102.locator('#quemVotou .aud-origem').all_inner_texts()
@@ -4572,7 +4572,7 @@ with sync_playwright() as pw:
         # Pelo link, a votação continua igual
         p102.evaluate(PUT, {V102 + '/votos/devB': {'pid': js102[6], 'v': {'best': js102[1]}, 't': 2000}}); p102.reload(); p102.wait_for_timeout(1500)
         p102.click('[data-a=tab][data-v=votacao]'); p102.wait_for_selector('#vrAbrir', timeout=8000)
-        ok('3 votos' in p102.inner_text('#votRaiz'), 'CT-KAN-254-10: votos pelo link e na votação rápida contam juntos')
+        ok(f'3 de {len(js102)} votaram' in p102.inner_text('#votRaiz'), 'CT-KAN-254-10: votos pelo link e na votação rápida contam juntos')
         # Em inglês
         p102.evaluate("localStorage.setItem('nj-idioma','en')"); p102.reload(); p102.wait_for_timeout(2000)
         p102.click('[data-a=tab][data-v=votacao]'); p102.wait_for_selector('#vrAbrir', timeout=8000)

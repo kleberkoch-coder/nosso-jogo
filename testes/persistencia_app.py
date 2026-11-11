@@ -235,7 +235,8 @@ with sync_playwright() as pw:
     # KAN-66: depois do autor, a mesma janela pergunta a assistência (futebol tem); escolhe um colega
     as13 = None
     if pg.locator('#astOpcoes [data-a=addAssist][data-p]').count():
-        as13 = pg.eval_on_selector('#astOpcoes [data-a=addAssist][data-p]', 'b=>b.dataset.p')
+        # um colega do elenco (no emulador, o primeiro pode ser o avulso que entrou pelo link no P11)
+        as13 = pg.eval_on_selector_all('#astOpcoes [data-a=addAssist][data-p]', 'bs=>(bs.find(b=>S.jog[b.dataset.p])||bs[0]).dataset.p')
         pg.click(f'#astOpcoes [data-a=addAssist][data-p="{as13}"]'); pg.wait_for_timeout(300)
     pg.click('[data-a=saveMatch]')
     gravou(pg); pronto(pg, 'partida'); pg.wait_for_timeout(800)

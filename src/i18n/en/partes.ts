@@ -536,7 +536,7 @@ export default {
   'partida.semLimite': 'No limit',
   'partida.limiteAtingido': 'End by score: reached {n}',
   'partida.salvasTitulo': 'Matches on this game day',
-  'partida.salva': 'Saved: {a} {ga} × {gb} {b}',
+  'partida.salva': 'Match saved: {a} {ga} × {gb} {b}',
   'partida.apagar': 'Delete',
   'partida.nenhumaSalva': 'No matches saved yet.',
   'partida.semRodada': 'Create the game day in the Game day tab and draw the teams to start.',
@@ -776,4 +776,12 @@ export default {
   'zappart.campeao': 'Champion: {time}',
   'zappart.vice': 'Runner-up: {time}',
   'zappart.terceiro': '3rd place: {time}',
+  /* KAN-66 (pelada-v107): assistências */
+  'partida.assistDe': 'Assist by…',
+  'partida.assistDoGol': '{ponto} by {nome}. Who made the pass?',
+  'partida.semAssist': 'No assist',
+  'partida.assistencia': 'Assist',
+  'partida.assistDoGolRotulo': 'Assist: {ponto} by {nome}',
+  'rank.garcom': 'Playmaker',
+  'rank.garcomLinha': 'Playmaker: {nome} ({n})',
 };

@@ -114,6 +114,15 @@ def abrir_pais_conta(pg):
     pg.click('#topright [data-a=contaMenu]'); pg.wait_for_timeout(200)
     pg.click('.theme-menu [data-a=contaPais]'); pg.wait_for_timeout(400)
 
+# KAN-66 (pelada-v107): no futebol, depois do autor do gol a janela pergunta a assistência; os roteiros antigos seguem
+# "Sem assistência" (o gol já está contado).
+def sem_assist(pg):
+    try:
+        if pg.locator('#astOpcoes').count():
+            pg.click('#astOpcoes [data-a=addAssist]:not([data-p])'); pg.wait_for_timeout(200)
+    except Exception:
+        pass
+
 def confirmar_app(pg, sim=True):
     try:
         pg.wait_for_selector('#dlg .conf [data-a=confSim]', timeout=3000)
@@ -358,6 +367,7 @@ with sync_playwright() as pw:
         # ---------- Partida, ranking, caixa, votação
         pg.click('[data-a=tab][data-v=partida]'); pg.wait_for_timeout(400)
         pg.locator('[data-a=goal][data-v=a]').first.click(); pg.wait_for_timeout(200); pg.locator('[data-a=addGoal][data-p]').first.click(); pg.wait_for_timeout(300)
+        sem_assist(pg)
         pg.evaluate("S.live.dur=1"); pg.click('[data-a=clock]'); pg.wait_for_timeout(1600)
         ok(pg.locator('#clockMsg').is_visible(), 'aviso visual "Tempo esgotado" no cronômetro')
         shot('04-placar'); pg.click('[data-a=clock]')
@@ -713,7 +723,9 @@ with sync_playwright() as pw:
         iv = next((i for i, t in enumerate(ordem) if t.startswith('Você vai')), 99); it = next((i for i, t in enumerate(ordem) if t.startswith('Ver times')), -1)
         ok(it > iv and not pg.locator('main .teams').first.is_visible(), f'CT-KAN-127-04: com a lista aberta, "Você vai?" vem antes e os times ficam recolhidos em "Ver times" ({ordem[:4]})')
         txtp = pg.inner_text('main')
-        rep_ = [n for n in [re.split(r' ·|\n', x)[0].strip() for x in pg.locator('main .plist .pn').all_inner_texts()] if n and txtp.count(n) > 1 and not any(n != m and n in m for m in [re.split(r' ·|\n', y)[0].strip() for y in pg.locator('main .plist .pn').all_inner_texts()])]
+        # KAN-249 (v107): a linha da partida mostra quem marcou ("gols: Gui"); isso é o resultado, não a lista de nomes
+        txpp = pg.inner_text('#pubPartidas') if pg.locator('#pubPartidas').count() else ''
+        rep_ = [n for n in [re.split(r' ·|\n', x)[0].strip() for x in pg.locator('main .plist .pn').all_inner_texts()] if n and txtp.count(n) - txpp.count(n) > 1 and not any(n != m and n in m for m in [re.split(r' ·|\n', y)[0].strip() for y in pg.locator('main .plist .pn').all_inner_texts()])]
         ok(not rep_, f'CT-KAN-127-05: fora dos blocos recolhidos, cada nome aparece uma vez ({rep_[:3]})')
         ok('Partidas' in pg.inner_text('main') and ' × ' in pg.inner_text('main') and pg.locator('[data-a=delMatch]').count() == 0, 'CT-KAN-86-03: jogador vê o placar das partidas pelo link, sem botão de apagar')
         pg.locator('.mk.lg [data-v=out]').nth(11).click(); pg.wait_for_timeout(900)
@@ -807,6 +819,7 @@ with sync_playwright() as pw:
         sc = [x.strip() for x in pg.locator('[data-a=goal][data-v=a]').all_inner_texts()]
         ok(sc == ['+1', '+2', '+3'], f'placar do basquete com +1, +2 e +3 ({sc})')
         pg.locator('[data-a=goal][data-v=a]').nth(2).click(); pg.wait_for_timeout(200); pg.locator('[data-a=addGoal][data-p]').first.click(); pg.wait_for_timeout(300)
+        sem_assist(pg)
         ok(pg.locator('.board .sc').first.inner_text().strip() == '3', 'cesta de 3 soma 3 pontos'); shot('11-basquete-placar')
         # ---------- v41 (KAN-75): textos do basquete vêm do catálogo, sem nada de futebol
         pg.locator('[data-a=goal][data-v=a]').nth(1).click(); pg.wait_for_timeout(200)
@@ -1660,6 +1673,7 @@ with sync_playwright() as pw:
         p8.click('[data-a=goal][data-v=a]'); p8.wait_for_timeout(300)
         ok(p8.locator(f'#dlg [data-a=addGoal][data-p="{emprestado}"]').count() == 1, 'CT-KAN-177-01: o emprestado aparece na janela do gol')
         p8.click(f'#dlg [data-a=addGoal][data-p="{emprestado}"]'); p8.wait_for_timeout(300)
+        sem_assist(p8)
         p8.click('[data-a=abrirEscalacao][data-v=a]'); p8.wait_for_timeout(400)
         sai = p8.eval_on_selector('#dlg #escLugar', 'e=>e.options[1].value')
         entra = p8.eval_on_selector('#dlg #escQuem', 'e=>e.options[e.options.length-1].value')
@@ -3933,7 +3947,9 @@ with sync_playwright() as pw:
         ok(p93.locator('[data-a=corrigirGols]').is_disabled(), 'CT-KAN-229-01: sem gol, "Corrigir" fica desligado')
         def gol93(lado, n):
             p93.locator(f'[data-a=goal][data-v={lado}]').first.click(); p93.wait_for_selector('[data-a=addGoal][data-p]', timeout=5000)
+            sem_assist(p93)
             p93.locator('[data-a=addGoal][data-p]').nth(n).click(); p93.wait_for_timeout(300)
+            sem_assist(p93)
         gol93('a', 0); gol93('b', 0); gol93('a', 1)
         g0 = p93.evaluate("S.live.goals.map(g=>[g.t,g.pid])")
         ok([x[0] for x in g0] == ['a', 'b', 'a'], f'CT-KAN-229-01: três gols marcados ({g0})')
@@ -4223,7 +4239,9 @@ with sync_playwright() as pw:
         def gols96(lado, n):
             for _ in range(n):
                 p96.locator(f'[data-a=goal][data-v={lado}]').first.click(); p96.wait_for_selector('[data-a=addGoal][data-p]', timeout=5000)
+                sem_assist(p96)
                 p96.locator('[data-a=addGoal][data-p]').first.click(); p96.wait_for_timeout(250)
+                sem_assist(p96)
         placares96 = [(2, 0), (1, 0), (0, 0), (3, 0), (1, 1), (4, 1)]
         esperado96 = [[0, 1], [2, 3], [0, 2], [1, 3], [0, 3], [1, 2]]
         seguiu96 = []
@@ -4677,7 +4695,9 @@ with sync_playwright() as pw:
         p103.click('[data-a=tab][data-v=partida]'); p103.wait_for_selector('[data-a=goal]', timeout=10000); p103.wait_for_timeout(400)
         def gol103(lado, n):
             p103.locator(f'[data-a=goal][data-v={lado}]').first.click(); p103.wait_for_selector('[data-a=addGoal][data-p]', timeout=5000)
+            sem_assist(p103)
             p103.locator('[data-a=addGoal][data-p]').nth(n).click(); p103.wait_for_timeout(300)
+            sem_assist(p103)
         gol103('a', 0); gol103('b', 0); gol103('a', 1)
         p103.click('#clockBtn'); p103.wait_for_timeout(1500)
         g103a = p103.evaluate("[S.live.a,S.live.b,S.live.goals.map(g=>[g.t,g.pid])]")
@@ -4977,6 +4997,204 @@ with sync_playwright() as pw:
         h3 = abrir_app6()
         ok(not h3.startswith('#/p/') and p6.locator('#le').count() == 1, f'CT-KAN-171-03: aparelho de organizador, só com o login anônimo do link: abrir o app mostra o login ({h3!r})')
         ctx6.close()
+
+    if parte('b'):
+        # ---------- v107 (KAN-124, KAN-66, KAN-249): agenda no link; assistências e Garçom; linha da partida
+        ctx107 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', accept_downloads=True, timezone_id='America/Sao_Paulo')
+        p107 = ctx107.new_page(); p107.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p107, 'criar')
+        p107.fill('#le', 'v107@teste.com'); p107.fill('#lp', 'Jogo@2026'); p107.fill('#lp2', 'Jogo@2026'); p107.keyboard.press('Enter'); p107.wait_for_selector('#ngBox', timeout=12000)
+        p107.fill('#ngn', 'Agenda FC'); p107.click('[data-a=pickSport][data-v=futebol]'); p107.click('[data-a=createGroup]')
+        p107.wait_for_function("location.hash.startsWith('#/g/')"); p107.wait_for_timeout(1500)
+        g107 = p107.url.split('#/g/')[1]
+        p107.click('[data-a=tab][data-v=jogadores]'); p107.wait_for_timeout(300); p107.click('[data-a=seed]'); p107.wait_for_timeout(1500)
+        js107 = p107.evaluate("Object.keys(S.jog).filter(id=>S.jog[id].ativo!==false).sort()")
+        baixados = []
+        p107.on('download', lambda d: baixados.append(d))
+        def ics107(seletor):
+            with p107.expect_download(timeout=8000) as dl:
+                p107.click(seletor)
+            d = dl.value
+            return d.suggested_filename, open(d.path(), encoding='utf-8', newline='').read()
+        # KAN-124: o botão de agenda só aparece para quem confirmou, logo abaixo da própria linha
+        p107.goto(URL + '#/p/' + g107); p107.wait_for_selector('.hero-r h2', timeout=8000); p107.wait_for_timeout(800)
+        ok(p107.locator('#agendaLinha').count() == 0, 'CT-KAN-124-04: sem resposta, o botão de agenda não aparece')
+        p107.click(f'[data-a=pubMark][data-v=in][data-p="{js107[0]}"]'); p107.wait_for_timeout(1200)
+        AG = """(()=>{const li=document.getElementById('agendaLinha');if(!li)return null;const b=li.querySelector('[data-a=pubAgenda]'),r=b.getBoundingClientRect();
+          return {antes:li.previousElementSibling&&li.previousElementSibling.classList.contains('me-row'),h:Math.round(r.height),rotulo:b.getAttribute('aria-label'),
+          emoji:b.querySelector('[aria-hidden=true]')?.textContent,texto:b.textContent,ajuda:li.innerText,larg:document.documentElement.scrollWidth}})()"""
+        for tema in ['light', 'dark']:
+            p107.emulate_media(color_scheme=tema); p107.wait_for_timeout(150)
+            a124 = p107.evaluate(AG)
+            ok(a124 and a124['antes'] and a124['h'] >= 44 and a124['larg'] <= 360,
+               f'CT-KAN-124-12: em 360px ({tema}), "Pôr na minha agenda" aparece logo abaixo da linha de quem confirmou, com 44px, sem rolagem lateral ({a124})')
+            contraste(p107, f'botão de agenda no link ({tema})')
+        p107.emulate_media(color_scheme='light')
+        ok(a124 and a124['rotulo'] == 'Pôr o jogo na minha agenda' and a124['emoji'] == '📅' and 'não muda sozinha' in a124['ajuda'],
+           f'CT-KAN-124-13: o leitor de tela ouve "Pôr o jogo na minha agenda", sem o emoji; a ajuda avisa que a agenda não muda sozinha ({a124 and a124["rotulo"]!r})')
+        p107.evaluate('scrollTo(0,0)'); p107.screenshot(path=f'{OUT}/107-agenda-360.png', full_page=True)
+        # grupo com dia fixo: "Só esta rodada" ou "Toda semana"
+        p107.click('[data-a=pubAgenda]'); p107.wait_for_selector('#agOpcoes', timeout=8000); p107.wait_for_timeout(200)
+        op124 = p107.evaluate("[...document.querySelectorAll('#agOpcoes button')].map(b=>b.textContent)")
+        foco124 = p107.evaluate("document.activeElement&&document.activeElement.dataset.v")
+        ok(len(op124) == 2 and op124[0].startswith('Só esta rodada (') and re.match(r'Toda semana \(\w+s?, \d', op124[1]) and foco124 == 'uma',
+           f'CT-KAN-124-02: a janela oferece "Só esta rodada" e "Toda semana", com o foco na primeira ({op124}, {foco124})')
+        p107.keyboard.press('Escape'); p107.wait_for_timeout(400)
+        ok(not p107.evaluate("document.getElementById('dlg').open") and not baixados, 'CT-KAN-124-03: Esc fecha a janela sem gerar nada')
+        p107.click('[data-a=pubAgenda]'); p107.wait_for_selector('#agOpcoes', timeout=8000)
+        p107.click('#dlg [data-a=close]'); p107.wait_for_timeout(300)
+        ok(not baixados, 'CT-KAN-124-03: Cancelar também não gera nada')
+        p107.click('[data-a=pubAgenda]'); p107.wait_for_selector('#agOpcoes', timeout=8000)
+        n124, t124 = ics107('#agOpcoes [data-v=semana]')
+        L124 = t124.replace('\r\n ', '').split('\r\n')
+        ok(n124.endswith('-semanal.ics') and any(l.startswith('RRULE:FREQ=WEEKLY;BYDAY=') for l in L124) and ('URL:' + URL.split('#')[0] + '#/p/' + g107) in L124,
+           f'CT-KAN-124-02: "Toda semana" gera o evento repetido, com o link permanente do grupo ({n124}, {[l for l in L124 if l.startswith(("RRULE","URL"))]})')
+        p107.click('[data-a=pubAgenda]'); p107.wait_for_selector('#agOpcoes', timeout=8000)
+        n124b, t124b = ics107('#agOpcoes [data-v=uma]')
+        L124b = t124b.replace('\r\n ', '').split('\r\n')
+        ok('SUMMARY:Futebol — Agenda FC' in L124b and 'TRIGGER:-PT3H' in L124b and any(l.startswith('DTSTART;TZID=America/Sao_Paulo:') for l in L124b)
+           and any(l.startswith('DTEND;TZID=') for l in L124b) and any('/r/' in l for l in L124b if l.startswith('URL:')) and not any(l.startswith('RRULE') for l in L124b)
+           and any(l.startswith('DESCRIPTION:Mudou de ideia? Responda aqui: ') for l in L124b),
+           f'CT-KAN-124-01: "Só esta rodada" gera o evento com título, início, término, alarme de 3 horas e o link da rodada ({[l for l in L124b if l[:4] in ("SUMM","DTST","URL:","TRIG")]})')
+        ok(p107.inner_text('#toast').startswith('Pronto: abra o arquivo'), 'CT-KAN-124-01: depois de gerar, o aviso diz para abrir o arquivo')
+        ok(not re.search(r'nota|mensalista|diarista|pix|R\$', t124b, re.I) and t124b.count('@') == 1, 'CT-KAN-124-08: o arquivo não leva nota, tipo, valores nem contatos')
+        # Não vou: o botão some na hora
+        p107.click(f'[data-a=pubMark][data-v=out][data-p="{js107[0]}"]'); p107.wait_for_timeout(1000)
+        ok(p107.locator('#agendaLinha').count() == 0, 'CT-KAN-124-04: quem marca "Não vou" depois de confirmar perde o botão na hora')
+        p107.click(f'[data-a=pubMark][data-v=in][data-p="{js107[0]}"]'); p107.wait_for_timeout(1000)
+        p107.reload(); p107.wait_for_selector('.hero-r h2', timeout=8000); p107.wait_for_timeout(1000)
+        ok(p107.locator('#agendaLinha').count() == 1 and p107.evaluate(LER, f'grupos/{g107}/rodadas/' + p107.evaluate("S.route.id") + f'/presencas/{js107[0]}')['s'] == 'in',
+           'CT-KAN-124-14: depois de recarregar, o botão continua e a presença não mudou')
+        # Em inglês, a agenda (o link segue o idioma escolhido no aparelho)
+        p107.evaluate("localStorage.setItem('nj-idioma','en')"); p107.reload(); p107.wait_for_selector('#agendaLinha', timeout=8000); p107.wait_for_timeout(500)
+        en124 = [p107.inner_text('[data-a=pubAgenda]'), p107.get_attribute('[data-a=pubAgenda]', 'aria-label')]
+        p107.click('[data-a=pubAgenda]'); p107.wait_for_selector('#agOpcoes', timeout=8000); en124.append(p107.inner_text('#agOpcoes'))
+        p107.keyboard.press('Escape'); p107.wait_for_timeout(200)
+        falta124 = p107.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(agenda|publico|partida)\\./.test(k))")
+        ok('Add to my calendar' in en124[0] and en124[1] == 'Add the game to my calendar' and 'Just this game (' in en124[2] and 'Every week (Mondays' in en124[2] and not falta124,
+           f'CT-KAN-124-10: em English, o botão, o rótulo e a janela da agenda vêm traduzidos ({en124}, {falta124})')
+        p107.evaluate("localStorage.setItem('nj-idioma','pt-BR')"); p107.reload(); p107.wait_for_timeout(800)
+        # KAN-66: assistência na Partida
+        p107.goto(URL + '#/g/' + g107); p107.wait_for_timeout(1500)
+        p107.click('[data-a=tab][data-v=rodada]'); p107.wait_for_timeout(500)
+        for x in js107[1:10]:
+            p107.click(f'#presLista [data-a=mark][data-v=in][data-p="{x}"]'); p107.wait_for_timeout(200)
+        sortear(p107)
+        ok(p107.locator('[data-a=pubAgenda]').count() == 0, 'CT-KAN-124-17: a gestão não tem o botão de agenda')
+        p107.click('[data-a=tab][data-v=partida]'); p107.wait_for_selector('[data-a=goal][data-v=a]', timeout=8000)
+        p107.locator('[data-a=goal][data-v=a]').first.click(); p107.wait_for_selector('[data-a=addGoal][data-p]', timeout=5000)
+        autor66 = p107.eval_on_selector('#dlg [data-a=addGoal][data-p]:not([data-og])', 'b=>b.dataset.p')
+        p107.click(f'#dlg [data-a=addGoal][data-p="{autor66}"]:not([data-og])'); p107.wait_for_selector('#astOpcoes', timeout=5000); p107.wait_for_timeout(200)
+        A66 = p107.evaluate("""(()=>{const bs=[...document.querySelectorAll('#astOpcoes button')];return {primeiro:!bs[0].dataset.p&&bs[0].textContent,foco:document.activeElement===bs[0],
+          ps:bs.slice(1).map(b=>b.dataset.p),alt:Math.min(...bs.map(b=>b.getBoundingClientRect().height)),titulo:document.getElementById('astTitulo').textContent,
+          live:document.getElementById('astTitulo').getAttribute('aria-live'),placar:document.querySelector('.sc').textContent}})()""")
+        meus66 = p107.evaluate("S.rod[S.rid].times[S.live.a].players")
+        ok(A66['primeiro'] == 'Sem assistência' and A66['foco'] and A66['ps'] and autor66 not in A66['ps'] and all(x in meus66 for x in A66['ps']) and A66['alt'] >= 44,
+           f'CT-KAN-66-01: depois do autor, "Assistência de…" com "Sem assistência" focado primeiro e só os colegas do time, com 44px ({A66})')
+        ok(A66['titulo'] == 'Assistência de…' and A66['live'] == 'polite' and A66['placar'] == '1', 'CT-KAN-66-17: o título é anunciado e o gol já está no placar')
+        as66 = A66['ps'][0]
+        p107.click(f'#astOpcoes [data-p="{as66}"]'); p107.wait_for_timeout(400)
+        nome = lambda i: p107.evaluate("id=>S.jog[id].name", i)
+        g66 = p107.inner_text('.goals')
+        ok(not p107.evaluate("document.getElementById('dlg').open") and f'{nome(autor66)} ({nome(as66)})' in g66 and p107.inner_text('.sc') == '1',
+           f'CT-KAN-66-02: tocar num colega fecha a janela e o gol aparece como "Autor (Colega)", somando 1 ({g66!r})')
+        # Esc e "Sem assistência": o gol fica contado, sem assistência
+        p107.locator('[data-a=goal][data-v=a]').first.click(); p107.wait_for_selector('[data-a=addGoal][data-p]', timeout=5000)
+        p107.click(f'#dlg [data-a=addGoal][data-p="{autor66}"]:not([data-og])'); p107.wait_for_selector('#astOpcoes', timeout=5000)
+        p107.keyboard.press('Escape'); p107.wait_for_timeout(400)
+        p107.locator('[data-a=goal][data-v=a]').first.click(); p107.wait_for_selector('[data-a=addGoal][data-p]', timeout=5000)
+        p107.click(f'#dlg [data-a=addGoal][data-p="{autor66}"]:not([data-og])'); p107.wait_for_selector('#astOpcoes', timeout=5000)
+        p107.dblclick('#astOpcoes [data-a=addAssist]:not([data-p])'); p107.wait_for_timeout(400)
+        gs66 = p107.evaluate("S.live.goals.map(g=>[g.pid,g.as||null])")
+        ok(p107.inner_text('.sc') == '3' and gs66[1:] == [[autor66, None], [autor66, None]], f'CT-KAN-66-03: Esc e "Sem assistência" (dois toques) contam o gol uma vez, sem assistência ({gs66})')
+        # gol contra: fecha direto
+        p107.locator('[data-a=goal][data-v=a]').first.click(); p107.wait_for_selector('[data-a=addGoal][data-og]', timeout=5000)
+        p107.locator('#dlg [data-a=addGoal][data-og]').first.click(); p107.wait_for_timeout(400)
+        ok(not p107.evaluate("document.getElementById('dlg').open") and p107.locator('#astOpcoes').count() == 0, 'CT-KAN-66-04: gol contra fecha a janela direto, sem o passo da assistência')
+        p107.click('[data-a=saveMatch]'); p107.wait_for_timeout(800)
+        t249 = p107.inner_text('#toast')
+        ok(t249.startswith('Partida salva: Time') and 'Time 1' in t249 and 'Time 2' in t249, f'CT-KAN-249-04: o aviso diz "Partida salva: Time 1 4 × 0 Time 2" sem quebrar o nome do time ({t249!r})')
+        # KAN-249: linha da partida em 360px
+        LP = """(()=>{const li=document.querySelector('#partidasSalvas li.linha-partida');if(!li)return null;const c=li.querySelector('.confronto'),
+          linhas=new Set([...c.children].map(x=>{const r=x.getBoundingClientRect();return Math.round((r.top+r.bottom)/20)})).size;
+          return {linhas,nw:[...c.querySelectorAll('.nw')].map(x=>x.getClientRects().length),placar:c.querySelector('.placar-p').textContent,
+          apoio:li.querySelector('.lp-apoio').textContent,larg:document.documentElement.scrollWidth}})()"""
+        for tema in ['light', 'dark']:
+            p107.emulate_media(color_scheme=tema); p107.wait_for_timeout(150)
+            l249 = p107.evaluate(LP)
+            ok(l249 and l249['linhas'] == 1 and l249['nw'] == [1, 1] and l249['placar'] == '4 × 0' and l249['larg'] <= 360,
+               f'CT-KAN-249-01: em 360px ({tema}), o confronto cabe numa linha, com o placar em pílula e os nomes inteiros ({l249})')
+            contraste(p107, f'linha da partida ({tema})')
+        p107.emulate_media(color_scheme='light')
+        ok(l249 and l249['apoio'].startswith('Jogo 1 · gols: ') and f'{nome(autor66)} ({nome(as66)})' in l249['apoio'],
+           f'CT-KAN-249-02: embaixo, "Jogo 1 · gols: Autor (Colega), …" ({l249 and l249["apoio"]!r})')
+        p107.screenshot(path=f'{OUT}/107-partida-360.png', full_page=True)
+        # Ranking: coluna e Garçom
+        p107.click('[data-a=tab][data-v=ranking]'); p107.wait_for_timeout(1500);  p107.wait_for_selector('#rankRaiz table', timeout=8000); p107.wait_for_timeout(500)
+        r66 = p107.evaluate("""(()=>{const ab=document.querySelector('#rankRaiz th abbr');return {ab:ab&&[ab.textContent,ab.getAttribute('aria-label')],
+          garcom:(document.getElementById('rankGarcom')||{}).textContent||'',larg:document.documentElement.scrollWidth}})()""")
+        ok(r66['ab'] == ['Assist.', 'Assistências'] and f'Garçom: {nome(as66)} (1)' in r66['garcom'] and r66['larg'] <= 360,
+           f'CT-KAN-66-08: o ranking ganha a coluna "Assist." (o leitor diz "Assistências") e o Garçom, sem rolagem lateral da página ({r66})')
+        for tema in ['light', 'dark']:
+            p107.emulate_media(color_scheme=tema); p107.wait_for_timeout(150); contraste(p107, f'ranking com assistências ({tema})')
+        p107.emulate_media(color_scheme='light')
+        # Editar partida: trocar a assistência; o autor não pode ser a própria assistência
+        p107.click('[data-a=tab][data-v=partida]'); p107.wait_for_selector('[data-a=editarPartida]', timeout=8000)
+        p107.click('[data-a=editarPartida]'); p107.wait_for_selector('#dlg .ed-assist', timeout=5000)
+        n_ed = p107.locator('#dlg .ed-assist').count()
+        outro66 = [x for x in A66['ps'] if x != as66][0]
+        p107.locator('#dlg .ed-assist').first.select_option(outro66); p107.wait_for_timeout(150)
+        p107.locator('#dlg .ed-autor').nth(1).select_option('p:' + autor66)
+        p107.locator('#dlg .ed-assist').nth(1).select_option(outro66); p107.wait_for_timeout(100)
+        p107.locator('#dlg .ed-autor').nth(1).select_option('p:' + outro66); p107.wait_for_timeout(150)
+        v66 = p107.evaluate("[...document.querySelectorAll('#dlg .ed-assist')].map(s=>s.value)")
+        ok(n_ed == 3 and v66[0] == outro66 and v66[1] == '', f'CT-KAN-66-10: no Editar, cada gol tem a assistência; quando o autor vira a própria assistência, ela é limpa ({n_ed}, {v66})')
+        p107.click('#dlg [data-a=salvarEdicao]'); p107.wait_for_timeout(900)
+        p107.click('[data-a=tab][data-v=ranking]'); p107.wait_for_timeout(800)
+        gc66 = p107.inner_text('#rankGarcom') if p107.locator('#rankGarcom').count() else ''
+        ok(f'Garçom: {nome(outro66)} (1)' in gc66 and nome(as66) not in gc66, f'CT-KAN-66-09: trocar a assistência no Editar muda o ranking na hora ({gc66!r})')
+        p107.reload(); p107.wait_for_timeout(1500); p107.click('[data-a=tab][data-v=ranking]'); p107.wait_for_timeout(1200)
+        gc66b = p107.inner_text('#rankGarcom') if p107.locator('#rankGarcom').count() else ''
+        ok(gc66b == gc66, f'CT-KAN-66-09: e continua igual depois de recarregar ({gc66b!r})')
+        # Link: as partidas no mesmo formato, com a assistência
+        p107.goto(URL + '#/p/' + g107); p107.wait_for_selector('#pubPartidas', timeout=8000); p107.wait_for_timeout(300)
+        p107.screenshot(path=f'{OUT}/107-link-partidas-360.png', full_page=True)
+        lk249 = p107.evaluate("(()=>{const li=document.querySelector('#pubPartidas li');const c=li.querySelector('.confronto');return {linhas:new Set([...c.children].map(x=>{const r=x.getBoundingClientRect();return Math.round((r.top+r.bottom)/20)})).size,apoio:li.querySelector('.lp-apoio').textContent,larg:document.documentElement.scrollWidth}})()")
+        ok(lk249['linhas'] == 1 and lk249['apoio'].startswith('Jogo 1 · gols: ') and f'({nome(outro66)})' in lk249['apoio'] and lk249['larg'] <= 360,
+           f'CT-KAN-249-05: no link do jogador, a mesma linha da partida, com a assistência, sem rolagem lateral ({lk249})')
+        # Esportes: vôlei sem assistência; basquete com assistência em cada cesta
+        p107.goto(URL + '#/g/' + g107); p107.wait_for_timeout(1500)
+        p107.evaluate("S.app.sport='volei'"); p107.click('[data-a=tab][data-v=partida]'); p107.wait_for_timeout(500)
+        p107.locator('[data-a=goal][data-v=a]').first.click(); p107.wait_for_selector('[data-a=addGoal][data-p]', timeout=5000)
+        p107.locator('#dlg [data-a=addGoal][data-p]').first.click(); p107.wait_for_timeout(400)
+        sem_volei = p107.locator('#astOpcoes').count() == 0 and not p107.evaluate("document.getElementById('dlg').open")
+        p107.click('[data-a=undoGoal]'); p107.wait_for_timeout(200)
+        p107.click('[data-a=tab][data-v=ranking]'); p107.wait_for_timeout(600)
+        ok(sem_volei and p107.locator('#rankRaiz th abbr').count() == 0 and p107.locator('#rankGarcom').count() == 0,
+           'CT-KAN-66-06: no vôlei, nada de assistência: nem o passo, nem a coluna, nem o Garçom')
+        p107.evaluate("S.app.sport='basquete'"); p107.click('[data-a=tab][data-v=partida]'); p107.wait_for_timeout(500)
+        p107.locator('[data-a=goal][data-v=a]').nth(1).click(); p107.wait_for_selector('[data-a=addGoal][data-p]', timeout=5000)
+        p107.locator('#dlg [data-a=addGoal][data-p]:not([data-og])').first.click(); p107.wait_for_timeout(300)
+        tem_bq = p107.locator('#astOpcoes').count() == 1
+        if tem_bq: p107.locator('#astOpcoes [data-p]').first.click(); p107.wait_for_timeout(300)
+        bq = p107.evaluate("S.live.goals.slice(-1).map(g=>[g.pts,!!g.as])")
+        ok(tem_bq and bq == [[2, True]], f'CT-KAN-66-07: no basquete, a cesta de +2 também aceita assistência ({bq})')
+        p107.click('[data-a=undoGoal]'); p107.evaluate("S.app.sport='futebol'")
+        # Em inglês
+        p107.evaluate("localStorage.setItem('nj-idioma','en')"); p107.reload(); p107.wait_for_timeout(1800)
+        p107.click('[data-a=tab][data-v=partida]'); p107.wait_for_selector('[data-a=goal][data-v=a]', timeout=8000)
+        p107.locator('[data-a=goal][data-v=a]').first.click(); p107.wait_for_selector('[data-a=addGoal][data-p]', timeout=5000)
+        p107.click(f'#dlg [data-a=addGoal][data-p="{autor66}"]:not([data-og])'); p107.wait_for_selector('#astOpcoes', timeout=5000)
+        en66 = [p107.inner_text('#astTitulo'), p107.inner_text('#astOpcoes button')]
+        p107.keyboard.press('Escape'); p107.wait_for_timeout(300); p107.click('[data-a=undoGoal]')
+        p107.click('[data-a=tab][data-v=ranking]'); p107.wait_for_timeout(800)
+        en66.append(p107.inner_text('#rankRaiz th abbr') if p107.locator('#rankRaiz th abbr').count() else '')
+        falta107 = p107.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(partida|rank|agenda|cat)\\./.test(k))")
+        ok(en66 == ['Assist by…', 'No assist', 'Ast.'] and not falta107, f'CT-KAN-66-18: em English, a assistência e a coluna vêm traduzidas ({en66}, {falta107})')
+        # Com os times sorteados, a lista fecha: o link não oferece a agenda
+        p107.goto(URL + '#/p/' + g107); p107.wait_for_selector('.hero-r h2', timeout=8000); p107.wait_for_timeout(800)
+        ok(p107.locator('#agendaLinha').count() == 0, 'CT-KAN-124-05: com a lista fechada, o botão de agenda não aparece')
+        ctx107.close()
 
     if parte('b'):
         # ---------- v35 (KAN-142): "Continuar com o Google" na aba errada entra ou cria a conta e avisa (navegador separado)

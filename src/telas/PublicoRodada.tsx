@@ -24,7 +24,7 @@ import { S as estado } from '../nucleo/estado.js';
 import { $, fdate, main } from '../nucleo/util.js';
 import { myLocal } from './publico-rodada.js';
 import { partidasDe } from '../nucleo/partidas-lista.js';
-import { ComoChegar, NomeNaLista, Pos, PorPosicao, TextoCortado } from '../ui/componentes';
+import { ComoChegar, LinhaPartida, NomeNaLista, Pos, PorPosicao, TextoCortado } from '../ui/componentes';
 import { avulsosEsgotados } from '../dominio/limites';
 import { DEMORA_MS } from '../nucleo/carga';
 import { precisaVaga, situacao } from '../dominio/vagas';
@@ -132,55 +132,82 @@ function Aviso({ titulo, texto, extra }: { titulo: string; texto: string; extra?
 function Linha({ id, r, me }: { id: string; r: Rodada; me: string | null }) {
   const S = st();
   const s = (S.pres[id] as Presenca | undefined)?.s;
+  /* KAN-124: quem confirmou ganha, logo abaixo da própria linha, o botão de pôr o jogo na agenda. */
+  const agenda =
+    id === me && s === 'in' && !r.locked && !r.cancelada ? (
+      <li class="agenda-linha" id="agendaLinha">
+        <button class="btn sm agenda-btn" data-a="pubAgenda" aria-label={tx('agenda.rotulo')}>
+          <span aria-hidden="true">📅</span> {tx('agenda.botao')}
+        </button>
+        <p class="small muted">{tx('agenda.ajuda')}</p>
+      </li>
+    ) : null;
   return (
-    <li class={id === me ? 'me-row' : ''}>
-      <Pos id={id} />
-      <NomeNaLista nome={pname(id)} voce={id === me} avulso={isAvulso(id)} />
-      {r.locked ? (
-        <span class="tag" style={{ color: s === 'in' ? 'var(--in)' : s === 'out' ? 'var(--out)' : '' }}>
-          {s === 'in' ? tx('publico.vai') : s === 'out' ? tx('publico.naoVai') : '—'}
-        </span>
-      ) : (
-        <span class="mk lg">
-          <button class={s === 'in' ? 'on-in' : ''} data-a="pubMark" data-p={id} data-v="in" aria-pressed={s === 'in'}>
-            {s === 'in' ? '✓ ' : ''}
-            {tx('publico.vou')}
-          </button>
-          <button
-            class={s === 'out' ? 'on-out' : ''}
-            data-a="pubMark"
-            data-p={id}
-            data-v="out"
-            aria-pressed={s === 'out'}
-          >
-            {s === 'out' ? '✕ ' : ''}
-            {tx('publico.naoVou')}
-          </button>
-        </span>
-      )}
-    </li>
+    <>
+      <li class={id === me ? 'me-row' : ''}>
+        <Pos id={id} />
+        <NomeNaLista nome={pname(id)} voce={id === me} avulso={isAvulso(id)} />
+        {r.locked ? (
+          <span class="tag" style={{ color: s === 'in' ? 'var(--in)' : s === 'out' ? 'var(--out)' : '' }}>
+            {s === 'in' ? tx('publico.vai') : s === 'out' ? tx('publico.naoVai') : '—'}
+          </span>
+        ) : (
+          <span class="mk lg">
+            <button
+              class={s === 'in' ? 'on-in' : ''}
+              data-a="pubMark"
+              data-p={id}
+              data-v="in"
+              aria-pressed={s === 'in'}
+            >
+              {s === 'in' ? '✓ ' : ''}
+              {tx('publico.vou')}
+            </button>
+            <button
+              class={s === 'out' ? 'on-out' : ''}
+              data-a="pubMark"
+              data-p={id}
+              data-v="out"
+              aria-pressed={s === 'out'}
+            >
+              {s === 'out' ? '✕ ' : ''}
+              {tx('publico.naoVou')}
+            </button>
+          </span>
+        )}
+      </li>
+      {agenda}
+    </>
   );
 }
 
-/* Placar das partidas já salvas (pelada-v18): só leitura para o jogador. */
+/* Placar das partidas já salvas (pelada-v18): só leitura para o jogador, na Linha da partida (KAN-249). */
 function Placar({ r }: { r: Rodada }) {
-  const ms = partidasDe(r.id) as { id: string; ca: number | string; cb: number | string; ga: number; gb: number }[];
+  const ms = partidasDe(r.id) as {
+    id: string;
+    ca: number | string;
+    cb: number | string;
+    ga: number;
+    gb: number;
+    goals?: { pid?: string | null; og?: boolean; pts?: number; as?: string | null }[];
+  }[];
   if (!ms.length) return null;
   return (
     <div class="panel">
       <h3>{tx('publico.partidas')}</h3>
-      <ul class="plist wrap">
+      <ul class="plist" id="pubPartidas">
         {ms.map((m, i) => (
-          <li key={m.id}>
-            <span class="num">{i + 1}</span>
-            <span class="pn">
-              <span class="dot" style={{ background: col(m.ca).c }}></span> {tnJogo(m, 'a', r.times)}{' '}
-              <b>
-                {m.ga} × {m.gb}
-              </b>{' '}
-              {tnJogo(m, 'b', r.times)} <span class="dot" style={{ background: col(m.cb).c }}></span>
-            </span>
-          </li>
+          <LinhaPartida
+            key={m.id}
+            n={i + 1}
+            ca={m.ca}
+            cb={m.cb}
+            na={tnJogo(m, 'a', r.times)}
+            nb={tnJogo(m, 'b', r.times)}
+            ga={m.ga}
+            gb={m.gb}
+            goals={m.goals}
+          />
         ))}
       </ul>
     </div>

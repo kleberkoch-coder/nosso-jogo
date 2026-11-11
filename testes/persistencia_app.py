@@ -232,9 +232,22 @@ with sync_playwright() as pw:
     pronto(pg, 'partida')
     pg.locator('[data-a=goal][data-v=a]').first.click(); pg.wait_for_timeout(200)
     if pg.locator('[data-a=addGoal][data-p]').count(): pg.locator('[data-a=addGoal][data-p]').first.click(); pg.wait_for_timeout(300)
+    # KAN-66: depois do autor, a mesma janela pergunta a assistência (futebol tem); escolhe um colega
+    as13 = None
+    if pg.locator('#astOpcoes [data-a=addAssist][data-p]').count():
+        as13 = pg.eval_on_selector('#astOpcoes [data-a=addAssist][data-p]', 'b=>b.dataset.p')
+        pg.click(f'#astOpcoes [data-a=addAssist][data-p="{as13}"]'); pg.wait_for_timeout(300)
     pg.click('[data-a=saveMatch]')
     gravou(pg); pronto(pg, 'partida'); pg.wait_for_timeout(800)
     ok(pg.locator('[data-a=delMatch]').count() == 1, 'CT-KAN-170-P13: partida salva continua depois de recarregar')
+    # P13d assistência do gol (rodadas/{rid}/partidas: goals[].as; resumos do mês: jog.{pid}.as) (KAN-66)
+    pa13 = J(pg, "(()=>{const m=Object.values(S.parts||{}).find(x=>x.goals);return m?m.goals.map(g=>g.as||null):null})()")
+    pronto(pg, 'ranking'); pg.wait_for_timeout(1200)
+    ra13 = J(pg, "(id)=>Object.values(S.res||{}).reduce((n,d)=>n+(((d.jog||{})[id]||{}).as||0),0)", as13)
+    nm13 = J(pg, "(id)=>(S.jog[id]||{}).name", as13) if as13 else None
+    ok(as13 and pa13 == [as13] and ra13 == 1 and nm13 and nm13 in pg.inner_text('#rankGarcom'),
+       f'CT-KAN-66-08: a assistência continua na partida e no ranking depois de recarregar ({nm13}, {pa13}, {ra13})')
+    pronto(pg, 'partida'); pg.wait_for_timeout(800)
 
     # P13b partida editada depois de salva (rodadas/{rid}/partidas com versão, resumos do mês) (KAN-176)
     ga13 = J(pg, "Object.values(S.parts||{})[0].ga")
@@ -356,6 +369,10 @@ with sync_playwright() as pw:
     p2.goto(URL + '#/g/' + gid); pronto(p2); p2.wait_for_timeout(1500)
     tudo = J(p2, """(()=>({nome:S.app.name,pos:(S.app.posx||[]).some(p=>p[1]==='Volante'),moeda:S.app.cfg.moeda,
       jog:Object.values(S.jog).length,sep:((S.rat||{}).sep||[]).length,pix:(S.pc||{}).pix,pais:S.me&&S.me.pais}))()""")
+    # KAN-66: a assistência também continua depois de entrar de novo (resumo do mês e partida)
+    p2.click('[data-a=tab][data-v=ranking]'); p2.wait_for_timeout(1500)
+    ra19 = J(p2, "(id)=>Object.values(S.res||{}).reduce((n,d)=>n+(((d.jog||{})[id]||{}).as||0),0)", as13)
+    ok(ra19 == 1, f'CT-KAN-66-08: e também depois de sair e entrar ({ra19})')
     ok(tudo['nome'] == 'Persistência FC 2' and tudo['pos'] and tudo['moeda'] == 'EUR' and tudo['jog'] >= 13 and tudo['sep'] >= 2
        and tudo['pix'] == 'pix-persistencia@teste.com' and tudo['pais'] == 'US',
        f'CT-KAN-170-P19: em outro navegador, depois de entrar de novo, tudo vem do banco ({tudo})')

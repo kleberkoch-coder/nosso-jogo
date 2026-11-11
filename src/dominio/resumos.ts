@@ -3,7 +3,8 @@
 
    Ficha grupos/{gid}/resumos/{AAAA-MM}:
      mes                       'AAAA-MM'
-     jog.{pid}.{j,v,e,d,g,mvp,bagre}   jogos, vitórias, empates, derrotas, gols/pontos, destaques e bagres
+     jog.{pid}.{j,v,e,d,g,as,mvp,bagre}   jogos, vitórias, empates, derrotas, gols/pontos, assistências (KAN-66),
+                               destaques e bagres
      jogos.{idPartida}         {rid, date, ca, cb, ga, gb}  (placar, para o histórico do ranking)
      cx.{ent,sai}              (até a v73) entradas e saídas do caixa no mês, em centavos
 
@@ -13,7 +14,8 @@
    Salvar ou apagar uma partida, um lançamento ou encerrar/reabrir uma votação gera "campos" (somar, gravar, apagar)
    que o app manda junto com a gravação. O mesmo cálculo refaz tudo do zero no botão Recalcular. */
 
-export type Gol = { t: 'a' | 'b'; pid?: string | null; og?: boolean; pts?: number };
+/* as = quem deu a assistência (KAN-66): conta 1 por ponto, nunca o próprio autor nem em gol contra. */
+export type Gol = { t: 'a' | 'b'; pid?: string | null; og?: boolean; pts?: number; as?: string | null };
 export type Partida = {
   id: string;
   /* 'art' = artilharia da rodada (KAN-178): só gols por jogador, sem placar nem resultado. */
@@ -41,7 +43,16 @@ export type Votacao = {
   createdAt?: number;
 };
 export type Campos = { mes: string; somar: Record<string, number>; gravar: Record<string, unknown>; apagar: string[] };
-export type JogStats = { j?: number; v?: number; e?: number; d?: number; g?: number; mvp?: number; bagre?: number };
+export type JogStats = {
+  j?: number;
+  v?: number;
+  e?: number;
+  d?: number;
+  g?: number;
+  as?: number;
+  mvp?: number;
+  bagre?: number;
+};
 export type Resumo = {
   mes: string;
   jog: Record<string, JogStats>;
@@ -95,6 +106,7 @@ export function camposPartida(m: Partida, rid: string, date: string, sinal: 1 | 
   lado(m.pb || [], 'b');
   (m.goals || []).forEach(g => {
     if (g.pid && !g.og) soma(c, `jog.${g.pid}.g`, (g.pts || 1) * sinal);
+    if (g.as && g.pid && !g.og && g.as !== g.pid) soma(c, `jog.${g.as}.as`, sinal);
   });
   if (sinal > 0)
     c.gravar[`jogos.${m.id}`] = Object.assign(
@@ -225,6 +237,7 @@ export type Linha = {
   e: number;
   d: number;
   gols: number;
+  as: number;
   mvp: number;
   bagre: number;
   pts: number;
@@ -236,18 +249,19 @@ export function ranking(docs: Partial<Resumo>[]): Linha[] {
   const s: Record<string, Linha> = {};
   docs.forEach(d =>
     Object.entries(d.jog || {}).forEach(([id, x]) => {
-      const l = s[id] || (s[id] = { id, j: 0, v: 0, e: 0, d: 0, gols: 0, mvp: 0, bagre: 0, pts: 0, ap: 0 });
+      const l = s[id] || (s[id] = { id, j: 0, v: 0, e: 0, d: 0, gols: 0, as: 0, mvp: 0, bagre: 0, pts: 0, ap: 0 });
       l.j += x.j || 0;
       l.v += x.v || 0;
       l.e += x.e || 0;
       l.d += x.d || 0;
       l.gols += x.g || 0;
+      l.as += x.as || 0;
       l.mvp += x.mvp || 0;
       l.bagre += x.bagre || 0;
     })
   );
   return Object.values(s)
-    .filter(l => l.j || l.mvp || l.bagre || l.gols)
+    .filter(l => l.j || l.mvp || l.bagre || l.gols || l.as)
     .map(l => Object.assign(l, { pts: l.v * 3 + l.e, ap: l.j ? Math.round(((l.v * 3 + l.e) / (l.j * 3)) * 100) : 0 }));
 }
 

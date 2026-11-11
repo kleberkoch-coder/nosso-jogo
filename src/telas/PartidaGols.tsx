@@ -9,12 +9,13 @@ import { tx } from '../i18n/index.js';
 import { S as estado } from '../nucleo/estado.js';
 import { partidasDe } from '../nucleo/partidas-lista.js';
 import { marcarAlterada } from '../ui/dialogos.js';
-import { sumPts } from '../ui/placar.js';
+import { sumPts } from '../ui/placar';
+import { unidade } from '../ui/JanelaPonto';
 import { quadra } from './Partida';
 
 type Time = { c: number | string; players: string[] };
 type Rodada = { id: string; date: string; time?: string; times?: Time[] | null };
-type Gol = { t: 'a' | 'b'; pid?: string | null; og?: boolean; pts?: number };
+type Gol = { t: 'a' | 'b'; pid?: string | null; og?: boolean; pts?: number; as?: string | null };
 type Partida = {
   id: string;
   ca: number | string;
@@ -38,7 +39,7 @@ function GolsDoLado(p: {
   mudar: (gs: Gol[]) => void;
 }) {
   const { t, goals, mudar } = p,
-    SP = sport() as unknown as { score: [string, number][]; og?: boolean },
+    SP = sport() as unknown as { score: [string, number][]; og?: boolean; ast?: string },
     /* Quem já marcou neste lado continua na lista, mesmo que tenha saído de quadra. */
     meus = [...new Set(p.meus.concat(goals.filter(g => g.t === t && g.pid && !g.og).map(g => g.pid!)))],
     deles = [...new Set(p.deles.concat(goals.filter(g => g.t === t && g.pid && g.og).map(g => g.pid!)))];
@@ -59,6 +60,8 @@ function GolsDoLado(p: {
                   const v = (e.currentTarget as HTMLSelectElement).value,
                     gs = goals.slice();
                   gs[i] = { ...g, pid: v ? v.slice(2) : null, og: v.startsWith('c:') };
+                  /* KAN-66: o autor não pode ser também a assistência; gol contra e sem autor não têm assistência. */
+                  if (!gs[i]!.pid || gs[i]!.og || gs[i]!.as === gs[i]!.pid) delete gs[i]!.as;
                   mudar(gs);
                 }}
               >
@@ -76,6 +79,29 @@ function GolsDoLado(p: {
                     ))
                   : null}
               </select>
+              {SP.ast && g.pid && !g.og ? (
+                <select
+                  class="sel ed-assist"
+                  aria-label={tx('partida.assistDoGolRotulo', { ponto: unidade(), nome: pname(g.pid) })}
+                  value={g.as || ''}
+                  onChange={e => {
+                    const v = (e.currentTarget as HTMLSelectElement).value,
+                      gs = goals.slice();
+                    gs[i] = { ...g, as: v || null };
+                    if (!v) delete gs[i]!.as;
+                    mudar(gs);
+                  }}
+                >
+                  <option value="">{tx('partida.semAssist')}</option>
+                  {[...new Set(p.meus.concat(g.as ? [g.as] : []))]
+                    .filter(id => id !== g.pid)
+                    .map(id => (
+                      <option key={id} value={id}>
+                        {pname(id)}
+                      </option>
+                    ))}
+                </select>
+              ) : null}
               {(g.pts || 1) > 1 ? <span class="tag">+{g.pts}</span> : null}
               <button
                 type="button"

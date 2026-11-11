@@ -151,3 +151,14 @@
 .camp-fim {
   border: 2px solid var(--primary);
 }
+
+/* KAN-66 (pelada-v107): no Editar e no Corrigir, a assistência vem ao lado do autor; no celular, desce para a linha
+   de baixo do autor, com a mesma largura. */
+.gols-lado li {
+  flex-wrap: wrap;
+}
+.gols-lado .ed-autor,
+.gols-lado .ed-assist {
+  flex: 1 1 140px;
+  min-width: 0;
+}

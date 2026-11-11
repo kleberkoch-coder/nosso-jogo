@@ -9,10 +9,10 @@ import { desfazer, emQuadra, entrar, escVazia, podemEntrar, type Esc } from '../
 import { tx } from '../i18n/index.js';
 import { S as estado } from '../nucleo/estado.js';
 import { artilhariaDe, partidasDe } from '../nucleo/partidas-lista.js';
-import { SeletorRodada } from '../ui/componentes';
+import { LinhaPartida, SeletorRodada } from '../ui/componentes';
 import { marcarAlterada } from '../ui/dialogos.js';
 import { rodadasProntas } from './rodada-partes.js';
-import { sumPts } from '../ui/placar.js';
+import { sumPts } from '../ui/placar';
 import { proximoJogo, type Proximo } from '../dominio/fila';
 import { AvisoFora, FimDoCampeonato, Formato, PainelCampeonato, chaveDe, proximoDoCamp } from './Campeonato';
 import { rotuloFase } from '../ui/zap-partidas';
@@ -20,7 +20,7 @@ import { chaveAoVivo, paraGuardar, paraVoltar } from '../dominio/ao-vivo';
 
 type Time = { c: number | string; players: string[] };
 type Rodada = { id: string; date: string; time?: string; times?: Time[] | null; camp?: unknown };
-type Gol = { t: 'a' | 'b'; pid?: string | null; og?: boolean; pts?: number };
+type Gol = { t: 'a' | 'b'; pid?: string | null; og?: boolean; pts?: number; as?: string | null };
 type Partida = {
   id: string;
   ca: number | string;
@@ -94,11 +94,15 @@ function Placar({ r }: { r: Rodada }) {
       c = col(time.c);
     const gols = (L.goals as Gol[])
       .filter(g => g.t === t)
-      .map(
-        g =>
-          (g.pid ? pname(g.pid) + (g.og ? ' ' + tx('partida.contraMarca') : '') : '—') +
-          ((g.pts || 1) > 1 ? ` (${g.pts})` : '')
-      )
+      .map(g => {
+        /* KAN-66: "Marcão (Caio)"; com pontos, "Japa (3, Caio)". */
+        const extra = [(g.pts || 1) > 1 ? String(g.pts) : '', g.as && !g.og ? pname(g.as) : '']
+          .filter(Boolean)
+          .join(', ');
+        return (
+          (g.pid ? pname(g.pid) + (g.og ? ' ' + tx('partida.contraMarca') : '') : '—') + (extra ? ` (${extra})` : '')
+        );
+      })
       .join(', ');
     return (
       <div>
@@ -247,11 +251,6 @@ function Salvas({ r }: { r: Rodada }) {
     carregou = S.partsRid === r.id && S.loaded.parts,
     /* KAN-238: com campeonato, a fase de cada partida (todos contra todos, mata-mata ou fora). */
     k = chaveDe(r);
-  const autores = (m: Partida) =>
-    m.goals
-      .filter(g => g.pid && !g.og)
-      .map(g => pname(g.pid) + ((g.pts || 1) > 1 ? ' (' + g.pts + ')' : ''))
-      .join(', ');
   return (
     <div class="panel">
       <div class="row between">
@@ -263,33 +262,35 @@ function Salvas({ r }: { r: Rodada }) {
         ) : null}
       </div>
       {ms.length ? (
-        <ul class="plist wrap">
+        <ul class="plist" id="partidasSalvas">
           {ms.map((m, i) => (
-            <li key={m.id}>
-              <span class="num">{i + 1}</span>
-              <span class="pn">
-                {k ? <span class="tag fase-tag">{rotuloFase(k.fases[i] ?? null)}</span> : null}
-                <span class="dot" style={{ background: col(m.ca).c }}></span> {tnJogo(m, 'a', r.times)}{' '}
-                <b>
-                  {m.ga} × {m.gb}
-                </b>{' '}
-                {tnJogo(m, 'b', r.times)} <span class="dot" style={{ background: col(m.cb).c }}></span>{' '}
-                <span class="small muted">
-                  {autores(m) ? ' — ' + (sport() as { word: string }).word.toLowerCase() + ': ' + autores(m) : ''}
-                </span>
-              </span>
-              <button
-                class="btn sm"
-                data-a="editarPartida"
-                data-v={m.id}
-                aria-label={tx('partida.editarRotulo', { n: i + 1 })}
-              >
-                {tx('partida.editar')}
-              </button>
-              <button class="btn sm ghost danger" data-a="delMatch" data-v={m.id}>
-                {tx('partida.apagar')}
-              </button>
-            </li>
+            <LinhaPartida
+              key={m.id}
+              n={i + 1}
+              ca={m.ca}
+              cb={m.cb}
+              na={tnJogo(m, 'a', r.times)}
+              nb={tnJogo(m, 'b', r.times)}
+              ga={m.ga}
+              gb={m.gb}
+              goals={m.goals}
+              fase={k ? <span class="tag fase-tag">{rotuloFase(k.fases[i] ?? null)}</span> : null}
+              acoes={
+                <>
+                  <button
+                    class="btn sm"
+                    data-a="editarPartida"
+                    data-v={m.id}
+                    aria-label={tx('partida.editarRotulo', { n: i + 1 })}
+                  >
+                    {tx('partida.editar')}
+                  </button>
+                  <button class="btn sm ghost danger" data-a="delMatch" data-v={m.id}>
+                    {tx('partida.apagar')}
+                  </button>
+                </>
+              }
+            />
           ))}
         </ul>
       ) : (

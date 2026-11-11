@@ -1890,3 +1890,50 @@ fieldset.chk-lista legend {
     padding: 0 9px;
   }
 }
+
+/* KAN-124 (pelada-v107): "Pôr na minha agenda", logo abaixo da linha de quem confirmou. */
+.plist li.agenda-linha {
+  display: block;
+  border-top: 0;
+  padding-top: 2px;
+}
+.btn.sm.agenda-btn {
+  min-height: var(--touch-min);
+}
+.agenda-linha p {
+  margin: 6px 0 0;
+}
+
+/* KAN-249 (pelada-v107): linha da partida. Confronto em cima (placar em pílula, nome do time sem quebrar), "Jogo 1 ·
+   gols: …" embaixo; Editar e Apagar à direita, descendo para uma linha própria quando não cabem. */
+.plist li.linha-partida {
+  display: block;
+}
+.lp-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+.confronto {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-width: 0;
+}
+.placar-p {
+  font: 700 17px var(--display);
+  background: var(--surface-2);
+  border-radius: 999px;
+  padding: 1px 10px;
+  white-space: nowrap;
+}
+.lp-acoes {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+.lp-apoio {
+  margin-top: 3px;
+}

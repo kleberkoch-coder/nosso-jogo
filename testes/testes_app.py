@@ -4490,13 +4490,16 @@ with sync_playwright() as pw:
         me101 = p101.evaluate(LER, f'usuarios/{u101}') or {}
         me101.setdefault('grupos', {})['g-outro101'] = {'name': 'Outro FC', 'role': 'owner', 'ativo': True}
         p101.evaluate(PUT, {f'usuarios/{u101}': me101})
-        p101.goto(URL + '#/'); p101.reload()
-        try: p101.wait_for_selector('#avisoContaBloqueada', timeout=10000)
-        except Exception: pass
+        # Sob carga, o app pode abrir o último grupo antes de a conta chegar: volta para "Meus grupos" até 3 vezes.
+        for _ in range(3):
+            p101.goto(URL + '#/'); p101.reload()
+            try: p101.wait_for_selector('#avisoContaBloqueada', timeout=10000); break
+            except Exception: pass
         p101.wait_for_timeout(300)
         if p101.locator('#dlg[open]').count(): p101.click('#dlg [data-a=close]'); p101.wait_for_timeout(300)
+        st101 = p101.evaluate("[location.hash, !!(S.conta&&S.conta.bloq), document.querySelectorAll('[data-a=newGroup]').length]")
         ok(p101.locator('#avisoContaBloqueada').count() == 1 and p101.locator('[data-a=newGroup]').count() == 0,
-           'CT-KAN-117-10: com a conta bloqueada, "Meus grupos" avisa e não oferece criar grupo')
+           f'CT-KAN-117-10: com a conta bloqueada, "Meus grupos" avisa e não oferece criar grupo ({st101})')
         contraste(p101, 'aviso de conta bloqueada')
         p101.goto(URL + '#/g/' + g101b); p101.wait_for_timeout(1500)
         p101.click('#topright [data-a=groupsDlg]'); p101.wait_for_selector('#dlg[open]', timeout=5000); p101.wait_for_timeout(300)

@@ -647,4 +647,16 @@ export default {
   'agenda.dias.5': 'Fridays',
   'agenda.dias.6': 'Saturdays',
   'partida.jogoN': 'Game {n}',
+  /* KAN-246 (pelada-v109): hora e número do sorteio */
+  'sortinfo.feito': 'Drawn at {hora} · draw #{n}',
+  'sortinfo.duplas': 'Pairs drawn at {hora} · draw #{n}',
+  'sortinfo.ajustes.um': '1 manual change after the draw',
+  'sortinfo.ajustes.outros': '{n} manual changes after the draw',
+  'cat.Bola': 'Ball',
+  'cat.Coletes': 'Bibs',
+  'cat.Rede': 'Net',
+  'cat.Bolinhas': 'Balls',
+  /* KAN-190 (pelada-v109): lembrete do material */
+  'matlink.vou': "You have the group's {itens}: bring it to the game.",
+  'matlink.naoVou': "You have the group's {itens}: arrange for someone to bring it.",
 };

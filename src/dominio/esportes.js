@@ -18,6 +18,8 @@ const FUT = {
   word: 'Gols',
   unit: 'gol',
   art: 'Artilharia',
+  /* KAN-190: sugestões de material do grupo (o organizador escreve o que quiser). */
+  mat: ['Bola', 'Coletes'],
   /* KAN-66: o esporte tem assistência (o passe do ponto); ast = nome da coluna no ranking, astN = nome inteiro. */
   ast: 'Assist.',
   astN: 'Assistências',
@@ -45,6 +47,7 @@ const SPORTS = {
     word: 'Pontos',
     unit: 'ponto',
     art: 'Cestinhas',
+    mat: ['Bola', 'Coletes'],
     ast: 'Assist.',
     astN: 'Assistências',
     min: 10,
@@ -61,6 +64,7 @@ const SPORTS = {
       ['LIB', 'Líbero'],
     ],
     key: 'LEV',
+    mat: ['Bola', 'Rede'],
     score: [['Ponto', 1]],
     word: 'Pontos',
     unit: 'ponto',
@@ -71,6 +75,7 @@ const SPORTS = {
     e: '🏖️',
     time: 2,
     pos: [],
+    mat: ['Bola', 'Rede'],
     score: [['Ponto', 1]],
     word: 'Pontos',
     unit: 'ponto',
@@ -81,6 +86,7 @@ const SPORTS = {
     e: '🦶',
     time: 2,
     pos: [],
+    mat: ['Bola', 'Rede'],
     score: [['Ponto', 1]],
     word: 'Pontos',
     unit: 'ponto',
@@ -91,6 +97,7 @@ const SPORTS = {
     e: '🎾',
     time: 2,
     pos: [],
+    mat: ['Bolinhas', 'Rede'],
     score: [['Game', 1]],
     word: 'Games',
     unit: 'game',
@@ -107,6 +114,7 @@ const SPORTS = {
       ['PIV', 'Pivô'],
     ],
     key: 'GOL',
+    mat: ['Bola', 'Coletes'],
     score: [['Gol', 1]],
     og: true,
     word: 'Gols',
@@ -306,6 +314,7 @@ function aplicarCatalogo() {
     s.word = tc(o.word);
     s.unit = tc(o.unit);
     if (o.art) s.art = tc(o.art);
+    if (o.mat) s.mat = o.mat.map(tc);
     if (o.ast) {
       s.ast = tc(o.ast);
       s.astN = tc(o.astN);

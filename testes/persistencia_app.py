@@ -925,6 +925,55 @@ with sync_playwright() as pw:
     ok(r37b == r37, f'CT-KAN-170-P37: e também depois de sair e entrar ({r37b})')
     c37.close()
 
+    # P38 (KAN-246, KAN-190): número do sorteio da rodada (rodadas.sor: n, em, aj), a opção de mostrar o sorteio no
+    # link (cfg.verSorteio) e o material do grupo (cfg.mat e cfg.matHist). Confere depois de recarregar e de sair e entrar.
+    c38 = novo(); p38 = c38.new_page()
+    p38.on('pageerror', lambda e: errs.append(str(e)))
+    E38 = 'material38@teste.com'
+    p38.goto(URL + '#/criar'); p38.wait_for_selector('#le', timeout=20000); p38.wait_for_timeout(300)
+    p38.fill('#le', E38); p38.fill('#lp', SENHA); p38.fill('#lp2', SENHA); p38.wait_for_timeout(200)
+    p38.click('[data-a=signup]'); p38.wait_for_selector('#ngn', timeout=20000)
+    p38.fill('#ngn', 'Material FC'); p38.click('[data-a=createGroup]')
+    p38.wait_for_function("location.hash.startsWith('#/g/')", timeout=20000)
+    g38 = p38.url.split('#/g/')[1].split('/')[0]
+    pronto(p38, 'jogadores'); p38.click('[data-a=seed]'); p38.wait_for_timeout(1500)
+    gravou(p38); pronto(p38, 'grupo'); p38.wait_for_selector('#materialPainel', timeout=10000)
+    js38 = J(p38, "Object.keys(S.jog).filter(id=>S.jog[id].ativo!==false).sort()")
+    for pid in js38[:2]:
+        p38.fill('#matNome', 'Bola'); p38.fill('#matQtd', '1'); p38.select_option('#matCom', pid)
+        p38.click('#matAddBtn'); p38.wait_for_timeout(800)
+    p38.fill('#matNome', 'Coletes'); p38.fill('#matQtd', '2'); p38.click('#matAddBtn'); p38.wait_for_timeout(800)
+    gravou(p38); pronto(p38, 'grupo'); p38.wait_for_selector('#matLista', timeout=10000)
+    id38 = J(p38, "(S.app.cfg.mat||[])[1].id")
+    p38.select_option(f'#matLista select[data-m="{id38}"]', js38[2]); p38.wait_for_timeout(800)
+    p38.click('[data-a=editGroup]'); p38.wait_for_selector('#ngVerSorteio', timeout=10000)
+    p38.uncheck('#ngVerSorteio'); p38.click('#dlg [data-a=saveGroup]'); p38.wait_for_timeout(1200)
+    gravou(p38); pronto(p38, 'rodada')
+    bt38 = p38.locator('[data-a=mark][data-v=in]')
+    for i in range(10):
+        bt38.nth(i).click(); p38.wait_for_timeout(250)
+    for _ in range(2):
+        p38.click('[data-a=drawDlg]'); p38.wait_for_timeout(400); conf(p38)
+        p38.click('#drawGo'); p38.wait_for_timeout(2500)
+    gravou(p38); pronto(p38, 'rodada'); p38.wait_for_timeout(800)
+    p38.locator('[data-a=move]').first.click(); p38.wait_for_selector('#dlg [data-a=doMove]', timeout=10000)
+    p38.locator('#dlg [data-a=doMove]').first.click(); p38.wait_for_timeout(1000)
+    gravou(p38); pronto(p38, 'rodada'); p38.wait_for_timeout(1000)
+    ler38 = ("(()=>{const c=S.app.cfg||{},r=S.rod[S.rid]||{},s=r.sor||{};"
+             "return [(c.mat||[]).map(x=>[x.nome,x.com||'']), (c.matHist||[]).map(h=>[h.nome,h.de,h.para,typeof h.em]),"
+             " c.verSorteio===false, [s.n, s.aj, typeof s.em], (document.querySelector('#sortInfoAdm')||{}).textContent||'']})()")
+    r38 = J(p38, ler38)
+    esp38 = [[['Bola', js38[0]], ['Bola', js38[2]], ['Coletes', '']], [['Bola', js38[1], js38[2], 'number']], True, [2, 1, 'number']]
+    ok(r38[:4] == esp38 and '2º sorteio · 1 ajuste manual' in r38[4],
+       f'CT-KAN-170-P38: o material do grupo, a troca, a opção do sorteio e o número do sorteio continuam depois de recarregar ({r38})')
+    sair_e_esperar(p38)
+    p38.goto(URL + '#/entrar'); p38.wait_for_selector('#le', timeout=20000); p38.wait_for_timeout(300)
+    p38.fill('#le', E38); p38.fill('#lp', SENHA); p38.keyboard.press('Enter'); p38.wait_for_timeout(2500)
+    p38.goto(URL + '#/g/' + g38); pronto(p38, 'rodada'); p38.wait_for_timeout(1500)
+    r38b = J(p38, ler38)
+    ok(r38b == r38, f'CT-KAN-170-P38: e também depois de sair e entrar ({r38b})')
+    c38.close()
+
     ok(not errs, 'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))
     b.close()
 

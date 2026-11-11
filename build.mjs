@@ -103,10 +103,12 @@ while (fila.length) {
   importsDiretos(t).forEach(x => fila.push('chunks/' + x));
 }
 const gestao = [...pedacos.keys()].filter(c => !nucleo.includes(c));
-/* KAN-262: partes sob demanda do próprio link (as janelas do jogador), que o service worker guarda na instalação. */
+/* KAN-262: partes sob demanda do próprio link (as janelas do jogador e, desde a v109, a linha das partidas), que o
+   service worker guarda na instalação. */
 const partesLink = [];
 {
-  const fila3 = [...pedacos.keys()].filter(c => /^chunks\/JanelasLink-/.test(c));
+  /* pelada-v109: a linha das partidas (ui/LinhaPartida.tsx) também, para o placar abrir sem internet. */
+  const fila3 = [...pedacos.keys()].filter(c => /^chunks\/(JanelasLink|LinhaPartida)-/.test(c));
   if (!fila3.length) throw new Error('Não achei a parte JanelasLink (KAN-262).');
   while (fila3.length) {
     const c = fila3.shift();

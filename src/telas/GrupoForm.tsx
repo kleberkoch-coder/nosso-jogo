@@ -247,6 +247,17 @@ function GrupoForm({ g, editing }: { g: Grupo; editing: boolean }) {
           {tx('grupo.mudarEsporte')}
         </p>
       )}
+      {/* KAN-246: a turma vê no link e no WhatsApp a hora e o número do sorteio (ligado por padrão). */}
+      {editing && (
+        <label class="chk-linha" style="margin:0 0 12px">
+          <input
+            type="checkbox"
+            id="ngVerSorteio"
+            defaultChecked={(c as { verSorteio?: boolean }).verSorteio !== false}
+          />
+          <span>{tx('grupo.verSorteio')}</span>
+        </label>
+      )}
       <div class="f" id="ngReg">
         <span class="lbl">{tx('regiao.titulo')}</span>
         <div class="reg-campos">
@@ -356,7 +367,8 @@ function readGroupForm(except: string | null) {
       fuso: val('ngz') || '',
       formato: (paisPor(pais) && paisPor(pais)!.formato) || 'pt-BR',
     };
-  return { name, sport: sp, sportName: spn, freq: fq, fixos, porTime: pt, regiao };
+  const vs = $('#ngVerSorteio') as HTMLInputElement | null;
+  return { name, sport: sp, sportName: spn, freq: fq, fixos, porTime: pt, regiao, verSorteio: vs ? vs.checked : null };
 }
 
 export { formAberto, montarGrupoForm, readGroupForm };

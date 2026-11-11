@@ -53,3 +53,27 @@
   display: inline-block;
   margin-top: 2px;
 }
+/* KAN-190 (pelada-v109): material do grupo na aba Grupo. */
+.mat-linha .mat-nome {
+  flex: 0 1 30%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.mat-linha .sel {
+  flex: 1;
+  min-width: 0;
+}
+.mat-novo {
+  display: grid;
+  grid-template-columns: 1fr 80px;
+  gap: 0 10px;
+  margin-top: 12px;
+  align-items: end;
+}
+.mat-novo label:nth-child(3),
+.mat-novo .btn {
+  grid-column: 1 / -1;
+}
+.mat-hist {
+  margin-top: 10px;
+}

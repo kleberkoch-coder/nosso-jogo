@@ -9,7 +9,8 @@ import { desfazer, emQuadra, entrar, escVazia, podemEntrar, type Esc } from '../
 import { tx } from '../i18n/index.js';
 import { S as estado } from '../nucleo/estado.js';
 import { artilhariaDe, partidasDe } from '../nucleo/partidas-lista.js';
-import { LinhaPartida, SeletorRodada } from '../ui/componentes';
+import { SeletorRodada } from '../ui/componentes';
+import { LinhaPartida } from '../ui/LinhaPartida';
 import { marcarAlterada } from '../ui/dialogos.js';
 import { rodadasProntas } from './rodada-partes.js';
 import { sumPts } from '../ui/placar';

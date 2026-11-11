@@ -34,4 +34,6 @@ export default {
   'grupo.porTimeAjuda':
     'Padrão de {esporte}: {n}. Use 2 para jogar em duplas. No sorteio, quem passar desse número fica como reserva.',
   'grupo.porTimeInvalido': 'Informe de 1 a 30 jogadores por time.',
+  /* KAN-246 (pelada-v109) */
+  'grupo.verSorteio': 'Mostrar no link e no WhatsApp a hora e o número do sorteio',
 };

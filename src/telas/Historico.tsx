@@ -15,7 +15,8 @@ import * as banco from '../nucleo/backend.js';
 import { S as estado, gp } from '../nucleo/estado.js';
 import { $, fdate, fmonth, toast, today } from '../nucleo/util.js';
 import { changed } from '../ui/render.js';
-import { LinhaPartida, Pos } from '../ui/componentes';
+import { Pos } from '../ui/componentes';
+import { LinhaPartida } from '../ui/LinhaPartida';
 
 juntarTextos(textosCampeao);
 juntarTextos(textosHist);

@@ -24,11 +24,20 @@ import { GB, S, w } from '../nucleo/estado.js';
 import { linkProxima, linkRodada } from '../nucleo/links.js';
 import { $, diaSemana, fdate, toast } from '../nucleo/util.js';
 import { avisar, closeDlg, closeDlgNow, confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
-import { drawPreview, comJanelasTimes, rodDlg } from '../ui/JanelasGestao';
+import { drawPreview, comJanelasTimes } from '../ui/JanelasGestao';
 import { changed, render } from '../ui/render.js';
 import { nPartidas, temVotacao } from '../telas/rodada-partes.js';
 import { ACT } from '../acoes.js';
+import { comAjuste, novoSorteio } from '../dominio/sorteio-info';
+import { situacao as situacaoMaterial } from '../dominio/material';
 
+const janelaRodada = () => import('../ui/JanelaRodada');
+const naoCarregou = () => toast(tx('comum.naoCarregouTitulo') + '. ' + tx('comum.naoCarregou'));
+/* KAN-246: mexer nos times depois do sorteio conta um ajuste manual (sem dizer quem foi mexido). */
+function ajusteManual(x) {
+  const s = comAjuste(x.sor);
+  if (s) x.sor = s;
+}
 /* Põe a pessoa direto num time (sai de qualquer outro) e a inclui na foto do sorteio, para não gerar aviso. */
 function porNoTime(ti, pid) {
   const r = curRodada(),
@@ -39,6 +48,7 @@ function porNoTime(ti, pid) {
       t.players = t.players.filter(p => p !== pid);
       if (t.res) t.res = t.res.filter(p => p !== pid);
     });
+    ajusteManual(x);
     const alvo = x.times[ti];
     if (titulares(alvo).length >= porTime()) alvo.res = (alvo.res || []).concat(pid);
     alvo.players.push(pid);
@@ -75,8 +85,9 @@ const janelasVagas = () =>
 const semJanela = () => toast(tx('comum.naoCarregouTitulo') + '. ' + tx('comum.naoCarregou'));
 
 const acoes = {
-  newRod: () => rodDlg(null),
-  editRod: () => rodDlg(curRodada()),
+  /* pelada-v109: a janela da rodada baixa no primeiro toque (o botão gira até ela abrir). */
+  newRod: () => janelaRodada().then(m => m.rodDlg(null), naoCarregou),
+  editRod: () => janelaRodada().then(m => m.rodDlg(curRodada()), naoCarregou),
   saveRod: el => {
     const d = val('rdt');
     if (!d) {
@@ -259,6 +270,22 @@ const acoes = {
     });
   },
   /* KAN-64: mensagem pronta para o grupo do WhatsApp com quem ainda não respondeu. */
+  /* KAN-190: cobrar no WhatsApp quem guarda um material e ainda não respondeu. */
+  matCobrar: el => {
+    const r = curRodada(),
+      m = r && situacaoMaterial(cfg().mat, S.pres).find(x => x.nome === el.dataset.v);
+    if (!m || !m.semResposta.length) return;
+    shareDlg(
+      tx('mat.cobrar'),
+      tx('mat.cobrarTexto', {
+        e: sport().e,
+        nomes: m.semResposta.map(pname).join(', '),
+        nome: m.nome,
+        data: fdate(r.date),
+        link: linkDaRodada(r),
+      })
+    );
+  },
   cobrarGrupo: () => {
     const r = curRodada(),
       falta = r
@@ -395,6 +422,8 @@ const acoes = {
       x.info = {};
       ids.forEach(id => (x.info[id] = { n: pname(id), p: ppos(id) }));
       x.drawnAt = Date.now();
+      /* KAN-246: número e hora do sorteio (sobe de 1 em 1; os ajustes manuais voltam a zero). */
+      x.sor = novoSorteio(x.sor, x.drawnAt);
       /* pelada-v15: sortear fecha a lista e guarda a foto dos confirmados, para avisar se a lista mudar depois. */
       x.locked = true;
       x.base = attendance().inn;
@@ -482,6 +511,7 @@ const acoes = {
         if (!x.times[f].res.length) delete x.times[f].res;
       }
       x.times[to].players.push(pid);
+      ajusteManual(x);
     });
     closeDlg();
   },
@@ -494,6 +524,7 @@ const acoes = {
         t.players = t.players.filter(p => p !== pid);
         if (t.res) t.res = t.res.filter(p => p !== pid);
       });
+      ajusteManual(x);
     });
   },
   divPor: el => escolherTime(el.dataset.p),

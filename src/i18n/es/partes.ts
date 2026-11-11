@@ -788,4 +788,27 @@ export default {
   'partida.assistDoGolRotulo': 'Asistencia: {ponto} de {nome}',
   'rank.garcom': 'Asistidor',
   'rank.garcomLinha': 'Asistidor: {nome} ({n})',
+  /* KAN-246 (pelada-v109) */
+  'grupo.verSorteio': 'Mostrar en el enlace y en WhatsApp la hora y el número del sorteo',
+  /* KAN-190 (pelada-v109): material do grupo */
+  'matg.titulo': 'Material del grupo',
+  'matg.ajuda':
+    'Pelotas, petos y lo que el grupo tenga, y quién guarda cada cosa entre las fechas. La pestaña Jornada avisa cuando nadie que lo guarda confirmó.',
+  'matg.ninguem': 'Nadie',
+  'matg.comQuem': 'Quién lo tiene: {nome}',
+  'matg.remover': 'Quitar {nome} del material',
+  'matg.vazio': 'Todavía no hay nada.',
+  'matg.nome': 'Qué es',
+  'matg.exemplo': 'Ej.: Pelota',
+  'matg.qtd': 'Cuántos',
+  'matg.com': 'Quién lo guarda',
+  'matg.adicionar': 'Agregar',
+  'matg.historico': 'Últimos cambios',
+  'matg.troca': '{data} · {nome}: {de} → {para}',
+  'matg.passou': '{nome} ahora lo tiene {para}.',
+  'matg.semNinguem': '{nome} sin nadie.',
+  'matg.semNome': 'Escribe qué es (ej.: Pelota).',
+  'matg.adicionado': '{nome} en el material del grupo.',
+  'matg.removerTitulo': '¿Quitar este ítem del material del grupo?',
+  'matg.removerAcao': 'Quitar',
 };

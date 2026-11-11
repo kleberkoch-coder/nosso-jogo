@@ -1435,3 +1435,63 @@ describe('extra da rodada: churrasco, pizzada (KAN-228)', () => {
     await assertFails(setDoc(doc(db.outro(), X + 'n2'), { s: 'in', t: Date.now(), by: 'outro', nome: 'X' }));
   });
 });
+
+describe('número do sorteio da rodada (KAN-246)', () => {
+  const R = G + '/rodadas/r1';
+  const semRegras = fn => env.withSecurityRulesDisabled(async ctx => fn(ctx.firestore()));
+  const base = (sor = undefined) =>
+    semRegras(f => setDoc(doc(f, R), Object.assign({ date: '2026-10-05', locked: false }, sor ? { sor } : {})));
+  test('o primeiro sorteio cria a rodada com n = 1; começar em 5 é recusado', async () => {
+    await assertFails(setDoc(doc(db.adm(), R), { date: '2026-10-05', sor: { n: 5, em: 1000, aj: 0 } }));
+    await assertSucceeds(setDoc(doc(db.adm(), R), { date: '2026-10-05', sor: { n: 1, em: 1000, aj: 0 } }));
+  });
+  test('sortear de novo sobe 1 e zera os ajustes; pular, voltar ou zerar é recusado', async () => {
+    await base({ n: 2, em: 1000, aj: 3 });
+    await assertFails(updateDoc(doc(db.adm(), R), { sor: { n: 4, em: 2000, aj: 0 } }));
+    await assertFails(updateDoc(doc(db.adm(), R), { sor: { n: 1, em: 2000, aj: 0 } }));
+    await assertFails(updateDoc(doc(db.adm(), R), { sor: deleteField() }));
+    await assertFails(updateDoc(doc(db.adm(), R), { sor: { n: 3, em: 2000, aj: 3 } }));
+    await assertSucceeds(updateDoc(doc(db.adm(), R), { sor: { n: 3, em: 2000, aj: 0 } }));
+  });
+  test('ajuste manual sobe 1 com o mesmo número e a mesma hora; diminuir ou trocar a hora é recusado', async () => {
+    await base({ n: 2, em: 1000, aj: 1 });
+    await assertFails(updateDoc(doc(db.adm(), R), { sor: { n: 2, em: 1000, aj: 0 } }));
+    await assertFails(updateDoc(doc(db.adm(), R), { sor: { n: 2, em: 5000, aj: 2 } }));
+    await assertFails(updateDoc(doc(db.adm(), R), { sor: { n: 2, em: 1000, aj: 3 } }));
+    await assertSucceeds(updateDoc(doc(db.adm(), R), { sor: { n: 2, em: 1000, aj: 2 } }));
+  });
+  test('outras mudanças na rodada não mexem no contador; o jogador pelo link não grava nada na rodada', async () => {
+    await base({ n: 1, em: 1000, aj: 0 });
+    await assertSucceeds(updateDoc(doc(db.adm(), R), { locked: true }));
+    await assertFails(updateDoc(doc(db.anon(), R), { sor: { n: 2, em: 2000, aj: 0 } }));
+  });
+});
+
+describe('material do grupo (KAN-190)', () => {
+  const mat = [
+    { id: 'b1', nome: 'Bola', com: 'j1' },
+    { id: 'b2', nome: 'Bola', com: 'j2' },
+  ];
+  test('o administrador sem a permissão de Configurações passa a bola e grava o histórico', async () => {
+    await env.withSecurityRulesDisabled(async ctx =>
+      setDoc(doc(ctx.firestore(), G + '/membros/adm'), {
+        uid: 'adm',
+        role: 'admin',
+        email: 'adm@x.com',
+        perm: { caixa: false, notas: false, elenco: false, config: false },
+      })
+    );
+    await assertSucceeds(updateDoc(doc(db.adm(), G), { 'cfg.mat': mat }));
+    await assertSucceeds(
+      updateDoc(doc(db.adm(), G), {
+        'cfg.mat': [mat[0], { id: 'b2', nome: 'Bola', com: 'j3' }],
+        'cfg.matHist': [{ nome: 'Bola', de: 'j2', para: 'j3', em: 1000 }],
+      })
+    );
+    /* Sem Configurações, o resto do grupo continua fechado. */
+    await assertFails(updateDoc(doc(db.adm(), G), { 'cfg.porTime': 9 }));
+  });
+  test('o jogador pelo link não mexe no material', async () => {
+    await assertFails(updateDoc(doc(db.anon(), G), { 'cfg.mat': mat }));
+  });
+});

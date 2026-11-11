@@ -784,4 +784,27 @@ export default {
   'partida.assistDoGolRotulo': 'Assist: {ponto} by {nome}',
   'rank.garcom': 'Playmaker',
   'rank.garcomLinha': 'Playmaker: {nome} ({n})',
+  /* KAN-246 (pelada-v109) */
+  'grupo.verSorteio': 'Show the draw time and number on the link and on WhatsApp',
+  /* KAN-190 (pelada-v109): material do grupo */
+  'matg.titulo': 'Group gear',
+  'matg.ajuda':
+    'Balls, bibs and anything else the group owns, and who keeps each one between games. The Game day tab warns you when nobody keeping it has confirmed.',
+  'matg.ninguem': 'Nobody',
+  'matg.comQuem': 'Who has it: {nome}',
+  'matg.remover': 'Remove {nome} from the gear',
+  'matg.vazio': 'Nothing added yet.',
+  'matg.nome': 'What it is',
+  'matg.exemplo': 'E.g.: Ball',
+  'matg.qtd': 'How many',
+  'matg.com': 'Who keeps it',
+  'matg.adicionar': 'Add',
+  'matg.historico': 'Latest handovers',
+  'matg.troca': '{data} · {nome}: {de} → {para}',
+  'matg.passou': '{nome} is now with {para}.',
+  'matg.semNinguem': '{nome} with nobody.',
+  'matg.semNome': 'Type what it is (e.g.: Ball).',
+  'matg.adicionado': '{nome} added to the group gear.',
+  'matg.removerTitulo': 'Remove this item from the group gear?',
+  'matg.removerAcao': 'Remove',
 };

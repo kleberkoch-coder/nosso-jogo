@@ -657,4 +657,16 @@ export default {
   'agenda.dias.5': 'viernes',
   'agenda.dias.6': 'sábados',
   'partida.jogoN': 'Partido {n}',
+  /* KAN-246 (pelada-v109): hora e número do sorteio */
+  'sortinfo.feito': 'Sorteado a las {hora} · sorteo n.º {n}',
+  'sortinfo.duplas': 'Parejas sorteadas a las {hora} · sorteo n.º {n}',
+  'sortinfo.ajustes.um': '1 ajuste manual después del sorteo',
+  'sortinfo.ajustes.outros': '{n} ajustes manuales después del sorteo',
+  'cat.Bola': 'Pelota',
+  'cat.Coletes': 'Petos',
+  'cat.Rede': 'Red',
+  'cat.Bolinhas': 'Pelotas',
+  /* KAN-190 (pelada-v109): lembrete do material */
+  'matlink.vou': 'Tienes {itens} del grupo: llévalo al partido.',
+  'matlink.naoVou': 'Tienes {itens} del grupo: combina con alguien para que lo lleve.',
 };

@@ -1,5 +1,7 @@
 /* Aba Rodada da gestão (KAN-153): componente em TypeScript + Preact, no lugar do HTML montado como texto.
    Por fora é a mesma tela de antes; os testes automáticos conferem. Os botões usam data-a (ações em acoes/rodada.js). */
+import { MaterialRodada } from '../ui/MaterialRodada';
+import { mostrarSorteio, textoSorteio } from '../ui/linha-sorteio';
 import { render } from 'preact';
 import { divergencia } from '../dominio/divergencia';
 import { linkCobrar, quemCobrar } from '../dominio/cobrar';
@@ -534,6 +536,13 @@ function Times({ r, inn }: { r: Rodada; inn: number }) {
       ) : null}
       {r.times ? (
         <>
+          {/* KAN-246: o administrador sempre vê a hora e o número do sorteio, como a turma vê no link. */}
+          {textoSorteio((r as { sor?: unknown }).sor, true) ? (
+            <p class="small muted sort-info" id="sortInfoAdm">
+              {textoSorteio((r as { sor?: unknown }).sor, true)}
+              {mostrarSorteio() ? null : ' · ' + tx('rodg.sortinfoOculto')}
+            </p>
+          ) : null}
           <div class="teams" style="margin-top:12px">
             {r.times.map((t, ti) => (
               <CartaoTime key={ti} t={t} ti={ti} />
@@ -668,6 +677,7 @@ function RodadaTela() {
       <LinkPermanente />
       {carregou ? <PainelVagas r={r} /> : null}
       {carregou ? <Cobrar r={r} /> : null}
+      {carregou ? <MaterialRodada mat={((S.app || {}).cfg || {}).mat} pres={S.pres} /> : null}
       <Presenca r={r} inn={a.inn} carregou={carregou} avs={avs} />
       {r.extra ? <ExtraNaRodada /> : null}
       <Times r={r} inn={a.inn.length} />

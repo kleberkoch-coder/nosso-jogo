@@ -706,6 +706,17 @@ export default {
   /* KAN-261: vieram da gestão (pt-BR-afast.ts) */
   'afast.voltouFeito': '{nome} is back: the time away ended in {mes}.',
   'afast.voltouCancelado': '{nome} is back: the time away was deleted.',
+  /* KAN-261: pt-BR-times.ts */
+  'jogador.jogador': 'Player',
+  'porTime.ajuda': 'The person goes straight into this team and is confirmed on the list.',
+  'porTime.avulso': 'Guest (played before or new)',
+  'porTime.confirmados': 'Confirmed but not on a team',
+  'porTime.jogadores.um': '{n} player',
+  'porTime.jogadores.outros': '{n} players',
+  'porTime.ninguem': 'All registered players are already on the teams.',
+  'porTime.outros': 'Other players',
+  'porTime.qualTime': 'Add {nome} to which team?',
+  'porTime.titulo': 'Add to {time}',
   /* KAN-261: pt-BR-vagas.ts */
   'minimo.dlgTitulo': 'Minimum for the game',
   'minimo.dlgAjuda':

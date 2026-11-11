@@ -6,15 +6,29 @@ import { cfg, ptipo, recebePorJogo } from '../dominio/caixa.js';
 import { relogio12 } from '../i18n/formatos.js';
 import { col, hasPos, porTime, posKeys, posLabel, siglaTela, sport, tn } from '../dominio/esportes.js';
 import { resumo } from '../dominio/times.ts';
-import { tp, tx } from '../i18n/index.js';
+import { juntarTextos, tp, tx } from '../i18n/index.js';
 import { fdia, fmtL, lvl, normName, pname, posso, ppos, recurso } from '../dominio/grupo.js';
 import { S } from '../nucleo/estado.js';
-import { $, nextSat } from '../nucleo/util.js';
+import { $, nextSat, toast } from '../nucleo/util.js';
 import { openDlg } from './dialogos.js';
 import { CampoPosicao, Pos } from './componentes';
 import { CampoNota, CampoTelefone, CampoTipo, LinhaAfastamento } from './Campos';
 
 const st = S;
+/* KAN-261 (pelada-v104): janelas de times e pares que baixam só quando abertas (ui/JanelasTimes.tsx). Elas recebem
+   daqui o que usam do app, em vez de importar (ver D52). */
+const utilJanelas = () => ({ tx, tp, pname, tn, col, Pos, openDlg });
+export type UtilJanelas = ReturnType<typeof utilJanelas>;
+let JT: any = null;
+export function comJanelasTimes(f: (m: any, u: UtilJanelas) => void) {
+  return (JT ? Promise.resolve(JT) : import('./JanelasTimes').then(m => (JT = m))).then(
+    m => {
+      juntarTextos(m.textos);
+      f(m, utilJanelas());
+    },
+    () => toast(tx('comum.naoCarregouTitulo') + '. ' + tx('comum.naoCarregou'))
+  );
+}
 const Cancelar = () => (
   <button class="btn" data-a="close">
     {tx('comum.cancelar')}
@@ -135,62 +149,6 @@ export function rodDlg(r: any) {
 }
 
 /* "Não colocar no mesmo time": escolher o par. */
-export function janelaSeparar(lista: { id: string; name: string }[]) {
-  const opcoes = lista.map(p => (
-    <option key={p.id} value={p.id}>
-      {p.name}
-    </option>
-  ));
-  openDlg(
-    <>
-      <h3>{tx('jogadores.separarTitulo')}</h3>
-      <label class="f">
-        <span>{tx('jogador.jogador')}</span>
-        <select class="sel" id="sa">
-          {opcoes}
-        </select>
-      </label>
-      <label class="f">
-        <span>{tx('jogadores.e')}</span>
-        <select class="sel" id="sb">
-          {opcoes}
-        </select>
-      </label>
-      <div class="dlg-f">
-        <Cancelar />
-        <button class="btn primary" data-a="saveSep">
-          {tx('jogadores.adicionarPar')}
-        </button>
-      </div>
-    </>
-  );
-}
-
-const Bolinha = ({ c }: { c: number | string }) => <span class="dot" style={{ background: col(c).c }}></span>;
-
-/* Escolher o time de quem confirmou depois do sorteio. */
-export function janelaEscolherTime(pid: string, times: any[]) {
-  openDlg(
-    <>
-      <h3>{tx('porTime.qualTime', { nome: pname(pid) })}</h3>
-      <div class="vgrid">
-        {times.map((t, i) => (
-          <button key={i} class="opt" data-a="doPorTime" data-v={i} data-p={pid}>
-            <Bolinha c={t.c} />
-            {tn(i)}
-            <span class="tag" style="margin-left:auto">
-              {tp('porTime.jogadores', t.players.length)}
-            </span>
-          </button>
-        ))}
-      </div>
-      <div class="dlg-f">
-        <Cancelar />
-      </div>
-    </>
-  );
-}
-
 /* Adicionar avulso: quem já jogou aqui (para escolher) ou um avulso novo. */
 export function janelaAvulso(regs: [string, { nome: string }][]) {
   openDlg(
@@ -353,70 +311,6 @@ export function janelaSorteio(o: {
     </div>
   );
   drawPreview();
-}
-
-/* Mover para outro time (ou marcar como reserva/titular). */
-export function janelaMover(pid: string, f: number, times: any[]) {
-  openDlg(
-    <>
-      <h3>{tx('times.moverRotulo', { nome: pname(pid) })}</h3>
-      <div class="vgrid">
-        {times.map((t, i) =>
-          i === f ? null : (
-            <button key={i} class="opt" data-a="doMove" data-v={i} data-f={f} data-p={pid}>
-              <Bolinha c={t.c} />
-              {tn(i)}
-            </button>
-          )
-        )}
-      </div>
-      <div class="dlg-f">
-        <Cancelar />
-        <button class="btn" data-a="toggleRes" data-v={f} data-p={pid}>
-          {(times[f].res || []).includes(pid) ? tx('times.marcarTitular') : tx('times.marcarReserva')}
-        </button>
-      </div>
-    </>
-  );
-}
-
-/* Pôr alguém num time: confirmados fora dos times, outros do elenco ou um avulso. */
-export function janelaPorTime(ti: number, t: any, conf: string[], outros: string[]) {
-  const opc = (id: string) => (
-    <button key={id} class="opt" data-a="doPorTime" data-v={ti} data-p={id}>
-      <Pos id={id} />
-      <span>{pname(id)}</span>
-    </button>
-  );
-  openDlg(
-    <>
-      <h3>
-        <Bolinha c={t.c} />
-        {' ' + tx('porTime.titulo', { time: tn(ti) })}
-      </h3>
-      <p class="small muted">{tx('porTime.ajuda')}</p>
-      {conf.length ? (
-        <div class="f">
-          <span class="lbl">{tx('porTime.confirmados')}</span>
-          <div class="vgrid">{conf.map(opc)}</div>
-        </div>
-      ) : null}
-      {outros.length ? (
-        <div class="f">
-          <span class="lbl">{tx('porTime.outros')}</span>
-          <div class="vgrid">{outros.map(opc)}</div>
-        </div>
-      ) : conf.length ? null : (
-        <p class="muted small">{tx('porTime.ninguem')}</p>
-      )}
-      <div class="dlg-f">
-        <Cancelar />
-        <button class="btn" data-a="addAvulso" data-t={ti}>
-          {tx('porTime.avulso')}
-        </button>
-      </div>
-    </>
-  );
 }
 
 /* Prévia do sorteio: quantos jogadores, quantos times e quem fica de reserva; liga ou desliga o Sortear. */

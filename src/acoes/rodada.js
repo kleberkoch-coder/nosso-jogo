@@ -24,14 +24,7 @@ import { GB, S, w } from '../nucleo/estado.js';
 import { linkProxima, linkRodada } from '../nucleo/links.js';
 import { $, diaSemana, fdate, toast } from '../nucleo/util.js';
 import { avisar, closeDlg, closeDlgNow, confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
-import {
-  drawPreview,
-  janelaEscolherTime,
-  janelaMover,
-  janelaPorTime,
-  janelaSorteio,
-  rodDlg,
-} from '../ui/JanelasGestao';
+import { drawPreview, comJanelasTimes, janelaSorteio, rodDlg } from '../ui/JanelasGestao';
 import { changed, render } from '../ui/render.js';
 import { nPartidas, temVotacao } from '../telas/rodada-partes.js';
 import { ACT } from '../acoes.js';
@@ -58,7 +51,7 @@ function porNoTime(ti, pid) {
 }
 /* Escolher o time de quem confirmou depois do sorteio. */
 function escolherTime(pid) {
-  janelaEscolherTime(pid, curRodada().times);
+  return comJanelasTimes((m, u) => m.janelaEscolherTime(u, pid, curRodada().times));
 }
 /* KAN-71: depois de sortear, a tela vai até os times e o foco fica no título "Times" (leitor de tela anuncia). */
 function irParaTimes() {
@@ -465,7 +458,7 @@ const acoes = {
     const r = curRodada(),
       f = +el.dataset.v,
       pid = el.dataset.p;
-    janelaMover(pid, f, r.times);
+    return comJanelasTimes((m, u) => m.janelaMover(u, pid, f, r.times));
   },
   toggleRes: el => {
     const f = +el.dataset.v,
@@ -520,7 +513,7 @@ const acoes = {
         r,
         players().map(p => p.id)
       ).filter(id => !conf.includes(id));
-    janelaPorTime(ti, t, conf, outros);
+    return comJanelasTimes((m, u) => m.janelaPorTime(u, ti, t, conf, outros));
   },
   doPorTime: el => {
     const ti = +el.dataset.v,

@@ -10,7 +10,7 @@ import { GB, S, clean, w } from '../nucleo/estado.js';
 import { $, brl, esc, key, toast, today } from '../nucleo/util.js';
 import { foraDoPadrao, referenciaDoGrupo } from '../dominio/caixa-regras';
 import { closeDlg, confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
-import { janelaSeparar, playerDlg } from '../ui/JanelasGestao';
+import { comJanelasTimes, playerDlg } from '../ui/JanelasGestao';
 import { changed } from '../ui/render.js';
 import { ACT } from '../acoes.js';
 /* Importar da planilha (KAN-159) baixa só quando a janela abre (v59), para a gestão abrir mais leve.
@@ -156,7 +156,7 @@ const acoes = {
       });
     closeDlg();
   },
-  addSep: () => janelaSeparar(players()),
+  addSep: () => comJanelasTimes((m, u) => m.janelaSeparar(u, players())),
   saveSep: () => {
     const a = val('sa'),
       b = val('sb');

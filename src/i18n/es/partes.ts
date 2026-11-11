@@ -709,6 +709,17 @@ export default {
   /* KAN-261: vieram da gestão (pt-BR-afast.ts) */
   'afast.voltouFeito': '{nome} volvió: la ausencia terminó en {mes}.',
   'afast.voltouCancelado': '{nome} volvió: la ausencia se borró.',
+  /* KAN-261: pt-BR-times.ts */
+  'jogador.jogador': 'Jugador',
+  'porTime.ajuda': 'La persona entra directo en este equipo y ya queda confirmada en la lista.',
+  'porTime.avulso': 'Invitado (ya jugó o nuevo)',
+  'porTime.confirmados': 'Confirmados fuera de los equipos',
+  'porTime.jogadores.um': '{n} jugador',
+  'porTime.jogadores.outros': '{n} jugadores',
+  'porTime.ninguem': 'Todos los jugadores registrados ya están en los equipos.',
+  'porTime.outros': 'Otros jugadores',
+  'porTime.qualTime': '¿Poner a {nome} en qué equipo?',
+  'porTime.titulo': 'Poner en {time}',
   /* KAN-261: pt-BR-vagas.ts */
   'minimo.dlgTitulo': 'Mínimo para el partido',
   'minimo.dlgAjuda':

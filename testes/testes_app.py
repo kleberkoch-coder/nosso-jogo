@@ -3254,6 +3254,9 @@ with sync_playwright() as pw:
         ok(p32.locator('#rtPart .rat-fora').count() == 2 and p32.input_value('#rtFora') == '' and p32.is_visible('#dlg'),
            'CT-KAN-216-01: "Adicionar" (ou Enter) põe a pessoa de fora no rateio e limpa o campo, sem fechar a janela')
         p32.locator('#rtPart .rat-fora:has-text("Vizinho") .rat-tirar').click(); p32.wait_for_timeout(150)
+        # Sob carga, a divisão pode levar um instante para aparecer
+        try: p32.wait_for_function("[...document.querySelectorAll('#rtPart .rat-valor')].every(x=>x.value&&x.value!=='0')", timeout=4000)
+        except Exception: pass
         vals32 = p32.evaluate("[...document.querySelectorAll('#rtPart .rat-valor')].map(x=>x.value)")
         soma32 = p32.inner_text('#rtSoma').replace('\xa0', ' ')
         ok(p32.locator('#rtPart .rat-fora').count() == 1 and vals32 == ['100', '100', '100'] and '3 participantes · soma R$ 300,00' in soma32,

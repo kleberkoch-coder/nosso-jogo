@@ -1,7 +1,11 @@
-import { S } from '../nucleo/estado.js';
+import * as estado from '../nucleo/estado.js';
+
+/* TypeScript desde a pelada-v107 (KAN-66); o estado ainda é JavaScript sem tipos. */
+type Obj = Record<string, any>;
+const S = (estado as Obj).S as Obj;
 
 /* ---------- Partida: placar e cronômetro (a tela fica em telas/Partida.tsx, KAN-160) ---------- */
-function sumPts(gs, t) {
+function sumPts(gs: { t: string; pts?: number }[], t: string) {
   return gs.filter(g => g.t === t).reduce((s, g) => s + (g.pts || 1), 0);
 }
 function elapsed() {
@@ -44,7 +48,7 @@ function tick() {
 setInterval(() => {
   if (S.tab === 'partida' && S.route.n === 'admin') tick();
 }, 250);
-let actx = null;
+let actx: any = null;
 function beep() {
   try {
     if (!actx) return;
@@ -63,7 +67,7 @@ function beep() {
   } catch (e) {}
 }
 
-function setActx(v) {
+function setActx(v: unknown) {
   actx = v;
 }
 

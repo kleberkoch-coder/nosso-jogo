@@ -96,6 +96,8 @@ export default {
   /* Google na aba errada (KAN-142) */
   /* login e cadastro (pelada-v34: textos fora do código, KAN-10) */
   'publico.partidas': 'Partidas',
+  /* KAN-249: linha da partida (aba Partida, Histórico e link) */
+  'partida.jogoN': 'Jogo {n}',
   'times.reserva': 'reserva',
   'times.marcarReserva': 'Marcar como reserva',
   'times.marcarTitular': 'Marcar como titular',
@@ -201,5 +203,10 @@ export default {
   'zap.times': 'Times — {data}',
   'zap.detalhes': 'Detalhes: {link}',
   'pwa.botao': '📲 Instalar app',
+  /* KAN-124: botão de agenda no link (a janela e o arquivo chegam com ui/JanelasLink.tsx) */
+  'agenda.botao': 'Pôr na minha agenda',
+  'agenda.rotulo': 'Pôr o jogo na minha agenda',
+  'agenda.ajuda':
+    'Abre a agenda do seu celular: confirme em Adicionar. Se o jogo mudar, a agenda não muda sozinha; confira sempre este link.',
   'zap.extra': '🍖 Depois tem {n}: responda no mesmo link, separado do jogo.',
 };

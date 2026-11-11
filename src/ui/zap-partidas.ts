@@ -6,6 +6,7 @@
 import { lerCamp, type Jogo } from '../dominio/campeonato';
 import { chave, type Chave } from '../dominio/mata-mata';
 import { artilharia, autores, tabela, type PartidaResumo } from '../dominio/resumo-rodada';
+import { assistencias } from '../dominio/partida-texto';
 import { artNome, col, sport, timeDoJogo, tn, tnJogo } from '../dominio/esportes.js';
 import { pname } from '../dominio/grupo.js';
 import { LOCAL } from '../i18n/formatos.js';
@@ -88,6 +89,14 @@ export function txtPartidas(
     });
   const art = artilharia(ms, nome, lancada, LOCAL);
   if (art.length) t += `\n\n🏅 *${artNome()}*: ` + art.map(([p, n]) => `${nome(p)} ${n}`).join(' · ');
+  /* KAN-66: as assistências da rodada, nos esportes que têm (o nome vem do catálogo). */
+  const astN = (sport() as { astN?: string }).astN;
+  if (astN) {
+    const as = Object.entries(assistencias(ms as { goals?: { pid?: string | null; as?: string | null }[] }[])).sort(
+      (x, y) => y[1] - x[1] || nome(x[0]).localeCompare(nome(y[0]), LOCAL)
+    );
+    if (as.length) t += `\n🍽️ *${astN}*: ` + as.map(([p, n]) => `${nome(p)} ${n}`).join(' · ');
+  }
   if (k) {
     const camp = k.tabela.filter(l => l.j > 0);
     if (camp.length)

@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   aplicar,
   caixaDoMes,
+  camposEdicao,
   camposLancamento,
   camposPartida,
   camposVotacao,
@@ -32,7 +33,7 @@ const P = (id, date, ga, gb, goals = [], extra = {}) => ({
 /* Jeito antigo (v17): soma tudo direto das partidas. Os resumos têm que dar o mesmo resultado. */
 function antigo(ps) {
   const s = {},
-    g = id => s[id] || (s[id] = { id, j: 0, v: 0, e: 0, d: 0, gols: 0, mvp: 0, bagre: 0 });
+    g = id => s[id] || (s[id] = { id, j: 0, v: 0, e: 0, d: 0, gols: 0, as: 0, mvp: 0, bagre: 0 });
   ps.forEach(m => {
     const res = m.ga > m.gb ? 'a' : m.ga < m.gb ? 'b' : 'e';
     m.pa.forEach(id => {
@@ -47,6 +48,7 @@ function antigo(ps) {
     });
     m.goals.forEach(gl => {
       if (gl.pid && !gl.og) g(gl.pid).gols += gl.pts || 1;
+      if (gl.as && gl.pid && !gl.og && gl.as !== gl.pid) g(gl.as).as += 1;
     });
   });
   return Object.values(s)
@@ -64,8 +66,8 @@ const PARTIDAS = [
   P('m2', '2026-09-07', 0, 0),
   P('m3', '2026-10-05', 1, 3, [
     { t: 'a', pid: 'c', og: true },
-    { t: 'b', pid: 'd', pts: 2 },
-    { t: 'b', pid: 'c' },
+    { t: 'b', pid: 'd', pts: 2, as: 'c' },
+    { t: 'b', pid: 'c', as: 'd' },
   ]),
 ];
 
@@ -195,4 +197,39 @@ test('KAN-207: totais antigos dentro do resumo do ranking são achados para muda
   assert.deepEqual(caixaAntigo({ mes: '2026-09', cx: { ent: 100 } }), { mes: '2026-09', cx: { ent: 100, sai: 0 } });
   assert.equal(caixaAntigo({ mes: '2026-09', jog: {} }), null);
   assert.equal(caixaAntigo(null), null);
+});
+
+/* KAN-66 (pelada-v107): assistências no resumo do mês. */
+test('CT-KAN-66-07: assistência conta 1 por ponto (não pelos pontos), no jogador que deu o passe', () => {
+  const doc = resumirTudo(PARTIDAS, [], [])['2026-10'];
+  const l = Object.fromEntries(ranking([doc]).map(x => [x.id, x]));
+  assert.equal(l.c.as, 1); // passe para a cesta de 2 do d
+  assert.equal(l.d.as, 1);
+  assert.equal(l.c.gols, 1);
+});
+test('CT-KAN-66-10: gol contra, sem autor ou a assistência do próprio autor não contam', () => {
+  const m = P('m9', '2026-10-20', 1, 1, [
+    { t: 'a', pid: 'a', as: 'a' },
+    { t: 'b', pid: 'b', og: true, as: 'c' },
+    { t: 'b', pid: null, as: 'c' },
+  ]);
+  const c = camposPartida(m, m.rid, m.date, 1);
+  assert.ok(!Object.keys(c.somar).some(k => k.endsWith('.as')));
+});
+test('CT-KAN-66-09: editar a assistência troca quem soma, sem mexer nos gols', () => {
+  const antes = P('m5', '2026-10-12', 1, 0, [{ t: 'a', pid: 'a', as: 'b' }]),
+    depois = P('m5', '2026-10-12', 1, 0, [{ t: 'a', pid: 'a', as: 'e' }]);
+  const [c] = camposEdicao(antes, depois, antes.rid, antes.date);
+  assert.equal(c.somar['jog.b.as'], -1);
+  assert.equal(c.somar['jog.e.as'], 1);
+  assert.ok(!('jog.a.g' in c.somar));
+});
+test('CT-KAN-66-12: partidas antigas (sem assistência) dão 0, e quem só deu assistência aparece no ranking', () => {
+  const doc = resumirTudo([PARTIDAS[0]], [], [])['2026-08'];
+  assert.ok(ranking([doc]).every(x => x.as === 0));
+  const so = ranking([{ mes: '2026-11', jog: { z: { as: 2 } }, jogos: {} }]);
+  assert.deepEqual(
+    so.map(x => [x.id, x.as]),
+    [['z', 2]]
+  );
 });

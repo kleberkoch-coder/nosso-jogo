@@ -538,7 +538,7 @@ export default {
   'partida.semLimite': 'Sin límite',
   'partida.limiteAtingido': 'Fin por marcador: llegó a {n}',
   'partida.salvasTitulo': 'Partidos de esta jornada',
-  'partida.salva': 'Guardado: {a} {ga} × {gb} {b}',
+  'partida.salva': 'Partido guardado: {a} {ga} × {gb} {b}',
   'partida.apagar': 'Borrar',
   'partida.nenhumaSalva': 'Todavía no hay partidos guardados.',
   'partida.semRodada': 'Crea la jornada en la pestaña Jornada y sortea los equipos para empezar.',
@@ -780,4 +780,12 @@ export default {
   'zappart.campeao': 'Campeón: {time}',
   'zappart.vice': 'Subcampeón: {time}',
   'zappart.terceiro': '3.er lugar: {time}',
+  /* KAN-66 (pelada-v107): assistências */
+  'partida.assistDe': 'Asistencia de…',
+  'partida.assistDoGol': '{ponto} de {nome}. ¿Quién dio el pase?',
+  'partida.semAssist': 'Sin asistencia',
+  'partida.assistencia': 'Asistencia',
+  'partida.assistDoGolRotulo': 'Asistencia: {ponto} de {nome}',
+  'rank.garcom': 'Asistidor',
+  'rank.garcomLinha': 'Asistidor: {nome} ({n})',
 };

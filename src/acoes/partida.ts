@@ -2,25 +2,35 @@
 import { sport, tn } from '../dominio/esportes.js';
 import { curRodada, pname } from '../dominio/grupo.js';
 import { tx } from '../i18n/index.js';
-import { addMatch, delMatch as apagarPartida, editMatch, salvarArtilharia } from '../nucleo/partidas.js';
-import { GB, S, w } from '../nucleo/estado.js';
+import { addMatch, delMatch as apagarPartida, editMatch, salvarArtilharia } from '../nucleo/partidas-tarefas';
+import * as estado from '../nucleo/estado.js';
 import { $, esc, toast, uid } from '../nucleo/util.js';
-import { actx, beep, elapsed, setActx, sumPts } from '../ui/placar.js';
+import * as placar from '../ui/placar';
 import { artAtual, limiteAtingido, montarArtilharia, montarEscalacao, novaPartida, quadra } from '../telas/Partida';
 import { correcaoAtual, edicaoAtual, montarCorrecao, montarEdicao } from '../telas/PartidaGols';
 import { artilhariaDe, partidasDe } from '../nucleo/partidas-lista.js';
 import { mandarPartidas } from '../ui/zap-partidas';
 import { closeDlg, confirmou, dlg, openDlg } from '../ui/dialogos.js';
-import { janelaPonto } from '../ui/JanelaPonto';
+import { janelaAssistencia, janelaPonto } from '../ui/JanelaPonto';
 import { changed, render } from '../ui/render.js';
 import { ACT } from '../acoes.js';
 import { campDe, chaveDe } from '../telas/Campeonato';
 import { MAX_TIMES, MIN_TIMES, novoCampeonato } from '../dominio/campeonato';
 import { recurso } from '../dominio/grupo.js';
-import { op } from '../nucleo/backend.js';
+import * as backend from '../nucleo/backend.js';
+
+/* O estado e o banco ainda são JavaScript sem tipos (TypeScript desde a pelada-v107, KAN-66). */
+type Obj = Record<string, any>;
+type El = Obj & { dataset: Obj };
+const S = (estado as Obj).S as Obj,
+  GB = (estado as Obj).GB as Obj,
+  w = (estado as Obj).w as (p: unknown) => Promise<unknown>,
+  op = (backend as Obj).op as Obj;
+const { beep, elapsed, setActx, sumPts } = placar as Obj;
+const actx = (): any => (placar as Obj).actx;
 
 /* KAN-233: grava o campeonato na ficha da rodada (campo camp), com a tela mudando na hora. */
-function gravarCamp(r, camp) {
+function gravarCamp(r: Obj, camp: Obj | null) {
   const d = S.rod[r.id] || {};
   S.rod[r.id] = Object.assign({}, d, { camp });
   if (!camp) delete S.rod[r.id].camp;
@@ -28,9 +38,9 @@ function gravarCamp(r, camp) {
   return w(GB.patch('rodadas/' + r.id, { camp: camp || op.apagar() }));
 }
 /* Só alguns campos do campeonato (ajustes, quem passou): não desfaz o que outro aparelho gravou nos outros. */
-function gravarNoCamp(r, campos) {
+function gravarNoCamp(r: Obj, campos: Obj) {
   const d = S.rod[r.id] || {},
-    c = Object.assign({}, d.camp);
+    c: Obj = Object.assign({}, d.camp);
   Object.entries(campos).forEach(([k, v]) => {
     const [a, b] = k.split('.');
     if (b) c[a] = Object.assign({}, c[a], { [b]: v });
@@ -38,7 +48,7 @@ function gravarNoCamp(r, campos) {
   });
   S.rod[r.id] = Object.assign({}, d, { camp: c });
   changed();
-  const o = {};
+  const o: Obj = {};
   Object.entries(campos).forEach(([k, v]) => (o['camp.' + k] = v));
   return w(GB.patch('rodadas/' + r.id, o));
 }
@@ -49,8 +59,8 @@ const janelas = () =>
     throw e;
   });
 /* Empate no mata-mata (KAN-233): abre "Quem passou?" para o jogo da chave. */
-function abrirQuemPassou(r, id) {
-  const k = chaveDe(r),
+function abrirQuemPassou(r: Obj, id: string | undefined) {
+  const k = chaveDe(r as any),
     s = k && k.slots.find(x => x.id === id && x.res && x.res.ga === x.res.gb);
   if (!s) return;
   return janelas().then(m => {
@@ -60,15 +70,22 @@ function abrirQuemPassou(r, id) {
   });
 }
 
+/* O gol como é gravado. KAN-66: a assistência só entra se for de outra pessoa e não for gol contra. */
+function golLimpo(g: Obj) {
+  const o: Obj = { t: g.t, pid: g.pid || null, og: !!g.og, pts: g.pts || 1 };
+  if (g.as && o.pid && !o.og && g.as !== o.pid) o.as = g.as;
+  return o;
+}
+
 /* KAN-75: título da janela do ponto, pelo catálogo do esporte.
    "+2" vira "+2 pontos"; "Gol" fica "Gol"; "TD" vira "TD (+6)"; "2 pts" fica como está. */
-function nomePonto(sc, SP) {
+function nomePonto(sc: [string, number], SP: Obj) {
   const [r, p] = sc;
   if (/^\+\d+$/.test(r)) return r + ' ' + (p === 1 ? SP.unit : SP.word.toLowerCase());
   return p > 1 && !/\d/.test(r) ? r + ' (+' + p + ')' : r;
 }
 
-const acoes = {
+const acoes: Record<string, (el: El) => unknown> = {
   /* KAN-233: formato da rodada. Campeonato abre a janela (montar ou mudar o desempate); Livre desfaz, com confirmação. */
   abrirCampeonato: () => {
     const r = curRodada();
@@ -90,7 +107,7 @@ const acoes = {
         m.desempateEscolhido(),
         Date.now(),
         Math.floor(Math.random() * 2 ** 31),
-        m.mataEscolhido()
+        m.mataEscolhido() || undefined
       );
       closeDlg();
       /* O jogo em andamento que ainda não começou passa a ser o primeiro do campeonato. */
@@ -111,7 +128,7 @@ const acoes = {
       return gravarNoCamp(r, { crit: m.desempateEscolhido(), mm: m.mataEscolhido() || c.mm });
     });
   },
-  quemPassou: el => abrirQuemPassou(curRodada(), el.dataset.v),
+  quemPassou: (el: El) => abrirQuemPassou(curRodada(), el.dataset.v),
   /* KAN-238: campeonato encerrado: jogar mais uma partida (fora do campeonato) ou voltar ao resultado. */
   jogarFora: () => {
     const r = curRodada();
@@ -134,7 +151,7 @@ const acoes = {
       return gravarNoCamp(r, { ['dec.' + e.id]: e.d });
     });
   },
-  formatoLivre: el => {
+  formatoLivre: (el: El) => {
     const r = curRodada();
     if (!r || !r.camp) return;
     if (
@@ -148,7 +165,7 @@ const acoes = {
     toast(tx('camp.voltouLivre'));
     return gravarCamp(r, null);
   },
-  goal: el => {
+  goal: (el: El) => {
     const r = curRodada(),
       L = S.live,
       t = el.dataset.v,
@@ -165,9 +182,12 @@ const acoes = {
       contra: SP.og ? quadra(r, t === 'a' ? 'b' : 'a').atuais : null,
     });
   },
-  addGoal: el => {
-    const L = S.live;
-    L.goals.push({ t: el.dataset.v, pid: el.dataset.p || null, og: !!el.dataset.og, pts: +el.dataset.pts || 1 });
+  addGoal: (el: El) => {
+    const L = S.live,
+      t = el.dataset.v,
+      pid = el.dataset.p || null,
+      og = !!el.dataset.og;
+    L.goals.push({ t, pid, og, pts: +el.dataset.pts || 1 });
     /* Fim por placar (KAN-175): avisa uma vez, pausa o cronômetro e toca como no fim do tempo. */
     if (limiteAtingido(L) && !L.limAviso) {
       L.limAviso = true;
@@ -177,6 +197,22 @@ const acoes = {
       }
       beep();
     }
+    /* KAN-66: o gol já está contado; se o esporte tem assistência, a mesma janela pergunta quem deu o passe
+       (os colegas em quadra, sem o autor). Esc, tocar fora ou "Sem assistência" fecham sem assistência. */
+    const colegas = pid && !og && sport().ast ? quadra(curRodada(), t).atuais.filter(id => id !== pid) : [];
+    if (colegas.length) {
+      render();
+      janelaAssistencia({ i: L.goals.length - 1, autor: pid, colegas });
+      return;
+    }
+    closeDlg();
+    render();
+  },
+  /* KAN-66: assistência do gol que acabou de entrar (data-v = posição do gol na partida). */
+  addAssist: (el: El) => {
+    const L = S.live,
+      g = L && L.goals[+el.dataset.v];
+    if (g && el.dataset.p && el.dataset.p !== g.pid && !g.og) g.as = el.dataset.p;
     closeDlg();
     render();
   },
@@ -187,7 +223,7 @@ const acoes = {
     const ms = partidasDe(r.id);
     if (!ms.length) return;
     const a = artilhariaDe(r.id);
-    mandarPartidas(r, ms, a && a.gols);
+    mandarPartidas(r, ms as any, (a as Obj | null)?.gols);
   },
   /* KAN-229: corrigir qualquer gol da partida em andamento (autor, time, tirar ou somar). */
   corrigirGols: () => {
@@ -201,7 +237,7 @@ const acoes = {
     const gs = correcaoAtual(),
       L = S.live;
     if (!gs || !L) return;
-    L.goals = gs.map(g => ({ t: g.t, pid: g.pid || null, og: !!g.og, pts: g.pts || 1 }));
+    L.goals = gs.map(golLimpo);
     /* Se a correção tirou o placar do limite, o aviso some; se chegou nele, avisa como num gol. */
     if (!limiteAtingido(L)) L.limAviso = false;
     else if (!L.limAviso) {
@@ -223,8 +259,8 @@ const acoes = {
   clock: () => {
     const L = S.live;
     try {
-      if (!actx) setActx(new (window.AudioContext || window.webkitAudioContext)());
-      if (actx.state === 'suspended') actx.resume();
+      if (!actx()) setActx(new (window.AudioContext || (window as Obj).webkitAudioContext)());
+      if (actx().state === 'suspended') actx().resume();
     } catch (e) {}
     if (L.run) {
       L.el = elapsed();
@@ -258,12 +294,14 @@ const acoes = {
       pb: quadra(r, 'b').jogaram,
       ga,
       gb,
-      goals: L.goals.map(g => ({ t: g.t, pid: g.pid, og: g.og, pts: g.pts || 1 })),
+      goals: L.goals.map(golLimpo),
       at: Date.now(),
     });
     /* KAN-175: o próximo jogo sai dos jogos salvos (quem ganha fica, entra quem espera há mais tempo). */
     S.live = novaPartida(r, L);
-    toast(tx('partida.salva', { a: tn(L.a), ga, gb, b: tn(L.b) }));
+    /* KAN-249: o nome do time não quebra no meio do aviso (espaço que não quebra). */
+    const inteiro = (t: string) => String(t).replace(/ /g, '\u00a0');
+    toast(tx('partida.salva', { a: inteiro(tn(L.a)), ga, gb, b: inteiro(tn(L.b)) }));
     /* KAN-233: empate num jogo do mata-mata pergunta na hora quem passou. */
     if (ga === gb) {
       const k = chaveDe(r),
@@ -280,7 +318,7 @@ const acoes = {
     const g = artAtual(),
       r = curRodada();
     if (!g || !r) return;
-    const gols = {};
+    const gols: Record<string, number> = {};
     Object.entries(g).forEach(([id, n]) => {
       if (n > 0) gols[id] = n;
     });
@@ -289,27 +327,27 @@ const acoes = {
     return salvarArtilharia(r.id, gols);
   },
   /* KAN-177: escalação de um lado (empréstimo, troca, alguém da lista de presença). */
-  abrirEscalacao: el => {
+  abrirEscalacao: (el: El) => {
     openDlg('escRaiz');
     if (!montarEscalacao(el.dataset.v, render)) closeDlg();
   },
   /* KAN-176: corrigir uma partida salva (autores, gols a mais ou a menos). */
-  editarPartida: el => {
+  editarPartida: (el: El) => {
     openDlg('edRaiz');
     if (!montarEdicao(el.dataset.v)) closeDlg();
   },
-  salvarEdicao: el => {
+  salvarEdicao: (el: El) => {
     const e = edicaoAtual(),
       r = curRodada();
     if (!e || !r || e.mid !== el.dataset.v) return;
-    const goals = e.goals.map(g => ({ t: g.t, pid: g.pid || null, og: !!g.og, pts: g.pts || 1 })),
+    const goals = e.goals.map(golLimpo),
       ga = sumPts(goals, 'a'),
       gb = sumPts(goals, 'b');
     closeDlg();
     toast(tx('partida.editada', { a: ga, b: gb }));
     return editMatch(r.id, e.mid, { goals, ga, gb });
   },
-  delMatch: el => {
+  delMatch: (el: El) => {
     if (
       confirmou(el, {
         titulo: tx('partida.apagarTitulo'),

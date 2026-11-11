@@ -22,4 +22,7 @@ export default {
   'resumo.recalcular': 'Recalcular',
   'resumo.ajuda': 'Totais prontos por mês, atualizados a cada partida e votação.',
   'resumo.preparando': 'Preparando os totais do grupo pela primeira vez… isso leva alguns segundos.',
+  /* KAN-66 (pelada-v107): quem mais deu assistências */
+  'rank.garcom': 'Garçom',
+  'rank.garcomLinha': 'Garçom: {nome} ({n})',
 };

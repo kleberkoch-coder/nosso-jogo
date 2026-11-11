@@ -1,6 +1,10 @@
 /* Ações: Link público (jogador sem conta): presença e voto. Fazem parte de ACT (src/acoes.js).
    TypeScript desde a pelada-v106 (KAN-262). */
-import { isAvulso, normName, players, pname, rodById } from '../dominio/grupo.js';
+import { fixos, gname, isAvulso, normName, players, pname, rodById } from '../dominio/grupo.js';
+import { sportName } from '../dominio/esportes.js';
+import { horaTexto } from '../dominio/rodadas.js';
+import { FUSO } from '../i18n/formatos.js';
+import { linkProxima, linkRodada } from '../nucleo/links.js';
 import { tx } from '../i18n/index.js';
 import { semConexao } from '../eventos.js';
 import * as banco from '../nucleo/backend.js';
@@ -9,7 +13,7 @@ import { precisaVaga, situacao } from '../dominio/vagas';
 import { proximoVoto } from '../dominio/votacao';
 import { setPres } from '../nucleo/edicoes';
 import { GB, S as estado, w } from '../nucleo/estado.js';
-import { $, toast } from '../nucleo/util.js';
+import { $, fdate, toast } from '../nucleo/util.js';
 import { MEK, myLocal } from '../telas/publico-rodada';
 import { closeDlg, dlg, val } from '../ui/dialogos.js';
 import { changed } from '../ui/render.js';
@@ -30,6 +34,26 @@ function semVaga(id: string) {
   toast(tx(v.cheia ? 'vagaslink.esgotadas' : 'vagaslink.fechadas'));
   return true;
 }
+/* KAN-124: o que o evento de agenda leva (só o que o link já mostra). "Toda semana" só em rodada de dia fixo. */
+function dadosAgenda() {
+  const r = rodById(st().route.id);
+  if (!r) return null;
+  const [y, m, d] = String(r.date).split('-').map(Number);
+  return {
+    r,
+    grupo: gname(),
+    esporte: sportName(),
+    fuso: FUSO,
+    gid: st().gid,
+    semanal: !!r.fixo && fixos().length > 0,
+    dia: fdate(r.date),
+    dow: new Date(Date.UTC(y, m - 1, d)).getUTCDay(),
+    hora: r.time ? horaTexto(r.time) : '',
+    linkRodada: linkRodada(r.id),
+    linkGrupo: linkProxima(),
+  };
+}
+const janelasLink = () => import('../ui/JanelasLink');
 const acoes: Record<string, (el: El) => unknown> = {
   /* KAN-184: "Tentar de novo" quando o link não carregou. */
   recarregar: () => location.reload(),
@@ -60,8 +84,17 @@ const acoes: Record<string, (el: El) => unknown> = {
   },
   /* KAN-127: o que o jogador digitou na busca já vem no nome. */
   /* KAN-262: a janela baixa sob demanda; devolver a promessa faz o botão girar até ela abrir. */
+  /* KAN-124: "Pôr na minha agenda" (a janela e o arquivo baixam sob demanda, como "Adicionar meu nome"). */
+  pubAgenda: () => {
+    const d = dadosAgenda();
+    if (d) return janelasLink().then(m => m.janelaAgenda(d), semConexao);
+  },
+  pubAgendaGerar: el => {
+    const d = dadosAgenda();
+    if (d) return janelasLink().then(m => m.baixarAgenda(d, el.dataset.v === 'semana'), semConexao);
+  },
   pubAdd: el =>
-    import('../ui/JanelasLink').then(m => {
+    janelasLink().then(m => {
       m.janelaMeuNome((el && el.dataset.v) || '');
       if (el && el.dataset.v) $('#anm')?.dispatchEvent(new Event('input', { bubbles: true }));
     }, semConexao),

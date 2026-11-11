@@ -15,7 +15,7 @@ import * as banco from '../nucleo/backend.js';
 import { S as estado, gp } from '../nucleo/estado.js';
 import { $, fdate, fmonth, toast, today } from '../nucleo/util.js';
 import { changed } from '../ui/render.js';
-import { Pos } from '../ui/componentes';
+import { LinhaPartida, Pos } from '../ui/componentes';
 
 juntarTextos(textosCampeao);
 juntarTextos(textosHist);
@@ -40,9 +40,11 @@ type Partida = {
   ta?: number;
   tb?: number;
   tipo?: string;
+  ca: number | string;
+  cb: number | string;
   ga: number;
   gb: number;
-  goals?: { pid?: string; og?: boolean; pts?: number }[];
+  goals?: { pid?: string; og?: boolean; pts?: number; as?: string | null }[];
 };
 type Hist = {
   modo: 'mes' | 'periodo';
@@ -402,29 +404,21 @@ function Detalhe({ h }: { h: Hist }) {
         {!h.parts ? (
           <p class="muted small">{tx('comum.carregando')}</p>
         ) : ms.length ? (
-          <ul class="plist wrap">
-            {ms.map((m, i) => {
-              const gs = (m.goals || []).filter(g => g.pid && !g.og);
-              return (
-                <li key={m.id || i}>
-                  <span class="num">{i + 1}</span>
-                  <span class="pn">
-                    {ko ? <span class="tag fase-tag">{rotuloFase(ko.fases[i] ?? null)}</span> : null}
-                    {ko ? ' ' : null}
-                    {tnJogo(m, 'a', r.times)} <b>{m.ga + ' × ' + m.gb}</b> {tnJogo(m, 'b', r.times)}
-                    {gs.length ? (
-                      <>
-                        {' '}
-                        <span class="small muted">
-                          — {String(sport().word).toLowerCase()}:{' '}
-                          {gs.map(g => pname(g.pid) + ((g.pts || 1) > 1 ? ' (' + g.pts + ')' : '')).join(', ')}
-                        </span>
-                      </>
-                    ) : null}
-                  </span>
-                </li>
-              );
-            })}
+          <ul class="plist" id="histPartidas">
+            {ms.map((m, i) => (
+              <LinhaPartida
+                key={m.id || i}
+                n={i + 1}
+                ca={m.ca}
+                cb={m.cb}
+                na={tnJogo(m, 'a', r.times)}
+                nb={tnJogo(m, 'b', r.times)}
+                ga={m.ga}
+                gb={m.gb}
+                goals={m.goals}
+                fase={ko ? <span class="tag fase-tag">{rotuloFase(ko.fases[i] ?? null)}</span> : null}
+              />
+            ))}
           </ul>
         ) : (
           <p class="muted small">{tx('hist.semPartidas')}</p>

@@ -25,6 +25,7 @@ import textos from '../i18n/pt-BR-campeonato';
 import { S as estado } from '../nucleo/estado.js';
 import { partidasDe } from '../nucleo/partidas-lista.js';
 import { Trava } from '../ui/Plano';
+import { Confronto } from '../ui/componentes';
 
 juntarTextos(textos);
 
@@ -189,8 +190,14 @@ export function PainelCampeonato({ r }: { r: Rodada }) {
             <li key={j} class={feito ? 'feito' : agora ? 'agora' : ''} data-j={j}>
               <span class="num">{i + 1}</span>
               <span class="pn">
-                <Dot c={times[a].c} /> {tn(a)} <b>{feito ? feito.ga + ' × ' + feito.gb : '×'}</b> {tn(b)}{' '}
-                <Dot c={times[b].c} />
+                <Confronto
+                  ca={times[a].c}
+                  cb={times[b].c}
+                  na={tn(a)}
+                  nb={tn(b)}
+                  ga={feito ? feito.ga : null}
+                  gb={feito ? feito.gb : null}
+                />
               </span>
               {quadra ? (
                 <span class="tag">{tx('camp.emQuadra')}</span>

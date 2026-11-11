@@ -63,7 +63,7 @@ export default {
   'partida.semLimite': 'Sem limite',
   'partida.limiteAtingido': 'Fim por placar: chegou a {n}',
   'partida.salvasTitulo': 'Partidas desta rodada',
-  'partida.salva': 'Salvo: {a} {ga} × {gb} {b}',
+  'partida.salva': 'Partida salva: {a} {ga} × {gb} {b}',
   'partida.apagar': 'Apagar',
   'partida.nenhumaSalva': 'Nenhuma partida salva ainda.',
   'partida.semRodada': 'Crie a rodada na aba Rodada e sorteie os times para começar.',
@@ -73,4 +73,10 @@ export default {
   'partida.apagarTitulo': 'Apagar esta partida?',
   'partida.apagarTexto': 'O placar e os pontos dela saem do ranking. Não dá para desfazer.',
   'partida.apagarAcao': 'Apagar partida',
+  /* KAN-66 (pelada-v107): assistências */
+  'partida.assistDe': 'Assistência de…',
+  'partida.assistDoGol': '{ponto} de {nome}. Quem deu o passe?',
+  'partida.semAssist': 'Sem assistência',
+  'partida.assistencia': 'Assistência',
+  'partida.assistDoGolRotulo': 'Assistência: {ponto} de {nome}',
 };

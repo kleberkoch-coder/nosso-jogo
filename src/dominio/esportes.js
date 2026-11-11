@@ -18,6 +18,9 @@ const FUT = {
   word: 'Gols',
   unit: 'gol',
   art: 'Artilharia',
+  /* KAN-66: o esporte tem assistência (o passe do ponto); ast = nome da coluna no ranking, astN = nome inteiro. */
+  ast: 'Assist.',
+  astN: 'Assistências',
   min: 10,
 };
 const SPORTS = {
@@ -42,6 +45,8 @@ const SPORTS = {
     word: 'Pontos',
     unit: 'ponto',
     art: 'Cestinhas',
+    ast: 'Assist.',
+    astN: 'Assistências',
     min: 10,
   },
   volei: {
@@ -107,6 +112,8 @@ const SPORTS = {
     word: 'Gols',
     unit: 'gol',
     art: 'Artilharia',
+    ast: 'Assist.',
+    astN: 'Assistências',
     min: 15,
   },
   fut_americano: {
@@ -183,6 +190,8 @@ const SPORTS = {
     og: true,
     word: 'Gols',
     unit: 'gol',
+    ast: 'Assist.',
+    astN: 'Assistências',
     min: 15,
   },
   outro: {
@@ -297,6 +306,10 @@ function aplicarCatalogo() {
     s.word = tc(o.word);
     s.unit = tc(o.unit);
     if (o.art) s.art = tc(o.art);
+    if (o.ast) {
+      s.ast = tc(o.ast);
+      s.astN = tc(o.astN);
+    }
   }
   ORIG.c.forEach((o, i) => (COL[i].n = tc(o.n)));
   /* O futebol, o society e o futsal dividiam as listas (FUT): depois da troca, cada um tem a sua. */

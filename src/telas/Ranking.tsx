@@ -74,6 +74,7 @@ function Filtros() {
   );
 }
 
+const temAssist = () => !!(sport() as { ast?: string }).ast;
 function colunas(): [Coluna, string][] {
   return [
     ['pts', tx('rank.col.pts')],
@@ -83,6 +84,8 @@ function colunas(): [Coluna, string][] {
     ['d', tx('rank.col.d')],
     ['ap', tx('rank.col.ap')],
     ['gols', (sport() as { word: string }).word],
+    /* KAN-66: assistências, só nos esportes que têm (catálogo). */
+    ...(temAssist() ? ([['as', (sport() as { ast: string }).ast]] as [Coluna, string][]) : []),
     ['mvp', tx('rank.col.mvp')],
     ['bagre', tx('rank.col.bagre')],
   ];
@@ -120,9 +123,17 @@ function Tabela({ linhas }: { linhas: Linha[] }) {
           <tr>
             <th>#</th>
             <th>{tx('rank.jogador')}</th>
-            {cols.map(([c, l]) => (
-              <th key={c}>{l}</th>
-            ))}
+            {cols.map(([c, l]) =>
+              c === 'as' ? (
+                <th key={c}>
+                  <abbr title={(sport() as { astN: string }).astN} aria-label={(sport() as { astN: string }).astN}>
+                    {l}
+                  </abbr>
+                </th>
+              ) : (
+                <th key={c}>{l}</th>
+              )
+            )}
           </tr>
         </thead>
         <tbody>
@@ -137,6 +148,7 @@ function Tabela({ linhas }: { linhas: Linha[] }) {
               <td>{x.d}</td>
               <td>{x.ap}%</td>
               <td>{x.gols}</td>
+              {temAssist() ? <td>{x.as}</td> : null}
               <td>{x.mvp}</td>
               <td>{x.bagre}</td>
             </tr>
@@ -147,6 +159,22 @@ function Tabela({ linhas }: { linhas: Linha[] }) {
         {tx('rank.pontos')}
       </p>
     </div>
+  );
+}
+
+/* KAN-66: quem mais deu assistências no período ("🍽️ Garçom: Caio (4)"; empatados, os nomes juntos). */
+function Garcom({ linhas }: { linhas: Linha[] }) {
+  if (!temAssist()) return null;
+  const max = Math.max(0, ...linhas.map(l => l.as));
+  if (!max) return null;
+  const nomes = linhas
+    .filter(l => l.as === max)
+    .map(l => pname(l.id))
+    .join(', ');
+  return (
+    <p class="rank-garcom" id="rankGarcom">
+      <span aria-hidden="true">🍽️</span> {tx('rank.garcomLinha', { nome: nomes, n: max })}
+    </p>
   );
 }
 
@@ -204,6 +232,7 @@ function RankingTela() {
   return (
     <div class="stack">
       <Topo />
+      {linhas.length ? <Garcom linhas={linhas} /> : null}
       {linhas.length ? (
         <Tabela linhas={linhas} />
       ) : (

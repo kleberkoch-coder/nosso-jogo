@@ -2,3 +2,21 @@
 tr.lead td {
   background: var(--surface-2);
 }
+/* KAN-66 (pelada-v107): o Garçom do período, acima da tabela; a coluna do nome fica fixa ao rolar a tabela. */
+.rank-garcom {
+  margin: 0;
+  font-weight: 600;
+}
+.tbl th:nth-child(2),
+.tbl td:nth-child(2) {
+  position: sticky;
+  left: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+.tbl tr.lead td:nth-child(2) {
+  background: var(--surface-2);
+}
+.tbl abbr {
+  text-decoration: none;
+}

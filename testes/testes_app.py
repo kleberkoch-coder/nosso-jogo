@@ -5197,6 +5197,39 @@ with sync_playwright() as pw:
         ok(p107.locator('#agendaLinha').count() == 0, 'CT-KAN-124-05: com a lista fechada, o botão de agenda não aparece')
         ctx107.close()
 
+        # ---------- v108 (KAN-252): todo combo com 44px (aba Partida, seletor de rodada, dias fixos)
+        ctx108 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+        p108 = ctx108.new_page(); p108.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p108, 'criar')
+        p108.fill('#le', 'v108@teste.com'); p108.fill('#lp', 'Jogo@2026'); p108.fill('#lp2', 'Jogo@2026'); p108.keyboard.press('Enter'); p108.wait_for_selector('#ngBox', timeout=12000)
+        ALT = "(sel)=>[...document.querySelectorAll(sel)].filter(e=>e.offsetParent).map(e=>Math.round(e.getBoundingClientRect().height))"
+        dias252 = p108.evaluate(ALT, '#ngBox .srow select.sel')
+        p108.fill('#ngn', 'Combos FC'); p108.click('[data-a=pickSport][data-v=futebol]'); p108.click('[data-a=createGroup]')
+        p108.wait_for_function("location.hash.startsWith('#/g/')"); p108.wait_for_timeout(1500)
+        p108.click('[data-a=tab][data-v=jogadores]'); p108.wait_for_timeout(300); p108.click('[data-a=seed]'); p108.wait_for_timeout(1500)
+        js108 = p108.evaluate("Object.keys(S.jog).filter(id=>S.jog[id].ativo!==false).sort()")
+        p108.click('[data-a=tab][data-v=rodada]'); p108.wait_for_timeout(500)
+        for x in js108[:10]:
+            p108.click(f'#presLista [data-a=mark][data-v=in][data-p="{x}"]'); p108.wait_for_timeout(200)
+        sortear(p108)
+        for lg, alt in [(360, 740), (390, 844)]:
+            p108.set_viewport_size({'width': lg, 'height': alt}); p108.wait_for_timeout(200)
+            for tema in ['light', 'dark']:
+                p108.emulate_media(color_scheme=tema); p108.wait_for_timeout(100)
+                p108.click('[data-a=tab][data-v=rodada]'); p108.wait_for_timeout(400)
+                rod252 = p108.evaluate(ALT, 'select.sel[data-c=rid]')
+                p108.click('[data-a=tab][data-v=partida]'); p108.wait_for_selector('select.sel[data-c=ta]', timeout=8000); p108.wait_for_timeout(300)
+                par252 = p108.evaluate(ALT, 'select.sel[data-c=ta],select.sel[data-c=tb],select.sel[data-c=dur],select.sel[data-c=lim]')
+                lin252 = p108.evaluate("new Set(['ta','tb','dur','lim'].map(c=>Math.round(document.querySelector(`select.sel[data-c=${c}]`).getBoundingClientRect().top))).size")
+                larg252 = p108.evaluate("document.documentElement.scrollWidth")
+                ok(rod252 and all(h >= 44 for h in rod252) and len(par252) == 4 and all(h >= 44 for h in par252),
+                   f'CT-KAN-252-03: em {lg}px ({tema}), os combos da aba Partida e o seletor de rodada têm 44px ({par252}, {rod252})')
+                ok(lin252 == 2 and larg252 <= lg, f'CT-KAN-252-05: em {lg}px ({tema}), os quatro combos da Partida ficam em duas linhas, sem rolagem lateral ({lin252}, {larg252}px)')
+        p108.emulate_media(color_scheme='light')
+        ok(dias252 and all(h >= 44 for h in dias252), f'CT-KAN-252-03: o dia da semana dos dias fixos tem 44px ({dias252})')
+        p108.screenshot(path=f'{OUT}/108-partida-combos.png')
+        ctx108.close()
+
     if parte('b'):
         # ---------- v35 (KAN-142): "Continuar com o Google" na aba errada entra ou cria a conta e avisa (navegador separado)
         ctx3 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block'); p3 = ctx3.new_page()

@@ -449,6 +449,52 @@ describe('convite sem o código no cadastro e grupo que não se apaga (KAN-258, 
   });
 });
 
+describe('falhas no uso (KAN-239, pelada-v105)', () => {
+  const falha = (extra = {}) => ({
+    v: 'pelada-v105',
+    t: 'appcheck',
+    m: 'appCheck/fetch-status-error',
+    r: 'r',
+    g: 'g1',
+    nav: 'Safari 17',
+    so: 'iOS 17',
+    disp: 'celular',
+    inst: false,
+    lang: 'pt-BR',
+    n: 1,
+    em: serverTimestamp(),
+    d: '2026-11-11',
+    ...extra,
+  });
+  test('qualquer aparelho com login (inclusive o anônimo do link) grava uma falha no formato certo', async () => {
+    await assertSucceeds(setDoc(doc(db.anon(), 'falhas/abcd1234'), falha()));
+    await assertSucceeds(
+      setDoc(doc(db.adm(), 'falhas/abcd1235'), falha({ t: 'erro', m: 'x is null', p: 'at a (x.js:1)' }))
+    );
+    await assertFails(setDoc(doc(db.semLogin(), 'falhas/abcd1236'), falha()));
+  });
+  test('fora do formato é recusado: tipo, campo a mais, texto grande, hora do aparelho, contagem, id', async () => {
+    await assertFails(setDoc(doc(db.anon(), 'falhas/abcd1237'), falha({ t: 'outro' })));
+    await assertFails(setDoc(doc(db.anon(), 'falhas/abcd1237'), falha({ email: 'a@b.com' })));
+    await assertFails(setDoc(doc(db.anon(), 'falhas/abcd1237'), falha({ m: 'x'.repeat(301) })));
+    await assertFails(setDoc(doc(db.anon(), 'falhas/abcd1237'), falha({ p: 'x'.repeat(1501) })));
+    await assertFails(setDoc(doc(db.anon(), 'falhas/abcd1237'), falha({ em: 5 })));
+    await assertFails(setDoc(doc(db.anon(), 'falhas/abcd1237'), falha({ n: 0 })));
+    await assertFails(setDoc(doc(db.anon(), 'falhas/abcd1237'), falha({ disp: 'relógio' })));
+    await assertFails(setDoc(doc(db.anon(), 'falhas/x'), falha()));
+  });
+  test('ninguém além do portal lê, muda ou apaga', async () => {
+    await assertSucceeds(setDoc(doc(db.anon(), 'falhas/abcd1238'), falha()));
+    await assertFails(getDoc(doc(db.anon(), 'falhas/abcd1238')));
+    await assertFails(getDoc(doc(db.dono(), 'falhas/abcd1238')));
+    await assertFails(setDoc(doc(db.anon(), 'falhas/abcd1238'), falha({ n: 2 })));
+    await assertFails(deleteDoc(doc(db.dono(), 'falhas/abcd1238')));
+    await assertSucceeds(getDoc(doc(db.portal(), 'falhas/abcd1238')));
+    await assertSucceeds(getDocs(collection(db.portal(), 'falhas')));
+    await assertSucceeds(deleteDoc(doc(db.portal(), 'falhas/abcd1238')));
+  });
+});
+
 describe('vagas para diaristas e avulsos (KAN-63)', () => {
   const R = G + '/rodadas/r1',
     CV = R + '/limites/vagas',

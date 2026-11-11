@@ -27,6 +27,7 @@ import {
   type Motivo,
 } from '../dominio/planos.ts';
 import { PADRAO as LIMITES_PADRAO, limite, type Chave } from '../dominio/limites.ts';
+import { agrupar, type Grupo as GrupoFalha, type Registro } from '../dominio/falhas.ts';
 import { tx } from './textos.js';
 import { LOCAL } from '../i18n/formatos.js';
 import { today } from '../nucleo/util.js';
@@ -70,6 +71,9 @@ const P = {
   confirmarBloq: false,
   bloqErro: '',
   bloqOk: '',
+  /* KAN-239: falhas no uso dos últimos 30 dias, agrupadas. */
+  falhas: [] as GrupoFalha[],
+  falhasTotal: 0,
 };
 const $ = (s: string) => document.querySelector(s) as HTMLElement | null;
 const dia = (ts: number | null | undefined) =>
@@ -89,12 +93,22 @@ async function carregar() {
     desenhar();
   }
   try {
-    const [contas, grupos, cfg, lims] = await Promise.all([
+    const [contas, grupos, cfg, lims, falhas] = await Promise.all([
       B.get('contas'),
       B.get('grupos'),
       B.get('sistema/planos').catch(() => null),
       B.get('sistema/limites').catch(() => null),
+      B.get('falhas').catch(() => ({})),
     ]);
+    /* KAN-239: a hora do servidor chega como Timestamp no Firebase e como número no modo demonstração. */
+    const desde = Date.now() - 30 * 864e5,
+      regs: Record<string, Registro> = {};
+    for (const [k, x] of Object.entries((falhas || {}) as Record<string, any>)) {
+      const em = x && x.em && typeof x.em.toMillis === 'function' ? x.em.toMillis() : x && x.em;
+      if (x && typeof em === 'number' && em >= desde) regs[k] = { ...x, em };
+    }
+    P.falhas = agrupar(regs);
+    P.falhasTotal = Object.keys(regs).length;
     P.grupos = grupos || {};
     P.limites = lims;
     const donos = [
@@ -288,6 +302,7 @@ function Lista() {
         </ul>
       </div>
       <Limites />
+      <Falhas />
       <p class="small muted">{tx('portal.atualizado', { d: new Date(P.em).toLocaleString(LOCAL) })}</p>
     </div>
   );
@@ -342,6 +357,51 @@ function Limites() {
         </button>
       </div>
     </form>
+  );
+}
+
+/* Falhas no uso (KAN-239): agrupadas por tipo e mensagem, com as vezes, as versões, as telas e os navegadores. */
+const quando = (ms: number | null) =>
+  ms
+    ? new Date(ms).toLocaleString(LOCAL, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+    : '—';
+const nomeTela = (r: string) => {
+  const t = tx('falhas.tela.' + r);
+  return t.startsWith('falhas.') ? r || '—' : t;
+};
+function Falhas() {
+  return (
+    <div class="panel" id="falhasPainel">
+      <h3 style="margin:0 0 6px">{tx('falhas.titulo')}</h3>
+      <p class="small muted" style="margin:0 0 10px">
+        {tx('falhas.ajuda')}
+      </p>
+      {P.falhas.length ? (
+        <ul class="plist falhas-lista">
+          {P.falhas.map((g, i) => (
+            <li key={i} class="falha">
+              <details>
+                <summary>
+                  <span class="tag">{tx('falhas.tipo.' + g.t)}</span> <b>{g.m}</b>{' '}
+                  <span class="small muted">{tx('falhas.vezes', { n: g.n })}</span>
+                </summary>
+                <p class="small muted" style="margin:6px 0">
+                  {tx('falhas.quando', { a: quando(g.primeira), b: quando(g.ultima) })} · {g.versoes.join(', ')} ·{' '}
+                  {g.telas.map(nomeTela).join(', ')}
+                </p>
+                <ul class="small falha-navs">
+                  {g.navs.map(([n, k]) => (
+                    <li key={n}>{tx('falhas.nav', { nav: n, n: k })}</li>
+                  ))}
+                </ul>
+              </details>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p class="small muted">{tx('falhas.nenhuma')}</p>
+      )}
+    </div>
   );
 }
 

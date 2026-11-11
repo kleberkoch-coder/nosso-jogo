@@ -104,7 +104,8 @@ function w<T>(p: T | Promise<T>): Promise<T> {
   return Promise.resolve(p).catch(e => {
     console.error(e);
     toast(tx(e && e.code === 'permission-denied' ? 'erro.semPermissao' : 'erro.salvar'));
-    document.dispatchEvent(new Event('nj-gravacao-falhou'));
+    /* KAN-239: o código do erro vai junto, para o coletor de falhas (nucleo/falhas.ts). */
+    document.dispatchEvent(new CustomEvent('nj-gravacao-falhou', { detail: (e && (e.code || e.message)) || '?' }));
     throw e;
   });
 }

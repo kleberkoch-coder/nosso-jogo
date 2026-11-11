@@ -4724,6 +4724,54 @@ with sync_playwright() as pw:
         ok(f'of {len(js103)} voted' in e103 and 'Votaram' not in e103 and not falta103, f'CT-KAN-257: em English, a participação e o resultado saem traduzidos ({falta103})')
         ctx103.close()
 
+        # ---------- v105 (KAN-239, 1ª parte): falhas no uso gravadas com os dados de navegação; lista no portal
+        UA105 = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'
+        ctx105 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, service_workers='block', user_agent=UA105)
+        p105 = ctx105.new_page()
+        abrir_entrada(p105, 'criar')
+        p105.fill('#le', 'v105@teste.com'); p105.fill('#lp', 'Jogo@2026'); p105.fill('#lp2', 'Jogo@2026'); p105.keyboard.press('Enter'); p105.wait_for_selector('#ngBox', timeout=12000)
+        p105.fill('#ngn', 'Falhas FC'); p105.click('[data-a=pickSport][data-v=futebol]'); p105.click('[data-a=createGroup]')
+        p105.wait_for_function("location.hash.startsWith('#/g/')"); p105.wait_for_timeout(1500)
+        g105 = p105.url.split('#/g/')[1]
+        p105.goto(URL + '#/p/' + g105); p105.wait_for_timeout(1500)
+        FALHAS = "(()=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2')||'{}');return Object.entries(s).filter(([k])=>/^falhas\\/[^/]+$/.test(k)).map(([,v])=>v)})()"
+        p105.evaluate("document.dispatchEvent(new CustomEvent('nj-appcheck-falhou',{detail:'appCheck/fetch-status-error'}));document.dispatchEvent(new CustomEvent('nj-appcheck-falhou',{detail:'appCheck/fetch-status-error'}))")
+        p105.evaluate("setTimeout(()=>{throw new Error('Teste KAN-239: x is null')},0)")
+        p105.evaluate("document.dispatchEvent(new CustomEvent('nj-gravacao-falhou',{detail:'permission-denied'}))")
+        p105.wait_for_timeout(4500)
+        f105 = p105.evaluate(FALHAS)
+        por = {x['t']: x for x in f105}
+        ac = por.get('appcheck') or {}
+        ok(len(f105) == 3 and sorted(por) == ['appcheck', 'erro', 'gravacao'], f'CT-KAN-239-05: o comprovante do App Check, o erro de código e a gravação recusada viram 3 registros ({sorted(por)})')
+        ok(ac.get('n') == 2 and ac.get('m') == 'appCheck/fetch-status-error' and ac.get('nav') == 'Safari 17' and ac.get('so') == 'iOS 17' and ac.get('disp') == 'celular'
+           and ac.get('v') == 'pelada-v105' and ac.get('r') == 'r' and ac.get('g') == g105 and ac.get('lang') and isinstance(ac.get('em'), (int, float)) and ac.get('inst') is False,
+           f'CT-KAN-239-05: a mesma falha na mesma visita vira um registro com a contagem e os dados de navegação ({ac})')
+        er = por.get('erro') or {}
+        ok('x is null' in er.get('m', '') and len(er.get('p', '')) > 0 and (por.get('gravacao') or {}).get('m') == 'permission-denied',
+           f'CT-KAN-239-05: o erro de código leva o trecho do código; a gravação recusada, o código do Firebase ({er.get("m")!r})')
+        proib = {'email', 'nome', 'name', 'tel', 'uid', 'ip'}
+        ok(all(not (proib & set(x)) for x in f105) and all(set(x) <= {'v', 't', 'm', 'p', 'r', 'g', 'nav', 'so', 'disp', 'inst', 'lang', 'n', 'em', 'd'} for x in f105),
+           'CT-KAN-239-05: nenhum registro leva nome, e-mail, telefone, identificador da pessoa ou IP')
+        # No máximo 20 por aparelho por dia
+        p105.evaluate("localStorage.setItem('nj-falhas-dia',JSON.stringify({d:JSON.parse(localStorage.getItem('nj-falhas-dia')).d,n:20}))")
+        p105.evaluate("document.dispatchEvent(new CustomEvent('nj-appcheck-falhou',{detail:'outra'}))"); p105.wait_for_timeout(4000)
+        ok(len(p105.evaluate(FALHAS)) == 3, 'CT-KAN-239-06: o 21º registro do dia no mesmo aparelho não é gravado')
+        # Portal: lista agrupada
+        if TEM_PORTAL:
+            p105.goto(URL.rsplit('/', 1)[0] + '/portal.html'); p105.wait_for_timeout(600)
+            if p105.locator('[data-p=google]').count(): p105.click('[data-p=google]')
+            p105.wait_for_selector('#falhasPainel', timeout=8000); p105.wait_for_timeout(300)
+            fp = p105.inner_text('#falhasPainel')
+            ok('App Check' in fp and 'appCheck/fetch-status-error' in fp and '2×' in fp and 'Gravação' in fp and 'Erro' in fp,
+               f'CT-KAN-239-07: o portal lista as falhas agrupadas por tipo e mensagem, com as vezes ({fp[:200]!r})')
+            p105.locator('#falhasPainel details').first.click(); p105.wait_for_timeout(200)
+            ok('Safari 17 · iOS 17 · celular: 2×' in p105.inner_text('#falhasPainel') and 'link da rodada' in p105.inner_text('#falhasPainel'),
+               'CT-KAN-239-07: aberta, a falha mostra o navegador, o aparelho e a tela')
+            for tema in ['light', 'dark']:
+                p105.emulate_media(color_scheme=tema); p105.wait_for_timeout(150); contraste(p105, f'falhas no portal ({tema})')
+            p105.emulate_media(color_scheme='light')
+        ctx105.close()
+
         # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
         ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
         p7 = ctx7.new_page()

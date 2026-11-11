@@ -4,6 +4,7 @@
   "grupos": ["P02", "P24"],
   "grupos/membros": ["P02", "P25"],
   "grupos/convites": ["P25"],
+  "falhas": ["fora: só o portal lê (o app só grava, sem ler de volta); conferido em testes_app.py (CT-KAN-239) e nas regras do Firebase no emulador"],
   "contas": ["P02", "P24"],
   "contas/historico": ["fora: gravado só pelo portal (entrada com a conta Google da administração), que o roteiro de gravação não abre; conferido em testes_app.py (CT-KAN-117) e nas regras do Firebase no emulador"],
   "config/app": ["P02", "P03", "P16", "P21", "P22", "P23", "P35"],

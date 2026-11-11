@@ -21,9 +21,12 @@ import './rotas';
 import './pwa.js';
 import { S } from './nucleo/estado.js';
 import { boot } from './inicio.js';
+import { ligarColetor } from './nucleo/falhas';
 
 /* Em modo demonstração (sem Firebase), o estado fica visível para os testes automáticos. */
 // Também nos testes contra o emulador do Firebase (KAN-170), que nunca usam os dados reais.
 if (!(window.FIREBASE_CONFIG || {}).apiKey || window.FIREBASE_EMULADOR) window.S = S;
 
+/* KAN-239: coletor de falhas no uso (só o portal lê). */
+ligarColetor();
 boot();

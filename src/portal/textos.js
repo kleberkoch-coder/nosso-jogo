@@ -70,6 +70,24 @@ const T = {
   'ficha.nadaMudou': 'Nada mudou: o plano, a validade, o motivo e a observação são os mesmos.',
   'ficha.erroGravar': 'Não foi possível salvar. Verifique a conexão e tente de novo.',
   /* Bloqueio da conta e limites contra abuso (KAN-117, 2ª parte) */
+  /* KAN-239 */
+  'falhas.titulo': 'Falhas no uso (últimos 30 dias)',
+  'falhas.ajuda':
+    'O app grava sozinho quando o comprovante do App Check não vem, quando dá erro de código e quando o Firebase recusa uma gravação, com o navegador e o aparelho. Sem nome, e-mail, telefone ou IP.',
+  'falhas.nenhuma': 'Nenhuma falha nos últimos 30 dias.',
+  'falhas.vezes': '{n}×',
+  'falhas.quando': 'de {a} a {b}',
+  'falhas.nav': '{nav}: {n}×',
+  'falhas.tipo.appcheck': 'App Check',
+  'falhas.tipo.erro': 'Erro',
+  'falhas.tipo.gravacao': 'Gravação',
+  'falhas.tela.r': 'link da rodada',
+  'falhas.tela.v': 'link da votação',
+  'falhas.tela.a': 'link da avaliação',
+  'falhas.tela.admin': 'gestão',
+  'falhas.tela.home': 'início',
+  'falhas.tela.auth': 'entrar',
+  'falhas.tela.inv': 'convite',
   'bloq.titulo': 'Bloqueio da conta',
   'bloq.tag': 'Bloqueada',
   'bloq.desde':

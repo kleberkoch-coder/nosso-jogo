@@ -358,6 +358,31 @@ service cloud.firestore {
       allow read, write: if realUser() && request.auth.uid == uid;
     }
 
+    // KAN-239 (pelada-v105): falhas no uso (comprovante do App Check que não veio, erro de código, gravação recusada),
+    // com os dados de navegação e sem nada pessoal. Qualquer aparelho com login (inclusive o anônimo do link) só cria;
+    // ninguém muda; só o administrador do portal lê e apaga. Campos e tamanhos conferidos; a hora é a do servidor.
+    match /falhas/{id} {
+      allow read, delete: if adminPortal();
+      allow update: if false;
+      allow create: if signed() && id.matches('[A-Za-z0-9_-]{8,40}')
+        && request.resource.data.keys().hasOnly(['v', 't', 'm', 'p', 'r', 'g', 'nav', 'so', 'disp', 'inst', 'lang', 'n', 'em', 'd'])
+        && request.resource.data.keys().hasAll(['v', 't', 'm', 'n', 'em', 'd'])
+        && request.resource.data.t in ['appcheck', 'erro', 'gravacao']
+        && request.resource.data.v is string && request.resource.data.v.size() <= 20
+        && request.resource.data.m is string && request.resource.data.m.size() <= 300
+        && request.resource.data.get('p', '') is string && request.resource.data.get('p', '').size() <= 1500
+        && request.resource.data.get('r', '') is string && request.resource.data.get('r', '').size() <= 20
+        && request.resource.data.get('g', '') is string && request.resource.data.get('g', '').size() <= 64
+        && request.resource.data.get('nav', '') is string && request.resource.data.get('nav', '').size() <= 60
+        && request.resource.data.get('so', '') is string && request.resource.data.get('so', '').size() <= 40
+        && request.resource.data.get('disp', 'celular') in ['celular', 'tablet', 'computador']
+        && request.resource.data.get('inst', false) is bool
+        && request.resource.data.get('lang', '') is string && request.resource.data.get('lang', '').size() <= 12
+        && request.resource.data.n is int && request.resource.data.n >= 1 && request.resource.data.n <= 1000
+        && request.resource.data.em == request.time
+        && request.resource.data.d is string && request.resource.data.d.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}');
+    }
+
     match /grupos/{gid} {
       // Nome e configurações do grupo aparecem nos links públicos (ler UM grupo).
       // Listar todos os grupos, só o administrador do portal (KAN-133).

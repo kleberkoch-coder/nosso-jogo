@@ -8,6 +8,25 @@ function FirebaseBackend(cfg, appCheckKey) {
   if (appCheckKey && firebase.appCheck) {
     try {
       firebase.appCheck().activate(new firebase.appCheck.ReCaptchaEnterpriseProvider(appCheckKey), true);
+      /* KAN-239: se o comprovante não vier (é o que o Firebase conta como "solicitação inválida"), avisa o coletor de
+         falhas, que grava o navegador e o aparelho (KAN-88). */
+      const falhou = e =>
+        document.dispatchEvent(new CustomEvent('nj-appcheck-falhou', { detail: (e && (e.code || e.message)) || '?' }));
+      try {
+        firebase.appCheck().onTokenChanged(() => {}, falhou);
+      } catch (e) {
+        /* sem aviso de troca de comprovante nesta versão */
+      }
+      setTimeout(() => {
+        try {
+          firebase
+            .appCheck()
+            .getToken(false)
+            .then(r => r && r.error && falhou(r.error), falhou);
+        } catch (e) {
+          falhou(e);
+        }
+      }, 4000);
     } catch (e) {
       console.warn('App Check', e);
     }

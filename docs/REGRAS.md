@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
 Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D56) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v107 (11/11/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Atualizado na pelada-v108 (11/11/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -230,6 +230,7 @@ Atualizado na pelada-v107 (11/11/2026). Toda entrega que mudar uma regra atualiz
 - Janela de formulário com algo preenchido: tocar fora ou Esc pergunta "Descartar o que você preencheu?" antes de fechar (KAN-140).
 - Confirmações na janela do app (nunca `confirm` ou `alert`): pergunta curta, consequência, botão com o verbo; coral quando apaga (KAN-128).
 - Cabeçalho no celular (até 420px, KAN-194): nome do grupo em 28px numa linha só, com "…" (tocar mostra o nome inteiro) e os chips na mesma linha; cabeçalho de até 120px. No computador, como antes. O horário da rodada ("20:00–22:00") nunca quebra no meio, também no Histórico (lista e detalhe, KAN-251).
+- Todo combo (`sel`) tem 44px de altura, o mesmo do toque, em qualquer tela (KAN-252, v108).
 - Leitor de tela (KAN-131): todo botão de ícone diz a qual item se refere ("Mover Dudu", "Apagar lançamento: Despesa, R$ 80,00", "Abrir Pelada de Quinta") e todo campo tem rótulo; em Meus grupos, o cartão inteiro do grupo abre o grupo.
 - Local e outros textos longos: numa linha só com "…" (sublinhado pontilhado quando corta); passar o mouse mostra o texto inteiro e tocar abre ou fecha. O seletor de rodadas e o cabeçalho não mostram o local. Nada pode criar rolagem lateral (KAN-144, KAN-146).
 - Horário (início e término): campo do app com hora (00–23) e minutos (00–59), setas ▲▼ e digitação; qualquer minuto vale (ex.: 10:03); nunca o relógio do celular, que corta botões no Android com letra grande (KAN-151). No país de 12h, a hora vai de 1 a 12 com o botão AM/PM; ▲ em 11 PM vira 12 AM e em 11 AM vira 12 PM (KAN-163). Componente `HoraCampo` (`ui/HoraCampo.tsx`, comportamento em `ui/hora.ts`).

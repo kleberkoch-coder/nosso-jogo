@@ -617,6 +617,10 @@ h3 {
   padding: 9px 11px;
   width: 100%;
 }
+/* KAN-252 (pelada-v108): todo combo tem a mesma altura, a do toque (44px), em qualquer tela. */
+.sel {
+  min-height: var(--touch-min);
+}
 textarea.inp {
   min-height: 150px;
   font-size: 14px;

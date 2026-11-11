@@ -963,7 +963,7 @@ with sync_playwright() as pw:
              "return [(c.mat||[]).map(x=>[x.nome,x.com||'']), (c.matHist||[]).map(h=>[h.nome,h.de,h.para,typeof h.em]),"
              " c.verSorteio===false, [s.n, s.aj, typeof s.em], (document.querySelector('#sortInfoAdm')||{}).textContent||'']})()")
     r38 = J(p38, ler38)
-    esp38 = [[['Bola', js38[0]], ['Bola', js38[2]], ['Coletes', '']], [['Bola', js38[1], js38[2], 'number']], True, [2, 1, 'number']]
+    esp38 = [[['Bola', js38[0]], ['Bola', js38[2]], ['Coletes', ''], ['Coletes', '']], [['Bola', js38[1], js38[2], 'number']], True, [2, 1, 'number']]
     ok(r38[:4] == esp38 and '2º sorteio · 1 ajuste manual' in r38[4],
        f'CT-KAN-170-P38: o material do grupo, a troca, a opção do sorteio e o número do sorteio continuam depois de recarregar ({r38})')
     sair_e_esperar(p38)

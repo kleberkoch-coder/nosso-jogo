@@ -412,8 +412,12 @@ describe('convite sem o código no cadastro e grupo que não se apaga (KAN-258, 
   test('entrar pelo convite grava o código em convites/{uid}, e o cadastro fica sem ele', async () => {
     const f = novo();
     await assertSucceeds(entrar(f));
-    const m = await semRegras(g => getDoc(doc(g, G + '/membros/novo')));
-    assert.equal(m.data().token, undefined);
+    let m = null;
+    await semRegras(async g => {
+      m = (await getDoc(doc(g, G + '/membros/novo'))).data();
+    });
+    assert.equal(m.role, 'admin');
+    assert.equal(m.token, undefined);
   });
   test('cadastro novo com o código, sem a prova, com código errado ou com campo a mais na prova: recusado', async () => {
     await assertFails(entrar(novo(), { token: 'tok123' }));

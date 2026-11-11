@@ -2474,6 +2474,14 @@ with sync_playwright() as pw:
         conv22 = p22.evaluate("S.user&&S.user.uid")
         perm22 = p22.evaluate("S.mem&&S.mem.perm")
         ok(perm22 == {'caixa': False, 'notas': False, 'elenco': False, 'config': False}, f'CT-KAN-201-01: convidado novo entra só com o dia a dia ({perm22})')
+        # KAN-258 (pelada-v104): o código do convite fica em convites/{uid} (ninguém lê), não no cadastro.
+        m258 = p22.evaluate(LER, f'grupos/{g22}/membros/{conv22}') or {}
+        c258 = p22.evaluate(LER, f'grupos/{g22}/convites/{conv22}') or {}
+        ok('token' not in m258 and c258.get('token') == tok22 and not p22.evaluate("Object.values(S.membros||{}).some(m=>m&&m.token)"),
+           f'CT-KAN-258-01: o cadastro do convidado não guarda o código do convite; ele vai para convites/{{uid}} ({sorted(m258)})')
+        # Cadastro antigo com o código: o próprio convidado tira, ao abrir a gestão
+        p22.evaluate(PUT, {f'grupos/{g22}/membros/{conv22}': {**m258, 'token': tok22}}); p22.reload(); p22.wait_for_timeout(1800)
+        ok('token' not in (p22.evaluate(LER, f'grupos/{g22}/membros/{conv22}') or {'token': 1}), 'CT-KAN-258-02: cadastro antigo com o código: o app tira o código ao abrir')
         abas22 = p22.evaluate("[...document.querySelectorAll('[data-a=tab]')].map(b=>b.dataset.v)")
         ok('caixa' not in abas22 and 'rodada' in abas22 and 'partida' in abas22, f'CT-KAN-201-02: sem a permissão de caixa, a aba Caixa não aparece ({abas22})')
         ok(p22.evaluate("S.pc===null&&Object.keys(S.cont||{}).length===0"), 'CT-KAN-201-02: sem caixa e sem elenco, caixa e contatos nem chegam ao aparelho')
@@ -4609,6 +4617,14 @@ with sync_playwright() as pw:
            f'CT-KAN-253-01: com as vagas fechadas, os diaristas vão para o bloco "Diaristas (vagas fechadas)" no fim da lista ({len(ag103)} de {len(dia103)})')
         ok(p103.locator('#presAguardando .tag-espera').count() == len(dia103) and 'Aguardando vaga' in p103.inner_text('#presAguardando'),
            'CT-KAN-253-01: cada diarista do bloco tem a etiqueta "Aguardando vaga"')
+        # KAN-260 (pelada-v104): a etiqueta aparece inteira em 360px e 390px, mesmo com nome comprido
+        MEDE260 = "[...document.querySelectorAll('#presAguardando .tag-espera')].map(t=>{const r=t.getBoundingClientRect(),p=t.closest('li').getBoundingClientRect(),n=t.closest('.pn').getBoundingClientRect();return [Math.round(r.width),t.scrollWidth,r.left>=n.left-1&&r.right<=n.right+1&&r.right<=p.right+1]})"
+        p103.evaluate(PUT, {f'grupos/{g103}/jogadores/{dia103[1]}': {**(p103.evaluate(LER, f'grupos/{g103}/jogadores/{dia103[1]}') or {}), 'name': 'Fernandinho da Silva Pereira Junior'}}); p103.reload(); p103.wait_for_timeout(1800)
+        for lg in [360, 390]:
+            p103.set_viewport_size({'width': lg, 'height': 740}); p103.wait_for_timeout(300)
+            m260 = p103.evaluate(MEDE260)
+            ok(m260 and all(w >= sw - 1 and dentro for w, sw, dentro in m260), f'CT-KAN-260-01: em {lg}px, a etiqueta "Aguardando vaga" aparece inteira em todos os diaristas do bloco ({m260})')
+        p103.set_viewport_size({'width': 360, 'height': 740}); p103.wait_for_timeout(200)
         for tema in ['light', 'dark']:
             p103.emulate_media(color_scheme=tema); p103.wait_for_timeout(150); contraste(p103, f'diaristas aguardando vaga ({tema})')
         p103.emulate_media(color_scheme='light')

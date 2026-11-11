@@ -103,6 +103,18 @@ while (fila.length) {
   importsDiretos(t).forEach(x => fila.push('chunks/' + x));
 }
 const gestao = [...pedacos.keys()].filter(c => !nucleo.includes(c));
+/* KAN-262: partes sob demanda do próprio link (as janelas do jogador), que o service worker guarda na instalação. */
+const partesLink = [];
+{
+  const fila3 = [...pedacos.keys()].filter(c => /^chunks\/JanelasLink-/.test(c));
+  if (!fila3.length) throw new Error('Não achei a parte JanelasLink (KAN-262).');
+  while (fila3.length) {
+    const c = fila3.shift();
+    if (partesLink.includes(c) || nucleo.includes(c)) continue;
+    partesLink.push(c);
+    importsDiretos(pedacos.get(c)).forEach(x => fila3.push('chunks/' + x));
+  }
+}
 /* KAN-159: os textos da gestão (src/i18n/pt-BR-gestao.js) só chegam com a parte de gestão. Nenhum arquivo do link
    público pode usar um grupo de textos que mora lá, senão o jogador veria a chave no lugar do texto. */
 {
@@ -147,6 +159,7 @@ fs.writeFileSync(path.join(LEGIVEL, 'index.html'), legivel);
   for (const [nome, lista] of [
     ['CHUNKS', nucleo],
     ['GESTAO', gestao],
+    ['PARTES_LINK', partesLink],
   ]) {
     const n0 = sw.length;
     sw = sw.replace(`const ${nome} = [];`, `const ${nome} = ${JSON.stringify(lista.map(c => './' + c))};`);
@@ -225,6 +238,36 @@ console.log(
   `Site ${VERSAO} montado em ${OUT}/ em ${Date.now() - t0} ms · link do jogador ${kb(gzPub)} comprimido · ao abrir a gestão ${kb(gzAbrir)} · sob demanda ${sobDemanda.map(c => c.replace(/^chunks\/|-[A-Z0-9]+\.js$/g, '') + ' ' + kb(z(pedacos.get(c)))).join(', ')} · tudo ${kb(gz)} (sem compactar seria ${kb(gzLeg)}) · ${pedacos.size} pedaços · cópia legível em ${LEGIVEL}/`
 );
 
+/* KAN-262: o que cada módulo pesa no link do jogador (compactado, antes do gzip), do maior para o menor. Aparece no
+   resumo da tarefa "montar" no GitHub, para saber o que mover para sob demanda quando o link apertar. */
+{
+  const doLink = new Set(['main.js', ...nucleo]);
+  const peso = new Map();
+  for (const [saida, o] of Object.entries(rMin.metafile.outputs))
+    if (doLink.has(path.relative(OUT, saida).split(path.sep).join('/')))
+      for (const [f, i] of Object.entries(o.inputs)) {
+        const nome = f.includes('preact') ? 'preact' : f.replace(/^src\//, '');
+        peso.set(nome, (peso.get(nome) || 0) + i.bytesInOutput);
+      }
+  const total = [...peso.values()].reduce((a, b) => a + b, 0);
+  const lista = [...peso].sort((a, b) => b[1] - a[1]);
+  console.log(
+    'Link do jogador por módulo: ' +
+      lista
+        .slice(0, 12)
+        .map(([f, b]) => `${f} ${kb(b)}`)
+        .join(', ') +
+      ` (de ${kb(total)} compactados, ${lista.length} módulos)`
+  );
+  if (process.env.GITHUB_STEP_SUMMARY)
+    fs.appendFileSync(
+      process.env.GITHUB_STEP_SUMMARY,
+      `## Link do jogador por módulo\n\n${kb(gzPub)} com gzip (limite ${kb(50 * 1024)}). Peso de cada módulo compactado, antes do gzip:\n\n| Módulo | Peso |\n| --- | --- |\n` +
+        lista.map(([f, b]) => `| ${f} | ${kb(b)} |`).join('\n') +
+        '\n'
+    );
+}
+
 /* Painel da dívida técnica (docs/ARQUITETURA.md, D12): números que devem melhorar a cada versão. */
 const arquivos = [];
 (function varre(d) {
@@ -237,7 +280,7 @@ const arquivos = [];
 })('src');
 const emTS = arquivos.filter(f => /\.tsx?$/.test(f)).length;
 const telas = arquivos.filter(
-  f => f.includes(path.join('src', 'telas')) && !f.endsWith('publico-rodada.js') && !f.endsWith('-partes.js')
+  f => f.includes(path.join('src', 'telas')) && !f.endsWith('publico-rodada.ts') && !f.endsWith('-partes.js')
 );
 const telasComp = telas.filter(f => f.endsWith('.tsx')).length;
 const innerHTML = arquivos.reduce((n, f) => n + (fs.readFileSync(f, 'utf8').match(/innerHTML/g) || []).length, 0);
@@ -333,6 +376,9 @@ for (const c of sobDemanda)
     );
     process.exit(1);
   }
+/* KAN-262: a folga combinada no link é de 3 KB (D7). Abaixo disso a montagem avisa, sem barrar. */
+if (gzPub > LIMITE_LINK - 3 * 1024 && gzPub <= LIMITE_LINK)
+  console.warn(`Atenção: o link do jogador está com ${kb(gzPub)}, menos de 3 KB de folga (D7, KAN-262).`);
 if (gzPub > LIMITE_LINK) {
   console.error(`O link do jogador passou do orçamento: ${kb(gzPub)} comprimido (limite ${kb(LIMITE_LINK)}).`);
   process.exit(1);

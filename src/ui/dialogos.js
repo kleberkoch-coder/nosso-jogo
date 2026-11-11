@@ -31,6 +31,21 @@ function openDlg(conteudo) {
       if (i.id !== 'avq') i.setAttribute('enterkeyhint', 'done');
     });
   if (!dlg.open) dlg.showModal();
+  setTimeout(focarPrimeiro, 0);
+}
+/* KAN-250 (pelada-v106): a janela abre com o cursor no primeiro campo (ou no marcado com data-foco, com o texto
+   selecionado), nunca na própria janela. Vale também para as janelas que se desenham logo depois (openDlg('xRaiz')). */
+function focarPrimeiro() {
+  const a = document.activeElement;
+  if (!dlg.open || (a && a !== dlg && dlg.contains(a))) return;
+  const b = $('#dlgBody'),
+    c =
+      b.querySelector('[data-foco]') ||
+      b.querySelector('input:not([type=hidden]):not([disabled]),select:not([disabled]),textarea:not([disabled])') ||
+      b.querySelector('button:not([disabled])');
+  if (!c) return;
+  c.focus();
+  if (c.dataset.foco != null && c.select) c.select();
 }
 function closeDlgNow() {
   if (dlg.open) dlg.close();
@@ -171,18 +186,23 @@ function responder(r, ACT) {
   c.el._conf = r;
   const res = f(c.el);
   if (c.fim) c.fim();
-  if (!(CAP && CAP.close) && $('#dlgBody .conf')) {
-    if (c.guardado) {
-      const body = $('#dlgBody');
-      body.querySelector('.conf').remove();
-      while (c.guardado.firstChild) body.appendChild(c.guardado.firstChild);
-      c.guardado.remove();
-    } else closeDlg();
-  }
-  if (c.volta && c.volta.isConnected)
-    setTimeout(() => {
-      if (!dlg.open && c.volta.isConnected) c.volta.focus();
-    }, 0);
+  const depois = () => {
+    if (!(CAP && CAP.close) && $('#dlgBody .conf')) {
+      if (c.guardado) {
+        const body = $('#dlgBody');
+        body.querySelector('.conf').remove();
+        while (c.guardado.firstChild) body.appendChild(c.guardado.firstChild);
+        c.guardado.remove();
+      } else closeDlg();
+    }
+    if (c.volta && c.volta.isConnected)
+      setTimeout(() => {
+        if (!dlg.open && c.volta.isConnected) c.volta.focus();
+      }, 0);
+  };
+  /* KAN-262: a ação pode abrir uma janela que baixa sob demanda (o sorteio); espera ela chegar antes de arrumar. */
+  if (res && typeof res.then === 'function') res.then(depois, depois);
+  else depois();
   return res;
 }
 /* Esc com a confirmação aberta: só a confirmação fecha (volta ao formulário, se houver). */

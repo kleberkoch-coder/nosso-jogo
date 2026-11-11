@@ -1,23 +1,29 @@
 /* Endereços do app e o que cada um abre (KAN-225: era rotas.js; a carga de cada assunto fica em src/carga/).
    #/p/{grupo}[/r|v|a/{id}] link público · #/g/{grupo} gestão · #/entrar, #/criar · #/convite/{grupo}/{token} · #/ início */
 import { ACT } from './acoes.js';
-import { migrarPrivado, sincronizarVagas } from './dominio/caixa.js';
 import { tx } from './i18n/index.js';
 import * as banco from './nucleo/backend.js';
-import { carregarAdmin } from './nucleo/carga-admin.js';
+import { adm, carregarAdmin } from './nucleo/carga-admin.js';
 import { S, dropAll, sub, subQ, subRaw } from './nucleo/estado';
 import type { Rota } from './nucleo/tipos';
 import { $, toast } from './nucleo/util.js';
 import { closeDlgNow, dlg } from './ui/dialogos.js';
 import { render } from './ui/render.js';
-import { ensureExtras } from './carga/abas';
 import { cargaLinkAvaliacao } from './carga/avaliacao';
 import { aplicarRegiao, gravarPaisConta, registrarAcesso, syncName, upMyGroup } from './carga/conta';
-import { startData } from './carga/gestao';
-import { syncPerm, syncVia } from './carga/permissoes';
 import { Q_PROX, dia, ensurePres, resolveNext, subExtra, subLimAv, subLimCfg } from './carga/rodada';
 import { cargaLinkVotacao, ensureVotos } from './carga/votacao';
 import { idiomaDaConta } from './nucleo/idioma';
+
+/* O que a parte de gestão (src/admin.js) oferece às rotas (KAN-262). */
+type Gestao = {
+  startData: () => void;
+  syncPerm: () => void;
+  syncVia: () => void;
+  migrarPrivado: () => void;
+  sincronizarVagas: () => void;
+};
+const gest = () => adm() as Gestao | null;
 // O banco é JavaScript sem tipos e é trocado ao iniciar (setB): lido na hora.
 const bk = (): any => (banco as any).B;
 
@@ -196,9 +202,11 @@ function setupRoute() {
       aplicarRegiao(d && d.cfg);
       if (R.next) resolveNext();
       syncName();
-      migrarPrivado();
-      sincronizarVagas();
-      sincronizarVagas();
+      const A = gest();
+      if (A) {
+        A.migrarPrivado();
+        A.sincronizarVagas();
+      }
     });
   const anon = () => {
     if (!S.user)
@@ -219,16 +227,23 @@ function setupRoute() {
   } else if ((R.n === 'admin' || R.n === 'inv') && logged && S.user) {
     sub('mem', 'membros/' + S.user.uid, d => {
       S.mem = d;
-      if (d && R.n === 'admin') startData();
-      syncPerm();
       syncName();
-      syncVia();
+      /* KAN-262: a carga da gestão vem com a parte de gestão (o link do jogador não baixa). */
+      carregarAdmin().then(
+        (A: Gestao) => {
+          if (S.route !== R) return;
+          if (d && R.n === 'admin') A.startData();
+          A.syncPerm();
+          A.syncVia();
+        },
+        () => {}
+      );
     });
   }
   render();
   if (R.n === 'auth' || (R.n === 'inv' && !logged)) focusEmail();
 }
-document.addEventListener('nj-via', syncVia);
+document.addEventListener('nj-via', () => gest()?.syncVia());
 /* Gravação recusada pelo banco (KAN-170): lê de novo o que está gravado, para a tela não mostrar o que não foi salvo. */
 document.addEventListener('nj-gravacao-falhou', () => setTimeout(setupRoute, 0));
 function focusEmail() {
@@ -242,4 +257,4 @@ function focusEmail() {
   }, 50);
 }
 
-export { dia, ensureExtras, ensurePres, ensureVotos, setupRoute, upMyGroup };
+export { dia, ensurePres, ensureVotos, setupRoute, upMyGroup };

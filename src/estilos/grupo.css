@@ -33,6 +33,18 @@
   gap: 6px;
   padding: 0 6px;
 }
+/* KAN-251: o nome nunca quebra no meio; no celular, o ícone vai para cima do nome e as três ficam da mesma altura. */
+.theme-seg .ts-nome {
+  white-space: nowrap;
+}
+@media (max-width: 440px) {
+  .theme-seg button {
+    flex-direction: column;
+    gap: 0;
+    padding: 4px 2px;
+    line-height: 1.2;
+  }
+}
 .theme-seg button[aria-checked='true'] {
   background: var(--primary);
   color: var(--on-primary);

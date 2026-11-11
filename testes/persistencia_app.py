@@ -196,7 +196,7 @@ with sync_playwright() as pw:
     pub = novo() if EMU else None; pp = (pub or ctx).new_page()
     pp.goto(URL + '#/p/' + gid); pp.wait_for_selector('[data-a=pubMark]', timeout=20000); pp.wait_for_timeout(800)
     pp.locator('[data-a=pubMark][data-v=out]').last.click(); pp.wait_for_timeout(800)
-    pp.click('[data-a=pubAdd]'); pp.wait_for_timeout(300); pp.fill('#anm', 'Avulso Persistente'); pp.click('[data-a=pubSaveAdd]')
+    pp.click('[data-a=pubAdd]'); pp.wait_for_selector('#anm', timeout=8000); pp.fill('#anm', 'Avulso Persistente'); pp.click('[data-a=pubSaveAdd]')
     pp.wait_for_timeout(800); pp.evaluate("window.__njPendentes ? window.__njPendentes(10000) : true")
     pp.reload(); pp.wait_for_selector('[data-a=pubMark]', timeout=20000); pp.wait_for_timeout(1200)
     ok('Avulso Persistente' in pp.inner_text('main') and pp.locator('[data-a=pubMark][data-v=out][aria-pressed=true]').count() >= 1,

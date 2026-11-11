@@ -366,6 +366,7 @@ export default {
   'grupo.deixeUmDia': 'Deja al menos un día, o marca el grupo como de vez en cuando.',
   'grupo.removerDia': 'Quitar día',
   'grupo.localOpcional': 'Lugar (opcional)',
+  'grupo.localExemplo': 'Ej.: Arena Fútbol 5, cancha 3',
   'grupo.nome': 'Nombre del grupo',
   'grupo.nomeExemplo': 'Ej.: Fútbol del Lunes',
   'grupo.frequencia': '¿Con qué frecuencia juegan?',

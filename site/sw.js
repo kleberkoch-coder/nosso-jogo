@@ -1,11 +1,14 @@
 /* Service worker do site da pelada.
    Ao publicar uma nova versão, troque o número abaixo para os celulares atualizarem. */
-const VERSION = 'pelada-v105';
+const VERSION = 'pelada-v106';
 const SHELL = ['./', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png'];
 /* Preenchidas na montagem (build.mjs, KAN-149): pedaços de código do link público e da gestão. */
 const CHUNKS = [];
 const GESTAO = [];
+/* Partes do link que baixam só quando tocadas ("Adicionar meu nome", "Instalar no celular", KAN-262): guardadas na
+   instalação, para abrir também sem internet. */
+const PARTES_LINK = [];
 
 /* Os pedaços da gestão só são guardados para usar sem internet nos aparelhos que já usaram a gestão
    (o celular de quem só confirma presença não baixa o que não usa). */
@@ -21,6 +24,7 @@ async function usouGestao() {
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(async c => {
     await c.addAll(SHELL.concat(CHUNKS));
+    await c.addAll(PARTES_LINK).catch(() => {});
     if (await usouGestao()) await c.addAll(GESTAO).catch(() => {});
   }));
 });

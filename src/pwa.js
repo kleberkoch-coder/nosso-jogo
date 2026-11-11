@@ -1,5 +1,6 @@
 import { $, toast } from './nucleo/util.js';
-import { janelaInstalar } from './ui/JanelasLink';
+import { semConexao } from './eventos.js';
+import { setBusy } from './nucleo/backend.js';
 import { tx } from './i18n/index.js';
 
 /* =================== PWA =================== */
@@ -29,7 +30,9 @@ ib.addEventListener('click', async () => {
     installEvt = null;
     return;
   }
-  janelaInstalar(isIOS);
+  /* KAN-262: a janela baixa sob demanda; o botão gira até ela chegar. */
+  setBusy(ib, true);
+  import('./ui/JanelasLink').then(m => m.janelaInstalar(isIOS), semConexao).finally(() => setBusy(ib, false));
 });
 const netBar = () => {
   $('#net').hidden = navigator.onLine;

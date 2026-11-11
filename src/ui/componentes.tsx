@@ -212,3 +212,21 @@ export function CampoPosicao({ id, valor }: { id: string; valor?: string }) {
 export function ComNegrito({ texto }: { texto: string }) {
   return <>{texto.split(/<b>|<\/b>/).map((p, i) => (i % 2 ? <b key={i}>{p}</b> : p))}</>;
 }
+
+/* KAN-248 (pelada-v106): o nome aparece inteiro em até 2 linhas, sem quebrar palavra; "você" e "avulso" ficam embaixo.
+   Se nem assim couber, corta com "…" e o nome inteiro fica no title. Usado no link (PublicoRodada.tsx) e no extra (PublicoExtra.tsx). */
+export function NomeNaLista({ nome, voce, avulso }: { nome: string; voce?: boolean; avulso?: boolean }) {
+  return (
+    <span class="pn pn-2l">
+      <span class="pn-txt" title={nome}>
+        {nome}
+      </span>
+      {voce || avulso ? (
+        <span class="pn-tags">
+          {voce ? <span class="tag">{tx('publico.voce')}</span> : null}
+          {avulso ? <span class="tag">{tx('publico.avulso')}</span> : null}
+        </span>
+      ) : null}
+    </span>
+  );
+}

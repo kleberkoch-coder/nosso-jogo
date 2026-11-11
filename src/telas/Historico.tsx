@@ -9,6 +9,8 @@ import { comCores, pname, ppos } from '../dominio/grupo.js';
 import { hora } from '../dominio/rodadas.js';
 import { juntarTextos, tp, tx } from '../i18n/index.js';
 import textosCampeao from '../i18n/pt-BR-campeao';
+import textosHist from '../i18n/pt-BR-hist';
+import textosVoto from '../i18n/pt-BR-voto';
 import * as banco from '../nucleo/backend.js';
 import { S as estado, gp } from '../nucleo/estado.js';
 import { $, fdate, fmonth, toast, today } from '../nucleo/util.js';
@@ -16,6 +18,8 @@ import { changed } from '../ui/render.js';
 import { Pos } from '../ui/componentes';
 
 juntarTextos(textosCampeao);
+juntarTextos(textosHist);
+juntarTextos(textosVoto);
 const st = () => estado;
 const bk = (): any => (banco as any).B;
 const POR_PAGINA = 20;
@@ -266,7 +270,12 @@ function Lista({ h }: { h: Hist }) {
             <li key={id}>
               <span class="pn">
                 <b>{fdate(r.date)}</b>
-                {r.time ? ' · ' + hora(r) : ''}
+                {r.time ? (
+                  <>
+                    {' · '}
+                    <span class="nw">{hora(r)}</span>
+                  </>
+                ) : null}
                 <br />
                 <Local
                   r={r}
@@ -326,9 +335,15 @@ function Detalhe({ h }: { h: Hist }) {
         </button>
       </div>
       <div class="panel">
+        {/* KAN-251: o horário nunca quebra no meio (como no cartão da rodada, KAN-194). */}
         <h2>
           {fdate(r.date)}
-          {r.time ? ' · ' + hora(r) : ''}
+          {r.time ? (
+            <>
+              {' · '}
+              <span class="nw">{hora(r)}</span>
+            </>
+          ) : null}
         </h2>
         <div class="muted linha-local">
           <span class="corta" data-corta>

@@ -1,16 +1,19 @@
 /* Link da votação (KAN-218: virou componente; antes montava a tela como texto). O jogador escolhe o nome e vota em cada
    categoria; encerrada, mostra os vencedores. Baixa só quando o link de votação é aberto (KAN-183). Os botões usam
-   data-a (pubVote, acoes/publico.js). */
+   data-a (pubVote, acoes/publico.ts). */
 import { render } from 'preact';
 import { gname, grpAtivo, grpBloq, pname, ppos, rodDoc } from '../dominio/grupo.js';
 import { candidatos, type Categoria, type Votacao } from '../dominio/votacao';
 import { percentual, textoPct } from '../dominio/votacao-resultado';
 import { LOCAL } from '../i18n/formatos.js';
-import { tp, tx } from '../i18n/index.js';
+import { juntarTextos, tp, tx } from '../i18n/index.js';
+import textosVoto from '../i18n/pt-BR-voto';
 import { S as estado } from '../nucleo/estado.js';
 import { $, fdate, main } from '../nucleo/util.js';
 import { myLocal } from './publico-rodada.js';
 import { DEMORA_MS } from '../nucleo/carga';
+
+juntarTextos(textosVoto);
 
 /* Candidatos de uma categoria (regra em dominio/votacao.ts) com os dados da rodada. */
 const candidates = (v: Votacao, c: Categoria) =>

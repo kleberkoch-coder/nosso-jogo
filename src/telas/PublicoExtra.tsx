@@ -12,6 +12,7 @@ import type { Extra, RespostaExtra } from '../nucleo/tipos';
 import { $, brl, toast } from '../nucleo/util.js';
 import { changed } from '../ui/render.js';
 import { usarEstilo } from '../ui/estilo';
+import { NomeNaLista } from '../ui/componentes';
 
 juntarTextos(textos);
 usarEstilo('extra', estilo);
@@ -86,15 +87,7 @@ function Linha({ id, me }: { id: string; me: string | null }) {
     n = nomeExtra();
   return (
     <li class={id === me ? 'me-row' : ''} data-extra={id}>
-      <span class="pn">
-        {pname(id)}
-        {id === me ? (
-          <>
-            {' '}
-            <span class="tag">{tx('publico.voce')}</span>
-          </>
-        ) : null}
-      </span>
+      <NomeNaLista nome={pname(id)} voce={id === me} />
       <span class="mk lg">
         <button
           class={s === 'in' ? 'on-in' : ''}

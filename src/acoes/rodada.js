@@ -24,7 +24,7 @@ import { GB, S, w } from '../nucleo/estado.js';
 import { linkProxima, linkRodada } from '../nucleo/links.js';
 import { $, diaSemana, fdate, toast } from '../nucleo/util.js';
 import { avisar, closeDlg, closeDlgNow, confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
-import { drawPreview, comJanelasTimes, janelaSorteio, rodDlg } from '../ui/JanelasGestao';
+import { drawPreview, comJanelasTimes, rodDlg } from '../ui/JanelasGestao';
 import { changed, render } from '../ui/render.js';
 import { nPartidas, temVotacao } from '../telas/rodada-partes.js';
 import { ACT } from '../acoes.js';
@@ -324,7 +324,7 @@ const acoes = {
       k = a.inn.length,
       dentro = a.inn.filter(id => !(hasPos() && fora.has(ppos(id)))).length,
       n = sport().pairs ? Math.max(1, Math.floor(dentro / 2)) : sugerirTimes(dentro, T);
-    janelaSorteio({ n, nov: cfg().novelty, fora, inn: a.inn, dentro, T });
+    return comJanelasTimes((m, u) => m.janelaSorteio(u, { n, nov: cfg().novelty, fora, inn: a.inn, dentro, T }));
   },
   /* Deixar uma posição inteira fora do sorteio (ex.: goleiros fixos). A escolha fica salva no grupo ao sortear. */
   dFora: el => {

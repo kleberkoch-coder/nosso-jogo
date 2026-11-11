@@ -151,7 +151,7 @@ jobs:
   persistencia:
     needs: montar
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -172,7 +172,9 @@ jobs:
         run: |
           npm install --no-save --no-audit --no-fund firebase-tools@13
           pip install playwright==1.47.0
-          python -m playwright install --with-deps chromium
+          # Se o servidor de pacotes do Ubuntu falhar (aconteceu na pelada-v106), instala só o navegador: a máquina do
+          # GitHub já tem as bibliotecas de que ele precisa. O limite de 4 min evita perder o tempo da tarefa esperando.
+          timeout 240 python -m playwright install --with-deps chromium || python -m playwright install chromium
       - name: Ligar o app ao emulador (sem dados reais e sem App Check)
         run: |
           python - <<'PY'

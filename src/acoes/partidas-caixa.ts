@@ -1,5 +1,6 @@
 /* Ações da janela "Partidas e caixa" (aba Grupo; KAN-209). Vêm com a aba Grupo (abas/grupo.ts). */
-import { CAIXA_K, cfg, editPc } from '../dominio/caixa.js';
+import { CAIXA_K, cfg } from '../dominio/caixa.js';
+import { editPc } from '../dominio/caixa-gestao';
 import { compComDia, diaValido, mudarDia } from '../dominio/ciclo';
 import { tx } from '../i18n/index.js';
 import { ciclo, mesHoje } from '../nucleo/afast';

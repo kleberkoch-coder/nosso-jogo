@@ -107,16 +107,16 @@ function SemRodada() {
     <div class="panel empty">
       <h2>{tx('rodada.nenhuma')}</h2>
       <p class="muted">
-        {grpAtivo() ? tx(fixo ? 'rodada.nenhumaFixo' : 'rodada.nenhumaEsporadico') : tx('rodada.grupoInativo')}
+        {grpAtivo() ? tx(fixo ? 'rodg.nenhumaFixo' : 'rodg.nenhumaEsporadico') : tx('rodg.grupoInativo')}
       </p>
       <div class="row" style="justify-content:center">
         {fixo && (
           <button class="btn" data-a="editGroup">
-            {tx('rodada.diasDoGrupo')}
+            {tx('rodg.diasDoGrupo')}
           </button>
         )}
         <button class="btn primary" data-a="newRod">
-          {tx('rodada.criar')}
+          {tx('rodg.criar')}
         </button>
       </div>
     </div>
@@ -167,7 +167,7 @@ function CartaoTime({ t, ti }: { t: Time; ti: number }) {
               data-a="move"
               data-v={ti}
               data-p={id}
-              title={tx('times.mover')}
+              title={tx('rodg.times.mover')}
               aria-label={tx('times.moverRotulo', { nome: pname(id) })}
             >
               ⇄
@@ -176,7 +176,7 @@ function CartaoTime({ t, ti }: { t: Time; ti: number }) {
         ))}
       </ul>
       <div class="row between small muted" style="padding:0 14px 12px">
-        <span>{posso('notas') ? tx('times.media', { n: fmtL(Math.round(media * 10) / 10) }) : ''}</span>
+        <span>{posso('notas') ? tx('rodg.times.media', { n: fmtL(Math.round(media * 10) / 10) }) : ''}</span>
         {pares ? null : (
           <button class="btn sm ghost" data-a="porTime" data-v={ti}>
             {tx('porTime.botao')}
@@ -227,11 +227,11 @@ function Divergencia({ r }: { r: Rodada }) {
 function RespostasMudadas({ alt }: { alt: string[] }) {
   if (!alt.length) return null;
   const nomes = alt
-    .map(id => pname(id) + ' (' + tx(statusDe(id) === 'in' ? 'rodada.vai' : 'rodada.naoVai') + ')')
+    .map(id => pname(id) + ' (' + tx(statusDe(id) === 'in' ? 'rodg.vai' : 'rodg.naoVai') + ')')
     .join(', ');
   return (
     <div class="warn-alt">
-      <b>{tp('rodada.mudadas', alt.length)}</b> {tx('rodada.mudadasTexto', { nomes })}
+      <b>{tp('rodg.mudadas', alt.length)}</b> {tx('rodg.mudadasTexto', { nomes })}
     </div>
   );
 }
@@ -268,8 +268,8 @@ function AfastadoConfirmou({ r }: { r: Rodada }) {
 const TAG_MUDADO = () => (
   <>
     {' '}
-    <Tag classe="alt" titulo={tx('rodada.mudadoTitulo')}>
-      · {tx('rodada.mudado')}
+    <Tag classe="alt" titulo={tx('rodg.mudadoTitulo')}>
+      · {tx('rodg.mudado')}
     </Tag>
   </>
 );
@@ -360,13 +360,13 @@ function Presenca({ r, inn, carregou, avs }: { r: Rodada; inn: string[]; carrego
   const vazio = !carregou
     ? tx('comum.carregando')
     : !ids.length
-      ? tx('rodada.semJogadores')
+      ? tx('rodg.semJogadores')
       : f === 'in'
-        ? tx('rodada.ninguemConfirmou')
+        ? tx('rodg.ninguemConfirmou')
         : f === 'out'
-          ? tx('rodada.ninguemNaoVai')
+          ? tx('rodg.ninguemNaoVai')
           : f === 'sem'
-            ? tx('rodada.todosResponderam')
+            ? tx('rodg.todosResponderam')
             : '';
   const Lista = f === 'in' ? 'ol' : 'ul';
   const linha = (id: string, i: number) => {
@@ -382,7 +382,7 @@ function Presenca({ r, inn, carregou, avs }: { r: Rodada; inn: string[]; carrego
           {isAvulso(id) ? (
             <>
               {' '}
-              <Tag>· {tx('rodada.avulso')}</Tag>
+              <Tag>· {tx('rodg.avulso')}</Tag>
             </>
           ) : null}
           {presAlterada(id) ? <TAG_MUDADO /> : null}
@@ -405,7 +405,7 @@ function Presenca({ r, inn, carregou, avs }: { r: Rodada; inn: string[]; carrego
               data-a="mark"
               data-p={id}
               data-v="in"
-              aria-label={tx('rodada.vaiRotulo', { nome })}
+              aria-label={tx('rodg.vaiRotulo', { nome })}
               aria-pressed={s === 'in'}
             >
               ✓
@@ -415,7 +415,7 @@ function Presenca({ r, inn, carregou, avs }: { r: Rodada; inn: string[]; carrego
               data-a="mark"
               data-p={id}
               data-v="out"
-              aria-label={tx('rodada.naoVaiRotulo', { nome })}
+              aria-label={tx('rodg.naoVaiRotulo', { nome })}
               aria-pressed={s === 'out'}
             >
               ✕
@@ -428,16 +428,16 @@ function Presenca({ r, inn, carregou, avs }: { r: Rodada; inn: string[]; carrego
   return (
     <div class="panel" id="presPainel">
       <div class="row between">
-        <h3 style="margin:0">{tx('rodada.presenca')}</h3>
+        <h3 style="margin:0">{tx('rodg.presenca')}</h3>
         {r.locked ? null : (
           <button class="btn sm" data-a="addAvulso">
-            {tx('rodada.addAvulso')}
+            {tx('rodg.addAvulso')}
           </button>
         )}
       </div>
       {!r.locked && avulsosEsgotados(S.limAv, S.limCfg) ? (
         <div class="warn-alt aviso-limite" role="status">
-          {tx('limite.avulsosAdmin', { n: limite(S.limCfg, 'avulsosPorRodada') })}
+          {tx('rodg.limite.avulsosAdmin', { n: limite(S.limCfg, 'avulsosPorRodada') })}
         </div>
       ) : null}
       {r.locked ? (
@@ -450,7 +450,7 @@ function Presenca({ r, inn, carregou, avs }: { r: Rodada; inn: string[]; carrego
       <Segmentado
         acao="presFiltro"
         atual={f}
-        rotulo={tx('rodada.mostrar')}
+        rotulo={tx('rodg.mostrar')}
         opcoes={FILTROS.map(k => ({
           v: k,
           rotulo: tx('rodada.filtro.' + k),
@@ -459,7 +459,7 @@ function Presenca({ r, inn, carregou, avs }: { r: Rodada; inn: string[]; carrego
       />
       {carregou && !inn.length && f !== 'in' && ids.length ? (
         <p class="small muted" style="margin:10px 0 0">
-          {tx('rodada.ninguemConfirmou')}
+          {tx('rodg.ninguemConfirmou')}
         </p>
       ) : null}
       <Lista class="plist" id="presLista">
@@ -486,22 +486,22 @@ function Qualidade({ q }: { q: Qualidade }) {
     <div class="quality">
       {posso('notas') ? (
         <span>
-          {tx('times.difMedia')} <b>{fmtL(Math.round(q.diff * 10) / 10)}</b>
+          {tx('rodg.times.difMedia')} <b>{fmtL(Math.round(q.diff * 10) / 10)}</b>
         </span>
       ) : null}
       {q.gk ? (
         <span>
-          {tx('times.posChave', { pos: posLabel(sport().key) })} <b>{q.gk.join(' × ')}</b>
+          {tx('rodg.times.posChave', { pos: posLabel(sport().key) })} <b>{q.gk.join(' × ')}</b>
         </span>
       ) : null}
       {q.nsep ? (
         <span>
-          {tx('times.separacoes')} <b>{q.nsep - (q.viol || 0) + '/' + q.nsep}</b>
+          {tx('rodg.times.separacoes')} <b>{q.nsep - (q.viol || 0) + '/' + q.nsep}</b>
         </span>
       ) : null}
       {q.newPct != null ? (
         <span>
-          {tx('times.parcerias')} <b>{q.newPct}%</b>
+          {tx('rodg.times.parcerias')} <b>{q.newPct}%</b>
         </span>
       ) : null}
     </div>
@@ -514,7 +514,7 @@ function Times({ r, inn }: { r: Rodada; inn: number }) {
     <div class="panel">
       <div class="row between">
         <h3 style="margin:0" id="timesTit" tabIndex={-1}>
-          {tx('times.titulo')}
+          {tx('rodg.times.titulo')}
         </h3>
         {r.times && !votou ? (
           <button class="btn bib" data-a="drawDlg" disabled={inn < 4}>
@@ -529,7 +529,7 @@ function Times({ r, inn }: { r: Rodada; inn: number }) {
       ) : null}
       {!r.times ? (
         <p class="muted small" style="margin-bottom:0">
-          {tx(inn < 4 ? 'rodada.timesAjuda' : 'rodada.timesPronto')}
+          {tx(inn < 4 ? 'rodg.timesAjuda' : 'rodg.timesPronto')}
         </p>
       ) : null}
       {r.times ? (
@@ -542,10 +542,10 @@ function Times({ r, inn }: { r: Rodada; inn: number }) {
           <Qualidade q={quality(r) as Qualidade} />
           <div class="row" style="margin-top:12px">
             <button class="btn sm" data-a="shareTimes">
-              {tx('times.mandar')}
+              {tx('rodg.times.mandar')}
             </button>
             <button class="btn sm" data-a="tab" data-v="partida">
-              {tx('times.irPartida')}
+              {tx('rodg.times.irPartida')}
             </button>
           </div>
         </>
@@ -560,9 +560,7 @@ function BarraSortear({ k }: { k: number }) {
   return (
     <div class="acao-fixa">
       <button class="btn bib" data-a="drawDlg" disabled={!!falta}>
-        {falta
-          ? tp('rodada.faltam', falta)
-          : tx(sport().pairs ? 'rodada.sortearDuplas' : 'rodada.sortearTimes', { n: k })}
+        {falta ? tp('rodg.faltam', falta) : tx(sport().pairs ? 'rodg.sortearDuplas' : 'rodg.sortearTimes', { n: k })}
       </button>
     </div>
   );
@@ -578,10 +576,10 @@ function RodadaTela() {
       <div class="stack">
         <SeletorRodada r={r} acoes />
         <div class="panel empty">
-          <h2>{tx('rodada.cancelada', { data: fdate(r.date) })}</h2>
-          <p class="muted">{tx('rodada.canceladaTexto')}</p>
+          <h2>{tx('rodg.cancelada', { data: fdate(r.date) })}</h2>
+          <p class="muted">{tx('rodg.canceladaTexto')}</p>
           <button class="btn" data-a="cancelRod">
-            {tx('rodada.reativar')}
+            {tx('rodg.reativar')}
           </button>
         </div>
         <LinkPermanente />
@@ -611,15 +609,15 @@ function RodadaTela() {
             <div class="muted linha-local">
               <TextoCortado texto={r.place || tx('publico.localADefinir')} />
               <span class="extra">
-                {r.fixo ? ' · ' + tx('rodada.jogoFixo') : ''}
-                {r.locked ? ' · ' + tx('rodada.listaFechada') : ''}
+                {r.fixo ? ' · ' + tx('rodg.jogoFixo') : ''}
+                {r.locked ? ' · ' + tx('rodg.listaFechada') : ''}
               </span>
             </div>
             {r.place ? <ComoChegar local={r.place} /> : null}
           </div>
           <div class="count">
             {carregou ? a.inn.length : '…'}
-            <small>{tx('rodada.confirmados')}</small>
+            <small>{tx('rodg.confirmados')}</small>
           </div>
         </div>
         {carregou ? (
@@ -640,29 +638,29 @@ function RodadaTela() {
         {carregou ? <AfastadoConfirmou r={r} /> : null}
         <div class="row" style="margin-top:12px">
           <button class="btn sm primary" data-a="shareConvite">
-            {tx('rodada.mandarLink')}
+            {tx('rodg.mandarLink')}
           </button>
           <button class="btn sm" data-a="copyLink">
-            {tx('rodada.copiarLink')}
+            {tx('rodg.copiarLink')}
           </button>
           <button class="btn sm" data-a="editRod">
             {tx('rodada.editar')}
           </button>
           <button class="btn sm" data-a="lock">
-            {tx(r.locked ? 'rodada.reabrir' : 'rodada.fechar')}
+            {tx(r.locked ? 'rodg.reabrir' : 'rodg.fechar')}
           </button>
           {r.extra ? null : (
             <button class="btn sm" data-a="abrirExtra">
-              {tx('rodada.extra')}
+              {tx('rodg.extra')}
             </button>
           )}
           {r.fixo ? (
             <button class="btn sm ghost danger" data-a="cancelRod">
-              {tx('rodada.cancelarData')}
+              {tx('rodg.cancelarData')}
             </button>
           ) : (
             <button class="btn sm ghost danger" data-a="delRod">
-              {tx('rodada.excluir')}
+              {tx('rodg.excluir')}
             </button>
           )}
         </div>

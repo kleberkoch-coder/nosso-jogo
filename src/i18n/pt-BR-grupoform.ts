@@ -12,6 +12,7 @@ export default {
   'grupo.deixeUmDia': 'Deixe pelo menos um dia, ou marque o grupo como esporádico.',
   'grupo.removerDia': 'Remover dia',
   'grupo.localOpcional': 'Local (opcional)',
+  'grupo.localExemplo': 'Ex.: Arena Society, quadra 3',
   'grupo.nome': 'Nome do grupo',
   'grupo.nomeExemplo': 'Ex.: Futebol de Segunda',
   'grupo.frequencia': 'Com que frequência vocês jogam?',

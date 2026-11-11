@@ -129,7 +129,7 @@ def trocar_colete(pg, sel):
     livre.click(); pg.wait_for_timeout(800)
 
 def adicionar_pelo_link(pg, nome):
-    pg.click('[data-a=pubAdd]'); pg.wait_for_timeout(300); pg.fill('#anm', nome); pg.click('[data-a=pubSaveAdd]'); pg.wait_for_timeout(1200)
+    pg.click('[data-a=pubAdd]'); pg.wait_for_selector('#anm', timeout=8000); pg.fill('#anm', nome); pg.click('[data-a=pubSaveAdd]'); pg.wait_for_timeout(1200)
     return pg.evaluate("n=>Object.keys(S.pres).find(id=>S.pres[id].nome===n)||null", nome)
 
 with sync_playwright() as pw:
@@ -697,7 +697,7 @@ with sync_playwright() as pw:
         ok(bool(vis) and vis['h'] >= 44 and vis['lbl'], 'CT-KAN-127-06: campo de busca com rótulo visível e 44px de altura')
         total = pg.locator('[data-a=pubMark][data-v=in]').count()
         pg.fill('#pbusca', 'FERN'); pg.wait_for_timeout(150)
-        achou = [x.split(' ·')[0].strip() for x in pg.locator('.mk.lg').locator('xpath=..').locator('.pn').all_inner_texts()]
+        achou = [re.split(r' ·|\n', x)[0].strip() for x in pg.locator('.mk.lg').locator('xpath=..').locator('.pn').all_inner_texts()]
         ok(len(achou) >= 1 and all('fern' in n.lower() for n in achou), f'CT-KAN-127-02: busca "FERN" mostra só os nomes com "fern", sem diferenciar maiúsculas ({achou})')
         pg.fill('#pbusca', 'aléMAO'); pg.wait_for_timeout(150)
         ok(pg.locator('[data-a=pubMark][data-v=in]').count() == 1, 'CT-KAN-127-02: busca ignora acentos ("aléMAO" acha Alemão)')
@@ -705,7 +705,7 @@ with sync_playwright() as pw:
         ok(pg.locator('[data-a=pubMark][data-v=in]').count() == total, f'CT-KAN-127-02: apagar a busca volta a lista completa ({total})')
         pg.fill('#pbusca', 'Zezinho Novo'); pg.wait_for_timeout(150)
         ok('Não achou? Toque em Adicionar meu nome' in pg.inner_text('main') and pg.locator('[data-a=pubAdd]').is_visible(), 'CT-KAN-127-03: busca sem resultado orienta e mostra "Adicionar meu nome"')
-        pg.click('[data-a=pubAdd]'); pg.wait_for_timeout(300)
+        pg.click('[data-a=pubAdd]'); pg.wait_for_selector('#anm', timeout=8000)
         ok(pg.input_value('#anm') == 'Zezinho Novo', 'CT-KAN-127-03: o nome digitado na busca já vem na janela')
         ok(pg.get_attribute('#anm', 'enterkeyhint') == 'done', 'CT-KAN-74-02: o teclado do celular mostra "Concluir" no campo da janela')
         pg.click('#dlg [data-a=close]'); pg.wait_for_timeout(200); pg.fill('#pbusca', ''); pg.wait_for_timeout(150)
@@ -713,13 +713,13 @@ with sync_playwright() as pw:
         iv = next((i for i, t in enumerate(ordem) if t.startswith('Você vai')), 99); it = next((i for i, t in enumerate(ordem) if t.startswith('Ver times')), -1)
         ok(it > iv and not pg.locator('main .teams').first.is_visible(), f'CT-KAN-127-04: com a lista aberta, "Você vai?" vem antes e os times ficam recolhidos em "Ver times" ({ordem[:4]})')
         txtp = pg.inner_text('main')
-        rep_ = [n for n in [x.split(' ·')[0].strip() for x in pg.locator('main .plist .pn').all_inner_texts()] if n and txtp.count(n) > 1 and not any(n != m and n in m for m in [y.split(' ·')[0].strip() for y in pg.locator('main .plist .pn').all_inner_texts()])]
+        rep_ = [n for n in [re.split(r' ·|\n', x)[0].strip() for x in pg.locator('main .plist .pn').all_inner_texts()] if n and txtp.count(n) > 1 and not any(n != m and n in m for m in [re.split(r' ·|\n', y)[0].strip() for y in pg.locator('main .plist .pn').all_inner_texts()])]
         ok(not rep_, f'CT-KAN-127-05: fora dos blocos recolhidos, cada nome aparece uma vez ({rep_[:3]})')
         ok('Partidas' in pg.inner_text('main') and ' × ' in pg.inner_text('main') and pg.locator('[data-a=delMatch]').count() == 0, 'CT-KAN-86-03: jogador vê o placar das partidas pelo link, sem botão de apagar')
         pg.locator('.mk.lg [data-v=out]').nth(11).click(); pg.wait_for_timeout(900)
         ok(pg.locator('.mk.lg button.on-out').first.inner_text().startswith('✕'), 'Não vou marcado mostra ✕')
         ok(pg.locator('.mk.lg button.on-in').first.inner_text().startswith('✓'), 'Vou marcado mostra ✓')
-        pg.click('[data-a=pubAdd]'); pg.wait_for_timeout(300); pg.fill('#anm', 'Avulso Teste'); pg.keyboard.press('Enter'); pg.wait_for_timeout(900)
+        pg.click('[data-a=pubAdd]'); pg.wait_for_selector('#anm', timeout=8000); pg.fill('#anm', 'Avulso Teste'); pg.keyboard.press('Enter'); pg.wait_for_timeout(900)
         ok('Avulso Teste' in pg.inner_text('main') and not pg.evaluate("document.getElementById('dlg').open"), 'CT-KAN-74-01: avulso se adiciona pelo link apertando Enter ("Ir" no teclado)')
         shot('08-link-publico-escuro'); contraste(pg, 'link público (escuro)')
         pg.locator('#themeBtn').click(); pg.locator('.theme-menu [data-v=light]').click(); pg.wait_for_timeout(300)
@@ -1356,7 +1356,7 @@ with sync_playwright() as pw:
            f'CT-KAN-77-05: link permanente em 390px mostra só a próxima rodada ({i77["d"]}), nenhuma data distante, sem rolagem lateral, e o Vou grava ({i77["ds"]})')
         # CT-KAN-78-06 e 05: avulso novo pelo link entra no fim da lista numerada; Não vou e Vou não mudam nome, avulso e posição
         lim78 = pg.evaluate(LER, lim_k(gid_fut, rid_main))
-        pg.click('[data-a=pubAdd]'); pg.wait_for_timeout(300); pg.fill('#anm', 'Zé Avulso 78')
+        pg.click('[data-a=pubAdd]'); pg.wait_for_selector('#anm', timeout=8000); pg.fill('#anm', 'Zé Avulso 78')
         tem_pos = pg.locator('select#apos').count() == 1
         if tem_pos: pg.select_option('select#apos', index=1)
         pg.click('[data-a=pubSaveAdd]'); pg.wait_for_timeout(1200)
@@ -4747,7 +4747,7 @@ with sync_playwright() as pw:
         ac = por.get('appcheck') or {}
         ok(len(f105) == 3 and sorted(por) == ['appcheck', 'erro', 'gravacao'], f'CT-KAN-239-05: o comprovante do App Check, o erro de código e a gravação recusada viram 3 registros ({sorted(por)})')
         ok(ac.get('n') == 2 and ac.get('m') == 'appCheck/fetch-status-error' and ac.get('nav') == 'Safari 17' and ac.get('so') == 'iOS 17' and ac.get('disp') == 'celular'
-           and ac.get('v') == 'pelada-v105' and ac.get('r') == 'r' and ac.get('g') == g105 and ac.get('lang') and isinstance(ac.get('em'), (int, float)) and ac.get('inst') is False,
+           and re.match(r'pelada-v\d+$', str(ac.get('v'))) and ac.get('r') == 'r' and ac.get('g') == g105 and ac.get('lang') and isinstance(ac.get('em'), (int, float)) and ac.get('inst') is False,
            f'CT-KAN-239-05: a mesma falha na mesma visita vira um registro com a contagem e os dados de navegação ({ac})')
         er = por.get('erro') or {}
         ok('x is null' in er.get('m', '') and len(er.get('p', '')) > 0 and (por.get('gravacao') or {}).get('m') == 'permission-denied',
@@ -4774,6 +4774,115 @@ with sync_playwright() as pw:
                 p105.emulate_media(color_scheme=tema); p105.wait_for_timeout(150); contraste(p105, f'falhas no portal ({tema})')
             p105.emulate_media(color_scheme='light')
         ctx105.close()
+
+        # ---------- v106 (KAN-262, KAN-248, KAN-250, KAN-251): link mais leve; nome inteiro na lista do link; janelas
+        # prontas para digitar; "Automático" e o horário sem quebrar no meio
+        ctx106 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', user_agent=UA105, timezone_id='America/Sao_Paulo')
+        p106 = ctx106.new_page(); p106.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p106, 'criar')
+        p106.fill('#le', 'v106@teste.com'); p106.fill('#lp', 'Jogo@2026'); p106.fill('#lp2', 'Jogo@2026'); p106.keyboard.press('Enter'); p106.wait_for_selector('#ngBox', timeout=12000)
+        # KAN-250: o local do dia fixo tem rótulo visível
+        rot106 = p106.evaluate("[...document.querySelectorAll('#ngBox .srow .sl')].map(i=>{const l=i.closest('label');return [l&&l.querySelector('.hrot-t')?l.querySelector('.hrot-t').textContent:'',i.placeholder]})")
+        ok(rot106 and all(r == ['Local (opcional)', 'Ex.: Arena Society, quadra 3'] for r in rot106), f'CT-KAN-250-04: no Novo grupo, o local de cada dia fixo tem o rótulo "Local (opcional)" e um exemplo ({rot106})')
+        p106.fill('#ngn', 'Leve FC'); p106.click('[data-a=pickSport][data-v=futebol]'); p106.click('[data-a=createGroup]')
+        p106.wait_for_function("location.hash.startsWith('#/g/')"); p106.wait_for_timeout(1500)
+        g106 = p106.url.split('#/g/')[1]
+        p106.click('[data-a=tab][data-v=jogadores]'); p106.wait_for_timeout(300); p106.click('[data-a=seed]'); p106.wait_for_timeout(1500)
+        js106 = p106.evaluate("Object.keys(S.jog).filter(id=>S.jog[id].ativo!==false).sort()")
+        nomes106 = {js106[0]: 'Alemão', js106[1]: 'Zé Carlos da Silva', js106[2]: 'Fernandinho', js106[3]: 'Maximiliano Bartolomeu Constantino de Albuquerque'}
+        for pid, nm in nomes106.items():
+            p106.evaluate(PUT, {f'grupos/{g106}/jogadores/{pid}': {**(p106.evaluate(LER, f'grupos/{g106}/jogadores/{pid}') or {}), 'name': nm}})
+        # KAN-250: Lançar abre com o cursor em "Tipo"
+        p106.reload(); p106.wait_for_timeout(1500)
+        p106.click('[data-a=tab][data-v=caixa]'); p106.wait_for_selector('[data-a=addLan]', timeout=8000); p106.click('[data-a=addLan]'); p106.wait_for_timeout(400)
+        ok(p106.evaluate("document.activeElement.id") == 'lk', f'CT-KAN-250-01: "Novo lançamento" abre com o cursor no campo "Tipo" ({p106.evaluate("document.activeElement.id")!r})')
+        p106.fill('#lv', '80'); p106.select_option('#lp2', js106[5]); p106.focus('#lv'); p106.keyboard.press('Enter'); p106.wait_for_timeout(900)
+        ok(not p106.evaluate("document.getElementById('dlg').open") and 'Mensalidade' in p106.inner_text('#lanLista'), 'CT-KAN-250-05: Enter no valor salva o lançamento')
+        # KAN-250: Nova votação abre com o cursor em "Título", selecionado
+        p106.click('[data-a=tab][data-v=rodada]'); p106.wait_for_timeout(500)
+        for x in js106[:10]:
+            p106.click(f'#presLista [data-a=mark][data-v=in][data-p="{x}"]'); p106.wait_for_timeout(250)
+        sortear(p106)
+        p106.click('[data-a=tab][data-v=votacao]'); p106.wait_for_selector('[data-a=newVote]', timeout=8000); p106.click('[data-a=newVote]'); p106.wait_for_timeout(400)
+        f106 = p106.evaluate("(()=>{const a=document.activeElement;return [a.id,a.selectionStart,a.selectionEnd,a.value.length]})()")
+        ok(f106[0] == 'vt' and f106[1] == 0 and f106[2] == f106[3] > 0, f'CT-KAN-250-02: "Nova votação" abre com o cursor no título, com o texto selecionado para trocar ({f106})')
+        p106.click('#dlg [data-a=close]'); p106.wait_for_timeout(300)
+        # KAN-250: nenhuma janela de formulário da gestão abre com o foco na própria janela
+        foco106 = []
+        for tab, sel in [('rodada', '[data-a=newRodada]'), ('rodada', '#porPosicao [data-a=abrirMinimos]'), ('jogadores', '[data-a=addPlayer]'), ('caixa', '[data-a=addLan]')]:
+            p106.click(f'[data-a=tab][data-v={tab}]'); p106.wait_for_timeout(500)
+            if not p106.locator(sel).count(): continue
+            p106.locator(sel).first.click(); p106.wait_for_timeout(500)
+            foco106.append((sel, p106.evaluate("(()=>{const a=document.activeElement,d=document.getElementById('dlg');return d.open&&a!==d&&d.contains(a)})()")))
+            p106.click('#dlg [data-a=close]'); p106.wait_for_timeout(300); confirmar_app(p106, True)
+        ok(len(foco106) >= 3 and all(x for _, x in foco106), f'CT-KAN-250-03: as janelas de formulário abrem com o foco num campo dentro delas ({foco106})')
+        # KAN-251: Aparência sem palavra quebrada, três opções da mesma altura
+        p106.click('[data-a=tab][data-v=grupo]'); p106.wait_for_selector('.theme-seg', timeout=8000)
+        MEDE251 = "[...document.querySelectorAll('.theme-seg button')].map(b=>{const n=b.querySelector('.ts-nome');return [n.textContent,n.getClientRects().length,Math.round(b.getBoundingClientRect().height),n.getBoundingClientRect().right<=b.getBoundingClientRect().right+1]})"
+        for lg, alt in [(360, 740), (390, 844)]:
+            p106.set_viewport_size({'width': lg, 'height': alt}); p106.wait_for_timeout(250)
+            for tema in ['light', 'dark']:
+                p106.emulate_media(color_scheme=tema); p106.wait_for_timeout(100)
+                m251 = p106.evaluate(MEDE251)
+                ok(len(m251) == 3 and all(r == 1 and dentro for _, r, _, dentro in m251) and len({h for _, _, h, _ in m251}) == 1 and m251[0][2] >= 44,
+                   f'CT-KAN-251-01: em {lg}px ({tema}), Automático, Claro e Escuro aparecem inteiros, numa linha, com a mesma altura de 44px ou mais ({m251})')
+        p106.emulate_media(color_scheme='light'); p106.set_viewport_size({'width': 360, 'height': 740}); p106.wait_for_timeout(200)
+        p106.screenshot(path=f'{OUT}/106-aparencia-360.png')
+        p106.click('.theme-seg [data-v=auto]'); p106.wait_for_timeout(200)
+        ok(p106.get_attribute('.theme-seg [data-v=auto]', 'aria-checked') == 'true' and 'Segue o tema do celular' in p106.inner_text('.theme-seg + p'), 'CT-KAN-251-02: tocar em Automático marca a opção e a ajuda continua')
+        # KAN-251: no Histórico, o horário da rodada não quebra no meio
+        ontem106 = p106.evaluate("(()=>{const d=new Date();d.setDate(d.getDate()-3);return d.toLocaleDateString('sv')})()")
+        p106.evaluate(PUT, {f'grupos/{g106}/rodadas/hist106': {'date': ontem106, 'time': '20:00', 'fim': '22:00', 'place': 'Quadra 106', 'createdAt': 1}})
+        p106.reload(); p106.wait_for_timeout(1500)
+        p106.click('[data-a=tab][data-v=historico]'); p106.wait_for_timeout(1200)
+        if p106.locator('li', has_text='Quadra 106').count() == 0 and p106.locator('[data-a=histBuscar]').count():
+            p106.click('[data-a=histBuscar]'); p106.wait_for_timeout(900)
+        p106.locator('li', has_text='Quadra 106').locator('[data-a=histAbrir]').click(); p106.wait_for_timeout(700)
+        h251 = p106.evaluate("(()=>{const n=document.querySelector('main h2 .nw');return n?[n.textContent,n.getClientRects().length]:null})()")
+        ok(h251 and '20:00' in h251[0] and '22:00' in h251[0] and h251[1] == 1, f'CT-KAN-251-03: no detalhe do Histórico em 360px, "20:00–22:00" fica inteiro numa linha ({h251})')
+        p106.screenshot(path=f'{OUT}/106-historico-360.png')
+        # KAN-262: o link abre sem as janelas do jogador; elas baixam ao tocar (os times sorteados acima saem, para a lista voltar)
+        rid106 = p106.evaluate("S.rid")
+        p106.goto(URL + '#/p/' + g106); p106.wait_for_selector('.hero-r h2', timeout=8000)
+        r106 = p106.evaluate(LER, f'grupos/{g106}/rodadas/{rid106}') or {}
+        p106.evaluate(PUT, {f'grupos/{g106}/rodadas/{rid106}': {k: v for k, v in r106.items() if k not in ('times', 'locked')}})
+        p106.reload(); p106.wait_for_selector('.hero-r h2', timeout=8000); p106.wait_for_timeout(800)
+        baixou = lambda: p106.evaluate("performance.getEntriesByType('resource').some(e=>/JanelasLink-/.test(e.name))")
+        okp(pagina_usa_pedacos() and not baixou(), 'CT-KAN-262-06: o link do jogador abre sem baixar as janelas "Adicionar meu nome" e "Instalar"')
+        p106.click('#installBtn'); p106.wait_for_selector('#dlg ol li', timeout=8000)
+        ok('Instalar no celular' in p106.inner_text('#dlg') and 'Safari' in p106.inner_text('#dlg'), 'CT-KAN-262-06: no iPhone, "Instalar" abre a janela com os passos do Safari')
+        okp(pagina_usa_pedacos() and baixou(), 'CT-KAN-262-06: a janela baixa só quando o jogador toca')
+        p106.click('#dlg [data-a=close]'); p106.wait_for_timeout(200)
+        sw106 = p106.evaluate("fetch('sw.js').then(r=>r.text()).then(t=>(/const PARTES_LINK = (\\[.*?\\]);/.exec(t)||[])[1]||'')")
+        okp(pagina_usa_pedacos() and 'JanelasLink-' in sw106 and 'PARTES_LINK).catch' in p106.evaluate("fetch('sw.js').then(r=>r.text())"),
+            f'CT-KAN-262-07: o service worker guarda as janelas do link na instalação, para abrir também sem internet ({sw106[:80]})')
+        # KAN-248: nome inteiro em até 2 linhas, "você" embaixo
+        p106.click(f'[data-a=pubMark][data-v=in][data-p="{js106[0]}"]'); p106.wait_for_timeout(1200)
+        MEDE248 = """(id)=>{const b=document.querySelector(`[data-a=pubMark][data-v=in][data-p="${id}"]`);if(!b)return null;const li=b.closest('li'),t=li.querySelector('.pn-txt'),
+          lh=parseFloat(getComputedStyle(t).lineHeight);return {nome:t.textContent,cabe:t.scrollHeight<=t.clientHeight+1&&t.scrollWidth<=t.clientWidth+1,linhas:Math.round(t.clientHeight/lh),
+          tags:[...li.querySelectorAll('.pn-tags .tag')].map(x=>x.textContent),title:t.title,me:li.classList.contains('me-row'),
+          bts:[...li.querySelectorAll('.mk.lg button')].map(x=>{const r=x.getBoundingClientRect();return [Math.round(r.width),Math.round(r.height)]}),texto:li.textContent}}"""
+        for tema in ['light', 'dark']:
+            p106.emulate_media(color_scheme=tema); p106.wait_for_timeout(150)
+            a248 = p106.evaluate(MEDE248, js106[0])
+            ok(a248 and a248['me'] and a248['nome'] == 'Alemão' and a248['cabe'] and a248['tags'] == ['você'],
+               f'CT-KAN-248-01: em 360px ({tema}), a minha linha mostra "Alemão" inteiro e a etiqueta "você" embaixo ({a248})')
+            contraste(p106, f'lista do link com nome em 2 linhas ({tema})')
+        p106.emulate_media(color_scheme='light')
+        z248 = p106.evaluate(MEDE248, js106[1])
+        ok(z248 and z248['cabe'] and z248['linhas'] <= 2, f'CT-KAN-248-02: "Zé Carlos da Silva" aparece inteiro em até 2 linhas ({z248})')
+        larg106 = p106.evaluate("document.documentElement.scrollWidth")
+        ok(all(w >= 44 and h >= 44 for w, h in (z248 or {}).get('bts', [])) and larg106 <= 360, f'CT-KAN-248-03: com o nome em 2 linhas, Vou e Não vou continuam com 44px e a página não rola de lado ({z248 and z248["bts"]}, {larg106}px)')
+        ok(a248 and a248['texto'].index('Alemão') < a248['texto'].index('você') < a248['texto'].index('Vou'), f'CT-KAN-248-04: o leitor de tela ouve o nome, depois "você" e o estado ({a248 and a248["texto"]!r})')
+        l248 = p106.evaluate(MEDE248, js106[3])
+        ok(l248 and not l248['cabe'] and l248['linhas'] == 2 and l248['title'] == nomes106[js106[3]], f'CT-KAN-248-05: nome comprido demais corta na 2ª linha e fica inteiro no title ({l248 and [l248["linhas"], l248["title"]]})')
+        p106.screenshot(path=f'{OUT}/106-link-nomes-360.png', full_page=True)
+        # Em inglês
+        p106.evaluate("localStorage.setItem('nj-idioma','en')"); p106.reload(); p106.wait_for_selector('.hero-r h2', timeout=8000); p106.wait_for_timeout(1200)
+        e248 = p106.evaluate(MEDE248, js106[0])
+        falta106 = p106.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(publico|pwa)/.test(k))")
+        ok(e248 and e248['tags'] == ['you'] and not falta106, f'CT-KAN-248-01: em English, a etiqueta diz "you" ({e248 and e248["tags"]}, {falta106})')
+        ctx106.close()
 
         # ---------- v52 (KAN-172): isento de pagamento e "Recebe por jogo" com A pagar no Caixa (navegador separado)
         ctx7 = b.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')

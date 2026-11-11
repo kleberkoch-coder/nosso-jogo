@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
-Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D53) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v104 (11/11/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D54) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
+Atualizado na pelada-v105 (11/11/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -26,6 +26,12 @@ Atualizado na pelada-v104 (11/11/2026). Toda entrega que mudar uma regra atualiz
 - Extra da rodada pelo link (KAN-228): cada resposta em `rodadas/{id}/extra/{pessoa}` só com o sim ou não, a hora, o aparelho e até 3 convidados (nomes que somam até 125 letras); só para quem existe no elenco, nos avulsos ou na presença; o link não apaga nem grava nome de pessoa de fora (isso é só do administrador).
 - Tamanho do que o link grava (KAN-198, v66): na presença, nome até 40 letras, posição até 4 e a marca de avulso só sim ou não; no voto, cada categoria e cada escolhido é um identificador de até 64 letras (até 30 categorias). O resto o Firebase recusa.
 - Qualquer um lê um grupo pelo link; só o portal lista todos os grupos (KAN-133).
+- **Falhas no uso** (KAN-239, 1ª parte, v105; pedido do Kleber de 11/11 para achar o aparelho dos picos do App Check, KAN-88; regra em `dominio/falhas.ts`, com teste): o app grava sozinho, em `falhas/{id}`:
+  - quando o comprovante do App Check não vem;
+  - quando dá erro de código;
+  - quando o Firebase recusa uma gravação.
+
+  Cada registro leva os dados de navegação: navegador e versão principal, sistema, tipo de aparelho (celular, tablet, computador), se o app está instalado, idioma, versão do app, tela e o código do grupo. **Nunca** leva nome, e-mail, telefone, identificador da pessoa nem IP. A mesma falha na mesma visita vira um registro só, com a contagem; no máximo 20 por aparelho por dia. Qualquer aparelho com login só cria; ninguém muda; só o portal lê e apaga.
 - Sair apaga a cópia local dos dados; com algo sem enviar, pergunta antes (KAN-80).
 - App Check em observação, com a chave "Nosso Jogo web 2" desde a v42. Só ligar o bloqueio (Aplicar) com mais de 99% de chamadas verificadas por 7 dias; ligado antes, ele derrubou o login em 15/10 (KAN-88, lembrete em 20/10).
 - Mudança no `firestore.rules`: testes no emulador e aviso destacado ao Kleber; é publicada no Merge.
@@ -209,6 +215,7 @@ Atualizado na pelada-v104 (11/11/2026). Toda entrega que mudar uma regra atualiz
 - Plano só é gravado pelo portal (ou servidor de pagamento), nunca pelo app.
 - **Ficha do cliente no portal (KAN-117, v99; decisões do Kleber de 06/11):** cada cliente da lista tem **Ficha**, com o plano em vigor (e de onde vem: portal, teste de 14 dias, transição ou Grátis), o que está gravado e o formulário **Mudar o plano**: plano do catálogo, **Válido até** (opcional; vale até o fim desse dia em Brasília e depois volta sozinho ao Grátis, sem apagar nada), **Motivo** (obrigatório para plano pago: Pago por fora, Cortesia, Parceria ou Teste estendido) e observação (até 200 letras). Teste estendido é um plano com data e o motivo "teste" (o teste de 14 dias do app não muda). Grátis limpa a validade e o motivo: com Grátis escolhido, "Válido até" e "Motivo" ficam desligados, com a explicação, e ligam ao escolher A ou B (KAN-240, v100). Depois de um aviso de erro, o que foi digitado continua no formulário. Cada mudança grava, junto, uma linha no **histórico** (`contas/{uid}/historico`: quando, quem, de qual para qual plano, motivo e observação), que só o portal lê e ninguém muda nem apaga. Salvar sem mudar nada avisa e não grava. O organizador recebe o plano novo na próxima vez que abrir o app. 
 - **Bloquear conta pelo portal (KAN-117, 2ª parte, v101):** na ficha, **Bloquear conta** (com motivo opcional e confirmação) marca a conta (`contas/{uid}.bloq` = quando) e todos os grupos dela (`grupos/{gid}.bloq`), no mesmo lote, com a linha "Conta bloqueada" no histórico. Efeito na hora, nas regras do Firebase: a conta não cria grupo nem grava como administrador em nenhum grupo; nos grupos dela, ninguém grava (nem os convidados) e o link mostra "Este grupo está indisponível no momento" (presença, votação e avaliação). No app, o grupo abre só para consulta com o aviso "Grupo bloqueado pela administração do Nosso Jogo"; "Meus grupos" avisa e não oferece "Novo grupo". Nada é apagado. **Desbloquear conta** é direto e volta tudo na hora (também vai para o histórico). Só o portal mexe no bloqueio. Na lista do portal, a conta aparece como "Bloqueada".
+- **Falhas no portal** (KAN-239, v105): o painel "Falhas no uso (últimos 30 dias)" mostra as falhas agrupadas por tipo e mensagem, com quantas vezes aconteceram. Aberta, cada uma mostra quando, em que versões e telas, e os navegadores e aparelhos.
 - Portal em site separado (`nosso-jogo-portal.web.app`), só Google, acesso só pelo uid listado nas regras (`adminPortal()`); nunca mostra notas, caixa, Pix ou contatos.
 
 ## Padrões de tela

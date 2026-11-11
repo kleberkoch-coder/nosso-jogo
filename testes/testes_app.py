@@ -5057,7 +5057,8 @@ with sync_playwright() as pw:
            and any(l.startswith('DESCRIPTION:Mudou de ideia? Responda aqui: ') for l in L124b),
            f'CT-KAN-124-01: "Só esta rodada" gera o evento com título, início, término, alarme de 3 horas e o link da rodada ({[l for l in L124b if l[:4] in ("SUMM","DTST","URL:","TRIG")]})')
         ok(p107.inner_text('#toast').startswith('Pronto: abra o arquivo'), 'CT-KAN-124-01: depois de gerar, o aviso diz para abrir o arquivo')
-        ok(not re.search(r'nota|mensalista|diarista|pix|R\$', t124b, re.I) and t124b.count('@') == 1, 'CT-KAN-124-08: o arquivo não leva nota, tipo, valores nem contatos')
+        m124 = re.search(r'nota|mensalista|diarista|pix|R\$', re.sub(r'[a-z0-9]{12,}', '', t124b.replace(g107, '')), re.I)  # sem os identificadores, que são letras sorteadas
+        ok(not m124 and t124b.count('@') == 1, f'CT-KAN-124-08: o arquivo não leva nota, tipo, valores nem contatos ({m124 and t124b[max(0,m124.start()-40):m124.end()+10]!r}, {t124b.count("@")})')
         # Não vou: o botão some na hora
         p107.click(f'[data-a=pubMark][data-v=out][data-p="{js107[0]}"]'); p107.wait_for_timeout(1000)
         ok(p107.locator('#agendaLinha').count() == 0, 'CT-KAN-124-04: quem marca "Não vou" depois de confirmar perde o botão na hora')

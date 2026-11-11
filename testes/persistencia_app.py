@@ -246,7 +246,7 @@ with sync_playwright() as pw:
     ra13 = J(pg, "(id)=>Object.values(S.res||{}).reduce((n,d)=>n+(((d.jog||{})[id]||{}).as||0),0)", as13)
     nm13 = J(pg, "(id)=>(S.jog[id]||{}).name", as13) if as13 else None
     ok(as13 and pa13 == [as13] and ra13 == 1 and nm13 and nm13 in pg.inner_text('#rankGarcom'),
-       f'CT-KAN-66-08: a assistência continua na partida e no ranking depois de recarregar ({nm13}, {pa13}, {ra13})')
+       f'CT-KAN-170-P13d: (CT-KAN-66-08) a assistência continua na partida e no ranking depois de recarregar ({nm13}, {pa13}, {ra13})')
     pronto(pg, 'partida'); pg.wait_for_timeout(800)
 
     # P13b partida editada depois de salva (rodadas/{rid}/partidas com versão, resumos do mês) (KAN-176)
@@ -372,7 +372,7 @@ with sync_playwright() as pw:
     # KAN-66: a assistência também continua depois de entrar de novo (resumo do mês e partida)
     p2.click('[data-a=tab][data-v=ranking]'); p2.wait_for_timeout(1500)
     ra19 = J(p2, "(id)=>Object.values(S.res||{}).reduce((n,d)=>n+(((d.jog||{})[id]||{}).as||0),0)", as13)
-    ok(ra19 == 1, f'CT-KAN-66-08: e também depois de sair e entrar ({ra19})')
+    ok(ra19 == 1, f'CT-KAN-170-P13d: (CT-KAN-66-08) e também depois de sair e entrar ({ra19})')
     ok(tudo['nome'] == 'Persistência FC 2' and tudo['pos'] and tudo['moeda'] == 'EUR' and tudo['jog'] >= 13 and tudo['sep'] >= 2
        and tudo['pix'] == 'pix-persistencia@teste.com' and tudo['pais'] == 'US',
        f'CT-KAN-170-P19: em outro navegador, depois de entrar de novo, tudo vem do banco ({tudo})')

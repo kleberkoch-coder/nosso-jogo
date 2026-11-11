@@ -84,7 +84,11 @@ function LinhaDia({ x, doze, dias }: { x: Fixo | null; doze: boolean; dias: numb
       <button class="btn sm ghost danger" data-a="rmSched" aria-label={tx('grupo.removerDia')}>
         ✕
       </button>
-      <input class="inp sl" defaultValue={f.place || ''} maxLength={200} placeholder={tx('grupo.localOpcional')} />
+      {/* KAN-250: o local tem rótulo visível (o exemplo dentro do campo some ao digitar). */}
+      <label class="sl-rot">
+        <span class="hrot-t">{tx('grupo.localOpcional')}</span>
+        <input class="inp sl" defaultValue={f.place || ''} maxLength={200} placeholder={tx('grupo.localExemplo')} />
+      </label>
     </div>
   );
 }

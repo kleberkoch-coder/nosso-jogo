@@ -7,6 +7,7 @@ import { gname, grpAtivo, grpBloq, pname } from '../dominio/grupo.js';
 import { FORMATO, FUSO, LOCAL } from '../i18n/formatos.js';
 import { juntarTextos, tx } from '../i18n/index.js';
 import textos from '../i18n/pt-BR-aval';
+import textosVoto from '../i18n/pt-BR-voto';
 import { DEMORA_MS } from '../nucleo/carga';
 import { S as estado } from '../nucleo/estado.js';
 import { $, main } from '../nucleo/util.js';
@@ -15,6 +16,7 @@ import { ACT } from '../acoes.js';
 import { acoes } from '../acoes/avaliacao-envio';
 
 juntarTextos(textos);
+juntarTextos(textosVoto);
 Object.assign(ACT, acoes);
 
 const st = () => estado;

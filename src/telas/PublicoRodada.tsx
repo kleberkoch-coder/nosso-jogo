@@ -24,7 +24,7 @@ import { S as estado } from '../nucleo/estado.js';
 import { $, fdate, main } from '../nucleo/util.js';
 import { myLocal } from './publico-rodada.js';
 import { partidasDe } from '../nucleo/partidas-lista.js';
-import { ComoChegar, Pos, PorPosicao, TextoCortado } from '../ui/componentes';
+import { ComoChegar, NomeNaLista, Pos, PorPosicao, TextoCortado } from '../ui/componentes';
 import { avulsosEsgotados } from '../dominio/limites';
 import { DEMORA_MS } from '../nucleo/carga';
 import { precisaVaga, situacao } from '../dominio/vagas';
@@ -135,21 +135,7 @@ function Linha({ id, r, me }: { id: string; r: Rodada; me: string | null }) {
   return (
     <li class={id === me ? 'me-row' : ''}>
       <Pos id={id} />
-      <span class="pn">
-        {pname(id)}
-        {id === me && (
-          <>
-            {' '}
-            <span class="tag">{tx('publico.voce')}</span>
-          </>
-        )}
-        {isAvulso(id) && (
-          <>
-            {' '}
-            <span class="tag">{tx('publico.avulso')}</span>
-          </>
-        )}
-      </span>
+      <NomeNaLista nome={pname(id)} voce={id === me} avulso={isAvulso(id)} />
       {r.locked ? (
         <span class="tag" style={{ color: s === 'in' ? 'var(--in)' : s === 'out' ? 'var(--out)' : '' }}>
           {s === 'in' ? tx('publico.vai') : s === 'out' ? tx('publico.naoVai') : '—'}

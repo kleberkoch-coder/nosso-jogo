@@ -173,7 +173,7 @@ function NovaVotacao({ rs }: { rs: Rodada[] }) {
       </label>
       <label class="f">
         <span>{tx('votacao.titulo')}</span>
-        <input class="inp" id="vt" value={tx('votacao.tituloPadrao')} maxLength={50} />
+        <input class="inp" id="vt" value={tx('votacao.tituloPadrao')} maxLength={50} data-foco />
       </label>
       <fieldset class="f chk-lista">
         <legend class="lbl">{tx('votacao.oQueVotar')}</legend>

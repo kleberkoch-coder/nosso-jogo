@@ -199,6 +199,17 @@ Medido a cada versão, no celular de 390px:
 - **Prova:** com o formato antigo das posições recolocado de propósito, o roteiro falha (casos P03, P04, P07 e P19).
 - **Agente de Qualidade:** passou a exigir "grava, recarrega e confere" e "sai, entra e confere" em todo caso de teste de algo que grava; dado perdido é gravidade Alta.
 
+### D55. Link do jogador com folga de novo: janelas sob demanda e a presença em TypeScript (11 nov. 2026, pelada-v106, KAN-262)
+- **Por quê:** o link estava em 48,6 de 50 KB no GitHub (folga de 1,4 KB, abaixo dos 3 KB da D7), e a agenda no celular (KAN-124) e a previsão do tempo (KAN-191) vão crescer o link. A gravação da presença, o coração do link, não tinha conferência de tipos.
+- **O que saiu do link:**
+  - "Adicionar meu nome" e "Instalar no celular" (`ui/JanelasLink.tsx`, com os textos em `pt-BR-janelaslink.ts`) baixam ao tocar, com o botão girando. O service worker as guarda na instalação (`PARTES_LINK` em `site/sw.js`, preenchida pela montagem), para abrirem também sem internet;
+  - a carga da gestão (`carga/abas`, `carga/gestao`, `carga/permissoes`) e o que grava no caixa privado (`dominio/caixa-gestao.ts`, que saiu de `caixa.js`) chegam pela parte de gestão (`src/admin.js`); `rotas.ts` e `render.js` chamam por ela;
+  - os textos que só a aba Rodada usa (51 chaves, agora `rodg.*`) e os do Histórico e da votação pública (`pt-BR-hist.ts`, `pt-BR-voto.ts`) saíram de `pt-BR.js`.
+- **Gestão:** recebeu parte do que saiu do link; para compensar, a janela do sorteio foi para `ui/JanelasTimes.tsx` (sob demanda, no padrão da D52: recebe `tx`, `sport`, `porTime`, `resumo` e afins de quem chama).
+- **TypeScript:** `acoes/publico.ts`, `telas/publico-rodada.ts` e `nucleo/edicoes.ts`. A regra do que grava na presença saiu para `dominio/presenca.ts`, com teste próprio (`testes/regras/presenca.test.mjs`: presença comum, avulso novo no contador, vaga que sobe e desce). Arquivos sem tipos: de 38 para 35.
+- **Medida:** a tarefa "montar" escreve no resumo o peso de cada módulo do link (compactado, antes do gzip) e avisa quando a folga fica abaixo de 3 KB. Local: link 46,5 KB e gestão 89,3 KB (o GitHub mede de 0,4 a 0,6 KB a menos, D53).
+- **Regras do Firebase:** não mudam.
+
 ### D54. Coletor de falhas próprio no Firebase (11 nov. 2026, pelada-v105, KAN-239, 1ª parte)
 - **Por quê:** o App Check (KAN-88) mostrou picos de "solicitações inválidas", e não havia como saber de que aparelho vinham. Erros de código e gravações recusadas também se perdiam no console de cada celular. Foi preferido ao Sentry (dados fora, LGPD, link mais pesado) e ao Error Reporting do Google Cloud (exige o Blaze).
 - **Como:** `nucleo/falhas.ts` (no link e na gestão, cerca de 0,5 KB) só ouve `error`, `unhandledrejection` e os eventos `nj-gravacao-falhou` (que agora levam o código do erro) e `nj-appcheck-falhou` (novo, de `backend.js`). Esse último dispara quando `getToken()` do App Check devolve erro (nesse caso o SDK manda um comprovante falso, que o Firebase conta como "inválido") ou quando `onTokenChanged` avisa erro. O coletor junta as repetições por 3 s e, só na primeira falha, baixa `dominio/falhas.ts` (1,6 KB, sob demanda), que monta o registro.
@@ -547,7 +558,7 @@ As 5 regras de negócio com teste próprio previsto: sorteio, ranking, pendênci
 | `main.js` | Ponto de partida: carrega os módulos na ordem certa e inicia o app |
 | `estilos/app.css` | CSS do app (tokens do Design System e componentes) |
 | `i18n/` | `pt-BR.js` (textos do link e do login), `pt-BR-gestao.js` (textos da gestão), `index.js` (`tx` e `tp`), `formatos.js` (idioma, formato, moeda, fuso e `agora()` do grupo, KAN-162), `cidades.ts` (nomes de cidades dos fusos) |
-| `nucleo/` | `util.js` (utilidades, sem dependências), `links.js`, `estado.js` (estado e assinaturas do banco), `backend.js` (Firebase ou demonstração, carregando dos botões), `edicoes.js` (gravações otimistas e presença) |
+| `nucleo/` | `util.js` (utilidades, sem dependências), `links.js`, `estado.js` (estado e assinaturas do banco), `backend.js` (Firebase ou demonstração, carregando dos botões), `edicoes.ts` (gravações otimistas e presença; a regra do que grava fica em `dominio/presenca.ts`) |
 | `dominio/` | Regras de negócio sem tela: `esportes.js` (catálogo), `grupo.js`, `rodadas.js`, `caixa.js` (configuração do caixa), `caixa-regras.ts` (pendências do mês e totais, com teste próprio desde a pelada-v30), `sorteio.js`, `whatsapp.js` (textos para compartilhar), `limites.ts` (limites contra abuso) |
 | `ui/` | `render.js` (desenho da tela e abas), `tema.js`, `dialogos.js` (janelas; desde a pelada-v30 também a janela de confirmação do app, `confirmou()`, no lugar do `confirm()` do navegador) |
 | `telas/` | Uma tela por arquivo: `apresentacao`, `Login.tsx`, `convite`, `grupos`, `rodada`, `historico`, `GrupoForm.tsx`, `grupo`, `jogadores`, `partida`, `ranking`, `Votacao.tsx` (aba e Nova votação, v75), `votacao` (apuração), `publico-voto` e os componentes `PublicoRodada.tsx` e `Caixa.tsx` (pelada-v30, KAN-135) (link do jogador; `publico-rodada.js` guarda o "quem sou eu" do aparelho) |

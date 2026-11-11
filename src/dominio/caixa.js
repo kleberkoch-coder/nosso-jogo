@@ -1,9 +1,6 @@
-import { isAdmin, posso, recurso } from './grupo.js';
-import { B } from '../nucleo/backend.js';
-import { GB, S, clean, gp, w } from '../nucleo/estado.js';
-import { cl } from '../nucleo/util.js';
-import { marcasParaAjustar } from './vagas.ts';
-import { changed } from '../ui/render.js';
+/* Valores do caixa que o link e a gestão leem. O que grava (editPc e as migrações) fica em caixa-gestao.ts, que vem
+   só com a gestão (KAN-262). */
+import { S } from '../nucleo/estado.js';
 
 function cfg() {
   const p = S.pc || {},
@@ -36,67 +33,4 @@ function inicioAPagar() {
     .sort();
   return ds[0] || null;
 }
-/* Sem a permissão de caixa (KAN-201), nada é gravado no caixa: as regras do Firebase recusariam. */
-function editPc(fn) {
-  if (!posso('caixa') || !recurso('caixa')) return Promise.resolve(); // KAN-119: caixa só com o Plano A
-  const a = cl(S.pc) || {};
-  a.tipos = a.tipos || {};
-  fn(a);
-  S.pc = a;
-  changed();
-  return w(GB.set('privado/caixa', clean(a)));
-}
-function migrarPrivado() {
-  if (S.migrando || !S.dataOn || !isAdmin() || !S.app || !S.loaded.app || !S.loaded.jog || !S.loaded.pc) return;
-  const c = S.app.cfg || {},
-    ks = CAIXA_K.filter(k => k in c),
-    js = Object.entries(S.jog).filter(([, j]) => j && 'tipo' in j);
-  if (!ks.length && !js.length) return;
-  S.migrando = true;
-  const p = cl(S.pc) || {};
-  p.tipos = p.tipos || {};
-  ks.forEach(k => {
-    if (p[k] == null) p[k] = c[k];
-  });
-  js.forEach(([id, j]) => {
-    if (!p.tipos[id]) p.tipos[id] = j.tipo;
-  });
-  S.pc = p;
-  B.set(gp('privado/caixa'), clean(p))
-    .then(() => {
-      const ps = [];
-      if (ks.length) {
-        const a = cl(S.app);
-        ks.forEach(k => delete a.cfg[k]);
-        S.app = a;
-        ps.push(B.set(gp('config/app'), clean(a)));
-      }
-      js.forEach(([id]) => {
-        const o = cl(S.jog[id]);
-        if (!o) return;
-        delete o.tipo;
-        S.jog[id] = o;
-        ps.push(B.set(gp('jogadores/' + id), clean(o)));
-      });
-      return Promise.all(ps);
-    })
-    .catch(e => console.warn('migração do caixa', e))
-    .finally(() => {
-      S.migrando = false;
-      changed();
-    });
-}
-
-/* KAN-63: a marca pública "só entra com vaga aberta" acompanha o tipo do jogador (só diarista, só com o controle ligado).
-   Roda quando o elenco, o caixa privado ou o grupo chegam, e grava só quem precisa mudar. */
-function sincronizarVagas() {
-  if (S.ajVagas || !S.dataOn || !isAdmin() || !S.app || !S.loaded.app || !S.loaded.jog || !S.loaded.pc) return;
-  const aj = marcasParaAjustar(S.jog, ptipo, !!(S.app.cfg || {}).vagasCtrl);
-  if (!aj.length) return;
-  S.ajVagas = true;
-  const fim = () => {
-    S.ajVagas = false;
-  };
-  w(GB.lote(aj.map(([id, m]) => ({ tipo: 'patch', p: 'jogadores/' + id, o: { vaga: m } })))).then(fim, fim);
-}
-export { CAIXA_K, cfg, editPc, inicioAPagar, migrarPrivado, ptipo, recebePorJogo, sincronizarVagas };
+export { CAIXA_K, cfg, inicioAPagar, ptipo, recebePorJogo };

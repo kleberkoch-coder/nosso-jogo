@@ -16,7 +16,7 @@ import { B, applyBusy } from '../nucleo/backend.js';
 import { S } from '../nucleo/estado.js';
 import { $, fdate, main } from '../nucleo/util.js';
 import { isStandalone } from '../pwa.js';
-import { ensureExtras, ensurePres, ensureVotos } from '../rotas';
+import { ensurePres, ensureVotos } from '../rotas';
 import { adm, carregarAdmin } from '../nucleo/carga-admin.js';
 import { tx } from '../i18n/index.js';
 import { LOCAL } from '../i18n/formatos.js';
@@ -219,7 +219,8 @@ function renderCore() {
   abasNoLugar();
   ensurePres();
   ensureVotos();
-  ensureExtras();
+  /* KAN-262: a carga das abas vem com a gestão (src/admin.js). */
+  if (A) A.ensureExtras();
   /* Abas sob demanda (KAN-180): enquanto a parte não chegou, um lugar para o "Carregando…". */
   const aba = k => (travada(k) ? A.vCadeado() : A.abaPronta(k) ? A.abaPronta(k).ver() : 'abaRaiz');
   /* KAN-204: convidado além do limite do plano: tudo à vista, nada que grave. */

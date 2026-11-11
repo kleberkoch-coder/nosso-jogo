@@ -363,6 +363,7 @@ export default {
   'grupo.deixeUmDia': 'Keep at least one day, or mark the group as now and then.',
   'grupo.removerDia': 'Remove day',
   'grupo.localOpcional': 'Place (optional)',
+  'grupo.localExemplo': 'E.g. Arena Sports Center, court 3',
   'grupo.nome': 'Group name',
   'grupo.nomeExemplo': 'E.g. Monday Soccer',
   'grupo.frequencia': 'How often do you play?',

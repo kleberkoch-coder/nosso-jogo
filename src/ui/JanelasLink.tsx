@@ -1,8 +1,13 @@
 /* Janelas do link do jogador (KAN-218, v84): "Adicionar meu nome" e "Instalar no celular". Componentes; antes eram
-   montadas como texto (acoes/publico.js e pwa.js). Os mesmos ids e data-a de antes. */
-import { tx } from '../i18n/index.js';
+   montadas como texto (acoes/publico.ts e pwa.js). Os mesmos ids e data-a de antes.
+   KAN-262 (pelada-v106): parte sob demanda, com os próprios textos. O link abre sem ela; o service worker a guarda na
+   primeira visita (PARTES_LINK em site/sw.js), para abrir também sem internet. */
+import { juntarTextos, tx } from '../i18n/index.js';
+import textos from '../i18n/pt-BR-janelaslink';
 import { openDlg } from './dialogos.js';
 import { CampoPosicao, ComNegrito } from './componentes';
+
+juntarTextos(textos);
 
 export function janelaMeuNome(nome: string) {
   openDlg(

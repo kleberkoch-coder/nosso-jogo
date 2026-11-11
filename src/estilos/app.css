@@ -224,8 +224,11 @@
   margin-bottom: 8px;
   background: var(--surface-2);
 }
-.srow .sl {
+.srow .sl-rot {
   grid-column: 1/-1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 .srow .inp,
 .srow .sel {
@@ -1853,4 +1856,37 @@ fieldset.chk-lista legend {
 /* KAN-255: escolhas da mensagem da rodada, na janela de compartilhar. */
 .zap-lista {
   margin: 0 0 10px;
+}
+
+/* KAN-248 (pelada-v106): nome da lista do link em até 2 linhas, quebrando entre palavras; "você" e "avulso" embaixo. */
+.pn-2l {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  white-space: normal;
+}
+.pn-2l .pn-txt {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  /* Quebra entre palavras. Uma palavra que sozinha não cabe na linha ganha hífen (ou, sem dicionário no aparelho,
+     divide no fim da linha), para o nome aparecer inteiro: "Fernandinho" cortado viraria "Fernandi…". */
+  overflow-wrap: break-word;
+  hyphens: auto;
+  max-width: 100%;
+  line-height: 1.25;
+}
+.pn-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+/* Em 360px, os botões Vou e Não vou ficam um pouco mais justos (continuam com 44px de altura e 64px de largura), para
+   nomes comuns como "Fernandinho" caberem numa palavra só. */
+@media (max-width: 380px) {
+  .mk.lg button {
+    padding: 0 9px;
+  }
 }

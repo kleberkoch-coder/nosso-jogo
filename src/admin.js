@@ -35,6 +35,11 @@ export function renderInvite() {
 }
 
 export { inicioAPagar } from './dominio/caixa.js';
+/* KAN-262 (pelada-v106): a carga da gestão e o que grava no caixa saíram do link do jogador (src/rotas.ts chama por aqui). */
+export { ensureExtras } from './carga/abas';
+export { startData } from './carga/gestao';
+export { syncPerm, syncVia } from './carga/permissoes';
+export { migrarPrivado, sincronizarVagas } from './dominio/caixa-gestao';
 export { inicioDaJanela } from './dominio/caixa-regras';
 export { montarHome, vHome } from './telas/Grupos';
 export { guardarOrdemJogadores, montarJogadores, vJogadores } from './telas/Jogadores';

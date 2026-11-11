@@ -1,4 +1,5 @@
-/* Janelas de times e pares (KAN-261, pelada-v104): Mover, Escolher o time, Pôr no time e Separar dois jogadores.
+/* Janelas de times e pares (KAN-261, pelada-v104) e do sorteio (KAN-262, pelada-v106): Mover, Escolher o time, Pôr no time,
+   Separar dois jogadores e Sortear.
    Baixam só quando abertas, para a gestão caber nos 90 KB. Por fora, as mesmas janelas, com os mesmos ids e data-a
    (doMove, toggleRes, doPorTime, addAvulso, saveSep, close), que acoes/rodada.js e acoes/jogadores.js já conhecem.
    O que vem do app (tx, nomes, cores, a abertura da janela) chega de quem chama (ui/JanelasGestao.tsx: comJanelasTimes),
@@ -141,4 +142,129 @@ export function janelaPorTime(u: U, ti: number, t: any, conf: string[], outros: 
       </div>
     </>
   );
+}
+
+/* Sortear times (ou duplas): quantos times, posições fora, variar parceiros e quem entra. */
+export function janelaSorteio(
+  u: U,
+  o: {
+    n: number;
+    nov: number;
+    fora: Set<string>;
+    inn: string[];
+    dentro: number;
+    T: number;
+  }
+) {
+  const { tx, sport, hasPos, posKeys, posLabel, siglaTela, ppos, pname, openDlg } = u;
+  const pares = sport().pairs,
+    k = o.inn.length;
+  openDlg(
+    <div id="drawBox" data-n={o.n} data-nov={o.nov} data-fora={[...o.fora].join(',')}>
+      <h3>{tx(pares ? 'sorteio.tituloDuplas' : 'sorteio.titulo')}</h3>
+      <p class="small muted" style="margin-top:-6px">
+        {pares ? tx('sorteio.infoDuplas') : tx('sorteio.info', { n: o.T })}
+      </p>
+      <div class="f" hidden={pares}>
+        <span class="lbl">{tx('sorteio.quantos')}</span>
+        <span class="seg">
+          {[2, 3, 4, 5, 6, 7, 8]
+            .filter(x => x * 2 <= k)
+            .map(x => (
+              <button key={x} data-a="dN" data-v={x}>
+                {x}
+              </button>
+            ))}
+        </span>
+      </div>
+      {hasPos() ? (
+        <div class="f" style="margin-top:12px">
+          <span class="lbl">{tx('sorteio.foraPos')}</span>
+          <span class="seg seg-wrap">
+            {(posKeys() as string[]).map(p => (
+              <button key={p} data-a="dFora" data-v={p} aria-pressed={o.fora.has(p)} title={posLabel(p)}>
+                {siglaTela(p)}
+              </button>
+            ))}
+          </span>
+          <p class="small muted" style="margin:6px 0 0">
+            {tx('sorteio.foraPosAjuda')}
+          </p>
+        </div>
+      ) : null}
+      <p id="drawPrev" style="font-weight:600"></p>
+      <div class="f">
+        <span class="lbl">{tx('sorteio.variar')}</span>
+        <span class="seg">
+          {[0, 1, 2, 3].map(i => (
+            <button key={i} data-a="dNov" data-v={i}>
+              {tx('sorteio.variar' + i)}
+            </button>
+          ))}
+        </span>
+      </div>
+      <details>
+        <summary>
+          {tx('sorteio.quemEntraAntes')}
+          <span id="drawK">{o.dentro}</span>
+          {tx('sorteio.quemEntraDepois', { total: k })}
+        </summary>
+        <div class="chk">
+          {o.inn.map(id => (
+            <label key={id}>
+              <input
+                type="checkbox"
+                class="dp"
+                value={id}
+                data-pos={ppos(id) || ''}
+                checked={!(hasPos() && o.fora.has(ppos(id)))}
+              />
+              {pname(id) + (hasPos() && ppos(id) ? ' ' : '')}
+              {hasPos() && ppos(id) ? <span class="tag">{'· ' + siglaTela(ppos(id))}</span> : null}
+            </label>
+          ))}
+        </div>
+      </details>
+      <div class="dlg-f">
+        <Cancelar tx={tx} />
+        <button class="btn bib" id="drawGo" data-a="doDraw">
+          {tx('sorteio.sortear')}
+        </button>
+      </div>
+    </div>
+  );
+  drawPreview(u);
+}
+
+/* Prévia do sorteio: quantos jogadores, quantos times e quem fica de reserva; liga ou desliga o Sortear. */
+export function drawPreview(u: U) {
+  const { tx, tp, sport, porTime, resumo, $ } = u;
+  const box = $('#drawBox') as HTMLElement | null;
+  if (!box) return;
+  const k = box.querySelectorAll('.dp:checked').length;
+  if (sport().pairs) box.dataset.n = String(Math.max(1, Math.floor(k / 2)));
+  const n = +box.dataset.n!,
+    T = porTime();
+  const kEl = $('#drawK');
+  if (kEl) kEl.textContent = String(k);
+  let txt: string;
+  if (sport().pairs)
+    txt = k < 4 ? tx('sorteio.minDuplas') : tx(k % 2 ? 'sorteio.prevDuplasReserva' : 'sorteio.prevDuplas', { k, n });
+  else if (k < n * 2) txt = tx('sorteio.poucos', { n });
+  else {
+    const r = resumo(k, n, T);
+    txt = r.reservas
+      ? tx('sorteio.prevReservas', { k, n, t: T, r: tp('sorteio.reservas', r.reservas) })
+      : r.completos
+        ? tx('sorteio.prevCompletos', { k, n, t: T })
+        : tx('sorteio.prevIncompletos', { k, n, tam: [...new Set(r.porTimeReal)].join(' e '), t: T });
+  }
+  $('#drawPrev')!.textContent = txt;
+  ($('#drawGo') as HTMLButtonElement).disabled = sport().pairs ? k < 4 : k < n * 2;
+  box
+    .querySelectorAll<HTMLElement>('[data-a=dN]')
+    .forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.v! === n)));
+  box
+    .querySelectorAll<HTMLElement>('[data-a=dNov]')
+    .forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.v! === +box.dataset.nov!)));
 }

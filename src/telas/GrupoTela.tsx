@@ -144,7 +144,7 @@ function Aparencia() {
       <div class="theme-seg" role="radiogroup" aria-label={tx('aparencia.rotulo')}>
         {(THEMES as [string, string, string][]).map(([k, ic, l]) => (
           <button key={k} role="radio" aria-checked={t === k} data-a="setTheme" data-v={k}>
-            <span aria-hidden="true">{ic}</span> {tx(l)}
+            <span aria-hidden="true">{ic}</span> <span class="ts-nome">{tx(l)}</span>
           </button>
         ))}
       </div>

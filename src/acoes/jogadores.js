@@ -1,5 +1,6 @@
 /* Ações: Jogadores: elenco, notas, contatos, pares separados e configurações. Fazem parte de ACT (src/acoes.js). */
-import { cfg, editPc, ptipo, recebePorJogo } from '../dominio/caixa.js';
+import { cfg, ptipo, recebePorJogo } from '../dominio/caixa.js';
+import { editPc } from '../dominio/caixa-gestao';
 import { posKeys } from '../dominio/esportes.js';
 import { normName, players, pname, posso, ppos, setLvl } from '../dominio/grupo.js';
 import { tp, tx } from '../i18n/index.js';

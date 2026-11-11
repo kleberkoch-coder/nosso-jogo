@@ -1,6 +1,6 @@
 /* Carga da gestão (KAN-225, saiu de rotas.js): o que todo administrador lê ao abrir o grupo. As abas pedem o resto
    (carga/abas.ts) e as permissões ligam caixa, contatos e convite (carga/permissoes.ts). */
-import { migrarPrivado, sincronizarVagas } from '../dominio/caixa.js';
+import { migrarPrivado, sincronizarVagas } from '../dominio/caixa-gestao';
 import { S, sub, subQ } from '../nucleo/estado';
 import { limparTokens, syncPerm } from './permissoes';
 import { Q_PROX, Q_REC, dia, juntarRod, regAvulsos, subLimCfg } from './rodada';

@@ -451,6 +451,8 @@ with sync_playwright() as pw:
     uc25 = J(q25, "S.user.uid")
     ok(J(q25, "S.mem&&S.mem.perm") == {'caixa': False, 'notas': False, 'elenco': False, 'config': False} and J(q25, "S.app.adms") == [uc25],
        'CT-KAN-170-P25: o convidado entra só com o dia a dia e na lista de convidados do grupo, depois de recarregar')
+    # KAN-258 (pelada-v104): o código do convite não fica no cadastro (todo administrador lê os cadastros).
+    ok(J(q25, "S.mem&&!('token' in S.mem)") is True, 'CT-KAN-258-01 (P25): o cadastro do convidado não guarda o código do convite')
     if not EMU:
         sair_e_esperar(p25); entrar25(p25, D25, False, URL + '#/entrar')
         p25.goto(URL + '#/g/' + g25); pronto(p25)

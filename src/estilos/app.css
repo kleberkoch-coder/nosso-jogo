@@ -1836,6 +1836,20 @@ fieldset.chk-lista legend {
 .tag-espera {
   white-space: nowrap;
 }
+/* KAN-260: no bloco, o nome fica numa linha (encolhe com "…") e a etiqueta inteira na de baixo. */
+.pn-espera {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  white-space: normal;
+}
+.pn-nome {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 /* KAN-255: escolhas da mensagem da rodada, na janela de compartilhar. */
 .zap-lista {
   margin: 0 0 10px;

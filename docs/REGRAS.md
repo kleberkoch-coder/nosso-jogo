@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
-Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D52) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v103 (10/11/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D53) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
+Atualizado na pelada-v104 (11/11/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -49,9 +49,9 @@ Atualizado na pelada-v103 (10/11/2026). Toda entrega que mudar uma regra atualiz
 - Ao criar: nome, frequência (Frequente com dias fixos ou Esporádico), dias e horários (só Frequente), esporte, país, moeda e fuso (KAN-162).
 - Nome não repete dentro da conta (ignora maiúsculas, acentos e espaços).
 - Jogadores por time é do grupo (o esporte só dá o padrão); 2 = duplas.
-- Inativar só o organizador: some da lista, não aceita presença nem voto, não gera rodada fixa, mantém histórico.
+- Inativar só o organizador: some da lista, não aceita presença nem voto, não gera rodada fixa, mantém histórico. **Ninguém apaga o grupo** (KAN-259, v104): as regras do Firebase recusam apagar o documento do grupo, porque o caixa, os contatos e as notas ficariam para trás e outra conta poderia recriar o grupo com o mesmo endereço. O caminho é Inativar.
 - Duplicar copia configuração e, se quiser, o elenco; não copia rodadas, caixa, votações nem administradores.
-- Administradores entram por link de convite (dentro do limite do plano, KAN-204); só o organizador remove, e remover invalida o link atual e libera a vaga.
+- Administradores entram por link de convite (dentro do limite do plano, KAN-204); só o organizador remove, e remover invalida o link atual e libera a vaga. **O código do convite não fica no cadastro** (KAN-258, v104): quem aceita grava, no mesmo lote, a prova `convites/{uid}` (ninguém lê nem apaga), e o cadastro `membros/{uid}` vai sem o código, porque todo administrador lê os cadastros (antes, um convidado sem a permissão de Configurações conseguia montar o link). Cadastro antigo com o código: o organizador tira de todos e cada convidado do próprio, ao abrir a gestão.
 - **Permissões dos convidados (KAN-201, pelada-v69):** o organizador escolhe, para cada convidado, em Grupo > Administradores > Permissões:
   - **Caixa:** ver e lançar pagamentos, mensalidade, diária, Pix e tipo de cada jogador.
   - **Notas dos jogadores:** ver e mudar notas e pares que não jogam juntos. Sem ela, o sorteio continua equilibrado: as notas chegam ao aparelho, só não aparecem na tela (proteção mais fraca, aceita pelo Kleber).
@@ -136,7 +136,7 @@ Atualizado na pelada-v103 (10/11/2026). Toda entrega que mudar uma regra atualiz
   - **No link, fechadas ou esgotadas:** quem precisa de vaga some (a não ser que já esteja confirmado), "Adicionar meu nome" some e aparece o aviso. Abertas: "Restam N vagas".
   - **Contador** (`rodadas/{rid}/limites/vagas`): entrar pelo link soma 1, quem estava dentro e sai devolve 1, na mesma gravação da presença. Passou do máximo, o Firebase recusa. Só devolve vaga quem precisava dela (diarista ou avulso), com o controle ligado: mensalista saindo não abre vaga (KAN-197, v66).
   - O administrador continua pondo qualquer pessoa pela gestão, aberto ou fechado.
-  - **Na gestão, aguardando vaga** (KAN-253, v103, decisão do Kleber de 09/11): com o controle ligado e as vagas fechadas ou esgotadas, o diarista que não confirmou sai do meio da lista de presença e vai para um bloco no fim, "Diaristas (vagas fechadas)" ou "Diaristas (vagas esgotadas)", com a etiqueta "Aguardando vaga". Os ✓ e ✕ continuam: confirmado, ele volta para a lista principal, sem a etiqueta. Com as vagas abertas, com o controle desligado ou com a lista fechada, a lista fica como antes.
+  - **Na gestão, aguardando vaga** (KAN-253, v103, decisão do Kleber de 09/11): com o controle ligado e as vagas fechadas ou esgotadas, o diarista que não confirmou sai do meio da lista de presença e vai para um bloco no fim, "Diaristas (vagas fechadas)" ou "Diaristas (vagas esgotadas)", com a etiqueta "Aguardando vaga" inteira na linha de baixo do nome (KAN-260, v104: o nome é que encolhe com "…"). Os ✓ e ✕ continuam: confirmado, ele volta para a lista principal, sem a etiqueta. Com as vagas abertas, com o controle desligado ou com a lista fechada, a lista fica como antes.
 
 ## Partida, ranking e votação
 - A aba Partida tem o seletor de rodada no topo, mesmo quando a rodada escolhida não tem times (KAN-160).

@@ -9,12 +9,12 @@ import { draw } from '../dominio/sorteio.js';
 import { foraDosTimes } from '../dominio/divergencia.ts';
 import { reservas, sugerirTimes, titulares } from '../dominio/times.ts';
 import { juntarTextos, tp, tx } from '../i18n/index.js';
-import { render as desenhar } from 'preact';
+import { h, render as desenhar } from 'preact';
 import { linkDaRodada, txtConvite, txtTimes } from '../dominio/whatsapp.js';
 import { Compartilhar, shareDlg } from '../ui/Compartilhar';
 import { quemCobrar } from '../dominio/cobrar';
 import { limparMinimos } from '../dominio/posicoes';
-import { elencoDaRodada, listasDoConvite, minimosDoGrupo, montarMinimos, montarVagas } from '../telas/Rodada';
+import { dadosMinimos, dadosVagas, elencoDaRodada, listasDoConvite, minimosDoGrupo } from '../telas/Rodada';
 import { situacao, vagasValidas } from '../dominio/vagas';
 import { copyText } from '../eventos.js';
 import { B, setCAP, sleep } from '../nucleo/backend.js';
@@ -24,14 +24,7 @@ import { GB, S, w } from '../nucleo/estado.js';
 import { linkProxima, linkRodada } from '../nucleo/links.js';
 import { $, diaSemana, fdate, toast } from '../nucleo/util.js';
 import { avisar, closeDlg, closeDlgNow, confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
-import {
-  drawPreview,
-  janelaEscolherTime,
-  janelaMover,
-  janelaPorTime,
-  janelaSorteio,
-  rodDlg,
-} from '../ui/JanelasGestao';
+import { drawPreview, comJanelasTimes, janelaSorteio, rodDlg } from '../ui/JanelasGestao';
 import { changed, render } from '../ui/render.js';
 import { nPartidas, temVotacao } from '../telas/rodada-partes.js';
 import { ACT } from '../acoes.js';
@@ -58,7 +51,7 @@ function porNoTime(ti, pid) {
 }
 /* Escolher o time de quem confirmou depois do sorteio. */
 function escolherTime(pid) {
-  janelaEscolherTime(pid, curRodada().times);
+  return comJanelasTimes((m, u) => m.janelaEscolherTime(u, pid, curRodada().times));
 }
 /* KAN-71: depois de sortear, a tela vai até os times e o foco fica no título "Times" (leitor de tela anuncia). */
 function irParaTimes() {
@@ -69,6 +62,17 @@ function irParaTimes() {
     h.focus({ preventScroll: true });
   }, 80);
 }
+
+/* KAN-261: janelas de mínimo e vagas, sob demanda (com os textos delas). Sem internet, avisa. */
+let JV = null;
+const janelasVagas = () =>
+  JV
+    ? Promise.resolve(JV)
+    : import('../ui/VagasJanelas').then(m => {
+        juntarTextos(m.textos);
+        return (JV = m);
+      });
+const semJanela = () => toast(tx('comum.naoCarregouTitulo') + '. ' + tx('comum.naoCarregou'));
 
 const acoes = {
   newRod: () => rodDlg(null),
@@ -206,12 +210,14 @@ const acoes = {
     ),
   copyLink: () => copyText(linkRodada(curRodada().id)),
   /* KAN-179: mínimo para o jogo (total e por posição), salvo no grupo e válido para todas as rodadas. */
-  abrirMinimos: () => {
-    openDlg('minRaiz');
-    dlg.setAttribute('aria-labelledby', 'minTitulo');
-    montarMinimos();
-    $('#minRaiz .minp')?.focus();
-  },
+  /* KAN-261: as janelas de mínimo e vagas baixam no primeiro toque (ui/VagasJanelas.tsx). */
+  abrirMinimos: () =>
+    janelasVagas().then(m => {
+      openDlg('minRaiz');
+      dlg.setAttribute('aria-labelledby', 'minTitulo');
+      desenhar(h(m.Minimos, { d: dadosMinimos() }), $('#minRaiz'));
+      $('#minRaiz .minp')?.focus();
+    }, semJanela),
   salvarMinimos: () => {
     const m = {};
     document.querySelectorAll('#minRaiz .minp').forEach(i => (m[i.dataset.k] = i.value));
@@ -227,12 +233,13 @@ const acoes = {
     return p;
   },
   /* KAN-63: vagas para diaristas e avulsos nesta rodada. Abrir zera o contador; mudar a quantidade mantém quem já entrou. */
-  abrirVagas: () => {
-    openDlg('vagasRaiz');
-    dlg.setAttribute('aria-labelledby', 'vagasTitulo');
-    montarVagas(curRodada(), attendance().inn.length);
-    $('#vagasN')?.focus();
-  },
+  abrirVagas: () =>
+    janelasVagas().then(m => {
+      openDlg('vagasRaiz');
+      dlg.setAttribute('aria-labelledby', 'vagasTitulo');
+      desenhar(h(m.AbrirVagas, dadosVagas(curRodada(), attendance().inn.length)), $('#vagasRaiz'));
+      $('#vagasN')?.focus();
+    }, semJanela),
   salvarVagas: () => {
     const r = curRodada(),
       max = vagasValidas(val('vagasN')),
@@ -451,7 +458,7 @@ const acoes = {
     const r = curRodada(),
       f = +el.dataset.v,
       pid = el.dataset.p;
-    janelaMover(pid, f, r.times);
+    return comJanelasTimes((m, u) => m.janelaMover(u, pid, f, r.times));
   },
   toggleRes: el => {
     const f = +el.dataset.v,
@@ -506,7 +513,7 @@ const acoes = {
         r,
         players().map(p => p.id)
       ).filter(id => !conf.includes(id));
-    janelaPorTime(ti, t, conf, outros);
+    return comJanelasTimes((m, u) => m.janelaPorTime(u, ti, t, conf, outros));
   },
   doPorTime: el => {
     const ti = +el.dataset.v,

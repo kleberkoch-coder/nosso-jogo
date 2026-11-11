@@ -686,6 +686,51 @@ export default {
   'rapida.proximo': 'Siguiente',
   'rapida.encerrada': 'La votación fue cerrada. Salga para ver el resultado.',
   'votzap.colOrigem': 'Origen',
+  /* KAN-261: vieram da gestão (pt-BR-grupolote.ts) */
+  'grupo.diasAcao': 'Cambiar días',
+  'grupo.diasTexto': 'La confirmación de la próxima jornada fija empieza de cero.',
+  'grupo.diasTitulo': '¿Cambiar los días fijos?',
+  'grupo.mudancasTitulo': '¿Guardar los cambios?',
+  'inicio.contaBloqueadaTitulo': 'Cuenta bloqueada',
+  'posicao.removerAviso.outros': '{n} jugadores con esta posición pasan a una posición predeterminada.',
+  'posicao.removerAviso.um': '1 jugador con esta posición pasa a una posición predeterminada.',
+  'regiao.contaAjuda': 'Vale para los grupos que crees de ahora en adelante. Cada grupo tiene su país en Editar grupo.',
+  'regiao.contaSalvo': 'País de la cuenta actualizado.',
+  'regiao.contaTitulo': 'País de la cuenta',
+  'regiao.moedaAcao': 'Cambiar moneda',
+  'regiao.moedaTexto':
+    'Los valores ya registrados en la caja no se convierten: lo registrado en {antes} pasa a aparecer en {depois}.',
+  'regiao.moedaTitulo': '¿Cambiar la moneda del grupo?',
+  /* KAN-261: vieram da gestão (pt-BR-cores.ts) */
+  'colete.titulo': 'Peto de {time}',
+  'colete.ajuda':
+    'Elige el color del peto que tienen en la cancha. Si otro equipo ya usa ese color, los dos se intercambian.',
+  'colete.outra': 'Otro color…',
+  /* KAN-261: vieram da gestão (pt-BR-afast.ts) */
+  'afast.voltouFeito': '{nome} volvió: la ausencia terminó en {mes}.',
+  'afast.voltouCancelado': '{nome} volvió: la ausencia se borró.',
+  /* KAN-261: pt-BR-times.ts */
+  'jogador.jogador': 'Jugador',
+  'porTime.ajuda': 'La persona entra directo en este equipo y ya queda confirmada en la lista.',
+  'porTime.avulso': 'Invitado (ya jugó o nuevo)',
+  'porTime.confirmados': 'Confirmados fuera de los equipos',
+  'porTime.jogadores.um': '{n} jugador',
+  'porTime.jogadores.outros': '{n} jugadores',
+  'porTime.ninguem': 'Todos los jugadores registrados ya están en los equipos.',
+  'porTime.outros': 'Otros jugadores',
+  'porTime.qualTime': '¿Poner a {nome} en qué equipo?',
+  'porTime.titulo': 'Poner en {time}',
+  /* KAN-261: pt-BR-vagas.ts */
+  'minimo.dlgTitulo': 'Mínimo para el partido',
+  'minimo.dlgAjuda':
+    'Cuántos necesita el grupo para que haya partido. Vale para todas las jornadas; la app avisa cuando falte gente. Deja 0 para no seguirlo.',
+  'minimo.campoTotal': 'Total de jugadores',
+  'minimo.porPosicao': 'Por posición',
+  'vagas.controle': 'Los jugadores por partido e invitados solo entran cuando abro cupos en la jornada',
+  'vagas.quantas': '¿Cuántos cupos?',
+  'vagas.semLimite': 'Sin límite',
+  'vagas.ajuda':
+    'Ya viene con lo que falta para el mínimo del partido. Quien entra por el enlace ocupa un cupo y quien desiste lo devuelve. Déjalo vacío para no tener límite. Puedes seguir agregando a cualquiera aquí.',
   /* KAN-255 */
   'zaplista.naoVao': 'No van ({n})',
   'zaplista.semResposta': 'Aún no respondieron ({n})',

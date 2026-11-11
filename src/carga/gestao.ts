@@ -2,7 +2,7 @@
    (carga/abas.ts) e as permissões ligam caixa, contatos e convite (carga/permissoes.ts). */
 import { migrarPrivado, sincronizarVagas } from '../dominio/caixa.js';
 import { S, sub, subQ } from '../nucleo/estado';
-import { syncPerm } from './permissoes';
+import { limparTokens, syncPerm } from './permissoes';
 import { Q_PROX, Q_REC, dia, juntarRod, regAvulsos, subLimCfg } from './rodada';
 
 export function startData() {
@@ -40,6 +40,7 @@ export function startData() {
   });
   sub('membros', 'membros', d => {
     S.membros = d || {};
+    limparTokens();
   });
   subLimCfg();
   syncPerm();

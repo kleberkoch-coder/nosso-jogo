@@ -53,4 +53,19 @@ export default {
   'admgrupo.removerTexto': 'O link de convite atual também deixa de funcionar, para ele não conseguir voltar sozinho.',
   'admgrupo.removerAcao': 'Remover administrador',
   'admgrupo.removido': 'Administrador removido. Para convidar alguém, gere um novo link.',
+  /* KAN-261: vieram da gestão (só esta parte usa) */
+  'grupo.diasAcao': 'Mudar dias',
+  'grupo.diasTexto': 'A confirmação da próxima rodada fixa começa do zero.',
+  'grupo.diasTitulo': 'Mudar os dias fixos?',
+  'grupo.mudancasTitulo': 'Salvar as mudanças?',
+  'inicio.contaBloqueadaTitulo': 'Conta bloqueada',
+  'posicao.removerAviso.outros': '{n} jogadores com essa posição passam para uma posição padrão.',
+  'posicao.removerAviso.um': '1 jogador com essa posição passa para uma posição padrão.',
+  'regiao.contaAjuda': 'Vale para os grupos que você criar daqui em diante. Cada grupo tem o seu país em Editar grupo.',
+  'regiao.contaSalvo': 'País da conta atualizado.',
+  'regiao.contaTitulo': 'País da conta',
+  'regiao.moedaAcao': 'Trocar moeda',
+  'regiao.moedaTexto':
+    'Os valores já lançados no caixa não são convertidos: o que foi lançado em {antes} passa a aparecer em {depois}.',
+  'regiao.moedaTitulo': 'Trocar a moeda do grupo?',
 };

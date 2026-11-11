@@ -44,13 +44,16 @@ export const acoes: Record<string, (el: El) => unknown> = {
       app = S.app!;
     try {
       // KAN-204: o convidado entra no fim da lista de convidados do grupo, na mesma gravação (dentro do limite do plano).
+      /* KAN-258: o código do convite vai para convites/{uid} (ninguém lê), não para o cadastro, que todo
+         administrador lê. */
       await bk().lote([
+        { tipo: 'set', p: 'grupos/' + gid + '/convites/' + u.uid, o: { token: R.token, at: Date.now() } },
         {
           tipo: 'set',
           p: 'grupos/' + gid + '/membros/' + u.uid,
           o: Object.assign(
             // KAN-201: convidado novo entra só com o dia a dia; o organizador libera o resto.
-            { uid: u.uid, email: u.email, role: 'admin', token: R.token, at: Date.now(), perm: { ...PERM_CONVIDADO } },
+            { uid: u.uid, email: u.email, role: 'admin', at: Date.now(), perm: { ...PERM_CONVIDADO } },
             u.via ? { via: u.via } : {}
           ),
         },

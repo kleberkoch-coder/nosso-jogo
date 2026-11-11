@@ -9,12 +9,12 @@ import { draw } from '../dominio/sorteio.js';
 import { foraDosTimes } from '../dominio/divergencia.ts';
 import { reservas, sugerirTimes, titulares } from '../dominio/times.ts';
 import { juntarTextos, tp, tx } from '../i18n/index.js';
-import { render as desenhar } from 'preact';
+import { h, render as desenhar } from 'preact';
 import { linkDaRodada, txtConvite, txtTimes } from '../dominio/whatsapp.js';
 import { Compartilhar, shareDlg } from '../ui/Compartilhar';
 import { quemCobrar } from '../dominio/cobrar';
 import { limparMinimos } from '../dominio/posicoes';
-import { elencoDaRodada, listasDoConvite, minimosDoGrupo, montarMinimos, montarVagas } from '../telas/Rodada';
+import { dadosMinimos, dadosVagas, elencoDaRodada, listasDoConvite, minimosDoGrupo } from '../telas/Rodada';
 import { situacao, vagasValidas } from '../dominio/vagas';
 import { copyText } from '../eventos.js';
 import { B, setCAP, sleep } from '../nucleo/backend.js';
@@ -69,6 +69,17 @@ function irParaTimes() {
     h.focus({ preventScroll: true });
   }, 80);
 }
+
+/* KAN-261: janelas de mínimo e vagas, sob demanda (com os textos delas). Sem internet, avisa. */
+let JV = null;
+const janelasVagas = () =>
+  JV
+    ? Promise.resolve(JV)
+    : import('../ui/VagasJanelas').then(m => {
+        juntarTextos(m.textos);
+        return (JV = m);
+      });
+const semJanela = () => toast(tx('comum.naoCarregouTitulo') + '. ' + tx('comum.naoCarregou'));
 
 const acoes = {
   newRod: () => rodDlg(null),
@@ -206,12 +217,14 @@ const acoes = {
     ),
   copyLink: () => copyText(linkRodada(curRodada().id)),
   /* KAN-179: mínimo para o jogo (total e por posição), salvo no grupo e válido para todas as rodadas. */
-  abrirMinimos: () => {
-    openDlg('minRaiz');
-    dlg.setAttribute('aria-labelledby', 'minTitulo');
-    montarMinimos();
-    $('#minRaiz .minp')?.focus();
-  },
+  /* KAN-261: as janelas de mínimo e vagas baixam no primeiro toque (ui/VagasJanelas.tsx). */
+  abrirMinimos: () =>
+    janelasVagas().then(m => {
+      openDlg('minRaiz');
+      dlg.setAttribute('aria-labelledby', 'minTitulo');
+      desenhar(h(m.Minimos, { d: dadosMinimos() }), $('#minRaiz'));
+      $('#minRaiz .minp')?.focus();
+    }, semJanela),
   salvarMinimos: () => {
     const m = {};
     document.querySelectorAll('#minRaiz .minp').forEach(i => (m[i.dataset.k] = i.value));
@@ -227,12 +240,13 @@ const acoes = {
     return p;
   },
   /* KAN-63: vagas para diaristas e avulsos nesta rodada. Abrir zera o contador; mudar a quantidade mantém quem já entrou. */
-  abrirVagas: () => {
-    openDlg('vagasRaiz');
-    dlg.setAttribute('aria-labelledby', 'vagasTitulo');
-    montarVagas(curRodada(), attendance().inn.length);
-    $('#vagasN')?.focus();
-  },
+  abrirVagas: () =>
+    janelasVagas().then(m => {
+      openDlg('vagasRaiz');
+      dlg.setAttribute('aria-labelledby', 'vagasTitulo');
+      desenhar(h(m.AbrirVagas, dadosVagas(curRodada(), attendance().inn.length)), $('#vagasRaiz'));
+      $('#vagasN')?.focus();
+    }, semJanela),
   salvarVagas: () => {
     const r = curRodada(),
       max = vagasValidas(val('vagasN')),

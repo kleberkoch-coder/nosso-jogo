@@ -683,6 +683,40 @@ export default {
   'rapida.proximo': 'Next',
   'rapida.encerrada': 'The vote was closed. Exit to see the result.',
   'votzap.colOrigem': 'Source',
+  /* KAN-261: vieram da gestão (pt-BR-grupolote.ts) */
+  'grupo.diasAcao': 'Change days',
+  'grupo.diasTexto': 'Attendance for the next regular game day starts from scratch.',
+  'grupo.diasTitulo': 'Change the regular days?',
+  'grupo.mudancasTitulo': 'Save the changes?',
+  'inicio.contaBloqueadaTitulo': 'Account blocked',
+  'posicao.removerAviso.outros': '{n} players with this position move to a default position.',
+  'posicao.removerAviso.um': '1 player with this position moves to a default position.',
+  'regiao.contaAjuda': 'Applies to the groups you create from now on. Each group has its own country in Edit group.',
+  'regiao.contaSalvo': 'Account country updated.',
+  'regiao.contaTitulo': 'Account country',
+  'regiao.moedaAcao': 'Change currency',
+  'regiao.moedaTexto':
+    'Amounts already recorded in the funds are not converted: what was recorded in {antes} will show in {depois}.',
+  'regiao.moedaTitulo': "Change the group's currency?",
+  /* KAN-261: vieram da gestão (pt-BR-cores.ts) */
+  'colete.titulo': '{time} bib',
+  'colete.ajuda':
+    'Choose the color of the bibs you have at the court. If another team already uses that color, the two swap.',
+  'colete.outra': 'Other color…',
+  /* KAN-261: vieram da gestão (pt-BR-afast.ts) */
+  'afast.voltouFeito': '{nome} is back: the time away ended in {mes}.',
+  'afast.voltouCancelado': '{nome} is back: the time away was deleted.',
+  /* KAN-261: pt-BR-vagas.ts */
+  'minimo.dlgTitulo': 'Minimum for the game',
+  'minimo.dlgAjuda':
+    'How many the group needs for the game to happen. Applies to every game day; the app warns when people are missing. Leave 0 to not track it.',
+  'minimo.campoTotal': 'Total players',
+  'minimo.porPosicao': 'By position',
+  'vagas.controle': 'Per-game players and guests only join when I open spots on the game day',
+  'vagas.quantas': 'How many spots?',
+  'vagas.semLimite': 'No limit',
+  'vagas.ajuda':
+    "Starts with what's missing for the game minimum. Whoever joins through the link takes a spot and whoever drops out gives it back. Leave empty for no limit. You can still add anyone here.",
   /* KAN-255 */
   'zaplista.naoVao': 'Not going ({n})',
   'zaplista.semResposta': 'No answer yet ({n})',

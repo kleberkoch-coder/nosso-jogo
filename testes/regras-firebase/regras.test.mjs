@@ -397,6 +397,54 @@ describe('votação rápida no aparelho do administrador (KAN-254, pelada-v102)'
   });
 });
 
+describe('convite sem o código no cadastro e grupo que não se apaga (KAN-258, KAN-259, pelada-v104)', () => {
+  const NADA = { caixa: false, notas: false, elenco: false, config: false };
+  const semRegras = fn => env.withSecurityRulesDisabled(async ctx => fn(ctx.firestore()));
+  const novo = () => env.authenticatedContext('novo', senha).firestore();
+  beforeEach(() => semRegras(f => setDoc(doc(f, G + '/privado/convite'), { token: 'tok123' })));
+  const entrar = (f, extraMembro = {}, conv = { token: 'tok123', at: 1 }) => {
+    const b = writeBatch(f);
+    if (conv) b.set(doc(f, G + '/convites/novo'), conv);
+    b.set(doc(f, G + '/membros/novo'), { uid: 'novo', role: 'admin', perm: NADA, ...extraMembro });
+    b.update(doc(f, G), { adms: arrayUnion('novo') });
+    return b.commit();
+  };
+  test('entrar pelo convite grava o código em convites/{uid}, e o cadastro fica sem ele', async () => {
+    const f = novo();
+    await assertSucceeds(entrar(f));
+    const m = await semRegras(g => getDoc(doc(g, G + '/membros/novo')));
+    assert.equal(m.data().token, undefined);
+  });
+  test('cadastro novo com o código, sem a prova, com código errado ou com campo a mais na prova: recusado', async () => {
+    await assertFails(entrar(novo(), { token: 'tok123' }));
+    await assertFails(entrar(novo(), {}, null));
+    await assertFails(entrar(novo(), {}, { token: 'errado', at: 1 }));
+    await assertFails(entrar(novo(), {}, { token: 'tok123', at: 1, x: 1 }));
+  });
+  test('ninguém lê nem apaga a prova do convite; outra pessoa não grava a prova de alguém', async () => {
+    await assertSucceeds(entrar(novo()));
+    await assertFails(getDoc(doc(db.dono(), G + '/convites/novo')));
+    await assertFails(getDoc(doc(db.adm(), G + '/convites/novo')));
+    await assertFails(deleteDoc(doc(db.dono(), G + '/convites/novo')));
+    await assertFails(setDoc(doc(db.adm(), G + '/convites/novo'), { token: 'tok123', at: 2 }));
+  });
+  test('o código antigo sai dos cadastros: o organizador tira de todos, o convidado só do próprio', async () => {
+    await semRegras(async f => {
+      await setDoc(doc(f, G + '/membros/adm'), { uid: 'adm', role: 'admin', email: 'adm@x.com', token: 'tok123' });
+      await setDoc(doc(f, G + '/membros/adm2'), { uid: 'adm2', role: 'admin', email: 'a2@x.com', token: 'tok123' });
+    });
+    await assertFails(updateDoc(doc(db.adm(), G + '/membros/adm2'), { token: deleteField() }));
+    await assertSucceeds(updateDoc(doc(db.adm(), G + '/membros/adm'), { token: deleteField() }));
+    await assertSucceeds(updateDoc(doc(db.dono(), G + '/membros/adm2'), { token: deleteField() }));
+    await assertFails(updateDoc(doc(db.dono(), G + '/membros/adm'), { token: 'outro' }));
+  });
+  test('KAN-259: ninguém apaga o documento do grupo; recriar um grupo que existe continua recusado', async () => {
+    await assertFails(deleteDoc(doc(db.dono(), G)));
+    await assertFails(setDoc(doc(db.outro(), G), { name: 'Meu', owner: 'outro', ativo: true, createdAt: 1 }));
+    await assertSucceeds(updateDoc(doc(db.dono(), G), { ativo: false }));
+  });
+});
+
 describe('vagas para diaristas e avulsos (KAN-63)', () => {
   const R = G + '/rodadas/r1',
     CV = R + '/limites/vagas',
@@ -864,12 +912,14 @@ describe('permissões dos administradores convidados (KAN-201)', () => {
       })
     );
     await assertFails(setDoc(doc(novo, G + '/membros/novo'), { uid: 'novo', role: 'admin', token: 'tok123' }));
-    // KAN-204: entrar junto com o nome na lista de convidados do grupo
-    await assertFails(
-      setDoc(doc(novo, G + '/membros/novo'), { uid: 'novo', role: 'admin', token: 'tok123', perm: NADA })
-    );
+    // KAN-204: entrar junto com o nome na lista de convidados do grupo; KAN-258: com o código em convites/{uid}
+    const b0 = writeBatch(novo);
+    b0.set(doc(novo, G + '/convites/novo'), { token: 'tok123', at: 1 });
+    b0.set(doc(novo, G + '/membros/novo'), { uid: 'novo', role: 'admin', perm: NADA });
+    await assertFails(b0.commit());
     const b = writeBatch(novo);
-    b.set(doc(novo, G + '/membros/novo'), { uid: 'novo', role: 'admin', token: 'tok123', perm: NADA });
+    b.set(doc(novo, G + '/convites/novo'), { token: 'tok123', at: 1 });
+    b.set(doc(novo, G + '/membros/novo'), { uid: 'novo', role: 'admin', perm: NADA });
     b.update(doc(novo, G), { adms: arrayUnion('novo') });
     await assertSucceeds(b.commit());
   });
@@ -1081,7 +1131,8 @@ describe('administradores convidados por plano (KAN-204)', () => {
   const entrar = (uid, extra = {}) => {
     const f = env.authenticatedContext(uid, senha).firestore(),
       b = writeBatch(f);
-    b.set(doc(f, G + '/membros/' + uid), { uid, role: 'admin', token: 'tok123', perm: NADA });
+    b.set(doc(f, G + '/convites/' + uid), { token: 'tok123', at: 1 });
+    b.set(doc(f, G + '/membros/' + uid), { uid, role: 'admin', perm: NADA });
     b.update(doc(f, G), Object.assign({ adms: arrayUnion(uid) }, extra));
     return b.commit();
   };

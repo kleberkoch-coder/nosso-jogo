@@ -391,7 +391,9 @@ service cloud.firestore {
       allow update: if adminPortal() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bloq'])
         && request.resource.data.get('bloq', false) is bool;
       allow update: if entrouNaLista(gid) || saiuDaLista(gid);
-      allow delete: if isOwner(gid);
+      // KAN-259 (pelada-v104): ninguém apaga o documento do grupo. Apagar só ele deixaria para trás o caixa, os contatos
+      // e as notas, e outra conta poderia criar um grupo com o mesmo endereço e herdar tudo. O caminho é Inativar.
+      allow delete: if false;
 
       // Administradores do grupo.
       match /membros/{uid} {
@@ -400,9 +402,13 @@ service cloud.firestore {
           // quem criou o grupo vira organizador
           (request.resource.data.role == 'owner' && get(grp(gid)).data.owner == uid)
           // ou quem tem o link de convite válido vira administrador
+          // KAN-258 (pelada-v104): o código do convite não fica mais no cadastro (todo administrador lê os cadastros):
+          // vai, no mesmo lote, para convites/{uid}, que ninguém lê. Cadastro novo com o código é recusado.
           || (request.resource.data.role == 'admin'
               && exists(/databases/$(database)/documents/grupos/$(gid)/privado/convite)
-              && request.resource.data.token == get(/databases/$(database)/documents/grupos/$(gid)/privado/convite).data.token
+              && !('token' in request.resource.data)
+              && existsAfter(/databases/$(database)/documents/grupos/$(gid)/convites/$(uid))
+              && getAfter(/databases/$(database)/documents/grupos/$(gid)/convites/$(uid)).data.token == get(/databases/$(database)/documents/grupos/$(gid)/privado/convite).data.token
               // KAN-201: convidado novo entra só com o dia a dia
               && request.resource.data.get('perm', null) == {'caixa': false, 'notas': false, 'elenco': false, 'config': false}
               // KAN-204: e entra na lista de convidados do grupo, na mesma gravação (dentro do limite do plano)
@@ -412,12 +418,28 @@ service cloud.firestore {
         allow update: if realUser() && request.auth.uid == uid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['via'])
           && request.resource.data.via in ['google', 'senha'];
+        // KAN-258: tirar o código do convite que ficou nos cadastros antigos (o organizador, ou o próprio administrador).
+        allow update: if (isOwner(gid) || (realUser() && request.auth.uid == uid))
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['token'])
+          && !('token' in request.resource.data);
         // KAN-201: só o organizador muda as permissões de um convidado (nunca as dele mesmo, que tem tudo).
         allow update: if isOwner(gid) && uid != request.auth.uid
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['perm'])
           && permValida(request.resource.data.perm);
         // Remover: só o organizador (ou a própria pessoa saindo). A permissão de configurações não remove ninguém.
         allow delete: if isOwner(gid) || (realUser() && request.auth.uid == uid && get(grp(gid)).data.owner != uid);
+      }
+
+      // KAN-258 (pelada-v104): prova de quem entrou pelo convite, gravada no mesmo lote do cadastro. Ninguém lê nem
+      // apaga; só a própria pessoa grava, e só com o código do convite que vale agora.
+      match /convites/{uid} {
+        allow read: if false;
+        allow create, update: if realUser() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['token', 'at'])
+          && exists(/databases/$(database)/documents/grupos/$(gid)/privado/convite)
+          && request.resource.data.token == get(/databases/$(database)/documents/grupos/$(gid)/privado/convite).data.token
+          && request.resource.data.at is int;
+        allow delete: if false;
       }
 
       // Notas, pares separados, contatos, link de convite e caixa (valores, Pix, tipo do jogador): só administradores.

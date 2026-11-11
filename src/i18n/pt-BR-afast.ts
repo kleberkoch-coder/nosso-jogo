@@ -30,4 +30,7 @@ export default {
   'afast.erroMotivo': 'Escolha o motivo.',
   'afast.erroInicio': 'Escolha o mês de início.',
   'afast.erroFim': 'O mês de fim tem de ser depois do início.',
+  /* KAN-261: vieram da gestão (só esta parte usa) */
+  'afast.voltouFeito': '{nome} voltou: o afastamento terminou em {mes}.',
+  'afast.voltouCancelado': '{nome} voltou: o afastamento foi apagado.',
 };

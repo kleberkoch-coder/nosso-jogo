@@ -23,4 +23,8 @@ export default {
   'cor.azul': 'Azul',
   'cor.roxo': 'Roxo',
   'cor.rosa': 'Rosa',
+  /* KAN-261: vieram da gestão (só esta parte usa) */
+  'colete.titulo': 'Colete do {time}',
+  'colete.ajuda': 'Escolha a cor do colete que vocês têm na quadra. Se outro time já usa essa cor, os dois trocam.',
+  'colete.outra': 'Outra cor…',
 };

@@ -3,6 +3,7 @@
 import { migrarPrivado, sincronizarVagas } from '../dominio/caixa.js';
 import { posso } from '../dominio/grupo.js';
 import { GB, S, SUBS, drop, sub, w } from '../nucleo/estado';
+import { op } from '../nucleo/backend.js';
 
 function liga(k: string, path: string, on: boolean, cb: (d: any) => void, off: () => void) {
   if (on && !SUBS[k]) sub(k, path, cb);
@@ -56,4 +57,19 @@ export function syncVia() {
     u = S.user;
   if (!m || !u || !u.via || m.via === u.via || !S.gid) return;
   w(GB.patch('membros/' + u.uid, { via: u.via }));
+}
+
+/* KAN-258 (pelada-v104): os cadastros de quem entrou antes da v104 guardam o código do convite, que todo administrador
+   lê. O organizador tira de todos; cada convidado, do próprio cadastro. Uma vez por cadastro, nesta visita. */
+const limpos = new Set<string>();
+export function limparTokens() {
+  const u = S.user;
+  if (!u || !S.gid) return;
+  const dono = !!(S.mem && (S.mem as { role?: string }).role === 'owner');
+  for (const [k, m] of Object.entries((S.membros || {}) as Record<string, { token?: string } | null>)) {
+    const chave = S.gid + '/' + k;
+    if (!m || !m.token || limpos.has(chave) || !(dono || k === u.uid)) continue;
+    limpos.add(chave);
+    w(GB.patch('membros/' + k, { token: (op as { apagar: () => unknown }).apagar() }));
+  }
 }

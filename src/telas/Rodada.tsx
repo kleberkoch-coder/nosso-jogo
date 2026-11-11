@@ -376,8 +376,9 @@ function Presenca({ r, inn, carregou, avs }: { r: Rodada; inn: string[]; carrego
       <li key={id}>
         {f === 'in' ? <span class="num">{i + 1}</span> : null}
         <Pos id={id} />
-        <span class="pn">
-          {nome}
+        <span class={espera(id) ? 'pn pn-espera' : 'pn'}>
+          {/* KAN-260: aguardando vaga, a etiqueta vai inteira para a linha de baixo e o nome encolhe com "…". */}
+          {espera(id) ? <span class="pn-nome">{nome}</span> : nome}
           {isAvulso(id) ? (
             <>
               {' '}
@@ -385,12 +386,7 @@ function Presenca({ r, inn, carregou, avs }: { r: Rodada; inn: string[]; carrego
             </>
           ) : null}
           {presAlterada(id) ? <TAG_MUDADO /> : null}
-          {espera(id) ? (
-            <>
-              {' '}
-              <Tag classe="alt tag-espera">{tx('vagas.aguardando')}</Tag>
-            </>
-          ) : null}
+          {espera(id) ? <Tag classe="alt tag-espera">{tx('vagas.aguardando')}</Tag> : null}
         </span>
         {isAvulso(id) && s === 'in' ? (
           <button class="btn sm" data-a="editAvulso" data-p={id}>
@@ -726,59 +722,21 @@ export function listasDoConvite(r: Rodada): { naoVao: string[]; sem: string[]; f
     ),
   };
 }
-function Minimos() {
+/* KAN-261 (pelada-v104): a janela "Mínimo e vagas" baixa só quando aberta (ui/VagasJanelas.tsx); daqui vão os valores. */
+function dadosMinimos() {
   const m = minimosDoGrupo(),
-    campo = (k: string, rotulo: string, titulo?: string) => (
-      <label class="f minpos" key={k} title={titulo}>
-        <span>{rotulo}</span>
-        <input
-          class="inp minp"
-          type="number"
-          inputmode="numeric"
-          min="0"
-          max="99"
-          step="1"
-          data-k={k}
-          value={String(minimoValido(m[k]))}
-        />
-      </label>
-    );
-  return (
-    <>
-      <h3 id="minTitulo">{tx('minimo.dlgTitulo')}</h3>
-      <p class="small muted">{tx('minimo.dlgAjuda')}</p>
-      {campo(TOTAL, tx('minimo.campoTotal'))}
-      {hasPos() ? (
-        <>
-          <p class="small muted" style="margin:10px 0 4px">
-            {tx('minimo.porPosicao')}
-          </p>
-          <div class="minpos-grade">{(posKeys() as string[]).map(k => campo(k, siglaTela(k), posLabel(k)))}</div>
-        </>
-      ) : null}
-      <p class="small muted" style="margin:14px 0 4px">
-        {tx('vagas.titulo')}
-      </p>
-      <label class="chk-linha">
-        <input
-          type="checkbox"
-          id="vagasCtrl"
-          checked={controleVagas()}
-          disabled={!controleVagas() && !recurso('listaEspera')}
-        />
-        <span>{tx('vagas.controle')}</span>
-      </label>
-      {!controleVagas() && !recurso('listaEspera') ? <Trava r="listaEspera" /> : null}
-      <div class="dlg-f">
-        <button class="btn" data-a="close">
-          {tx('comum.cancelar')}
-        </button>
-        <button class="btn primary" data-a="salvarMinimos">
-          {tx('comum.salvar')}
-        </button>
-      </div>
-    </>
-  );
+    v = (k: string) => String(minimoValido(m[k]));
+  return {
+    tx,
+    total: v(TOTAL),
+    campoTotal: TOTAL,
+    posicoes: hasPos()
+      ? (posKeys() as string[]).map(k => ({ k, sigla: siglaTela(k), nome: posLabel(k), v: v(k) }))
+      : [],
+    controle: controleVagas(),
+    travado: !recurso('listaEspera'),
+    trava: <Trava r="listaEspera" />,
+  };
 }
 /* Vagas para diaristas e avulsos (KAN-63): com o controle ligado no grupo, só entram pelo link quando a rodada abre vagas. */
 const controleVagas = (): boolean => !!(st().app?.cfg || {}).vagasCtrl;
@@ -810,48 +768,10 @@ function PainelVagas({ r }: { r: Rodada }) {
     </div>
   );
 }
-/* Janela "Abrir vagas": já vem com o que falta para o mínimo do jogo (v58); vazio = sem limite. */
-function AbrirVagas({ r, inn }: { r: Rodada; inn: number }) {
-  const v = vagasDaRodada(r),
-    sug = v.aberta ? v.max : faltaTotal(inn, minimosDoGrupo()).falta;
-  return (
-    <>
-      <h3 id="vagasTitulo">{tx(v.aberta ? 'vagas.mudar' : 'vagas.abrir')}</h3>
-      <p class="small muted">{tx('vagas.ajuda')}</p>
-      <label class="f">
-        <span>{tx('vagas.quantas')}</span>
-        <input
-          class="inp"
-          id="vagasN"
-          type="number"
-          inputmode="numeric"
-          min="0"
-          max="99"
-          step="1"
-          placeholder={tx('vagas.semLimite')}
-          value={sug ? String(sug) : ''}
-          style="max-width:140px"
-        />
-      </label>
-      <div class="dlg-f">
-        <button class="btn" data-a="close">
-          {tx('comum.cancelar')}
-        </button>
-        <button class="btn primary" data-a="salvarVagas">
-          {tx(v.aberta ? 'comum.salvar' : 'vagas.abrir')}
-        </button>
-      </div>
-    </>
-  );
-}
-function montarVagas(r: Rodada, inn: number) {
-  const el = document.getElementById('vagasRaiz');
-  if (el) render(<AbrirVagas r={r} inn={inn} />, el);
-}
-
-function montarMinimos() {
-  const el = document.getElementById('minRaiz');
-  if (el) render(<Minimos />, el);
+/* Janela "Abrir vagas" (ui/VagasJanelas.tsx, sob demanda): já vem com o que falta para o mínimo do jogo (v58). */
+function dadosVagas(r: Rodada, inn: number) {
+  const v = vagasDaRodada(r);
+  return { tx, aberta: v.aberta, sug: v.aberta ? v.max : faltaTotal(inn, minimosDoGrupo()).falta };
 }
 
 /* A gestão desenha as abas com texto; a Rodada entra num lugar reservado (#rodadaRaiz) logo depois (como o Caixa). */
@@ -861,4 +781,4 @@ function montarRodada() {
   if (el) render(<RodadaTela />, el);
 }
 
-export { minimosDoGrupo, montarMinimos, montarRodada, montarVagas, vRodada };
+export { dadosMinimos, dadosVagas, minimosDoGrupo, montarRodada, vRodada };

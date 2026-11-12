@@ -91,6 +91,7 @@ export default {
   'matg.com': 'Com quem fica',
   'matg.adicionar': 'Adicionar',
   'matg.historico': 'Últimas trocas',
+  'matg.atalhos': 'Sugestões do esporte',
   'matg.troca': '{data} · {nome}: {de} → {para}',
   'matg.passou': '{nome} agora está com {para}.',
   'matg.semNinguem': '{nome} sem ninguém.',

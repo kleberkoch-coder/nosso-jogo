@@ -26,6 +26,14 @@ export function passarMaterial(id: string, para: string | null) {
 }
 
 export const acoes: Record<string, (el: El) => unknown> = {
+  /* KAN-267: atalho de sugestão preenche "O que é" e leva o cursor para "Quantos". */
+  matSug: el => {
+    const n = $('#matNome') as HTMLInputElement | null,
+      q = $('#matQtd') as HTMLInputElement | null;
+    if (n) n.value = el.dataset.v || '';
+    q?.focus();
+    q?.select();
+  },
   matAdd: () => {
     const nome = val('matNome');
     if (!nome) {

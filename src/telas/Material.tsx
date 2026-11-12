@@ -73,18 +73,22 @@ export function PainelMaterial() {
       <div class="mat-novo">
         <label class="f">
           <span>{tx('matg.nome')}</span>
-          <input class="inp" id="matNome" maxLength={30} list="matSug" placeholder={tx('matg.exemplo')} />
-          <datalist id="matSug">
-            {sugestoes.map(n => (
-              <option key={n} value={n} />
-            ))}
-          </datalist>
+          <input class="inp" id="matNome" maxLength={30} placeholder={tx('matg.exemplo')} />
         </label>
         <label class="f">
           <span>{tx('matg.qtd')}</span>
           <input class="inp" id="matQtd" type="number" inputMode="numeric" min={1} max={10} value="1" />
         </label>
-        <label class="f">
+        {sugestoes.length ? (
+          <div class="mat-atalhos" id="matSug" role="group" aria-label={tx('matg.atalhos')}>
+            {sugestoes.map(n => (
+              <button key={n} type="button" class="btn sm" data-a="matSug" data-v={n}>
+                {n}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        <label class="f mat-com">
           <span>{tx('matg.com')}</span>
           <select class="sel" id="matCom">
             <Pessoas valor={null} />

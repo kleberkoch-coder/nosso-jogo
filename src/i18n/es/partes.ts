@@ -804,6 +804,7 @@ export default {
   'matg.com': 'Quién lo guarda',
   'matg.adicionar': 'Agregar',
   'matg.historico': 'Últimos cambios',
+  'matg.atalhos': 'Sugerencias del deporte',
   'matg.troca': '{data} · {nome}: {de} → {para}',
   'matg.passou': '{nome} ahora lo tiene {para}.',
   'matg.semNinguem': '{nome} sin nadie.',

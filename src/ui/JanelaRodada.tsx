@@ -2,10 +2,13 @@
    90 KB). Por fora, a mesma janela, com os mesmos ids (rdt, rtm, rfm, rpl) e o data-a saveRod. */
 import { cfg } from '../dominio/caixa.js';
 import { relogio12 } from '../i18n/formatos.js';
-import { tx } from '../i18n/index.js';
+import { juntarTextos, tx } from '../i18n/index.js';
+import textos from '../i18n/pt-BR-novarodada';
 import { nextSat } from '../nucleo/util.js';
 import { openDlg } from './dialogos.js';
 import { HoraCampo } from './HoraCampo';
+
+juntarTextos(textos);
 
 const Cancelar = () => (
   <button class="btn" data-a="close">

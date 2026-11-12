@@ -74,6 +74,9 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo de toda janela (pelada-v106, KAN-250); **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v112)
+- **Botão que baixa arquivo** (KAN-266): fica em carregando (`busy`, `aria-busy`) pelo menos 1,5 s depois do toque, mesmo quando o arquivo sai na hora. Vale para "Pôr na minha agenda", as opções da janela da agenda e "Baixar planilha" de quem votou. Visual igual ao carregando de sempre.
+
 ## Componentes (pelada-v111)
 - **Atalhos de sugestão** (KAN-267; `mat-atalhos` em `grupo.css`, no Material do grupo): abaixo do campo livre "O que é", uma fileira de `btn sm` (44px, 6px de espaço, quebra linha) com as sugestões do esporte, num `role="group"` com o nome "Sugestões do esporte". Tocar preenche o campo e leva o cursor para "Quantos". **Regra geral:** campo de texto livre não usa lista ligada (`datalist`): no computador ela desenha uma setinha que faz o campo parecer um combo, e no celular cada aparelho a mostra de um jeito; as sugestões viram atalhos.
 

@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
-Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D57) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v111 (12/11/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D58) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
+Atualizado na pelada-v112 (12/11/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -226,6 +226,7 @@ Atualizado na pelada-v111 (12/11/2026). Toda entrega que mudar uma regra atualiz
 
 ## Padrões de tela
 - Todo botão que grava, cria, exclui, abre ou faz login mostra loading; janelas só fecham depois de gravar.
+- **Toque duplo** (KAN-266, v112): enquanto o botão está em carregando, um 2º toque não faz nada. Gravar de novo o mesmo dado é inofensivo; já botão que entrega algo para fora do app e termina na hora (baixar arquivo: "Pôr na minha agenda", "Baixar planilha" de quem votou) fica em carregando pelo menos 1,5 s (`SEM_REPETIR` em `eventos.js`), para dois toques rápidos gerarem um arquivo só. Botão novo desse tipo entra nessa lista.
 - Seção recolhível (KAN-193, v67): o título de toda seção que abre e fecha tem 44px de altura; no cartão, o cartão inteiro é tocável. "Entrar" e "Criar conta grátis" na tela de entrar têm 44px de área de toque; "← Início" tem 36px.
 - Toda janela abre com o cursor no primeiro campo (ou no campo marcado, como o título da Nova votação, que já vem selecionado), nunca na própria janela (KAN-250, v106, em `ui/dialogos.js`). O local de cada dia fixo tem o rótulo visível "Local (opcional)".
 - Login e cadastro: cursor no e-mail; Enter envia em toda janela. Em "Criar conta", o botão desligado diz o motivo embaixo (e-mail sem terminação, e-mail faltando, senha incompleta ou senhas diferentes); Enter com o botão desligado mostra o que falta (KAN-187). Aberta no mesmo modo, a tela de entrar não é redesenhada, para não apagar o que a pessoa está digitando (v67).

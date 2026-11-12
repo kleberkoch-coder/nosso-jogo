@@ -240,6 +240,28 @@ console.log(
   `Site ${VERSAO} montado em ${OUT}/ em ${Date.now() - t0} ms · link do jogador ${kb(gzPub)} comprimido · ao abrir a gestão ${kb(gzAbrir)} · sob demanda ${sobDemanda.map(c => c.replace(/^chunks\/|-[A-Z0-9]+\.js$/g, '') + ' ' + kb(z(pedacos.get(c)))).join(', ')} · tudo ${kb(gz)} (sem compactar seria ${kb(gzLeg)}) · ${pedacos.size} pedaços · cópia legível em ${LEGIVEL}/`
 );
 
+/* KAN-265: o que cada módulo pesa no que baixa ao abrir a gestão (fora o link), do maior para o menor, para saber
+   o que mover para sob demanda quando a gestão apertar. */
+{
+  const daAbrir = new Set(daGestao);
+  const peso = new Map();
+  for (const [saida, o] of Object.entries(rMin.metafile.outputs))
+    if (daAbrir.has(path.relative(OUT, saida).split(path.sep).join('/')))
+      for (const [f, i] of Object.entries(o.inputs)) {
+        const nome = f.replace(/^src\//, '');
+        peso.set(nome, (peso.get(nome) || 0) + i.bytesInOutput);
+      }
+  const lista = [...peso].sort((a, b) => b[1] - a[1]);
+  console.log(
+    'Gestão por módulo (além do link): ' +
+      lista
+        .slice(0, 15)
+        .map(([f, b]) => `${f} ${kb(b)}`)
+        .join(', ') +
+      ` (${lista.length} módulos)`
+  );
+}
+
 /* KAN-262: o que cada módulo pesa no link do jogador (compactado, antes do gzip), do maior para o menor. Aparece no
    resumo da tarefa "montar" no GitHub, para saber o que mover para sob demanda quando o link apertar. */
 {

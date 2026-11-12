@@ -99,4 +99,11 @@ export default {
   'matg.adicionado': '{nome} no material do grupo.',
   'matg.removerTitulo': 'Tirar este item do material do grupo?',
   'matg.removerAcao': 'Tirar',
+  /* KAN-265 (pelada-v112): vieram de pt-BR-gestao.js (só esta parte usa). */
+  'caixa.mensalidadeMoeda': 'Mensalidade ({moeda})',
+  'caixa.diariaMoeda': 'Diária ({moeda})',
+  'grupo.partidasCaixa': 'Partidas e caixa',
+  'grupo.partidas': 'Partidas',
+  // Permissões dos administradores convidados (KAN-201)
+  // Planos no app (KAN-119)
 };

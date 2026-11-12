@@ -37,6 +37,8 @@ function copyText(s, ta) {
       } else prompt(tx('comum.copieLink'), s);
     });
 }
+/* KAN-266: ações que baixam um arquivo (cada toque a mais seria outro arquivo, outro evento na agenda). */
+const SEM_REPETIR = new Set(['pubAgenda', 'pubAgendaGerar', 'baixarVotos']);
 document.addEventListener('click', e => {
   const sub = e.target.closest('#gsub[role=button],#gname[role=button],[data-corta][role=button]');
   if (sub) {
@@ -90,6 +92,9 @@ document.addEventListener('click', e => {
   }
   const ps = cap.slice();
   if (res && typeof res.then === 'function') ps.push(res);
+  /* KAN-266: ação que entrega algo para fora do app (baixar arquivo) termina na hora, e o botão destravava antes do
+     2º toque: dois toques rápidos baixavam dois arquivos. Essas ficam em carregando pelo menos 1,5 s. */
+  if (SEM_REPETIR.has(el.dataset.a)) ps.push(sleep(1500));
   if (!ps.length) {
     if (cap.close) closeDlgNow();
     return;

@@ -2,8 +2,11 @@
    porque é só da gestão: os textos dele (hora.*) não vão para o link do jogador. */
 import { render } from 'preact';
 import { para12, partes } from '../dominio/relogio';
-import { tx } from '../i18n/index.js';
+import { juntarTextos, tx } from '../i18n/index.js';
+import textos from '../i18n/pt-BR-hora';
 import './hora';
+
+juntarTextos(textos);
 /* Campo de horário do app (KAN-151; 12h com AM/PM no país que usa, KAN-163). O valor "HH:MM" (24h) fica no campo
    escondido, com o id ou a classe que o formulário lê. O comportamento (setas, digitação, AM/PM) está em ui/hora.ts. */
 export function HoraCampo({

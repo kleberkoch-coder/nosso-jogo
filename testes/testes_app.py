@@ -4032,8 +4032,11 @@ with sync_playwright() as pw:
         p93.screenshot(path=f'{OUT}/93-votacao-zap.png')
         p93.click('#dlg [data-a=close]'); p93.wait_for_timeout(300)
         p93.click('#quemVotou > summary'); p93.wait_for_selector('[data-a=baixarVotos]', timeout=5000)
+        baix93 = []; p93.on('download', lambda d: baix93.append(d))
         with p93.expect_download() as d93:
-            p93.click('[data-a=baixarVotos]')
+            p93.dblclick('[data-a=baixarVotos]')
+        p93.wait_for_timeout(1500)
+        ok(len(baix93) == 1, f'CT-KAN-266-03: dois cliques seguidos em "Baixar planilha" baixam uma planilha só ({len(baix93)})')
         arq93 = d93.value; csv93 = open(arq93.path(), encoding='utf-8-sig', newline='').read().split('\r\n')
         ok(arq93.suggested_filename == 'Destaques.csv' and csv93[0] == '"Quem votou";"Melhor jogador";"Bagre";"Hora";"Trocas";"Origem"' and len(csv93) == 4 and all(l.endswith(';"link"') for l in csv93[1:])
            and any(l.startswith(f'"{nm93(0)}";"{nm93(1)}";"{nm93(4)}";') for l in csv93),
@@ -5066,6 +5069,15 @@ with sync_playwright() as pw:
         p107.reload(); p107.wait_for_selector('.hero-r h2', timeout=8000); p107.wait_for_timeout(1000)
         ok(p107.locator('#agendaLinha').count() == 1 and p107.evaluate(LER, f'grupos/{g107}/rodadas/' + p107.evaluate("S.route.id") + f'/presencas/{js107[0]}')['s'] == 'in',
            'CT-KAN-124-14: depois de recarregar, o botão continua e a presença não mudou')
+        # KAN-266 (v112): dois toques rápidos geram um arquivo só. Rodada sem dia fixo baixa direto, sem janela: aqui a
+        # rodada vira "sem dia fixo" só na memória da página, para o botão seguir esse caminho.
+        p107.evaluate("(()=>{const r=S.rod[S.route.id]||Object.values(S.rod)[0];r.fixo=false})()")
+        antes266 = len(baixados)
+        p107.locator('[data-a=pubAgenda]').click(); p107.wait_for_timeout(120); p107.locator('[data-a=pubAgenda]').click(force=True)
+        p107.wait_for_timeout(2500)
+        ok(len(baixados) - antes266 == 1, f'CT-KAN-266-01 (CT-KAN-124-14): dois toques rápidos em "Pôr na minha agenda" geram um arquivo só ({len(baixados) - antes266})')
+        p107.locator('[data-a=pubAgenda]').click(); p107.wait_for_timeout(1500)
+        ok(len(baixados) - antes266 == 2, f'CT-KAN-266-02: depois do carregando, um novo toque volta a gerar o arquivo ({len(baixados) - antes266})')
         # Em inglês, a agenda (o link segue o idioma escolhido no aparelho)
         p107.evaluate("localStorage.setItem('nj-idioma','en')"); p107.reload(); p107.wait_for_selector('#agendaLinha', timeout=8000); p107.wait_for_timeout(500)
         en124 = [p107.inner_text('[data-a=pubAgenda]'), p107.get_attribute('[data-a=pubAgenda]', 'aria-label')]

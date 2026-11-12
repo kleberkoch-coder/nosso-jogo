@@ -5071,7 +5071,8 @@ with sync_playwright() as pw:
            'CT-KAN-124-14: depois de recarregar, o botão continua e a presença não mudou')
         # KAN-266 (v112): dois toques rápidos geram um arquivo só. Rodada sem dia fixo baixa direto, sem janela: aqui a
         # rodada vira "sem dia fixo" só na memória da página, para o botão seguir esse caminho.
-        p107.evaluate("(()=>{const r=S.rod[S.route.id]||Object.values(S.rod)[0];r.fixo=false})()")
+        # (a rodada do dia fixo ainda não tem documento: cria um na memória, igual, mas sem a marca de dia fixo)
+        p107.evaluate("(()=>{const id=S.route.id,m=/^f-(\\d{4}-\\d{2}-\\d{2})-(\\d{2})(\\d{2})$/.exec(id)||[];S.rod[id]=Object.assign({date:m[1],time:m[2]?m[2]+':'+m[3]:''},S.rod[id]||{},{fixo:false})})()")
         antes266 = len(baixados)
         p107.locator('[data-a=pubAgenda]').click(); p107.wait_for_timeout(120); p107.locator('[data-a=pubAgenda]').click(force=True)
         p107.wait_for_timeout(2500)

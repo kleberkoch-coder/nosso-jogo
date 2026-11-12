@@ -74,6 +74,11 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo de toda janela (pelada-v106, KAN-250); **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v113)
+- **Colar lista do WhatsApp** (KAN-244; `ui/ColarLista.tsx`, CSS `colar.css`, sob demanda): no topo do painel Presença, "📋 Colar lista" (`btn sm`, 📋 em `aria-hidden`) ao lado de "Adicionar avulso" (`pres-acoes`, 8px; descem para baixo do título quando não cabem). Janela em dois passos:
+  - **Passo 1:** título, ajuda em `small muted`, campo de texto grande (`colar-texto`, 180px, cursor já nele) com exemplo de placeholder, rodapé "Cancelar" e "Ler lista" (`primary`).
+  - **Passo 2 "Conferir antes de marcar":** resumo "7 vão · 3 não vão · 1 sem marca" em `small muted`; aviso `warn-alt` se os times já foram sorteados; "Pôr todos os novos no elenco" (`btn sm`); grupos "Vão (7)" e "Não vão (3)" (`h4 colar-grupo`) com uma linha por pessoa (`colar-linha`: o nome colado à esquerda, com a dica "Parecido com Japa?", "Novo no grupo" ou "Na espera" em `small muted` embaixo, e o combo `sel` de 44px com 55% da largura à direita, nomeado "Quem é {nome} no grupo"); "Sem marca, não muda: Neto" em `small muted`; rodapé "Voltar" e "Marcar na rodada" (`primary`, carregando).
+
 ## Componentes (pelada-v112)
 - **Botão que baixa arquivo** (KAN-266): fica em carregando (`busy`, `aria-busy`) pelo menos 1,5 s depois do toque, mesmo quando o arquivo sai na hora. Vale para "Pôr na minha agenda", as opções da janela da agenda e "Baixar planilha" de quem votou. Visual igual ao carregando de sempre.
 

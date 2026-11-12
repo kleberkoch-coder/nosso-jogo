@@ -5389,6 +5389,86 @@ with sync_playwright() as pw:
            f'CT-KAN-246-08 e CT-KAN-190-11: em English, a linha do sorteio e o material vêm traduzidos ({en109}, {falta109})')
         ctx109.close()
 
+        # ---------- v113 (KAN-244): colar a lista do WhatsApp na aba Rodada
+        ctx113 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+        p113 = ctx113.new_page(); p113.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p113, 'criar')
+        p113.fill('#le', 'v113@teste.com'); p113.fill('#lp', 'Jogo@2026'); p113.fill('#lp2', 'Jogo@2026'); p113.keyboard.press('Enter'); p113.wait_for_selector('#ngBox', timeout=12000)
+        p113.fill('#ngn', 'Lista FC'); p113.click('[data-a=pickSport][data-v=futebol]'); p113.click('[data-a=createGroup]')
+        p113.wait_for_function("location.hash.startsWith('#/g/')"); p113.wait_for_timeout(1500)
+        g113 = p113.url.split('#/g/')[1]
+        p113.click('[data-a=tab][data-v=jogadores]'); p113.wait_for_timeout(300); p113.click('[data-a=seed]'); p113.wait_for_timeout(1500)
+        id113 = lambda n: p113.evaluate("n=>Object.keys(S.jog).find(k=>S.jog[k].name===n)||null", n)
+        p113.click('[data-a=tab][data-v=rodada]'); p113.wait_for_timeout(600)
+        h113 = p113.evaluate("(()=>{const h=document.querySelector('#presPainel > .row.between'),bs=[...h.querySelectorAll('.btn')],pn=document.getElementById('presPainel').getBoundingClientRect();return {bts:bs.map(b=>b.textContent.trim()),alt:bs.map(b=>Math.round(b.getBoundingClientRect().height)),dentro:bs.every(b=>b.getBoundingClientRect().right<=pn.right+0.5),rolagem:document.documentElement.scrollWidth>innerWidth}})()")
+        ok(h113['bts'] == ['📋 Colar lista', 'Adicionar avulso'] and min(h113['alt']) >= 36 and h113['dentro'] and not h113['rolagem'],
+           f'CT-KAN-244-10: em 360px, "Colar lista" e "Adicionar avulso" ficam no topo da Presença, dentro do painel ({h113})')
+        p113.click('[data-a=colarLista]'); p113.wait_for_selector('#colarTexto', timeout=8000); p113.wait_for_timeout(300)
+        ok(p113.evaluate("document.activeElement && document.activeElement.id") == 'colarTexto', 'CT-KAN-244-10: a janela abre com o cursor no campo da lista')
+        p113.fill('#colarTexto', '1.\n2. 👍👍\n⚽⚽'); p113.click('#dlg [data-a=colarLer]'); p113.wait_for_timeout(500)
+        ok(p113.locator('#colarTexto').count() == 1 and 'Não achei nomes nesse texto' in p113.inner_text('#toast') and not p113.evaluate("Object.values(S.pres||{}).length"),
+           'CT-KAN-244-03: texto sem nomes avisa "Não achei nomes nesse texto" e não grava nada')
+        LISTA113 = """Lista 16/11 das 20:00 as 22h - 👍🏻 ou ❌ - Responder até as 13:00
+
+1 - Gui (M) 👍🏼
+2 - Japa Silva (A) 🤙🏼
+3 - fernandinho (M) ❌️
+4 - Caio (M) 👍
+5 - Matheus (Z) 👍🏻
+6 - Neto (A)
+7 - Gabriel (Avulso) 👍🏼
+8 - Vini (A) ❌
+9 - Léo (Z) 👍
+
+1- Bruno (goleiro) 👍🏽
+2- Tiago (goleiro) ❌"""
+        p113.fill('#colarTexto', LISTA113); p113.click('#dlg [data-a=colarLer]'); p113.wait_for_selector('#colarVao', timeout=5000); p113.wait_for_timeout(300)
+        pv113 = p113.evaluate("""(()=>{const L=s=>[...document.querySelectorAll(s+' li')].map(li=>{const sel=li.querySelector('select');return [li.querySelector('.colar-nome').firstChild.textContent.trim(), sel.value, (li.querySelector('.colar-nome .small')||{}).textContent||'']});
+          return {vao:L('#colarVao'), nao:L('#colarNao'), sem:(document.getElementById('colarSem')||{}).textContent||'', resumo:document.getElementById('colarResumo').textContent}})()""")
+        ok([x[0] for x in pv113['vao']] == ['Gui', 'Japa Silva', 'Caio', 'Matheus', 'Gabriel', 'Léo', 'Bruno'] and [x[0] for x in pv113['nao']] == ['fernandinho', 'Vini', 'Tiago']
+           and pv113['sem'] == 'Sem marca, não muda: Neto' and pv113['resumo'] == '7 vão · 3 não vão · 1 sem marca',
+           f'CT-KAN-244-01: a prévia separa quem vai (na ordem colada), quem não vai e quem está sem marca; o título é ignorado ({pv113})')
+        vs113 = {x[0]: x for x in pv113['vao'] + pv113['nao']}
+        ok(vs113['Gui'][1] == id113('Gui') and vs113['fernandinho'][1] == id113('Fernandinho') and vs113['Japa Silva'][1] == id113('Japa')
+           and vs113['Japa Silva'][2] == 'Parecido com Japa?' and vs113['Matheus'][1:] == ['novo:avulso', 'Novo no grupo'] and vs113['Gabriel'][1] == 'novo:avulso',
+           f'CT-KAN-244-02: cada nome vem casado com o elenco (sem acento e maiúscula), "Parecido com Japa?" e os novos como avulso ({vs113})')
+        p113.click('#colarTodosElenco'); p113.wait_for_timeout(200)
+        el113 = p113.evaluate("[...document.querySelectorAll('#dlg .colar-sel')].map(s=>[s.closest('li').querySelector('.colar-nome').firstChild.textContent.trim(), s.value]).filter(x=>x[0]==='Matheus'||x[0]==='Gabriel')")
+        ok(el113 == [['Matheus', 'novo:elenco'], ['Gabriel', 'novo:avulso']], f'CT-KAN-244-02: "Pôr todos os novos no elenco" muda os novos, menos quem veio marcado "(avulso)" ({el113})')
+        g113b = p113.evaluate("(()=>{const d=document.getElementById('dlg'),r=d.getBoundingClientRect();return {larg:Math.round(r.width),rolagem:d.scrollWidth>d.clientWidth+1||document.documentElement.scrollWidth>innerWidth,sel:Math.min(...[...d.querySelectorAll('.colar-sel')].map(s=>Math.round(s.getBoundingClientRect().height)))}})()")
+        ok(not g113b['rolagem'] and g113b['sel'] >= 44, f'CT-KAN-244-10: em 360px, a prévia não tem rolagem lateral e os combos têm 44px ({g113b})')
+        for tema in ['light', 'dark']:
+            p113.emulate_media(color_scheme=tema); p113.wait_for_timeout(150); contraste(p113, f'prévia da lista colada ({tema})')
+        p113.emulate_media(color_scheme='light')
+        p113.screenshot(path=f'{OUT}/113-colar-previa-360.png')
+        # Voltar guarda o texto
+        p113.click('#dlg [data-a=colarVoltar]'); p113.wait_for_selector('#colarTexto', timeout=5000)
+        ok(p113.input_value('#colarTexto') == LISTA113, 'CT-KAN-244-10: "Voltar" mostra de novo o texto colado')
+        p113.click('#dlg [data-a=colarLer]'); p113.wait_for_selector('#colarVao', timeout=5000); p113.click('#colarTodosElenco'); p113.wait_for_timeout(200)
+        p113.click('#dlg [data-a=colarGravar]'); p113.wait_for_timeout(1500)
+        ok('Lista marcada: 7 vão e 3 não vão.' in p113.inner_text('#toast') and not p113.evaluate("document.getElementById('dlg').open"),
+           'CT-KAN-244-01: "Marcar na rodada" fecha a janela e avisa "Lista marcada: 7 vão e 3 não vão."')
+        p113.reload(); p113.wait_for_timeout(2000); p113.click('[data-a=tab][data-v=rodada]'); p113.wait_for_timeout(800)
+        r113 = p113.evaluate("""(()=>{const P=S.pres,nm=id=>(S.jog[id]&&S.jog[id].name)||(P[id]&&P[id].nome)||(S.avul[id]||{}).nome;
+          const vao=Object.keys(P).filter(k=>P[k].s==='in').sort((a,b)=>P[a].t-P[b].t).map(nm), nao=Object.keys(P).filter(k=>P[k].s==='out').map(nm).sort();
+          const mat=Object.keys(S.jog).find(k=>S.jog[k].name==='Matheus'), gab=Object.keys(S.avul||{}).find(k=>S.avul[k].nome==='Gabriel');
+          return {vao, nao, matheus: mat?[S.jog[mat].pos||'', ((S.pc||{}).tipos||{})[mat]||'']:null, gabriel: gab?[!!P[gab]&&P[gab].avulso, !S.jog[gab]]:null, neto: P[Object.keys(S.jog).find(k=>S.jog[k].name==='Neto')]||null}})()""")
+        ok(r113['vao'] == ['Gui', 'Japa', 'Caio', 'Matheus', 'Gabriel', 'Léo', 'Bruno'] and r113['nao'] == ['Fernandinho', 'Tiago', 'Vini'] and r113['neto'] is None,
+           f'CT-KAN-244-01: depois de recarregar, 7 confirmados na ordem colada, 3 "não vão" e o Neto (sem marca) sem resposta ({r113})')
+        ok(r113['matheus'] is not None and r113['matheus'][1] == 'mensalista' and r113['gabriel'] == [True, True],
+           f'CT-KAN-244-02: Matheus entrou no elenco como mensalista e Gabriel como avulso ({r113["matheus"]}, {r113["gabriel"]})')
+        # Em inglês
+        p113.evaluate("localStorage.setItem('nj-idioma','en')"); p113.reload(); p113.wait_for_timeout(2000)
+        p113.click('[data-a=tab][data-v=rodada]'); p113.wait_for_timeout(600)
+        p113.click('[data-a=colarLista]'); p113.wait_for_selector('#colarTexto', timeout=8000)
+        p113.fill('#colarTexto', '1 - Gui 👍\n2 - Somebody New ❌\n3 - Neto'); p113.click('#dlg [data-a=colarLer]'); p113.wait_for_selector('#colarVao', timeout=5000); p113.wait_for_timeout(300)
+        en113 = p113.inner_text('#dlg')
+        falta113 = p113.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(colar|rodg)\\./.test(k))")
+        ok('Check before marking' in en113 and 'Going (1)' in en113 and 'Not going (1)' in en113 and 'No mark, nothing changes: Neto' in en113 and 'New to the group' in en113 and not falta113,
+           f'CT-KAN-244-11: em English, a janela vem traduzida ({en113[:160]!r}, {falta113})')
+        p113.click('#dlg [data-a=close]') if p113.locator('#dlg [data-a=close]').count() else p113.keyboard.press('Escape')
+        ctx113.close()
+
     if parte('b'):
         # ---------- v35 (KAN-142): "Continuar com o Google" na aba errada entra ou cria a conta e avisa (navegador separado)
         ctx3 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block'); p3 = ctx3.new_page()

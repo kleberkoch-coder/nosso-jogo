@@ -22,10 +22,10 @@ export function MaterialRodada({ mat, pres }: { mat: unknown; pres: Pres }) {
               {!m.com.length ? (
                 <span>{tx('mat.semGuarda', { nome: m.nome })}</span>
               ) : m.nenhum ? (
-                <span class="warn-alt">
+                <p class="warn-alt">
                   <span aria-hidden="true">⚠️ </span>
                   {tx('mat.nenhum', { nome: m.nome, nomes: nomes(m.com) })}
-                </span>
+                </p>
               ) : (
                 <span>{tx('mat.ok', { nome: m.nome, n: m.vao.length, total: m.com.length, nomes: nomes(m.vao) })}</span>
               )}

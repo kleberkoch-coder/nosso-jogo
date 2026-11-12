@@ -5258,6 +5258,20 @@ with sync_playwright() as pw:
         t190 = p109.inner_text('#matRodada')
         ok('ninguém que guarda confirmou ainda' in t190 and all(nm(x) in t190 for x in [kl, dg, gu]) and p109.locator('#matRodada [data-a=matCobrar]').count() == 1,
            f'CT-KAN-190-08: sem ninguém confirmado, a aba Rodada avisa "ninguém que guarda confirmou", com os 3 nomes e o botão de cobrar ({t190!r})')
+        # KAN-264 (v110): com o aviso em 2 linhas, a caixa é um retângulo só e o botão fica embaixo, dentro do painel
+        for larg in [360, 390]:
+            p109.set_viewport_size({'width': larg, 'height': 740}); p109.wait_for_timeout(200)
+            g264 = p109.evaluate('''(()=>{const w=document.querySelector('#matRodada .warn-alt'),b=document.querySelector('#matRodada [data-a=matCobrar]'),
+              pn=document.querySelector('#matRodada').getBoundingClientRect(),rw=w.getBoundingClientRect(),rb=b.getBoundingClientRect();
+              return {partes:w.getClientRects().length, alt:Math.round(rw.height), dentro:rw.left>=pn.left&&rw.right<=pn.right+0.5,
+                botaoAbaixo:rb.top>=rw.bottom-0.5, botaoDentro:rb.left>=pn.left&&rb.right<=pn.right+0.5, botaoAlt:Math.round(rb.height),
+                rolagem:document.documentElement.scrollWidth>innerWidth}})()''')
+            ok(g264['partes'] == 1 and g264['alt'] > 40 and g264['dentro'] and not g264['rolagem'],
+               f'CT-KAN-264-01: em {larg}px, o aviso em 2 linhas é uma caixa só, dentro do painel ({g264})')
+            ok(g264['botaoAbaixo'] and g264['botaoDentro'] and g264['botaoAlt'] >= 44,
+               f'CT-KAN-264-02: em {larg}px, "Cobrar no WhatsApp" fica abaixo do aviso, dentro do painel, com 44px ({g264})')
+        p109.set_viewport_size({'width': 360, 'height': 740}); p109.wait_for_timeout(200)
+        p109.locator('#matRodada').screenshot(path=f'{OUT}/110-material-rodada-360.png')
         p109.click('#matRodada [data-a=matCobrar]'); p109.wait_for_selector('#shtxt', timeout=5000)
         z190 = p109.input_value('#shtxt')
         ok(all(nm(x) in z190 for x in [kl, dg, gu]) and 'Bola' in z190 and '#/p/' in z190, f'CT-KAN-190-08: a cobrança no WhatsApp leva os 3 nomes, a bola e o link ({z190[:120]!r})')

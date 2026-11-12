@@ -837,4 +837,11 @@ export default {
   'colar.nada': 'Nothing to mark: choose who each person is or go back.',
   'colar.feito': 'List marked: {vao} going and {nao} not going.',
   'colar.fechada': 'The list is closed. Reopen it to paste.',
+  /* KAN-245: pt-BR-grupodosorteio.ts */
+  'srg.aviso':
+    "The {n} players from the draw join the squad, with positions and ratings, and the teams go into today's game.",
+  'srg.descartar': 'Discard the draw',
+  'srg.descartado': 'Draw discarded.',
+  'srg.pronto': "Group created with the {n} players and today's teams.",
+  'srg.demorou': 'The group was created, but the players from the draw did not come in. Add them in the Players tab.',
 };

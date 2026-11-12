@@ -1,0 +1,38 @@
+/* Textos de "Sortear times agora, sem cadastro" (KAN-245): baixam com a tela (telas/SorteioRapido.tsx). */
+export default {
+  'sr.titulo': 'Sortear times agora',
+  'sr.sub': 'Sem cadastro. Os nomes e as notas ficam só no seu celular.',
+  'sr.esporte': 'Esporte',
+  'sr.porTime': 'Jogadores por time',
+  'sr.porTimeInvalido': 'Jogadores por time: de 1 a 30.',
+  'sr.nomes': 'Quem vai jogar',
+  'sr.nomesEx': 'Cole a lista do WhatsApp ou escreva um nome por linha',
+  'sr.nomesAjuda': 'Da lista do WhatsApp entra só quem marcou 👍. "(goleiro)" já vira goleiro.',
+  'sr.continuar': 'Continuar',
+  'sr.semNomes': 'Não achei ninguém para sortear. Escreva um nome por linha.',
+  'sr.ajustar': '{n} jogadores',
+  'sr.ajustarAjuda':
+    'Se quiser, diga a posição e a nota de cada um (de 1 a 10): o sorteio equilibra os times. Pode deixar em branco.',
+  'sr.ajustarAjudaSemPos':
+    'Se quiser, dê uma nota de 1 a 10 a cada um: o sorteio equilibra os times. Pode deixar em branco.',
+  'sr.posDe': 'Posição de {nome}',
+  'sr.notaDe': 'Nota de {nome}',
+  'sr.semPos': 'Posição',
+  'sr.semNota': 'Nota',
+  'sr.nota': 'Nota {n}',
+  'sr.voltar': 'Voltar',
+  'sr.sortear': 'Sortear',
+  'sr.faltam': 'Faltam {n} para dois times de {t}.',
+  'sr.faltamDuplas': 'Faltam {n} para duas duplas.',
+  'sr.times': 'Times sorteados',
+  'sr.zap': 'Mandar no WhatsApp',
+  'sr.deNovo': 'Sortear de novo',
+  'sr.mudar': 'Mudar jogadores',
+  'sr.zapTitulo': 'Times sorteados',
+  'sr.zapRodape': 'Sorteado no Nosso Jogo: {link}',
+  'sr.salvarTitulo': 'Toda semana é a mesma turma?',
+  'sr.salvarTexto':
+    'Salve como seu grupo: os jogadores, as posições e as notas ficam guardados, e a turma confirma presença por um link.',
+  'sr.salvar': 'Salvar como meu grupo',
+  'sr.privacidade': 'Nada disso é enviado: só fica guardado se você salvar como grupo.',
+};

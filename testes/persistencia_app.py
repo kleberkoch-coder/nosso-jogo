@@ -1009,6 +1009,40 @@ with sync_playwright() as pw:
     ok(r39b == r39, f'CT-KAN-170-P39: e também depois de sair e entrar ({r39b})')
     c39.close()
 
+    # P40 sorteio sem conta salvo como grupo (KAN-245): jogadores com posição e nota, tipos, uma rodada de hoje com os
+    # times (sor n=1, lista fechada) e as presenças. Confere depois de recarregar e de sair e entrar.
+    c40 = novo(); p40 = c40.new_page()
+    p40.on('pageerror', lambda e: errs.append(str(e)))
+    E40 = 'sorteio40@teste.com'
+    p40.goto(URL + '#/sortear'); p40.wait_for_selector('#srPasso1', timeout=20000); p40.wait_for_timeout(300)
+    p40.select_option('#srEsporte', 'society'); p40.fill('#srPorTime', '5')
+    p40.fill('#srNomes', '\n'.join(['1 - Ana 👍', '2 - Bia 👍', '3 - Caio 👍', '4 - Duda 👍', '5 - Edu 👍', '6 - Fabi 👍', '7 - Gil 👍', '8 - Helô 👍', '9 - Ivo 👍', '10 - Juca (goleiro) 👍', '11 - Kiko ❌']))
+    p40.click('[data-a=srLer]'); p40.wait_for_selector('#srPasso2', timeout=20000)
+    p40.locator('#srLista .sr-nota').nth(0).select_option('8')
+    p40.click('[data-a=srSortear]'); p40.wait_for_selector('#srTimes', timeout=20000)
+    p40.click('[data-a=srSalvar]'); p40.wait_for_selector('#le', timeout=20000); p40.wait_for_timeout(300)
+    p40.fill('#le', E40); p40.fill('#lp', SENHA); p40.fill('#lp2', SENHA); p40.wait_for_timeout(200)
+    p40.click('[data-a=signup]'); p40.wait_for_selector('#ngDoSorteio', timeout=30000)
+    p40.fill('#ngn', 'Sorteio FC'); p40.click('#dlg [data-a=criarGrupoDoSorteio]')
+    p40.wait_for_function("location.hash.startsWith('#/g/')", timeout=30000)
+    g40 = p40.url.split('#/g/')[1].split('/')[0]
+    p40.wait_for_function("localStorage.getItem('nj-sorteio-rapido') === null", timeout=30000)
+    gravou(p40); pronto(p40, 'rodada'); p40.wait_for_timeout(1500)
+    ler40 = ("(()=>{const nm=id=>(S.jog[id]||{}).name;const r=Object.values(S.rod||{}).find(v=>v.times)||{};"
+             "const ana=Object.keys(S.jog).find(k=>S.jog[k].name==='Ana'),juca=Object.keys(S.jog).find(k=>S.jog[k].name==='Juca');"
+             "return [Object.keys(S.jog).length, ana?((S.rat||{}).nivel||{})[ana]||null:null, juca?S.jog[juca].pos:null, ana?((S.pc||{}).tipos||{})[ana]||null:null,"
+             " (r.times||[]).map(t=>t.players.length).sort(), r.sor?r.sor.n:null, !!r.locked, Object.values(S.pres||{}).filter(p=>p.s==='in').length]})()")
+    r40 = J(p40, ler40)
+    ok(r40 == [10, 8, 'GOL', 'mensalista', [5, 5], 1, True, 10],
+       f'CT-KAN-170-P40: o sorteio sem conta salvo como grupo (jogadores com posição e nota, rodada de hoje com os times e as presenças) continua depois de recarregar ({r40})')
+    sair_e_esperar(p40)
+    p40.goto(URL + '#/entrar'); p40.wait_for_selector('#le', timeout=20000); p40.wait_for_timeout(300)
+    p40.fill('#le', E40); p40.fill('#lp', SENHA); p40.keyboard.press('Enter'); p40.wait_for_timeout(2500)
+    p40.goto(URL + '#/g/' + g40); pronto(p40, 'rodada'); p40.wait_for_timeout(1500)
+    r40b = J(p40, ler40)
+    ok(r40b == r40, f'CT-KAN-170-P40: e também depois de sair e entrar ({r40b})')
+    c40.close()
+
     ok(not errs, 'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))
     b.close()
 

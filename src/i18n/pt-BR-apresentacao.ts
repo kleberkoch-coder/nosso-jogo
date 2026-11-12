@@ -11,6 +11,7 @@ export default {
     'Do futebol de segunda ao vôlei de sábado: o {app} cuida da confirmação de presença, sorteia times equilibrados e guarda placar, ranking e o caixa da turma. Os jogadores confirmam por um link, sem baixar nada.',
   'apr.criarGrupo': 'Criar meu grupo grátis',
   'apr.jaTenho': 'Já tenho conta',
+  'apr.sortearAgora': '⚡ Sortear times agora, sem cadastro',
   'apr.nota': 'Vários grupos e esportes na mesma conta · Funciona como app no celular',
   'apr.demoGrupo': 'Futebol de Segunda',
   'apr.demoQuando': 'seg, 20:00–22:30 · Arena Central',

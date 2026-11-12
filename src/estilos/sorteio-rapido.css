@@ -1,0 +1,60 @@
+/* KAN-245 (pelada-v114): sortear times agora, sem cadastro (#/sortear). */
+.sr-tela {
+  max-width: 640px;
+  margin: 0 auto;
+}
+.sr-titulo {
+  margin: 0 0 4px;
+}
+.sr-grade {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px;
+  gap: 0 10px;
+  margin-top: 10px;
+}
+.sr-nomes {
+  min-height: 200px;
+  font-size: 15px;
+}
+.sr-acao {
+  width: 100%;
+  justify-content: center;
+}
+.plist li.sr-linha {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 6px 8px;
+  align-items: center;
+}
+.sr-nome {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.sr-linha .sel {
+  min-width: 0;
+  width: auto;
+  max-width: 130px;
+}
+.sr-botoes {
+  margin-top: 14px;
+  gap: 8px;
+}
+.sr-salvar {
+  border-color: var(--accent, currentColor);
+}
+.sr-rodape {
+  text-align: center;
+  margin: 8px 0 24px;
+}
+@media (max-width: 380px) {
+  .plist li.sr-linha {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .sr-linha .sr-nome {
+    grid-column: 1 / -1;
+  }
+  .sr-linha .sel {
+    max-width: none;
+    width: 100%;
+  }
+}

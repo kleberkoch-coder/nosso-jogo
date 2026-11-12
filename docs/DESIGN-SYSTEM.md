@@ -74,6 +74,13 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo de toda janela (pelada-v106, KAN-250); **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v114)
+- **Sorteio sem conta** (KAN-245; `telas/SorteioRapido.tsx`, CSS `sorteio-rapido.css`, sob demanda): página de até 640px, com "← Início" no cabeçalho e três passos num `panel`:
+  - **1.** Título "Sortear times agora" (h2), "Sem cadastro…" em `small muted`, Esporte (`sel`) e Jogadores por time (`inp`, 120px) lado a lado, "Quem vai jogar" (campo grande `sr-nomes`, 200px) com a ajuda embaixo e "Continuar" (`primary`, largura toda).
+  - **2.** "13 jogadores", a ajuda, e uma linha por pessoa (`sr-linha`): o nome e dois combos de 44px, Posição e Nota (até 130px cada; em 380px ou menos, o nome em cima e os dois combos lado a lado); rodapé "Voltar" e "Sortear" (`primary`).
+  - **3.** "Times sorteados" com os mesmos cartões de time da aba Rodada (`team`, faixa do colete, "· reserva"), e "Mandar no WhatsApp" (`primary`, link), "Sortear de novo" e "Mudar jogadores" (`ghost`); embaixo, o cartão "Toda semana é a mesma turma?" (`sr-salvar`, com borda) e "Salvar como meu grupo" (`primary`, largura toda). Rodapé em `small muted`: nada é enviado.
+- **Atalhos para o sorteio sem conta** (KAN-245): na apresentação, "⚡ Sortear times agora, sem cadastro" (`btn ld-ghost ld-sortear`, 44px) logo abaixo dos dois botões principais; na tela de entrar, abaixo do cartão, "Só quer sortear os times de hoje? Sortear sem cadastro" (`linkbtn`). Com um sorteio guardado, o cartão de entrar mostra o aviso `warn-alt` "Seu sorteio está guardado…", e o "Novo grupo" mostra "Os 13 jogadores do sorteio entram no elenco…".
+
 ## Componentes (pelada-v113)
 - **Colar lista do WhatsApp** (KAN-244; `ui/ColarLista.tsx`, CSS `colar.css`, sob demanda): no topo do painel Presença, "📋 Colar lista" (`btn sm`, 📋 em `aria-hidden`) ao lado de "Adicionar avulso" (`pres-acoes`, 8px; descem para baixo do título quando não cabem). Janela em dois passos:
   - **Passo 1:** título, ajuda em `small muted`, campo de texto grande (`colar-texto`, 180px, cursor já nele) com exemplo de placeholder, rodapé "Cancelar" e "Ler lista" (`primary`).

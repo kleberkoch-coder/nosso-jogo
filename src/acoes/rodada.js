@@ -5,7 +5,6 @@ import { horaTexto } from '../dominio/rodadas.js';
 import { cfg } from '../dominio/caixa.js';
 import { hasPos, porTime, posKeys, sport, tn } from '../dominio/esportes.js';
 import { attendance, curRodada, fixos, gname, isAvulso, players, pname, ppos, rodadas } from '../dominio/grupo.js';
-import { draw } from '../dominio/sorteio.js';
 import { foraDosTimes } from '../dominio/divergencia.ts';
 import { reservas, sugerirTimes, titulares } from '../dominio/times.ts';
 import { juntarTextos, tp, tx } from '../i18n/index.js';
@@ -32,6 +31,8 @@ import { comAjuste, novoSorteio } from '../dominio/sorteio-info';
 import { situacao as situacaoMaterial } from '../dominio/material';
 
 const janelaRodada = () => import('../ui/JanelaRodada');
+/* Sorteio de times: chega com o primeiro "Sortear" (doDraw). */
+let draw = null;
 const naoCarregou = () => toast(tx('comum.naoCarregouTitulo') + '. ' + tx('comum.naoCarregou'));
 /* KAN-246: mexer nos times depois do sorteio conta um ajuste manual (sem dizer quem foi mexido). */
 function ajusteManual(x) {
@@ -391,7 +392,9 @@ const acoes = {
       fora = (box.dataset.fora || '').split(',').filter(Boolean),
       ids = [...box.querySelectorAll('.dp:checked')].map(x => x.value);
     if (ids.length < n * 2) return;
-    return sleep(40).then(() => {
+    /* KAN-245: o sorteio baixa na hora de sortear (não pesa na gestão). */
+    return Promise.all([sleep(40), import('../dominio/sorteio.js')]).then(([, m]) => {
+      draw = m.draw;
       const cap = [];
       cap.close = false;
       setCAP(cap);
@@ -407,6 +410,7 @@ const acoes = {
     });
   },
   _draw: (ids, n, nov, fora) => {
+    if (!draw) return;
     const r = curRodada(),
       T = draw(ids, n, nov, r.id),
       PT = porTime(),

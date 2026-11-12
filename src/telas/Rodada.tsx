@@ -29,7 +29,6 @@ import {
 import { Trava } from '../ui/Plano';
 import { avulsosEsgotados, limite } from '../dominio/limites';
 import { hora } from '../dominio/rodadas.js';
-import { quality } from '../dominio/sorteio.js';
 import { tp, tx } from '../i18n/index.js';
 import { afastadoEm, afastamentoDe, compDe, confirmaramAfastados } from '../nucleo/afast';
 import { presAlterada } from '../nucleo/edicoes.js';
@@ -489,6 +488,27 @@ function Presenca({ r, inn, carregou, avs }: { r: Rodada; inn: string[]; carrego
   );
 }
 
+/* KAN-245 (pelada-v114): o sorteio (dominio/sorteio-regra.ts) baixa só quando há times na tela ou alguém sorteia;
+   assim ele pode ser usado também pelo sorteio sem conta sem pesar na gestão. O painel aparece quando chega. */
+type ModSorteio = typeof import('../dominio/sorteio.js');
+let modSorteio: ModSorteio | null = null,
+  baixandoSorteio = false;
+function qualidadeDe(r: Rodada) {
+  if (modSorteio) return modSorteio.quality(r) as Qualidade;
+  if (!baixandoSorteio) {
+    baixandoSorteio = true;
+    import('../dominio/sorteio.js').then(
+      m => {
+        modSorteio = m;
+        changed();
+      },
+      () => {
+        baixandoSorteio = false;
+      }
+    );
+  }
+  return null as unknown as Qualidade;
+}
 function Qualidade({ q }: { q: Qualidade }) {
   if (!q) return null;
   return (
@@ -555,7 +575,7 @@ function Times({ r, inn }: { r: Rodada; inn: number }) {
               <CartaoTime key={ti} t={t} ti={ti} />
             ))}
           </div>
-          <Qualidade q={quality(r) as Qualidade} />
+          <Qualidade q={qualidadeDe(r)} />
           <div class="row" style="margin-top:12px">
             <button class="btn sm" data-a="shareTimes">
               {tx('rodg.times.mandar')}

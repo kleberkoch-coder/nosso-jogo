@@ -1,0 +1,28 @@
+/* KAN-244 (pelada-v113): janela "Colar lista do WhatsApp" da aba Rodada. */
+.colar-texto {
+  min-height: 180px;
+  font-size: 15px;
+}
+.colar-grupo {
+  margin: 12px 0 4px;
+}
+.plist li.colar-linha {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 55%);
+  gap: 4px 10px;
+  align-items: center;
+}
+.colar-nome {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.colar-nome .small {
+  display: block;
+}
+.colar-linha .sel {
+  width: 100%;
+  min-width: 0;
+}
+.colar-sem {
+  margin: 10px 0 0;
+}

@@ -1970,3 +1970,12 @@ fieldset.chk-lista legend {
 .mat-nao {
   margin: 2px 0 0;
 }
+
+/* KAN-244 (pelada-v113): "Colar lista" e "Adicionar avulso" juntos no topo da Presença; descem para baixo do título
+   quando não cabem. */
+#presPainel > .row.between {
+  gap: 8px;
+}
+.pres-acoes {
+  gap: 8px;
+}

@@ -387,6 +387,7 @@ export default {
   'rodg.mudadoTitulo': 'Answer changed by a device other than the one that answered first',
   'rodg.presenca': 'Attendance',
   'rodg.addAvulso': 'Add guest',
+  'rodg.colarLista': 'Paste list',
   'rodg.mostrar': 'Show',
   'rodg.avulso': 'guest',
   'rodg.vaiRotulo': '{nome} is in',

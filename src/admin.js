@@ -12,6 +12,7 @@ import { acoes as plano } from './acoes/plano';
 import { acoes as afastamento } from './acoes/afastamento';
 import { acoes as avaliacao } from './acoes/avaliacao';
 import { acoes as extra } from './acoes/extra';
+import { acoes as colar } from './acoes/colar-lista';
 import { ACT } from './acoes.js';
 import { tx } from './i18n/index.js';
 import { main, toast } from './nucleo/util.js';
@@ -64,7 +65,8 @@ export const ACOES = Object.assign(
   plano,
   afastamento,
   avaliacao,
-  extra
+  extra,
+  colar
 );
 
 /* Abas sob demanda (KAN-180): Caixa, Histórico, Votação e Ranking baixam na primeira vez que a aba é aberta, como a Partida.

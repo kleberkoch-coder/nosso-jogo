@@ -348,6 +348,7 @@ export default {
   'rodg.mudadoTitulo': 'Resposta mudada por um aparelho diferente do que respondeu primeiro',
   'rodg.presenca': 'Presença',
   'rodg.addAvulso': 'Adicionar avulso',
+  'rodg.colarLista': 'Colar lista',
   'rodg.mostrar': 'Mostrar',
   'rodg.avulso': 'avulso',
   'rodg.vaiRotulo': '{nome} vai',

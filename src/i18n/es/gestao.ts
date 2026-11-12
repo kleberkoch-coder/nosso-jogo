@@ -390,6 +390,7 @@ export default {
   'rodg.mudadoTitulo': 'Respuesta cambiada por un dispositivo distinto del que respondió primero',
   'rodg.presenca': 'Asistencia',
   'rodg.addAvulso': 'Agregar invitado',
+  'rodg.colarLista': 'Pegar lista',
   'rodg.mostrar': 'Mostrar',
   'rodg.avulso': 'invitado',
   'rodg.vaiRotulo': '{nome} va',

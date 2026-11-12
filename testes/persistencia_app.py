@@ -975,6 +975,40 @@ with sync_playwright() as pw:
     ok(r38b == r38, f'CT-KAN-170-P38: e também depois de sair e entrar ({r38b})')
     c38.close()
 
+    # P39 lista colada do WhatsApp (KAN-244): presenças na ordem colada (t), jogador novo no elenco (jogadores e o tipo em
+    # privado/caixa) e avulso novo (avulsos). Confere depois de recarregar e de sair e entrar.
+    c39 = novo(); p39 = c39.new_page()
+    p39.on('pageerror', lambda e: errs.append(str(e)))
+    E39 = 'colar39@teste.com'
+    p39.goto(URL + '#/criar'); p39.wait_for_selector('#le', timeout=20000); p39.wait_for_timeout(300)
+    p39.fill('#le', E39); p39.fill('#lp', SENHA); p39.fill('#lp2', SENHA); p39.wait_for_timeout(200)
+    p39.click('[data-a=signup]'); p39.wait_for_selector('#ngn', timeout=20000)
+    p39.fill('#ngn', 'Colar FC'); p39.click('[data-a=createGroup]')
+    p39.wait_for_function("location.hash.startsWith('#/g/')", timeout=20000)
+    g39 = p39.url.split('#/g/')[1].split('/')[0]
+    pronto(p39, 'jogadores'); p39.click('[data-a=seed]'); p39.wait_for_timeout(1500)
+    gravou(p39); pronto(p39, 'rodada'); p39.wait_for_timeout(800)
+    p39.click('[data-a=colarLista]'); p39.wait_for_selector('#colarTexto', timeout=20000)
+    p39.fill('#colarTexto', 'Lista 16/11 - 👍 ou ❌\n1 - Gui 👍\n2 - Matheus (M) 👍\n3 - Gabriel (avulso) 👍\n4 - Vini ❌\n5 - Neto')
+    p39.click('#dlg [data-a=colarLer]'); p39.wait_for_selector('#colarVao', timeout=20000)
+    p39.click('#colarTodosElenco'); p39.wait_for_timeout(200)
+    p39.click('#dlg [data-a=colarGravar]'); p39.wait_for_timeout(1500)
+    gravou(p39); pronto(p39, 'rodada'); p39.wait_for_timeout(1500)
+    ler39 = ("(()=>{const P=S.pres||{},nm=id=>(S.jog[id]&&S.jog[id].name)||(P[id]&&P[id].nome)||((S.avul||{})[id]||{}).nome;"
+             "const mat=Object.keys(S.jog).find(k=>S.jog[k].name==='Matheus'),gab=Object.keys(S.avul||{}).find(k=>S.avul[k].nome==='Gabriel');"
+             "return [Object.keys(P).filter(k=>P[k].s==='in').sort((a,b)=>P[a].t-P[b].t).map(nm), Object.keys(P).filter(k=>P[k].s==='out').map(nm),"
+             " mat?[S.jog[mat].pos||'', ((S.pc||{}).tipos||{})[mat]||'']:null, gab?!!(P[gab]&&P[gab].avulso):null]})()")
+    r39 = J(p39, ler39)
+    ok(r39[0] == ['Gui', 'Matheus', 'Gabriel'] and r39[1] == ['Vini'] and r39[2] is not None and r39[2][1] == 'mensalista' and r39[3] is True,
+       f'CT-KAN-170-P39: a lista colada (presenças na ordem, jogador novo no elenco e avulso novo) continua depois de recarregar ({r39})')
+    sair_e_esperar(p39)
+    p39.goto(URL + '#/entrar'); p39.wait_for_selector('#le', timeout=20000); p39.wait_for_timeout(300)
+    p39.fill('#le', E39); p39.fill('#lp', SENHA); p39.keyboard.press('Enter'); p39.wait_for_timeout(2500)
+    p39.goto(URL + '#/g/' + g39); pronto(p39, 'rodada'); p39.wait_for_timeout(1500)
+    r39b = J(p39, ler39)
+    ok(r39b == r39, f'CT-KAN-170-P39: e também depois de sair e entrar ({r39b})')
+    c39.close()
+
     ok(not errs, 'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))
     b.close()
 

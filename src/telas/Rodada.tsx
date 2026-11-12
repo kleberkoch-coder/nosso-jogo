@@ -432,9 +432,16 @@ function Presenca({ r, inn, carregou, avs }: { r: Rodada; inn: string[]; carrego
       <div class="row between">
         <h3 style="margin:0">{tx('rodg.presenca')}</h3>
         {r.locked ? null : (
-          <button class="btn sm" data-a="addAvulso">
-            {tx('rodg.addAvulso')}
-          </button>
+          <span class="row pres-acoes">
+            {/* KAN-244: colar a lista do WhatsApp (a janela baixa só quando aberta). */}
+            <button class="btn sm" data-a="colarLista">
+              <span aria-hidden="true">📋 </span>
+              {tx('rodg.colarLista')}
+            </button>
+            <button class="btn sm" data-a="addAvulso">
+              {tx('rodg.addAvulso')}
+            </button>
+          </span>
         )}
       </div>
       {!r.locked && avulsosEsgotados(S.limAv, S.limCfg) ? (

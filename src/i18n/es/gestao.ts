@@ -410,4 +410,14 @@ export default {
   'rodg.times.mandar': 'Enviar equipos por WhatsApp',
   'rodg.times.irPartida': 'Ir al partido',
   'rodg.extra': '🍖 Extra',
+  /* KAN-246 (pelada-v109) */
+  'rodg.sortinfoOculto': 'solo tú lo ves (desactivado para el enlace)',
+  /* KAN-190 (pelada-v109): material desta rodada */
+  'mat.titulo': 'Material de esta jornada',
+  'mat.semGuarda': '{nome}: nadie lo tiene (mira la pestaña Grupo)',
+  'mat.nenhum': '{nome}: nadie que lo guarda confirmó todavía ({nomes})',
+  'mat.ok': '{nome}: {n} de {total} confirmados ({nomes})',
+  'mat.naoVai': '{pessoa} no va y tiene: {nome}',
+  'mat.cobrar': 'Avisar por WhatsApp',
+  'mat.cobrarTexto': '{e} {nomes}: ustedes tienen {nome} del grupo. ¿Van al partido del {data}? Respondan aquí: {link}',
 };

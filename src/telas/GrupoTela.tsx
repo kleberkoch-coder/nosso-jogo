@@ -2,6 +2,7 @@
    Mostra os dados do grupo, as posições, partidas e caixa, os administradores com as permissões de cada convidado
    (só o organizador muda) e a aparência. Cada botão aparece só para quem tem a permissão (dominio/permissoes.ts);
    as regras do Firebase garantem o mesmo. Os botões usam data-a (ações em acoes/grupo.ts e acoes/jogadores.js). */
+import { PainelMaterial } from './Material';
 import { render } from 'preact';
 import { cfg } from '../dominio/caixa.js';
 import { basePos, porTime, siglaTela, sport, sportName } from '../dominio/esportes.js';
@@ -318,6 +319,7 @@ function GrupoTela() {
         </div>
         <Administradores />
       </div>
+      <PainelMaterial />
       <Aparencia />
       <p class="versao small muted">{tx('comum.versao', { n: numeroVersao() })}</p>
     </div>

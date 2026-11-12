@@ -65,12 +65,13 @@ service cloud.firestore {
         && p.get('caixa', false) is bool && p.get('notas', false) is bool
         && p.get('elenco', false) is bool && p.get('config', false) is bool;
     }
-    // Sem a permissão de configurações, o dia a dia só mexe no local e no horário padrão da rodada
-    // e nas opções do sorteio (variar times, posições fora do sorteio).
+    // Sem a permissão de configurações, o dia a dia só mexe no local e no horário padrão da rodada,
+    // nas opções do sorteio (variar times, posições fora do sorteio) e no material do grupo (KAN-190: quem está
+    // com cada bola ou colete, e o histórico de quem passou para quem).
     function soDiaADia() {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cfg'])
         && request.resource.data.get('cfg', {}).diff(resource.data.get('cfg', {})).affectedKeys()
-          .hasOnly(['place', 'time', 'novelty', 'foraPos']);
+          .hasOnly(['place', 'time', 'novelty', 'foraPos', 'mat', 'matHist']);
     }
     // KAN-117 (pelada-v101): grupo de conta bloqueada pelo portal (bloq) fica indisponível: o link não aceita nada.
     function grpAtivo(gid) {
@@ -93,6 +94,23 @@ service cloud.firestore {
         && !('diaria' in request.resource.data.get('cfg', {}));
     }
     function rod(gid, rid) { return /databases/$(database)/documents/grupos/$(gid)/rodadas/$(rid); }
+    // KAN-246: contador do sorteio da rodada (sor = {n, em, aj}).
+    function sorteioForma(x) {
+      return x is map && x.keys().hasOnly(['n', 'em', 'aj']) && x.n is int && x.em is int && x.get('aj', 0) is int;
+    }
+    function sorteioNovoOk() {
+      return !('sor' in request.resource.data)
+        || (sorteioForma(request.resource.data.sor) && request.resource.data.sor.n == 1
+            && request.resource.data.sor.get('aj', 0) == 0);
+    }
+    function sorteioOk() {
+      let a = resource.data.get('sor', {'n': 0, 'em': 0, 'aj': 0});
+      let b = request.resource.data.get('sor', null);
+      return b == null ? !('sor' in resource.data)
+        : (b == a || (sorteioForma(b)
+          && ((b.n == a.get('n', 0) + 1 && b.get('aj', 0) == 0)
+            || (b.n == a.get('n', 0) && b.n > 0 && b.em == a.get('em', 0) && b.get('aj', 0) == a.get('aj', 0) + 1))));
+    }
     // Rodada aceitando confirmações: grupo ativo e lista aberta (ou jogo fixo ainda sem documento).
     function presencaAberta(gid, rid) {
       return signed() && grpAtivo(gid) && (
@@ -501,7 +519,11 @@ service cloud.firestore {
 
       match /rodadas/{rid} {
         allow read: if true;
-        allow write: if adminAtivo(gid);
+        // KAN-246 (pelada-v109): o número do sorteio (sor.n) só sobe de 1 em 1, com os ajustes zerados; os ajustes
+        // manuais (sor.aj) só sobem de 1 em 1, com o mesmo número e a mesma hora. Ninguém zera nem volta o contador.
+        allow create: if adminAtivo(gid) && sorteioNovoOk();
+        allow update: if adminAtivo(gid) && sorteioOk();
+        allow delete: if adminAtivo(gid);
 
         // Presença: qualquer pessoa com o link confirma (login anônimo automático).
         // 'dev' guarda o aparelho que respondeu primeiro e não pode ser trocado por outro aparelho.

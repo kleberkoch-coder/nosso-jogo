@@ -25,7 +25,7 @@ import textos from '../i18n/pt-BR-campeonato';
 import { S as estado } from '../nucleo/estado.js';
 import { partidasDe } from '../nucleo/partidas-lista.js';
 import { Trava } from '../ui/Plano';
-import { Confronto } from '../ui/componentes';
+import { Confronto } from '../ui/LinhaPartida';
 
 juntarTextos(textos);
 

@@ -9,4 +9,7 @@ usarEstilo('grupo', estilo);
 juntarTextos(textos);
 export { vGrupo as ver, montarGrupo as montar } from '../telas/GrupoTela';
 /* KAN-209: a janela Partidas e caixa vem com a aba. */
-export { acoes as ACOES } from '../acoes/partidas-caixa';
+import { acoes as pc } from '../acoes/partidas-caixa';
+/* KAN-190 (pelada-v109): as ações do material do grupo também vêm com a aba. */
+import { acoes as mat } from '../acoes/material';
+export const ACOES = Object.assign({}, pc, mat);

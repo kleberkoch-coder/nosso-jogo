@@ -145,6 +145,9 @@ const proprias = {
       a.cfg.fixos = g.fixos;
       a.cfg.porTime = g.porTime;
       Object.assign(a.cfg, g.regiao);
+      /* KAN-246: desligar tira a linha do sorteio do link e do WhatsApp (o administrador continua vendo). */
+      if (g.verSorteio === false) a.cfg.verSorteio = false;
+      else if (g.verSorteio === true) delete a.cfg.verSorteio;
       if (g.fixos[0] && g.fixos[0].place) a.cfg.place = g.fixos[0].place;
     });
     upMyGroup(S.gid, { name: g.name, sport: g.sport, sportName: g.sportName });

@@ -24,11 +24,13 @@ import { S as estado } from '../nucleo/estado.js';
 import { $, fdate, main } from '../nucleo/util.js';
 import { myLocal } from './publico-rodada.js';
 import { partidasDe } from '../nucleo/partidas-lista.js';
-import { ComoChegar, LinhaPartida, NomeNaLista, Pos, PorPosicao, TextoCortado } from '../ui/componentes';
+import { ComoChegar, NomeNaLista, Pos, PorPosicao, TextoCortado } from '../ui/componentes';
 import { avulsosEsgotados } from '../dominio/limites';
 import { DEMORA_MS } from '../nucleo/carga';
 import { precisaVaga, situacao } from '../dominio/vagas';
 import { ACT } from '../acoes.js';
+import { comPessoa } from '../dominio/material';
+import { textoSorteio } from '../ui/linha-sorteio';
 
 type Rodada = {
   id: string;
@@ -142,6 +144,18 @@ function Linha({ id, r, me }: { id: string; r: Rodada; me: string | null }) {
         <p class="small muted">{tx('agenda.ajuda')}</p>
       </li>
     ) : null;
+  /* KAN-190: quem guarda material do grupo vê o lembrete, ao confirmar ou ao dizer que não vai. */
+  const meu = id === me && s ? comPessoa(((S.app || {}).cfg || {}).mat, id) : [];
+  const lembrete = meu.length ? (
+    <li class="mat-lembrete" id="matLembrete">
+      <p class="small">
+        <span aria-hidden="true">⚽ </span>
+        {tx(s === 'in' ? 'matlink.vou' : 'matlink.naoVou', {
+          itens: meu.map(([n, q]) => (q > 1 ? q + ' × ' + n : n)).join(', '),
+        })}
+      </p>
+    </li>
+  ) : null;
   return (
     <>
       <li class={id === me ? 'me-row' : ''}>
@@ -176,12 +190,17 @@ function Linha({ id, r, me }: { id: string; r: Rodada; me: string | null }) {
           </span>
         )}
       </li>
+      {lembrete}
       {agenda}
     </>
   );
 }
 
-/* Placar das partidas já salvas (pelada-v18): só leitura para o jogador, na Linha da partida (KAN-249). */
+/* Placar das partidas já salvas (pelada-v18): só leitura para o jogador, na Linha da partida (KAN-249). A linha baixa
+   só quando a rodada tem partidas (pelada-v109), como o extra. */
+type ModLinha = typeof import('../ui/LinhaPartida');
+let modLinha: ModLinha | null = null,
+  baixandoLinha = false;
 function Placar({ r }: { r: Rodada }) {
   const ms = partidasDe(r.id) as {
     id: string;
@@ -192,12 +211,27 @@ function Placar({ r }: { r: Rodada }) {
     goals?: { pid?: string | null; og?: boolean; pts?: number; as?: string | null }[];
   }[];
   if (!ms.length) return null;
+  if (!modLinha) {
+    if (!baixandoLinha) {
+      baixandoLinha = true;
+      import('../ui/LinhaPartida')
+        .then(m => {
+          modLinha = m;
+          if (st().route.n === 'r') montarPublico();
+        })
+        .catch(() => {
+          baixandoLinha = false;
+        });
+    }
+    return null;
+  }
+  const L = modLinha.LinhaPartida;
   return (
     <div class="panel">
       <h3>{tx('publico.partidas')}</h3>
       <ul class="plist" id="pubPartidas">
         {ms.map((m, i) => (
-          <LinhaPartida
+          <L
             key={m.id}
             n={i + 1}
             ca={m.ca}
@@ -260,12 +294,20 @@ function PublicoRodada() {
   /* KAN-127: com a lista aberta, "Você vai?" vem logo depois do resumo e os times ficam recolhidos.
      Com a lista fechada, os times vêm primeiro e a lista de respostas é que fica recolhida.
      Fora dos blocos recolhidos, cada nome aparece uma vez só. */
+  const ls = textoSorteio((r as { sor?: unknown }).sor);
   const times = r.times ? (
-    <div class="teams">
-      {r.times.map((t, i) => (
-        <Time key={i} t={t} i={i} />
-      ))}
-    </div>
+    <>
+      {ls ? (
+        <p class="small muted sort-info" id="sortInfo">
+          {ls}
+        </p>
+      ) : null}
+      <div class="teams">
+        {r.times.map((t, i) => (
+          <Time key={i} t={t} i={i} />
+        ))}
+      </div>
+    </>
   ) : null;
   return (
     <div class="stack">

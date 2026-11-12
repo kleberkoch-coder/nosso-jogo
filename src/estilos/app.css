@@ -1941,3 +1941,24 @@ fieldset.chk-lista legend {
 .lp-apoio {
   margin-top: 3px;
 }
+
+/* KAN-246 (pelada-v109): "Sorteado às 19:42 · 1º sorteio", logo acima dos times (neutro, sem cor de alerta). */
+.sort-info {
+  margin: 0 0 8px;
+}
+
+/* KAN-190 (pelada-v109): lembrete do material no link e "Material desta rodada" na aba Rodada. */
+.plist li.mat-lembrete {
+  display: block;
+  padding-top: 2px;
+}
+.mat-lembrete p {
+  margin: 0;
+}
+.mat-rod li {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.mat-nao {
+  margin: 2px 0 0;
+}

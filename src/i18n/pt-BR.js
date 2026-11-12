@@ -98,6 +98,14 @@ export default {
   'publico.partidas': 'Partidas',
   /* KAN-249: linha da partida (aba Partida, Histórico e link) */
   'partida.jogoN': 'Jogo {n}',
+  /* KAN-246: hora e número do sorteio (link, aba Rodada e WhatsApp dos times) */
+  'sortinfo.feito': 'Sorteado às {hora} · {n}º sorteio',
+  'sortinfo.duplas': 'Duplas sorteadas às {hora} · {n}º sorteio',
+  'sortinfo.ajustes.um': '1 ajuste manual depois do sorteio',
+  'sortinfo.ajustes.outros': '{n} ajustes manuais depois do sorteio',
+  /* KAN-190: lembrete no link para quem guarda material do grupo */
+  'matlink.vou': 'Você está com {itens} do grupo: leve para o jogo.',
+  'matlink.naoVou': 'Você está com {itens} do grupo: combine com alguém para levar.',
   'times.reserva': 'reserva',
   'times.marcarReserva': 'Marcar como reserva',
   'times.marcarTitular': 'Marcar como titular',

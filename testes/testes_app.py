@@ -5230,6 +5230,123 @@ with sync_playwright() as pw:
         p108.screenshot(path=f'{OUT}/108-partida-combos.png')
         ctx108.close()
 
+        # ---------- v109 (KAN-246, KAN-190 parte 2): hora e número do sorteio; material do grupo
+        ctx109 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+        p109 = ctx109.new_page(); p109.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p109, 'criar')
+        p109.fill('#le', 'v109@teste.com'); p109.fill('#lp', 'Jogo@2026'); p109.fill('#lp2', 'Jogo@2026'); p109.keyboard.press('Enter'); p109.wait_for_selector('#ngBox', timeout=12000)
+        p109.fill('#ngn', 'Bolas FC'); p109.click('[data-a=pickSport][data-v=futebol]'); p109.click('[data-a=createGroup]')
+        p109.wait_for_function("location.hash.startsWith('#/g/')"); p109.wait_for_timeout(1500)
+        g109 = p109.url.split('#/g/')[1]
+        p109.click('[data-a=tab][data-v=jogadores]'); p109.wait_for_timeout(300); p109.click('[data-a=seed]'); p109.wait_for_timeout(1500)
+        js109 = p109.evaluate("Object.keys(S.jog).filter(id=>S.jog[id].ativo!==false).sort()")
+        nm = lambda i: p109.evaluate("id=>S.jog[id].name", i)
+        kl, dg, gu, rf = js109[0], js109[1], js109[2], js109[3]
+        # KAN-190: cadastrar 3 bolas, uma com cada pessoa (o caso real)
+        p109.click('[data-a=tab][data-v=grupo]'); p109.wait_for_selector('#materialPainel', timeout=8000)
+        for pid in [kl, dg, gu]:
+            p109.fill('#matNome', 'Bola'); p109.fill('#matQtd', '1'); p109.select_option('#matCom', pid)
+            p109.click('#matAddBtn'); p109.wait_for_timeout(400)
+        m190 = p109.evaluate("(S.app.cfg.mat||[]).map(x=>[x.nome,x.com])")
+        ok(m190 == [['Bola', kl], ['Bola', dg], ['Bola', gu]] and p109.locator('#matLista li').count() == 3,
+           f'CT-KAN-190-11: na aba Grupo, o material do grupo guarda 3 bolas, cada uma com uma pessoa ({m190})')
+        sug190 = p109.evaluate("[...document.querySelectorAll('#matSug option')].map(o=>o.value)")
+        ok(sug190 == ['Bola', 'Coletes'], f'CT-KAN-190-11: as sugestões vêm do catálogo do esporte ({sug190})')
+        p109.screenshot(path=f'{OUT}/109-material-grupo-360.png', full_page=True)
+        # aba Rodada: ninguém que guarda confirmou
+        p109.click('[data-a=tab][data-v=rodada]'); p109.wait_for_selector('#matRodada', timeout=8000); p109.wait_for_timeout(300)
+        t190 = p109.inner_text('#matRodada')
+        ok('ninguém que guarda confirmou ainda' in t190 and all(nm(x) in t190 for x in [kl, dg, gu]) and p109.locator('#matRodada [data-a=matCobrar]').count() == 1,
+           f'CT-KAN-190-08: sem ninguém confirmado, a aba Rodada avisa "ninguém que guarda confirmou", com os 3 nomes e o botão de cobrar ({t190!r})')
+        p109.click('#matRodada [data-a=matCobrar]'); p109.wait_for_selector('#shtxt', timeout=5000)
+        z190 = p109.input_value('#shtxt')
+        ok(all(nm(x) in z190 for x in [kl, dg, gu]) and 'Bola' in z190 and '#/p/' in z190, f'CT-KAN-190-08: a cobrança no WhatsApp leva os 3 nomes, a bola e o link ({z190[:120]!r})')
+        p109.click('#dlg [data-a=close]'); p109.wait_for_timeout(300)
+        p109.click(f'#presLista [data-a=mark][data-v=in][data-p="{gu}"]'); p109.wait_for_timeout(500)
+        t190b = p109.inner_text('#matRodada')
+        ok(f'Bola: 1 de 3 confirmados ({nm(gu)})' in t190b and 'ninguém que guarda' not in t190b, f'CT-KAN-190-08: uma das 3 pessoas confirma e vira "Bola: 1 de 3 confirmados (nome)" ({t190b!r})')
+        p109.click(f'#presLista [data-a=mark][data-v=out][data-p="{dg}"]'); p109.wait_for_timeout(500)
+        t190c = p109.inner_text('#matRodada')
+        ok(f'{nm(dg)} não vai e está com: Bola' in t190c, f'CT-KAN-190-09: quem guarda e não vai aparece separado ({t190c!r})')
+        for tema in ['light', 'dark']:
+            p109.emulate_media(color_scheme=tema); p109.wait_for_timeout(150); contraste(p109, f'material desta rodada ({tema})')
+        p109.emulate_media(color_scheme='light')
+        # link: lembrete para quem guarda
+        p109.goto(URL + '#/p/' + g109); p109.wait_for_selector('.hero-r h2', timeout=8000); p109.wait_for_timeout(600)
+        p109.click(f'[data-a=pubMark][data-v=out][data-p="{dg}"]'); p109.wait_for_timeout(900)
+        l190 = p109.inner_text('#matLembrete') if p109.locator('#matLembrete').count() else ''
+        ok('Você está com Bola do grupo: combine com alguém para levar.' in l190, f'CT-KAN-190-09: no link, quem guarda e diz "Não vou" vê o lembrete para combinar ({l190!r})')
+        p109.click(f'[data-a=pubMark][data-v=in][data-p="{dg}"]'); p109.wait_for_timeout(900)
+        l190b = p109.inner_text('#matLembrete') if p109.locator('#matLembrete').count() else ''
+        ok('Você está com Bola do grupo: leve para o jogo.' in l190b, f'CT-KAN-190-09: ao confirmar, o lembrete diz para levar ({l190b!r})')
+        p109.click(f'[data-a=pubMark][data-v=out][data-p="{dg}"]'); p109.wait_for_timeout(600)
+        # passar a bola do Gu para o Rafa
+        p109.goto(URL + '#/g/' + g109); p109.wait_for_timeout(1500)
+        p109.click('[data-a=tab][data-v=grupo]'); p109.wait_for_selector('#matLista', timeout=8000)
+        idg = p109.evaluate("id=>(S.app.cfg.mat||[]).find(x=>x.com===id).id", gu)
+        p109.select_option(f'#matLista select[data-m="{idg}"]', rf); p109.wait_for_timeout(600)
+        p109.reload(); p109.wait_for_timeout(1500); p109.click('[data-a=tab][data-v=grupo]'); p109.wait_for_selector('#matLista', timeout=8000)
+        h190 = p109.evaluate("(S.app.cfg.matHist||[])[0]||{}")
+        ok(p109.evaluate("id=>(S.app.cfg.mat||[]).find(x=>x.id===id).com", idg) == rf and h190.get('de') == gu and h190.get('para') == rf,
+           f'CT-KAN-190-10: passar uma bola para outra pessoa continua depois de recarregar, com o histórico ({h190})')
+        p109.click('.mat-hist summary'); p109.wait_for_timeout(200)
+        ok(f'Bola: {nm(gu)} → {nm(rf)}' in p109.inner_text('.mat-hist'), 'CT-KAN-190-10: o histórico mostra "Bola: de → para"')
+        # KAN-246: sortear e ver a linha na aba Rodada, no link e no WhatsApp
+        p109.click('[data-a=tab][data-v=rodada]'); p109.wait_for_timeout(500)
+        for x in js109[4:14]:
+            p109.click(f'#presLista [data-a=mark][data-v=in][data-p="{x}"]'); p109.wait_for_timeout(150)
+        sortear(p109)
+        RE246 = r'^Sorteado às \d{2}:\d{2} · 1º sorteio$'
+        a246 = p109.inner_text('#sortInfoAdm') if p109.locator('#sortInfoAdm').count() else ''
+        ok(re.match(RE246, a246), f'CT-KAN-246-01: na aba Rodada, o administrador vê "Sorteado às HH:MM · 1º sorteio" ({a246!r})')
+        hora_esp = p109.evaluate("new Intl.DateTimeFormat('en-GB',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(S.rod[S.rid].sor.em))")
+        ok(hora_esp in a246, f'CT-KAN-246-01: a hora é a do sorteio, no fuso do grupo ({hora_esp}, {a246!r})')
+        sortear(p109); sortear(p109)
+        a246b = p109.inner_text('#sortInfoAdm')
+        ok('3º sorteio' in a246b and p109.evaluate("S.rod[S.rid].sor.aj") == 0, f'CT-KAN-246-02: sortear de novo duas vezes mostra "3º sorteio" ({a246b!r})')
+        p109.locator('#rodadaTimes [data-a=move], .teams [data-a=move]').first.click(); p109.wait_for_selector('#dlg [data-a=doMove]', timeout=5000)
+        p109.locator('#dlg [data-a=doMove]').first.click(); p109.wait_for_timeout(600)
+        a246c = p109.inner_text('#sortInfoAdm')
+        ok('3º sorteio · 1 ajuste manual depois do sorteio' in a246c, f'CT-KAN-246-03: mover um jogador conta "1 ajuste manual depois do sorteio", sem nomes ({a246c!r})')
+        p109.click('[data-a=shareTimes]'); p109.wait_for_selector('#shtxt', timeout=5000)
+        z246 = p109.input_value('#shtxt')
+        ok('3º sorteio · 1 ajuste manual depois do sorteio' in z246, 'CT-KAN-246-01: a mensagem dos times no WhatsApp leva a linha do sorteio')
+        p109.click('#dlg [data-a=close]'); p109.wait_for_timeout(200)
+        p109.reload(); p109.wait_for_timeout(1500)
+        s246 = p109.evaluate("(()=>{const r=S.rod[S.rid];return r&&r.sor})()")
+        ok(s246 and s246.get('n') == 3 and s246.get('aj') == 1, f'CT-KAN-246-05: o número e os ajustes continuam depois de recarregar ({s246})')
+        p109.goto(URL + '#/p/' + g109); p109.wait_for_selector('#sortInfo', timeout=8000); p109.wait_for_timeout(300)
+        for tema in ['light', 'dark']:
+            p109.emulate_media(color_scheme=tema); p109.wait_for_timeout(150)
+            l246 = p109.evaluate("(()=>{const e=document.getElementById('sortInfo');return {t:e.textContent,larg:document.documentElement.scrollWidth,cor:getComputedStyle(e).color}})()")
+            ok(l246['t'].startswith('Sorteado às ') and '3º sorteio' in l246['t'] and l246['larg'] <= 360,
+               f'CT-KAN-246-01: no link em 360px ({tema}), a linha do sorteio aparece acima dos times, sem rolagem lateral ({l246})')
+            contraste(p109, f'linha do sorteio no link ({tema})')
+        p109.emulate_media(color_scheme='light')
+        p109.screenshot(path=f'{OUT}/109-link-sorteio-360.png', full_page=True)
+        # desligar a linha no grupo: some do link e do WhatsApp; a aba Rodada continua mostrando
+        p109.goto(URL + '#/g/' + g109); p109.wait_for_timeout(1500)
+        p109.click('[data-a=tab][data-v=grupo]'); p109.wait_for_timeout(500)
+        p109.click('[data-a=editGroup]'); p109.wait_for_selector('#ngVerSorteio', timeout=8000)
+        ok(p109.is_checked('#ngVerSorteio'), 'CT-KAN-246-04: a opção de mostrar o sorteio vem ligada')
+        p109.uncheck('#ngVerSorteio'); p109.click('#dlg [data-a=saveGroup]'); p109.wait_for_timeout(900)
+        p109.click('[data-a=tab][data-v=rodada]'); p109.wait_for_timeout(500)
+        a246d = p109.inner_text('#sortInfoAdm') if p109.locator('#sortInfoAdm').count() else ''
+        p109.click('[data-a=shareTimes]'); p109.wait_for_selector('#shtxt', timeout=5000)
+        z246b = p109.input_value('#shtxt'); p109.click('#dlg [data-a=close]'); p109.wait_for_timeout(200)
+        p109.goto(URL + '#/p/' + g109); p109.wait_for_selector('.hero-r h2', timeout=8000); p109.wait_for_timeout(600)
+        ok('3º sorteio' in a246d and 'só você vê' in a246d and 'sorteio' not in z246b and p109.locator('#sortInfo').count() == 0,
+           f'CT-KAN-246-04: desligada, a linha some do link e do WhatsApp; o administrador continua vendo ({a246d!r})')
+        # em inglês
+        p109.evaluate("localStorage.setItem('nj-idioma','en')"); p109.reload(); p109.wait_for_timeout(1500)
+        p109.goto(URL + '#/g/' + g109); p109.wait_for_timeout(1800)
+        p109.click('[data-a=tab][data-v=rodada]'); p109.wait_for_selector('#sortInfoAdm', timeout=8000); p109.wait_for_timeout(500)
+        en109 = [p109.inner_text('#sortInfoAdm'), p109.inner_text('#matRodada')]
+        falta109 = p109.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(sortinfo|mat|matg|matlink|rodg)\\./.test(k))")
+        ok(re.search(r'Drawn at \d{1,2}:\d{2}', en109[0]) and 'draw #3' in en109[0] and "This game's gear" in en109[1] and not falta109,
+           f'CT-KAN-246-08 e CT-KAN-190-11: em English, a linha do sorteio e o material vêm traduzidos ({en109}, {falta109})')
+        ctx109.close()
+
     if parte('b'):
         # ---------- v35 (KAN-142): "Continuar com o Google" na aba errada entra ou cria a conta e avisa (navegador separado)
         ctx3 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block'); p3 = ctx3.new_page()

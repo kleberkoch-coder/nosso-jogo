@@ -4,6 +4,7 @@ import { hora } from './rodadas.js';
 import { linkMaps, linkProxima, linkRodada } from '../nucleo/links.js';
 import { fdate } from '../nucleo/util.js';
 import { tx } from '../i18n/index.js';
+import { textoSorteio } from '../ui/linha-sorteio';
 
 /* =================== textos WhatsApp =================== */
 /* Link para confirmar: no jogo fixo, o permanente (sempre a próxima rodada); senão, o da rodada. */
@@ -44,7 +45,9 @@ function txtTimes(r) {
         .join('\n') +
       '\n';
   });
-  return t.trim() + '\n\n' + tx('zap.detalhes', { link: linkRodada(r.id) });
+  /* KAN-246: a hora e o número do sorteio, numa linha no fim (se o grupo não desligou). */
+  const ls = textoSorteio(r.sor);
+  return t.trim() + (ls ? '\n\n' + ls : '') + '\n\n' + tx('zap.detalhes', { link: linkRodada(r.id) });
 }
 /* A janela de compartilhar é um componente da gestão (KAN-131): ui/Compartilhar.tsx. */
 export { linkDaRodada, txtConvite, txtTimes };

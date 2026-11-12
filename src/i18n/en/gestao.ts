@@ -407,4 +407,14 @@ export default {
   'rodg.times.mandar': 'Send teams on WhatsApp',
   'rodg.times.irPartida': 'Go to the match',
   'rodg.extra': '🍖 Extra',
+  /* KAN-246 (pelada-v109) */
+  'rodg.sortinfoOculto': 'only you see this (turned off for the link)',
+  /* KAN-190 (pelada-v109): material desta rodada */
+  'mat.titulo': "This game's gear",
+  'mat.semGuarda': '{nome}: nobody has it (see the Group tab)',
+  'mat.nenhum': '{nome}: nobody keeping it has confirmed yet ({nomes})',
+  'mat.ok': '{nome}: {n} of {total} confirmed ({nomes})',
+  'mat.naoVai': "{pessoa} isn't coming and has: {nome}",
+  'mat.cobrar': 'Ask on WhatsApp',
+  'mat.cobrarTexto': "{e} {nomes}: you have the group's {nome}. Are you coming on {data}? Answer here: {link}",
 };

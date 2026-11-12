@@ -409,4 +409,14 @@ export default {
   'rodg.times.mandar': 'Mandar times no WhatsApp',
   'rodg.times.irPartida': 'Ir para a partida',
   'rodg.extra': '🍖 Extra',
+  /* KAN-246 (pelada-v109) */
+  'rodg.sortinfoOculto': 'só você vê (desligado para o link)',
+  /* KAN-190 (pelada-v109): material desta rodada */
+  'mat.titulo': 'Material desta rodada',
+  'mat.semGuarda': '{nome}: não está com ninguém (veja na aba Grupo)',
+  'mat.nenhum': '{nome}: ninguém que guarda confirmou ainda ({nomes})',
+  'mat.ok': '{nome}: {n} de {total} confirmados ({nomes})',
+  'mat.naoVai': '{pessoa} não vai e está com: {nome}',
+  'mat.cobrar': 'Cobrar no WhatsApp',
+  'mat.cobrarTexto': '{e} {nomes}: vocês estão com {nome} do grupo. Vão ao jogo de {data}? Responda aqui: {link}',
 };

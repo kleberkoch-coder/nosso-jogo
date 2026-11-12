@@ -656,6 +656,9 @@ export default {
   'cat.Coletes': 'Bibs',
   'cat.Rede': 'Net',
   'cat.Bolinhas': 'Balls',
+  'cat.Luvas': 'Gloves',
+  'cat.Cronômetro': 'Stopwatch',
+  'cat.Kit de primeiros socorros': 'First aid kit',
   /* KAN-190 (pelada-v109): lembrete do material */
   'matlink.vou': "You have the group's {itens}: bring it to the game.",
   'matlink.naoVou': "You have the group's {itens}: arrange for someone to bring it.",

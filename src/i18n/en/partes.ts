@@ -800,6 +800,7 @@ export default {
   'matg.com': 'Who keeps it',
   'matg.adicionar': 'Add',
   'matg.historico': 'Latest handovers',
+  'matg.atalhos': 'Suggestions for this sport',
   'matg.troca': '{data} · {nome}: {de} → {para}',
   'matg.passou': '{nome} is now with {para}.',
   'matg.semNinguem': '{nome} with nobody.',

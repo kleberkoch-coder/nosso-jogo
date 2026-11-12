@@ -5250,8 +5250,19 @@ with sync_playwright() as pw:
         m190 = p109.evaluate("(S.app.cfg.mat||[]).map(x=>[x.nome,x.com])")
         ok(m190 == [['Bola', kl], ['Bola', dg], ['Bola', gu]] and p109.locator('#matLista li').count() == 3,
            f'CT-KAN-190-11: na aba Grupo, o material do grupo guarda 3 bolas, cada uma com uma pessoa ({m190})')
-        sug190 = p109.evaluate("[...document.querySelectorAll('#matSug option')].map(o=>o.value)")
-        ok(sug190 == ['Bola', 'Coletes'], f'CT-KAN-190-11: as sugestões vêm do catálogo do esporte ({sug190})')
+        sug190 = p109.evaluate("[...document.querySelectorAll('#matSug [data-a=matSug]')].map(o=>o.dataset.v)")
+        ok(sug190 == ['Bola', 'Coletes', 'Luvas', 'Cronômetro', 'Kit de primeiros socorros'],
+           f'CT-KAN-190-11 e CT-KAN-267-02: no futebol, os atalhos vêm do catálogo do esporte, com luvas, cronômetro e primeiros socorros ({sug190})')
+        # KAN-267 (v111): "O que é" é campo livre (sem lista ligada), os atalhos preenchem e levam o cursor para "Quantos"
+        c267 = p109.evaluate("(()=>{const i=document.getElementById('matNome');return [i.tagName, i.type, i.getAttribute('list'), !!document.querySelector('datalist')]})()")
+        ok(c267 == ['INPUT', 'text', None, False], f'CT-KAN-267-01: "O que é" é um campo de texto livre, sem lista ligada nem setinha ({c267})')
+        p109.click('#matSug [data-a=matSug][data-v="Cronômetro"]'); p109.wait_for_timeout(200)
+        f267 = p109.evaluate("[document.getElementById('matNome').value, document.activeElement && document.activeElement.id]")
+        ok(f267 == ['Cronômetro', 'matQtd'], f'CT-KAN-267-03: tocar no atalho preenche o campo e leva o cursor para "Quantos" ({f267})')
+        g267 = p109.evaluate("(()=>{const bs=[...document.querySelectorAll('#matSug .btn')],pn=document.getElementById('materialPainel').getBoundingClientRect();return {alt:Math.min(...bs.map(b=>Math.round(b.getBoundingClientRect().height))), dentro:bs.every(b=>{const r=b.getBoundingClientRect();return r.left>=pn.left&&r.right<=pn.right+0.5}), linhas:new Set(bs.map(b=>Math.round(b.getBoundingClientRect().top))).size, rolagem:document.documentElement.scrollWidth>innerWidth}})()")
+        ok(g267['alt'] >= 44 and g267['dentro'] and g267['linhas'] >= 2 and not g267['rolagem'], f'CT-KAN-267-03: em 360px, os atalhos têm 44px e quebram linha dentro do painel, sem rolagem lateral ({g267})')
+        p109.locator('#materialPainel .mat-novo').screenshot(path=f'{OUT}/111-material-atalhos-360.png')
+        p109.fill('#matNome', '')
         p109.screenshot(path=f'{OUT}/109-material-grupo-360.png', full_page=True)
         # aba Rodada: ninguém que guarda confirmou
         p109.click('[data-a=tab][data-v=rodada]'); p109.wait_for_selector('#matRodada', timeout=8000); p109.wait_for_timeout(300)
@@ -5357,6 +5368,10 @@ with sync_playwright() as pw:
         p109.click('[data-a=tab][data-v=rodada]'); p109.wait_for_selector('#sortInfoAdm', timeout=8000); p109.wait_for_timeout(500)
         en109 = [p109.inner_text('#sortInfoAdm'), p109.inner_text('#matRodada')]
         falta109 = p109.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(sortinfo|mat|matg|matlink|rodg)\\./.test(k))")
+        p109.click('[data-a=tab][data-v=grupo]'); p109.wait_for_selector('#matSug', timeout=8000); p109.wait_for_timeout(300)
+        en267 = p109.evaluate("[...document.querySelectorAll('#matSug [data-a=matSug]')].map(o=>o.textContent)")
+        ok(en267 == ['Ball', 'Bibs', 'Gloves', 'Stopwatch', 'First aid kit'], f'CT-KAN-267-04: em English, os atalhos vêm traduzidos ({en267})')
+        p109.click('[data-a=tab][data-v=rodada]'); p109.wait_for_timeout(500)
         ok(re.search(r'Drawn at \d{1,2}:\d{2}', en109[0]) and 'draw #3' in en109[0] and "This game's gear" in en109[1] and not falta109,
            f'CT-KAN-246-08 e CT-KAN-190-11: em English, a linha do sorteio e o material vêm traduzidos ({en109}, {falta109})')
         ctx109.close()

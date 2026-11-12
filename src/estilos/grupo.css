@@ -70,9 +70,20 @@
   margin-top: 12px;
   align-items: end;
 }
-.mat-novo label:nth-child(3),
-.mat-novo .btn {
+.mat-novo .mat-com,
+.mat-novo .mat-atalhos,
+.mat-novo > .btn {
   grid-column: 1 / -1;
+}
+/* KAN-267: sugestões do esporte como atalhos abaixo de "O que é" (campo livre, sem a setinha de lista). */
+.mat-atalhos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 0 10px;
+}
+.mat-atalhos .btn.sm {
+  min-height: var(--touch-min);
 }
 .mat-hist {
   margin-top: 10px;

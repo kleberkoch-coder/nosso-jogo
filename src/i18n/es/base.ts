@@ -666,6 +666,9 @@ export default {
   'cat.Coletes': 'Petos',
   'cat.Rede': 'Red',
   'cat.Bolinhas': 'Pelotas',
+  'cat.Luvas': 'Guantes',
+  'cat.Cronômetro': 'Cronómetro',
+  'cat.Kit de primeiros socorros': 'Botiquín',
   /* KAN-190 (pelada-v109): lembrete do material */
   'matlink.vou': 'Tienes {itens} del grupo: llévalo al partido.',
   'matlink.naoVou': 'Tienes {itens} del grupo: combina con alguien para que lo lleve.',

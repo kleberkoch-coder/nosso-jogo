@@ -53,10 +53,14 @@ function apagar() {
 }
 
 /* Abre o "Novo grupo" já com o esporte do sorteio. Não abre de novo se já estiver aberto. */
+/* No limite de grupos do plano, o "Novo grupo" mostra os planos; isso acontece uma vez por visita, não a cada volta à
+   página inicial (o sorteio continua guardado). */
+let avisouLimite = false;
 export async function abrir() {
   const d = ler();
-  if (!d || (dlg.open && $('#dlg [data-a=criarGrupoDoSorteio]'))) return;
+  if (!d || avisouLimite || (dlg.open && $('#dlg [data-a=criarGrupoDoSorteio]'))) return;
   await act().newGroup({ dataset: {} });
+  if (!$('#ngRaiz')) avisouLimite = true;
   const raiz = $('#ngRaiz') as HTMLElement | null,
     b = $('#dlg [data-a=createGroup]') as HTMLElement | null;
   if (!raiz || !b) return;

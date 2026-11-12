@@ -5567,6 +5567,15 @@ with sync_playwright() as pw:
            f'CT-KAN-245-02: o grupo novo tem os 13 jogadores (mensalistas), com posição e nota, e o rascunho saiu do aparelho ({r114})')
         ok(sorted(r114['times']) == sorted(times114) and r114['sor'] == [1, 0] and r114['vao'] == 13 and p114.locator('.teams .team').count() == 2,
            f'CT-KAN-245-02: os times sorteados continuam visíveis na rodada de hoje, com todos confirmados e "1º sorteio" ({r114["times"]}, {r114["sor"]})')
+        # Quem desistiu descarta o sorteio
+        p114.goto(URL + '#/sortear'); p114.wait_for_selector('#srPasso1', timeout=15000)
+        p114.select_option('#srEsporte', 'society'); p114.fill('#srPorTime', '5'); p114.fill('#srNomes', LISTA114)
+        p114.click('[data-a=srLer]'); p114.wait_for_selector('#srPasso2', timeout=5000)
+        p114.click('[data-a=srSortear]'); p114.wait_for_selector('#srTimes', timeout=5000)
+        p114.click('[data-a=srSalvar]'); p114.wait_for_selector('#ngDoSorteio [data-a=descartarSorteio]', timeout=15000)
+        p114.click('#ngDoSorteio [data-a=descartarSorteio]'); p114.wait_for_timeout(600)
+        ds114 = p114.evaluate("[!!localStorage.getItem('nj-sorteio-rapido'), document.getElementById('dlg').open]")
+        ok(ds114 == [False, False] and 'Sorteio descartado.' in p114.inner_text('#toast'), f'CT-KAN-245-09: "Descartar o sorteio" apaga o sorteio guardado e fecha o "Novo grupo" ({ds114})')
         # Conta já logada: "Salvar como meu grupo" abre o "Novo grupo" direto e cria o grupo com o sorteio
         p114.goto(URL + '#/sortear'); p114.wait_for_selector('#srPasso1', timeout=15000)
         p114.select_option('#srEsporte', 'society'); p114.fill('#srPorTime', '5'); p114.fill('#srNomes', LISTA114)
@@ -5577,15 +5586,7 @@ with sync_playwright() as pw:
         p114.wait_for_function("location.hash.startsWith('#/g/')", timeout=15000); p114.wait_for_timeout(4000)
         lg114 = p114.evaluate("[Object.keys(S.jog).length, !!localStorage.getItem('nj-sorteio-rapido'), S.app && S.app.name]")
         ok(lg114 == [13, False, 'Segundo Grupo'], f'CT-KAN-245-09: com a conta já aberta, "Salvar como meu grupo" vai direto ao "Novo grupo" e o grupo nasce com o sorteio ({lg114})')
-        # Quem desistiu descarta o sorteio
-        p114.goto(URL + '#/sortear'); p114.wait_for_selector('#srPasso1', timeout=15000)
-        p114.select_option('#srEsporte', 'society'); p114.fill('#srPorTime', '5'); p114.fill('#srNomes', LISTA114)
-        p114.click('[data-a=srLer]'); p114.wait_for_selector('#srPasso2', timeout=5000)
-        p114.click('[data-a=srSortear]'); p114.wait_for_selector('#srTimes', timeout=5000)
-        p114.click('[data-a=srSalvar]'); p114.wait_for_selector('#ngDoSorteio [data-a=descartarSorteio]', timeout=15000)
-        p114.click('#ngDoSorteio [data-a=descartarSorteio]'); p114.wait_for_timeout(600)
-        ds114 = p114.evaluate("[!!localStorage.getItem('nj-sorteio-rapido'), document.getElementById('dlg').open]")
-        ok(ds114 == [False, False] and 'Sorteio descartado.' in p114.inner_text('#toast'), f'CT-KAN-245-09: "Descartar o sorteio" apaga o sorteio guardado e fecha o "Novo grupo" ({ds114})')
+        p114.evaluate("localStorage.removeItem('nj-sorteio-rapido')")
         ctx114.close()
         # Tela de entrar e English (visitante)
         ctx114b = b.new_context(viewport={'width': 360, 'height': 740}, service_workers='block', locale='en-US')

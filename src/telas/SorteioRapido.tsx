@@ -222,10 +222,10 @@ function desenhar() {
 }
 export function montarSorteioRapido(el: HTMLElement) {
   if (!raiz || raiz.parentNode !== el) {
+    /* Ao abrir a tela: com um sorteio guardado, mostra ele; sem, começa do passo 1 (com a lista da última vez). */
     const r = lerRascunho();
-    if (r && !est.js.length) {
-      Object.assign(est, { esporte: r.esporte, porTime: r.porTime, js: r.js, times: r.times, passo: 3 });
-    }
+    if (r) Object.assign(est, { esporte: r.esporte, porTime: r.porTime, js: r.js, times: r.times, passo: 3 });
+    else est.passo = 1;
     raiz = document.createElement('div');
     el.replaceChildren(raiz);
     onde = el;

@@ -1955,9 +1955,17 @@ fieldset.chk-lista legend {
 .mat-lembrete p {
   margin: 0;
 }
-.mat-rod li {
-  justify-content: space-between;
-  flex-wrap: wrap;
+/* KAN-264 (pelada-v110): cada item em bloco; o aviso é uma caixa inteira (não um trecho de texto, que partia a borda
+   em duas quando quebrava) e o "Cobrar no WhatsApp" fica embaixo, alinhado à esquerda. */
+.plist.mat-rod li {
+  display: block;
+}
+.mat-rod .warn-alt {
+  margin: 0;
+}
+.mat-rod .btn.sm {
+  margin-top: 8px;
+  min-height: var(--touch-min);
 }
 .mat-nao {
   margin: 2px 0 0;

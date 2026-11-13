@@ -1072,8 +1072,9 @@ with sync_playwright() as pw:
     # Mínimo do grupo para aparecer o horário; muda para 5h e desliga o grupo.
     p41.click('#dlg [data-a=close]'); p41.wait_for_timeout(300)
     p41.click('[data-a=tab][data-v=rodada]'); p41.wait_for_timeout(700)
-    p41.click('[data-a=abrirMinimos]'); p41.wait_for_selector('#dlg input', timeout=10000)
-    p41.locator('#dlg input').first.fill('4'); p41.click('#dlg .dlg-f .btn.primary'); p41.wait_for_timeout(1200)
+    p41.click('[data-a=abrirMinimos]'); p41.wait_for_selector('#minRaiz .minp[data-k=_total]', timeout=10000)
+    p41.fill('#minRaiz .minp[data-k=_total]', '4'); p41.click('#dlg [data-a=salvarMinimos]'); p41.wait_for_timeout(1500)
+    janela41(); p41.wait_for_selector('#avGrupos select', timeout=20000)
     p41.select_option('#avGrupos select', '6'); p41.wait_for_timeout(1500)
     p41.click('#avGrupos [data-a=avisosGrupo]'); p41.wait_for_selector('#avGrupos [data-a=avisosGrupo][aria-checked=false]', timeout=10000)
     gravou(p41); pronto(p41)

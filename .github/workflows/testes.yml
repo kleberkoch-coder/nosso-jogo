@@ -79,6 +79,39 @@ jobs:
           test "${pass:-0}" -gt 0 || { echo "::error::Nenhum teste de regra rodou."; exit 1; }
           echo "::notice::Regras do Firebase no emulador: ${pass} passaram, ${fail:-0} falharam."
 
+  # KAN-242 (pelada-v116): funções do servidor (avisos no celular) no emulador do Firebase: o gatilho da presença roda de
+  # verdade, e a verificação de "faltam pessoas" e o teto do mês são chamados direto. Nada é mandado para celulares.
+  funcoes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Montar as funções e instalar a biblioteca do Firebase
+        run: |
+          npm install --no-audit --no-fund
+          node funcoes/montar.mjs
+          (cd funcoes && npm install --no-audit --no-fund)
+          npm install --no-save --no-audit --no-fund firebase-tools@14
+      - name: Testar as funções no emulador
+        shell: bash
+        run: |
+          set -o pipefail
+          status=0
+          npx firebase emulators:exec --only functions,firestore --project demo-nosso-jogo "node --test testes/funcoes/" 2>&1 | tee "$RUNNER_TEMP/funcoes.txt" || status=$?
+          grep -E "^\s*not ok [0-9]+ - " "$RUNNER_TEMP/funcoes.txt" | sed -E 's/^\s*not ok [0-9]+ - /::error::Função falhou: /' || true
+          grep -iE "error|erro" "$RUNNER_TEMP/funcoes.txt" | grep -v "^#" | head -6 | sed -E 's/^\s*/::warning::Detalhe: /' || true
+          test "$status" -eq 0 || exit "$status"
+          pass=$(grep -oE '^# pass [0-9]+' "$RUNNER_TEMP/funcoes.txt" | grep -oE '[0-9]+' | tail -1)
+          test "${pass:-0}" -gt 0 || { echo "::error::Nenhum teste das funções rodou."; exit 1; }
+          echo "::notice::Funções no emulador: ${pass} testes passaram."
+
   # KAN-220: o roteiro se divide em 3 partes que rodam ao mesmo tempo (PARTE=a, b e c; ver testes/testes_app.py).
   # Juntas levam o tempo da mais longa (cerca de 8 min), em vez dos 20 min de uma só.
   testes-parte:

@@ -7,8 +7,8 @@
     "build": "node build.mjs",
     "checar": "tsc --noEmit -p tsconfig.json",
     "regras": "node --test \"testes/regras/*.test.mjs\"",
-    "formatar": "prettier --write \"src/**/*.{js,ts,tsx,css}\" build.mjs \"testes/**/*.mjs\"",
-    "conferir-formato": "prettier --check \"src/**/*.{js,ts,tsx,css}\" build.mjs \"testes/**/*.mjs\""
+    "formatar": "prettier --write \"src/**/*.{js,ts,tsx,css}\" build.mjs \"testes/**/*.mjs\" \"funcoes/src/*.ts\" funcoes/montar.mjs",
+    "conferir-formato": "prettier --check \"src/**/*.{js,ts,tsx,css}\" build.mjs \"testes/**/*.mjs\" \"funcoes/src/*.ts\" funcoes/montar.mjs"
   },
   "devDependencies": {
     "esbuild": "0.28.2",

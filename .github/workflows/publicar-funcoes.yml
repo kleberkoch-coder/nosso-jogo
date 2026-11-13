@@ -1,0 +1,44 @@
+# Publica as funções do servidor (Cloud Functions do Firebase, plano Blaze) quando elas mudam na main, ou seja, depois
+# que o Kleber aprova a proposta com Merge. Primeira função: avisos no celular dos administradores (KAN-242, pelada-v116).
+# A conta de serviço do GitHub precisa dos papéis de publicar funções (docs/ARQUITETURA.md, D61).
+name: Publicar as funções
+on:
+  push:
+    branches: [main]
+    paths: [funcoes/**, src/dominio/avisos.ts, src/dominio/posicoes.ts, src/dominio/rodadas-fixas.ts, firebase.json, .github/workflows/publicar-funcoes.yml]
+  workflow_dispatch:
+
+concurrency: publicar-funcoes
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Montar as funções
+        run: |
+          npm install --no-audit --no-fund
+          node funcoes/montar.mjs
+          (cd funcoes && npm install --no-audit --no-fund)
+      - name: Publicar no Firebase
+        env:
+          CHAVE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        shell: bash
+        run: |
+          test -n "$CHAVE" || { echo "::error::Falta o segredo FIREBASE_SERVICE_ACCOUNT no GitHub."; exit 1; }
+          echo "$CHAVE" > "$RUNNER_TEMP/chave.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/chave.json"
+          set +e
+          npx --yes firebase-tools@14 deploy --only functions --project nosso-jogo-f4762 --non-interactive --force 2>&1 | tee "$RUNNER_TEMP/saida.txt"
+          status=${PIPESTATUS[0]}
+          rm -f "$RUNNER_TEMP/chave.json"
+          if [ "$status" -ne 0 ]; then
+            grep -iE "error|erro|permission|denied|forbidden|not enabled|has not been used|not found|missing" "$RUNNER_TEMP/saida.txt" | tail -10 | while IFS= read -r l; do echo "::error::$l"; done
+            echo "::error::Confira os papéis da conta de serviço do GitHub para publicar funções (docs/ARQUITETURA.md, D61)."
+            exit "$status"
+          fi
+          echo "::notice::Funções publicadas: avisoResposta e avisoFaltas."

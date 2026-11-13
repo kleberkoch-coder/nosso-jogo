@@ -97,6 +97,7 @@ export function abrirMenuConta(anchor: HTMLElement) {
       item(temaAtual()[1], tx('conta.tema'), 'temaConta', tx(temaAtual()[2])),
       item('🗣️', tx('conta.idioma'), 'idiomaConta', nomeIdioma(LOCAL)),
       item('⭐', tx('conta.plano'), 'planosDlg'),
+      item('🔔', tx('conta.avisos'), 'avisosDlg'),
       sep,
       item('↪', tx('conta.sair'), 'logout')
     );

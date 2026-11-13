@@ -11,6 +11,13 @@ import { ACT } from '../acoes.js';
 import { abrirMenuConta, abrirMenuIdioma } from '../ui/menu-conta.ts';
 import { trocarIdioma } from '../nucleo/idioma';
 
+const avisosLigados = () => {
+  try {
+    return !!localStorage.getItem('nj-avisos');
+  } catch (e) {
+    return false;
+  }
+};
 async function sairDaConta(destino, el) {
   if (!(el && el._conf === 'sim') && !(await B.semPendencias(3000))) {
     confirmou(el, {
@@ -22,6 +29,8 @@ async function sairDaConta(destino, el) {
     return;
   }
   if (el) delete el._conf;
+  /* KAN-242: com os avisos ligados neste celular, desliga antes de sair (o celular para de receber). */
+  if (avisosLigados()) await import('../nucleo/avisos-aparelho').then(m => m.desligar()).catch(() => {});
   const limpou = await B.logout();
   if (limpou === false) await avisar(tx('sair.outrasAbasTitulo'), tx('sair.outrasAbas'));
   try {

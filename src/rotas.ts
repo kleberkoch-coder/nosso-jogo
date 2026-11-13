@@ -36,7 +36,9 @@ function parseRoute(): Rota {
     if (h[2] === 'a' && h[3]) return { n: 'a', gid: h[1], id: h[3] };
     return { n: 'r', gid: h[1], id: null, next: true };
   }
-  if (h[0] === 'g' && h[1]) return { n: 'admin', gid: h[1] };
+  /* KAN-242: o toque no aviso do celular abre a rodada certa (#/g/{grupo}/r/{rodada}). */
+  if (h[0] === 'g' && h[1])
+    return h[2] === 'r' && h[3] ? { n: 'admin', gid: h[1], rid: h[3] } : { n: 'admin', gid: h[1] };
   if (h[0] === 'entrar') return { n: 'auth', mode: 'login' };
   if (h[0] === 'criar') return { n: 'auth', mode: 'signup' };
   if (h[0] === 'convite' && h[1] && h[2]) return { n: 'inv', gid: h[1], token: h[2] };
@@ -199,6 +201,7 @@ function setupRoute() {
     } catch (e) {}
   }
   Object.assign(S, LIMPO(), { gid: R.gid || null });
+  if (R.rid) Object.assign(S, { rid: decodeURIComponent(R.rid as string), tab: 'rodada' });
   if (logged && S.user) cargaConta(S.user.uid);
   if (S.gid)
     sub('app', 'config/app', d => {

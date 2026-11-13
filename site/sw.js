@@ -1,6 +1,6 @@
 /* Service worker do site da pelada.
    Ao publicar uma nova versão, troque o número abaixo para os celulares atualizarem. */
-const VERSION = 'pelada-v115';
+const VERSION = 'pelada-v116';
 const SHELL = ['./', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png'];
 /* Preenchidas na montagem (build.mjs, KAN-149): pedaços de código do link público e da gestão. */
@@ -74,4 +74,33 @@ self.addEventListener('fetch', e => {
     }));
   }
   // Dados (Firestore, login) passam direto: o próprio Firebase cuida do modo offline.
+});
+
+/* KAN-242 (pelada-v116): avisos no celular. O servidor manda só dados (titulo, corpo, link, tag) pelo Firebase Cloud
+   Messaging; aqui vira a notificação. A mesma tag troca o aviso anterior (a mesma pessoa mudando de ideia).
+   Tocar abre o app na rodada (ou foca o app já aberto). */
+self.addEventListener('push', e => {
+  let d = {};
+  try {
+    const j = e.data ? e.data.json() : {};
+    d = j.data || j;
+  } catch (x) {}
+  if (!d.titulo) return;
+  e.waitUntil(self.registration.showNotification(d.titulo, {
+    body: d.corpo || '',
+    tag: d.tag || undefined,
+    renotify: !!d.tag,
+    icon: './icons/icon-192.png',
+    badge: './icons/favicon-32.png',
+    data: { link: d.link || './' },
+  }));
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.link) || './', self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => {
+    const c = cs.find(x => x.url.startsWith(self.registration.scope));
+    if (c) return c.focus().then(f => (f || c).navigate(url)).catch(() => self.clients.openWindow(url));
+    return self.clients.openWindow(url);
+  }));
 });

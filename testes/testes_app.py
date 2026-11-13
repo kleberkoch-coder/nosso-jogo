@@ -5610,6 +5610,105 @@ with sync_playwright() as pw:
            f'CT-KAN-245-11: em English, o sorteio sem conta vem traduzido ({en114[:140]!r}, {falta114})')
         ctx114b.close()
 
+        # ---------- v116 (KAN-242): avisos no celular dos administradores
+        ctx116 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo', permissions=['notifications'])
+        # O Chromium de teste (sem tela) responde "bloqueado" para notificações: aqui o celular "permite".
+        ctx116.add_init_script("Object.defineProperty(Notification,'permission',{configurable:true,get:()=>'granted'});Notification.requestPermission=async()=>'granted'")
+        p116 = ctx116.new_page(); p116.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p116, 'criar')
+        p116.fill('#le', 'v116@teste.com'); p116.fill('#lp', 'Jogo@2026'); p116.fill('#lp2', 'Jogo@2026'); p116.keyboard.press('Enter'); p116.wait_for_selector('#ngBox', timeout=12000)
+        p116.fill('#ngn', 'Avisos FC'); p116.click('[data-a=pickSport][data-v=futebol]'); p116.click('[data-a=createGroup]')
+        p116.wait_for_function("location.hash.startsWith('#/g/')"); p116.wait_for_timeout(1500)
+        g116 = p116.url.split('#/g/')[1].split('/')[0]
+        uid116 = p116.evaluate("S.user.uid")
+        def janela116():
+            p116.click('#topright [data-a=contaMenu]'); p116.wait_for_timeout(250)
+            p116.click('.theme-menu [data-a=avisosDlg]'); p116.wait_for_selector('#avisosJanela', timeout=8000); p116.wait_for_timeout(400)
+        p116.click('#topright [data-a=contaMenu]'); p116.wait_for_timeout(250)
+        it116 = p116.evaluate("(()=>{const b=document.querySelector('.theme-menu [data-a=avisosDlg]');return b?b.textContent.trim():null})()")
+        ok(it116 == '🔔Avisos no celular', f'CT-KAN-242-11: o menu da conta tem "Avisos no celular" ({it116!r})')
+        p116.keyboard.press('Escape'); p116.wait_for_timeout(200)
+        janela116()
+        d116 = p116.evaluate("(()=>{const j=document.getElementById('avisosJanela'),b=document.getElementById('avLigar');return {est:j.dataset.estado,alt:b?Math.round(b.getBoundingClientRect().height):0,foco:document.activeElement&&document.activeElement.id,txt:b?b.textContent.trim():''}})()")
+        ok(d116 == {'est': 'desligado', 'alt': d116['alt'], 'foco': 'avLigar', 'txt': '🔔 Receber avisos neste celular'} and d116['alt'] >= 44,
+           f'CT-KAN-242-11: sem avisos, a janela mostra "Receber avisos neste celular" (44px, com o foco) ({d116})')
+        p116.click('#avLigar'); p116.wait_for_selector('#avGrupos [data-a=avisosGrupo]', timeout=8000); p116.wait_for_timeout(800)
+        ap116 = p116.evaluate("(()=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2')||'{}');return Object.entries(s).filter(([k])=>k.startsWith('usuarios/'+S.user.uid+'/aparelhos/')).map(([k,v])=>[v.token,v.lang,v.plat])})()")
+        pref116 = p116.evaluate(LER, f'avisos/{g116}_{uid116}')
+        ok(ap116 == [['demo-token', 'pt-BR', 'web']] and pref116 and pref116['ligado'] is True and pref116['gid'] == g116 and pref116['uid'] == uid116,
+           f'CT-KAN-242-01: ligar grava este celular (token e idioma) e já liga o grupo ({ap116}, {pref116})')
+        gr116 = p116.evaluate("(()=>{const b=document.querySelector('#avGrupos [data-a=avisosGrupo]');return {nome:b.querySelector('.av-nome').textContent,ck:b.getAttribute('aria-checked'),alt:Math.round(b.getBoundingClientRect().height),semMin:!!document.querySelector('#avGrupos [data-a=avisosMinimo]'),sel:!!document.querySelector('#avGrupos select')}})()")
+        ok(gr116 == {'nome': 'Avisos FC', 'ck': 'true', 'alt': gr116['alt'], 'semMin': True, 'sel': False} and gr116['alt'] >= 44,
+           f'CT-KAN-242-05: o grupo aparece ligado (44px); sem mínimo, a janela orienta "Definir mínimo" em vez do horário ({gr116})')
+        p116.click('#avGrupos [data-a=avisosGrupo]'); p116.wait_for_selector('#avGrupos [data-a=avisosGrupo][aria-checked=false]', timeout=5000); p116.wait_for_timeout(300)
+        ok(p116.evaluate(LER, f'avisos/{g116}_{uid116}')['ligado'] is False, 'CT-KAN-242-05: cada administrador desliga um grupo só para si')
+        p116.click('#avGrupos [data-a=avisosGrupo]'); p116.wait_for_selector('#avGrupos [data-a=avisosGrupo][aria-checked=true]', timeout=5000)
+        # "Definir mínimo" leva para a aba Rodada; com o mínimo, aparece o horário do aviso
+        p116.click('#avGrupos [data-a=avisosMinimo]'); p116.wait_for_timeout(1200)
+        ok(p116.evaluate("S.tab") == 'rodada' and p116.locator('[data-a=abrirMinimos]').count() > 0 and 'Definir mínimo' in p116.inner_text('#toast'),
+           'CT-KAN-242-05: "Definir mínimo" abre a aba Rodada do grupo e diz onde tocar')
+        p116.click('[data-a=abrirMinimos]'); p116.wait_for_selector('#minRaiz .minp', timeout=5000)
+        p116.fill('#minRaiz .minp[data-k=_total]', '10'); p116.click('#dlg [data-a=salvarMinimos]'); p116.wait_for_timeout(1000)
+        janela116()
+        sel116 = p116.evaluate("(()=>{const s=document.querySelector('#avGrupos select');return s?{v:s.value,alt:Math.round(s.getBoundingClientRect().height),ops:[...s.options].map(o=>o.textContent)}:null})()")
+        ok(sel116 and sel116['v'] == '3' and sel116['alt'] >= 44 and sel116['ops'][0] == '1h antes do jogo' and '24h antes do jogo' in sel116['ops'],
+           f'CT-KAN-242-02: com mínimo, o aviso de faltam pessoas vem 3h antes por padrão, de 1h a 24h (44px) ({sel116})')
+        p116.select_option('#avGrupos select', '6'); p116.wait_for_timeout(800)
+        ok(p116.evaluate(LER, f'grupos/{g116}/privado/avisos') == {'horas': 6} and 'Horário do aviso salvo' in p116.inner_text('#toast'),
+           'CT-KAN-242-02: mudar o horário grava para o grupo todo (grupos/{gid}/privado/avisos)')
+        lay116 = p116.evaluate("(()=>{const d=document.getElementById('dlg');return {rolagem:d.scrollWidth>d.clientWidth+1||document.documentElement.scrollWidth>innerWidth}})()")
+        ok(not lay116['rolagem'], f'CT-KAN-242-11: em 360px, a janela não tem rolagem lateral ({lay116})')
+        p116.screenshot(path=f'{OUT}/v116-avisos.png')
+        for tema in ['light', 'dark']:
+            p116.emulate_media(color_scheme=tema); p116.wait_for_timeout(200)
+            bd116 = p116.evaluate(CHK)
+            ok(not bd116, f'CT-KAN-242-11: contraste da janela no tema {tema} ({bd116[:4]})')
+        p116.emulate_media(color_scheme='light')
+        # Recarrega e confere
+        p116.reload(); p116.wait_for_timeout(2000); janela116(); p116.wait_for_selector('#avGrupos select', timeout=8000)
+        ok(p116.evaluate("document.getElementById('avisosJanela').dataset.estado") == 'ligado' and p116.evaluate("document.querySelector('#avGrupos select').value") == '6',
+           'CT-KAN-242-11: depois de recarregar, os avisos continuam ligados e o horário de 6h')
+        # Desligar neste celular
+        p116.click('#avDesligar'); p116.wait_for_selector('#avLigar', timeout=5000); p116.wait_for_timeout(300)
+        ap116b = p116.evaluate("(()=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2')||'{}');return Object.keys(s).filter(k=>k.startsWith('usuarios/'+S.user.uid+'/aparelhos/')).length})()")
+        ok(ap116b == 0 and p116.evaluate("localStorage.getItem('nj-avisos')") is None, 'CT-KAN-242-11: "Desligar neste celular" apaga o registro do celular')
+        # O toque no aviso abre a rodada certa (#/g/{grupo}/r/{rodada})
+        p116.click('#dlg [data-a=close]'); p116.wait_for_timeout(200)
+        p116.click('[data-a=tab][data-v=jogadores]'); p116.wait_for_timeout(400)
+        rid116 = p116.evaluate("(()=>{const r=document.querySelector('[data-c=rid]');return r&&r.value?r.value:S.rid})()")
+        p116.goto(URL + '#/'); p116.wait_for_timeout(800)
+        p116.goto(URL + '#/g/' + g116 + '/r/' + rid116); p116.wait_for_timeout(2000)
+        rt116 = p116.evaluate("[S.tab, S.rid, !!document.getElementById('presPainel')]")
+        ok(rid116 and rt116 == ['rodada', rid116, True], f'CT-KAN-242-01: o endereço do aviso abre a gestão na rodada do aviso ({rid116}, {rt116})')
+        # Sair da conta com os avisos ligados: o celular sai da lista
+        janela116(); p116.click('#avLigar'); p116.wait_for_selector('#avGrupos', timeout=8000); p116.wait_for_timeout(500)
+        p116.click('#dlg [data-a=close]'); p116.wait_for_timeout(200)
+        sair(p116); p116.wait_for_timeout(2500)
+        ap116c = p116.evaluate("(()=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2')||'{}');return Object.keys(s).filter(k=>k.includes('/aparelhos/')).length})()")
+        ok(ap116c == 0 and p116.evaluate("localStorage.getItem('nj-avisos')") is None, f'CT-KAN-242-07: ao sair da conta, o celular para de receber (registro apagado) ({ap116c})')
+        ctx116.close()
+        # Sem permissão (bloqueada) e em English
+        ctx116b = b.new_context(viewport={'width': 360, 'height': 740}, service_workers='block', locale='en-US', timezone_id='America/Sao_Paulo')
+        ctx116b.add_init_script("Object.defineProperty(Notification,'permission',{configurable:true,get:()=>'default'})")
+        p116b = ctx116b.new_page(); p116b.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p116b, 'criar')
+        p116b.fill('#le', 'v116en@teste.com'); p116b.fill('#lp', 'Jogo@2026'); p116b.fill('#lp2', 'Jogo@2026'); p116b.keyboard.press('Enter'); p116b.wait_for_selector('#ngBox', timeout=12000)
+        p116b.fill('#ngn', 'Alerts FC'); p116b.click('[data-a=pickSport][data-v=futebol]'); p116b.click('[data-a=createGroup]')
+        p116b.wait_for_function("location.hash.startsWith('#/g/')"); p116b.wait_for_timeout(1500)
+        p116b.click('#topright [data-a=contaMenu]'); p116b.wait_for_timeout(250)
+        p116b.click('.theme-menu [data-a=avisosDlg]'); p116b.wait_for_selector('#avisosJanela', timeout=8000); p116b.wait_for_timeout(400)
+        en116 = p116b.inner_text('#avisosJanela')
+        falta116 = p116b.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(av|conta)\\./.test(k))")
+        ok('Phone notifications' in en116 and 'Get notifications on this phone' in en116 and not re.search(r'\b(avisos|celular|Receber)\b', en116) and not falta116,
+           f'CT-KAN-242-11: em English, a janela vem traduzida ({en116[:120]!r}, {falta116})')
+        p116b.evaluate("(()=>{Object.defineProperty(Notification,'permission',{get:()=>'denied'})})()")
+        p116b.click('#dlg [data-a=close]'); p116b.wait_for_timeout(200)
+        p116b.click('#topright [data-a=contaMenu]'); p116b.wait_for_timeout(250)
+        p116b.click('.theme-menu [data-a=avisosDlg]'); p116b.wait_for_selector('#avisosJanela', timeout=8000); p116b.wait_for_timeout(300)
+        ok(p116b.evaluate("document.getElementById('avisosJanela').dataset.estado") == 'negado' and 'blocked' in p116b.inner_text('#avisosJanela'),
+           'CT-KAN-242-05: com a permissão bloqueada, a janela explica como liberar, sem quebrar')
+        ctx116b.close()
+
     if parte('b'):
         # ---------- v35 (KAN-142): "Continuar com o Google" na aba errada entra ou cria a conta e avisa (navegador separado)
         ctx3 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block'); p3 = ctx3.new_page()

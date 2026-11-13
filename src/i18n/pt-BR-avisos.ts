@@ -12,7 +12,7 @@ export default {
   'av.semGrupos': 'Você ainda não administra nenhum grupo.',
   'av.on': 'Ligado',
   'av.off': 'Desligado',
-  'av.horas': 'Faltam pessoas: avisar',
+  'av.horas': 'Se faltar gente para o mínimo, avisar',
   'av.horasN': '{n}h antes do jogo',
   'av.horasSalvas': 'Horário do aviso salvo para o grupo.',
   'av.semMinimo': 'Para avisar quando faltar gente, defina o mínimo do jogo.',

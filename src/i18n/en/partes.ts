@@ -858,7 +858,7 @@ export default {
   'av.semGrupos': "You don't manage any group yet.",
   'av.on': 'On',
   'av.off': 'Off',
-  'av.horas': 'Short of players: notify',
+  'av.horas': 'If short of the minimum, notify',
   'av.horasN': '{n}h before the game',
   'av.horasSalvas': 'Notification time saved for the group.',
   'av.semMinimo': 'To get a notice when players are missing, set the minimum for the game.',

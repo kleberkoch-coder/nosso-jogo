@@ -46,16 +46,14 @@
   color: var(--muted);
 }
 .av-estado.on {
-  background: var(--in-soft);
+  background: var(--in-fill);
   border-color: var(--in);
   color: var(--on-in);
   font-weight: 600;
 }
 .av-horas {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px;
+  gap: 4px;
   padding: 4px 0 6px;
 }
 .av-horas .sel {

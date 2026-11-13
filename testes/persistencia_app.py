@@ -1047,7 +1047,7 @@ with sync_playwright() as pw:
     # horário do aviso de "faltam pessoas" (grupos/{gid}/privado/avisos), com as regras do Firebase. Sem o Firebase Cloud
     # Messaging de verdade (token de teste). Confere depois de recarregar; ao sair da conta, o celular sai da lista.
     c41 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block', timezone_id='America/Sao_Paulo', permissions=['notifications'])
-    c41.add_init_script("window.__njTokenTeste = 'token-de-teste-41'")
+    c41.add_init_script("window.__njTokenTeste = 'token-de-teste-41';Object.defineProperty(Notification,'permission',{get:()=>'granted'});Notification.requestPermission=async()=>'granted'")
     p41 = c41.new_page(); p41.on('pageerror', lambda e: errs.append(str(e)))
     E41 = 'avisos41@teste.com'
     p41.goto(URL + '#/criar'); p41.wait_for_function("document.querySelector('#lpais') && document.querySelector('#lpais').options.length > 10", timeout=20000)
@@ -1074,13 +1074,13 @@ with sync_playwright() as pw:
     p41.click('[data-a=tab][data-v=rodada]'); p41.wait_for_timeout(700)
     p41.click('[data-a=abrirMinimos]'); p41.wait_for_selector('#dlg input', timeout=10000)
     p41.locator('#dlg input').first.fill('4'); p41.click('#dlg .dlg-f .btn.primary'); p41.wait_for_timeout(1200)
-    p41.select_option('#avGrupos select', '5'); p41.wait_for_timeout(1500)
+    p41.select_option('#avGrupos select', '6'); p41.wait_for_timeout(1500)
     p41.click('#avGrupos [data-a=avisosGrupo]'); p41.wait_for_selector('#avGrupos [data-a=avisosGrupo][aria-checked=false]', timeout=10000)
     gravou(p41); pronto(p41)
     r41b = janela41()
     p41.click('#avGrupos [data-a=avisosGrupo]'); p41.wait_for_selector('#avGrupos select', timeout=10000)
     h41 = J(p41, "document.querySelector('#avGrupos select').value")
-    ok(r41b == ['ligado', ['false']] and h41 == '5', f'CT-KAN-170-P41: grupo desligado e o horário de 5h continuam depois de recarregar ({r41b}, {h41})')
+    ok(r41b == ['ligado', ['false']] and h41 == '6', f'CT-KAN-170-P41: grupo desligado e o horário de 6h continuam depois de recarregar ({r41b}, {h41})')
     p41.click('#dlg [data-a=close]'); p41.wait_for_timeout(300)
     sair_e_esperar(p41)
     p41.goto(URL + '#/entrar'); p41.wait_for_selector('#le', timeout=20000); p41.wait_for_timeout(300)

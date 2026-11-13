@@ -862,7 +862,7 @@ export default {
   'av.semGrupos': 'Todavía no administras ningún grupo.',
   'av.on': 'Activado',
   'av.off': 'Desactivado',
-  'av.horas': 'Falta gente: avisar',
+  'av.horas': 'Si falta gente para el mínimo, avisar',
   'av.horasN': '{n} h antes del partido',
   'av.horasSalvas': 'Horario del aviso guardado para el grupo.',
   'av.semMinimo': 'Para avisar cuando falte gente, define el mínimo del partido.',

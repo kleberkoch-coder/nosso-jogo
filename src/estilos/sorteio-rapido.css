@@ -39,6 +39,17 @@
   margin-top: 14px;
   gap: 8px;
 }
+/* KAN-270: barra fixa do passo 2 ("Voltar" e "Sortear times (12)"), sem sair das margens da página. */
+.acao-fixa.sr-fixa {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  border-radius: 14px 14px 0 0;
+}
+.acao-fixa.sr-fixa .btn:first-child {
+  width: auto;
+}
 .sr-salvar {
   border-color: var(--accent, currentColor);
 }

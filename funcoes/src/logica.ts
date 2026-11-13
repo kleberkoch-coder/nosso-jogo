@@ -7,6 +7,8 @@
    - usuarios/{uid}/aparelhos/{id}: cada celular que recebe avisos (token do Firebase Cloud Messaging e idioma).
    - grupos/{gid}/privado/avisos: horas antes do jogo para o aviso de "faltam pessoas" (o grupo todo).
    - avisosEnviados/{gid}_{rid}: o aviso de "faltam pessoas" já foi desta rodada (só o servidor lê e grava).
+   - falhas/{id}: falhas dos avisos (tipo "aviso"), no mesmo banco de falhas do app, que o Portal mostra: envio recusado
+     pelo Firebase, erro na função e teto do mês atingido. Sem nada pessoal: só o grupo, o motivo e quantos.
    - avisosEnviados/_teto: quantos avisos saíram no mês (teto de gasto: passou do limite, para até o mês virar). */
 import {
   agoraNoFuso,
@@ -48,8 +50,10 @@ export type Db = {
 type Transacao = { get(r: Ref): Promise<Snap>; set(r: Ref, d: Record<string, unknown>): unknown };
 
 export type Mensagem = Aviso & { token: string; link: string; tag: string; lang: Idioma };
-/* Envia e diz, para cada mensagem, se o token não vale mais (celular desinstalou, permissão tirada). */
-export type Enviar = (ms: Mensagem[]) => Promise<boolean[]>;
+/* Envia e diz, para cada mensagem: 'ok', 'invalido' (o celular desinstalou ou tirou a permissão: o registro é apagado,
+   é rotina) ou o código do erro (falha de verdade, que vai para o banco de falhas). */
+export type Resultado = 'ok' | 'invalido' | string;
+export type Enviar = (ms: Mensagem[]) => Promise<Resultado[]>;
 
 /* Teto de gasto: avisos por mês. O envio do Firebase Cloud Messaging é grátis; o que custa é a função rodar. */
 export const LIMITE_MES = 20000;
@@ -88,16 +92,61 @@ export async function cabeNoTeto(db: Db, n: number, agora: number, limite = LIMI
   });
 }
 
-async function mandar(db: Db, ds: Destino[], fazer: (d: Destino) => Mensagem, enviar: Enviar, agora: number) {
+/* Registra uma falha dos avisos no banco de falhas (KAN-239), que o Portal mostra junto com as do app. */
+export async function registrarFalha(db: Db, m: string, gid: string, n: number, agora = Date.now()): Promise<void> {
+  const d = new Date(agora).toISOString().slice(0, 10);
+  const id = 'aviso-' + agora.toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+  const o: Record<string, unknown> = {
+    v: 'servidor',
+    t: 'aviso',
+    m: String(m).replace(/\s+/g, ' ').trim().slice(0, 300),
+    r: 'servidor',
+    nav: 'servidor',
+    so: '',
+    disp: 'computador',
+    inst: false,
+    lang: '',
+    n: Math.max(1, Math.min(n, 1000)),
+    em: agora,
+    d,
+  };
+  if (gid) o.g = gid.slice(0, 64);
+  await db
+    .doc('falhas/' + id)
+    .set(o)
+    .catch(e => console.error('Avisos: não registrou a falha', e));
+}
+
+async function mandar(
+  db: Db,
+  gid: string,
+  ds: Destino[],
+  fazer: (d: Destino) => Mensagem,
+  enviar: Enviar,
+  agora: number
+) {
   if (!ds.length) return 0;
   if (!(await cabeNoTeto(db, ds.length, agora))) {
     console.warn('Avisos: teto do mês atingido; nada enviado.');
+    await registrarFalha(
+      db,
+      'Teto de ' + LIMITE_MES + ' avisos no mês atingido: avisos parados até o mês virar',
+      gid,
+      ds.length,
+      agora
+    );
     return 0;
   }
   const ms = ds.map(fazer);
-  const invalidos = await enviar(ms);
-  await Promise.all(ds.map((d, i) => (invalidos[i] ? d.ref.delete().catch(() => {}) : null)));
-  return ms.length - invalidos.filter(Boolean).length;
+  const rs = await enviar(ms);
+  await Promise.all(ds.map((d, i) => (rs[i] === 'invalido' ? d.ref.delete().catch(() => {}) : null)));
+  const erros: Record<string, number> = {};
+  rs.forEach(r => {
+    if (r !== 'ok' && r !== 'invalido') erros[r] = (erros[r] || 0) + 1;
+  });
+  for (const [codigo, n] of Object.entries(erros))
+    await registrarFalha(db, 'Envio recusado pelo Firebase: ' + codigo, gid, n, agora);
+  return rs.filter(r => r === 'ok').length;
 }
 
 type Grupo = { name?: string; ativo?: boolean; bloq?: boolean; cfg?: Record<string, any> };
@@ -136,6 +185,7 @@ export async function aoResponder(
   const formato = (g!.cfg || {}).formato;
   const n = await mandar(
     db,
+    gid,
     ds,
     d =>
       Object.assign(textoResposta(tipo, { nome, grupo: g!.name || '', date, confirmados: conf, formato }, d.lang), {
@@ -198,6 +248,7 @@ export async function verificarFaltas(db: Db, enviar: Enviar, agora = Date.now()
       await marca.set({ em: agora, gid, rid: j.id });
       await mandar(
         db,
+        gid,
         ds,
         d =>
           Object.assign(

@@ -9,7 +9,7 @@ import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 import { REGIAO } from './config';
-import { aoResponder, verificarFaltas, type Db, type Enviar } from './logica';
+import { aoResponder, registrarFalha, verificarFaltas, type Db, type Enviar } from './logica';
 
 initializeApp();
 setGlobalOptions({ region: REGIAO, maxInstances: 3, memory: '256MiB', timeoutSeconds: 60 });
@@ -29,7 +29,9 @@ const enviar: Enviar = async ms => {
           .add(Object.assign({ em: Date.now() }, m))
       )
     );
-    return ms.map(m => m.token === 'token-invalido');
+    return ms.map(m =>
+      m.token === 'token-invalido' ? 'invalido' : m.token === 'token-com-erro' ? 'messaging/internal-error' : 'ok'
+    );
   }
   const r = await getMessaging().sendEach(
     ms.map(m => ({
@@ -38,17 +40,37 @@ const enviar: Enviar = async ms => {
       webpush: { headers: { Urgency: 'high', TTL: '21600' } },
     }))
   );
-  return r.responses.map(x => !x.success && TOKEN_INVALIDO.includes(String(x.error?.code)));
+  return r.responses.map(x =>
+    x.success
+      ? 'ok'
+      : TOKEN_INVALIDO.includes(String(x.error?.code))
+        ? 'invalido'
+        : String(x.error?.code || 'desconhecido')
+  );
 };
 
-export const avisoResposta = onDocumentWritten('grupos/{gid}/rodadas/{rid}/presencas/{pid}', async ev => {
-  const antes = ev.data?.before?.data(),
-    depois = ev.data?.after?.data();
-  const r = await aoResponder(db(), ev.params as { gid: string; rid: string; pid: string }, antes, depois, enviar);
-  if (r.startsWith('enviados')) console.log('Avisos de resposta', ev.params.gid, r);
-});
+/* Erro na função: vai para o banco de falhas (o Portal mostra) e não repete (repetir mandaria o aviso duas vezes). */
+const comFalha = async (nome: string, gid: string, f: () => Promise<unknown>) => {
+  try {
+    await f();
+  } catch (e) {
+    console.error('Avisos:', nome, e);
+    await registrarFalha(db(), 'Erro na função ' + nome + ': ' + String((e as Error)?.message || e), gid, 1);
+  }
+};
 
-export const avisoFaltas = onSchedule({ schedule: 'every 15 minutes', timeZone: 'America/Sao_Paulo' }, async () => {
-  const feitos = await verificarFaltas(db(), enviar);
-  if (feitos.length) console.log('Avisos de faltam pessoas', feitos.join(', '));
-});
+export const avisoResposta = onDocumentWritten('grupos/{gid}/rodadas/{rid}/presencas/{pid}', ev =>
+  comFalha('avisoResposta', ev.params.gid, async () => {
+    const antes = ev.data?.before?.data(),
+      depois = ev.data?.after?.data();
+    const r = await aoResponder(db(), ev.params as { gid: string; rid: string; pid: string }, antes, depois, enviar);
+    if (r.startsWith('enviados')) console.log('Avisos de resposta', ev.params.gid, r);
+  })
+);
+
+export const avisoFaltas = onSchedule({ schedule: 'every 15 minutes', timeZone: 'America/Sao_Paulo' }, () =>
+  comFalha('avisoFaltas', '', async () => {
+    const feitos = await verificarFaltas(db(), enviar);
+    if (feitos.length) console.log('Avisos de faltam pessoas', feitos.join(', '));
+  })
+);

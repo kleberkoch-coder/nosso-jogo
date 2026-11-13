@@ -73,7 +73,7 @@ const T = {
   /* KAN-239 */
   'falhas.titulo': 'Falhas no uso (últimos 30 dias)',
   'falhas.ajuda':
-    'O app grava sozinho quando o comprovante do App Check não vem, quando dá erro de código e quando o Firebase recusa uma gravação, com o navegador e o aparelho. Sem nome, e-mail, telefone ou IP.',
+    'O app grava sozinho quando o comprovante do App Check não vem, quando dá erro de código e quando o Firebase recusa uma gravação, com o navegador e o aparelho. O servidor grava as falhas dos avisos no celular (tipo Aviso). Sem nome, e-mail, telefone ou IP.',
   'falhas.nenhuma': 'Nenhuma falha nos últimos 30 dias.',
   'falhas.vezes': '{n}×',
   'falhas.quando': 'de {a} a {b}',
@@ -81,6 +81,9 @@ const T = {
   'falhas.tipo.appcheck': 'App Check',
   'falhas.tipo.erro': 'Erro',
   'falhas.tipo.gravacao': 'Gravação',
+  /* KAN-242: falhas dos avisos no celular, registradas pelo servidor (funcoes/). */
+  'falhas.tipo.aviso': 'Aviso',
+  'falhas.tela.servidor': 'servidor',
   'falhas.tela.r': 'link da rodada',
   'falhas.tela.v': 'link da votação',
   'falhas.tela.a': 'link da avaliação',

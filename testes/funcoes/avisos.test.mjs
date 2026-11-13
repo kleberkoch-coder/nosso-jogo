@@ -5,7 +5,7 @@
 import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-import { aoResponder, cabeNoTeto, verificarFaltas } from '../../funcoes/src/logica.ts';
+import { LIMITE_MES, aoResponder, cabeNoTeto, verificarFaltas } from '../../funcoes/src/logica.ts';
 
 const req = createRequire(new URL('../../funcoes/package.json', import.meta.url));
 const { initializeApp } = req('firebase-admin/app');
@@ -81,7 +81,7 @@ test('CT-KAN-242-09: faltam pessoas na janela: avisa uma vez por rodada; adminis
   const enviados = [];
   const enviar = async ms => {
     enviados.push(...ms);
-    return ms.map(() => false);
+    return ms.map(() => 'ok');
   };
   await db.doc('grupos/' + G + '/rodadas/r1/presencas/a1').set({ s: 'in', t: 3, by: 'x', nome: 'Rafa', pos: 'GOL' });
   let feitos = await verificarFaltas(db, enviar, agora);
@@ -107,4 +107,58 @@ test('CT-KAN-242-10: teto do mês: passou do limite, não envia', async () => {
   assert.equal(await cabeNoTeto(db, 2, ms, 4), false);
   assert.equal(await cabeNoTeto(db, 1, ms, 4), true);
   assert.equal(await cabeNoTeto(db, 1, Date.UTC(2027, 1, 1), 4), true, 'mês novo zera');
+});
+
+async function falhasAviso(trecho) {
+  const q = await db.collection('falhas').where('t', '==', 'aviso').get();
+  return q.docs.map(d => d.data()).filter(f => f.m.includes(trecho));
+}
+
+test('CT-KAN-242-12: falhas dos avisos vão para o banco de falhas (envio recusado e teto do mês), sem nada pessoal', async () => {
+  const agora = Date.UTC(2026, 11, 10, 12);
+  const comErro = async ms => ms.map((m, i) => (i === 0 ? 'messaging/internal-error' : 'ok'));
+  const r = await aoResponder(
+    db,
+    { gid: G, rid: 'r1', pid: 'j1' },
+    { s: 'in' },
+    { s: 'out', by: 'anonimo9' },
+    comErro,
+    agora
+  );
+  assert.equal(r, 'enviados:0', 'o único celular deu erro');
+  const f1 = await falhasAviso('Envio recusado pelo Firebase: messaging/internal-error');
+  assert.equal(f1.length, 1);
+  assert.equal(f1[0].g, G);
+  assert.equal(f1[0].n, 1);
+  assert.deepEqual(Object.keys(f1[0]).sort(), [
+    'd',
+    'disp',
+    'em',
+    'g',
+    'inst',
+    'lang',
+    'm',
+    'n',
+    'nav',
+    'r',
+    'so',
+    't',
+    'v',
+  ]);
+  /* Teto: o mês já chegou no limite; nada sai e a falha fica registrada. */
+  await db.doc('avisosEnviados/_teto').set({ mes: '2026-12', n: LIMITE_MES });
+  const nada = [];
+  assert.equal(
+    await aoResponder(
+      db,
+      { gid: G, rid: 'r1', pid: 'j1' },
+      { s: 'out' },
+      { s: 'in', by: 'anonimo9' },
+      async ms => (nada.push(...ms), ms.map(() => 'ok')),
+      agora
+    ),
+    'enviados:0'
+  );
+  assert.equal(nada.length, 0);
+  assert.equal((await falhasAviso('avisos no mês atingido')).length, 1);
 });

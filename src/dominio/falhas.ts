@@ -1,7 +1,8 @@
 /* Falhas no uso (KAN-239, 1ª parte, pelada-v105): o que o coletor grava (nucleo/falhas.ts) e como o portal agrupa.
    Regra pura, testada em testes/regras/falhas.test.mjs.
    - Tipos: "appcheck" (o comprovante do App Check não veio, KAN-88), "erro" (erro de código) e "gravacao" (o Firebase
-     recusou uma gravação).
+     recusou uma gravação). Desde a pelada-v116 (KAN-242), o servidor também grava "aviso" (falha dos avisos no celular:
+     envio recusado, erro na função ou teto do mês), com "servidor" no lugar dos dados de navegação.
    - Dados de navegação, sem nada pessoal: navegador e versão, sistema e versão, tipo de aparelho, se o app está
      instalado, idioma, versão do app e tela. Nunca nome, e-mail, telefone, IP, notas ou caixa.
    - No máximo 20 registros por aparelho por dia; a mesma falha na mesma visita vira um registro só, com a contagem. */

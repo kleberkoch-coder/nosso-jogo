@@ -101,6 +101,10 @@ function Apresentacao() {
                 {tx('apr.jaTenho')}
               </a>
             </div>
+            {/* KAN-245: sortear na hora, sem cadastro (porta de entrada para conhecer o sorteio). */}
+            <a class="btn ld-ghost ld-sortear" href="#/sortear" id="aprSortear">
+              {tx('apr.sortearAgora')}
+            </a>
             <p class="ld-note">{tx('apr.nota')}</p>
           </div>
           <div class="ld-phone" aria-hidden="true">

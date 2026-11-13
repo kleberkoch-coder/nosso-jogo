@@ -55,6 +55,9 @@ export { montarAvisosPlano, montarCadeado, vCadeado } from './ui/Plano';
 /* Os textos da gestão entram no dicionário assim que esta parte chega (KAN-159). */
 juntarTextos(textosGestao);
 
+/* KAN-245: "Salvar como meu grupo" do sorteio sem conta (baixa só quando há um sorteio guardado). */
+export const grupoDoSorteio = () => import('./acoes/grupo-do-sorteio').then(m => m.abrir());
+
 export const ACOES = Object.assign(
   {},
   grupo,

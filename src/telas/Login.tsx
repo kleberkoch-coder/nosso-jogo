@@ -239,11 +239,34 @@ function Login({ convite }: { convite?: boolean }) {
             {tx('login.entrar')}
           </button>
         </div>
+        {/* KAN-245: quem veio de "Salvar como meu grupo" vê que o sorteio está guardado. */}
+        {!convite && temSorteio() ? (
+          <p class="warn-alt" id="authSorteio" role="status" style="margin:0 0 12px">
+            {tx('login.sorteioGuardado')}
+          </p>
+        ) : null}
         {m === 'signup' ? <CriarConta /> : <Entrar />}
       </div>
+      {convite ? null : (
+        <p class="small muted" style="text-align:center;margin:10px 0 0">
+          {tx('login.soSortear')}{' '}
+          <a class="linkbtn" href="#/sortear" id="authSortear">
+            {tx('login.sortearSemConta')}
+          </a>
+        </p>
+      )}
       <p class="versao small muted">{tx('comum.versao', { n: numeroVersao() })}</p>
     </div>
   );
+}
+
+/* KAN-245: há um sorteio sem conta guardado neste aparelho, esperando virar grupo? */
+function temSorteio() {
+  try {
+    return !!localStorage.getItem('nj-sorteio-rapido');
+  } catch (e) {
+    return false;
+  }
 }
 
 /* Lugar da tela (a página monta como texto e a tela entra logo depois, com montarAuth). */

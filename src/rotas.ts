@@ -40,6 +40,8 @@ function parseRoute(): Rota {
   if (h[0] === 'entrar') return { n: 'auth', mode: 'login' };
   if (h[0] === 'criar') return { n: 'auth', mode: 'signup' };
   if (h[0] === 'convite' && h[1] && h[2]) return { n: 'inv', gid: h[1], token: h[2] };
+  /* KAN-245: sortear times agora, sem cadastro. */
+  if (h[0] === 'sortear') return { n: 'sortear' };
   return { n: 'home' };
 }
 /* Tudo que a troca de endereço limpa (a memória de um grupo não passa para outro). */
@@ -110,6 +112,8 @@ function cargaConta(uid: string) {
     syncName();
     if (S.route.n === 'home' && !S.homeShown) {
       S.homeShown = true;
+      /* KAN-245: veio de "Salvar como meu grupo": abre o grupo novo com o sorteio, em vez de ir ao grupo de sempre. */
+      if (sorteioGuardado()) return void grupoDoSorteio();
       const all = Object.entries((S.me && S.me.grupos) || {}) as [string, { ativo?: boolean }][],
         g = all.filter(([, v]) => v.ativo !== false).map(([k]) => k);
       if (g.length === 1) location.hash = '#/g/' + g[0];
@@ -242,10 +246,24 @@ function setupRoute() {
   }
   render();
   if (R.n === 'auth' || (R.n === 'inv' && !logged)) focusEmail();
+  if (R.n === 'home' && logged && S.homeShown && sorteioGuardado()) grupoDoSorteio();
 }
 document.addEventListener('nj-via', () => gest()?.syncVia());
 /* Gravação recusada pelo banco (KAN-170): lê de novo o que está gravado, para a tela não mostrar o que não foi salvo. */
 document.addEventListener('nj-gravacao-falhou', () => setTimeout(setupRoute, 0));
+/* KAN-245: sorteio sem conta guardado no aparelho, esperando virar grupo (telas/SorteioRapido.tsx). */
+function sorteioGuardado() {
+  try {
+    return !!localStorage.getItem('nj-sorteio-rapido');
+  } catch (e) {
+    return false;
+  }
+}
+const grupoDoSorteio = () =>
+  carregarAdmin().then(
+    (A: Gestao & { grupoDoSorteio: () => Promise<unknown> }) => A.grupoDoSorteio(),
+    () => {}
+  );
 function focusEmail() {
   let n = 0;
   const t = setInterval(() => {

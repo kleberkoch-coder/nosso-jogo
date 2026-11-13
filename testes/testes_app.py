@@ -5469,6 +5469,139 @@ with sync_playwright() as pw:
         p113.click('#dlg [data-a=close]') if p113.locator('#dlg [data-a=close]').count() else p113.keyboard.press('Escape')
         ctx113.close()
 
+        # ---------- v114 (KAN-245): sortear times agora, sem cadastro, e salvar como grupo
+        ctx114 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+        p114 = ctx114.new_page(); p114.on('pageerror', lambda e: errs.append(str(e)))
+        p114.goto(URL + '#/'); p114.wait_for_selector('#aprSortear', timeout=15000); p114.wait_for_timeout(400)
+        ok(p114.inner_text('#aprSortear').strip() == '⚡ Sortear times agora, sem cadastro', 'CT-KAN-245-01: a apresentação tem "Sortear times agora, sem cadastro"')
+        banco0 = p114.evaluate("Object.keys(JSON.parse(localStorage.getItem('pelada-demo-v2')||'{}')).length")
+        p114.click('#aprSortear'); p114.wait_for_selector('#srPasso1', timeout=15000); p114.wait_for_timeout(300)
+        p114.select_option('#srEsporte', 'society'); p114.wait_for_timeout(100)
+        ok(p114.input_value('#srPorTime') == '6', f'CT-KAN-245-01: trocar o esporte sugere o tamanho do time dele (society: {p114.input_value("#srPorTime")})')
+        p114.fill('#srPorTime', '5')
+        p114.fill('#srNomes', 'Kleber\nPeró'); p114.click('[data-a=srLer]'); p114.wait_for_timeout(300)
+        p114.click('[data-a=srSortear]'); p114.wait_for_timeout(400)
+        ok('Faltam 8 para dois times de 5.' in p114.inner_text('#toast') and p114.locator('#srTimes').count() == 0,
+           f'CT-KAN-245-03: com 2 nomes e 5 por time, avisa quantos faltam e não sorteia ({p114.inner_text("#toast")!r})')
+        p114.click('[data-a=srVoltar][data-v="1"]'); p114.wait_for_selector('#srNomes', timeout=5000)
+        LISTA114 = """Lista 28/09 das 20:30 as 22h - 👍🏻 ou ❌ - Responder até as 13:00
+1 - Kleber (Z) ❌️
+2 - Peró (M) 👍🏼
+3 - Diegão (M) 🤙🏼
+4 - Luiz Otávio (LE) 👍
+5 - Pedro Nunes (M) 👍
+6 - Daniel (M) 👍🏽
+7 - Alex (LD) 🤙🏼
+8 - Thiago Aguiar (V)👍🏾
+9 - Denis (A) 👍
+10 - Cristian (M)
+11 - Bruno (Z) 👍🏼
+12 - Gustavão (V) 👍🏼
+13 - Matheus (M) 👍🏻
+
+1- Marcos (goleiro) 👍🏽
+2- Jones (goleiro)👍🏼"""
+        p114.fill('#srNomes', LISTA114); p114.click('[data-a=srLer]'); p114.wait_for_selector('#srPasso2', timeout=5000); p114.wait_for_timeout(200)
+        n114 = p114.evaluate("[...document.querySelectorAll('#srLista .sr-nome')].map(e=>e.textContent)")
+        gk114 = p114.evaluate("[...document.querySelectorAll('#srLista li')].filter(li=>li.querySelector('.sr-pos').value==='GOL').map(li=>li.querySelector('.sr-nome').textContent)")
+        ok(len(n114) == 13 and 'Kleber' not in n114 and 'Cristian' not in n114 and n114[0] == 'Peró' and gk114 == ['Marcos', 'Jones'],
+           f'CT-KAN-245-01: da lista do WhatsApp entram só os 13 com 👍, e "(goleiro)" já vem como goleiro ({n114}, {gk114})')
+        for i, nota in [(0, '9'), (1, '9'), (2, '3')]:
+            p114.locator('#srLista .sr-nota').nth(i).select_option(nota)
+        g114 = p114.evaluate("(()=>{const sels=[...document.querySelectorAll('#srLista .sel')];return {alt:Math.min(...sels.map(s=>Math.round(s.getBoundingClientRect().height))),rolagem:document.documentElement.scrollWidth>innerWidth}})()")
+        ok(g114['alt'] >= 44 and not g114['rolagem'], f'CT-KAN-245-08: em 360px, os combos de posição e nota têm 44px e não há rolagem lateral ({g114})')
+        p114.click('[data-a=srSortear]'); p114.wait_for_selector('#srTimes', timeout=5000); p114.wait_for_timeout(300)
+        t114 = p114.evaluate("[...document.querySelectorAll('#srTimes .team')].map(t=>({n:t.querySelector('.th b').textContent,js:[...t.querySelectorAll('li')].map(li=>li.querySelector('.pn').firstChild.textContent.trim()),res:t.querySelectorAll('li.reserva').length,gk:[...t.querySelectorAll('.pos')].filter(p=>p.textContent==='GOL').length}))")
+        gkres114 = p114.evaluate("[...document.querySelectorAll('#srTimes li.reserva .pos')].filter(p=>p.textContent==='GOL').length")
+        ok(len(t114) == 2 and sorted(len(t['js']) for t in t114) == [6, 7] and sum(t['res'] for t in t114) == 3 and all(t['gk'] == 1 for t in t114) and gkres114 == 0
+           and sorted(sum([t['js'] for t in t114], [])) == sorted(n114),
+           f'CT-KAN-245-01: 13 nomes com 5 por time viram 2 times (7 e 6), com os reservas marcados, um goleiro em cada e nenhum goleiro de reserva ({t114})')
+        z114 = p114.get_attribute('#srZap', 'href')
+        from urllib.parse import unquote
+        zt114 = unquote(z114.split('text=', 1)[1])
+        ok(z114.startswith('https://api.whatsapp.com/send?text=') and 'Time 1' in zt114 and 'Peró' in zt114 and 'Nota' not in zt114 and '9' not in zt114.replace('#/sortear', ''),
+           f'CT-KAN-245-06: "Mandar no WhatsApp" leva os times e os nomes, sem as notas ({zt114[:120]!r})')
+        for tema in ['light', 'dark']:
+            p114.emulate_media(color_scheme=tema); p114.wait_for_timeout(150); contraste(p114, f'sorteio sem conta ({tema})')
+        p114.emulate_media(color_scheme='light')
+        p114.screenshot(path=f'{OUT}/114-sorteio-rapido-360.png', full_page=True)
+        banco1 = p114.evaluate("Object.keys(JSON.parse(localStorage.getItem('pelada-demo-v2')||'{}')).length")
+        ok(banco1 == banco0 and not p114.evaluate("localStorage.getItem('nj-sorteio-rapido')"),
+           f'CT-KAN-245-06: sortear não grava nada no banco nem guarda no aparelho ({banco0} → {banco1})')
+        # Duplas (beach tennis): sem posição
+        p114.click('[data-a=srVoltar][data-v="2"]'); p114.wait_for_selector('#srPasso2', timeout=5000); p114.click('[data-a=srVoltar][data-v="1"]'); p114.wait_for_selector('#srNomes', timeout=5000)
+        txt_antes = p114.input_value('#srNomes')
+        p114.select_option('#srEsporte', 'beach_tennis'); p114.wait_for_timeout(100)
+        p114.fill('#srPorTime', '2'); p114.fill('#srNomes', 'Ana\nBia\nCaio\nDuda\nEdu\nFabi\nGil\nHelô')
+        p114.click('[data-a=srLer]'); p114.wait_for_selector('#srPasso2', timeout=5000)
+        semPos114 = p114.locator('#srLista .sr-pos').count() == 0
+        p114.click('[data-a=srSortear]'); p114.wait_for_selector('#srTimes', timeout=5000)
+        d114 = p114.evaluate("[...document.querySelectorAll('#srTimes .team')].map(t=>[t.querySelector('.th b').textContent, t.querySelectorAll('li').length])")
+        ok(txt_antes == LISTA114 and semPos114 and len(d114) == 4 and all(x[1] == 2 for x in d114) and d114[0][0] == 'Dupla 1',
+           f'CT-KAN-245-05: beach tennis forma 4 duplas e não pede posição; "Voltar" guardou a lista ({d114})')
+        # De volta ao society para salvar como grupo
+        p114.click('[data-a=srVoltar][data-v="2"]'); p114.wait_for_selector('#srPasso2', timeout=5000); p114.click('[data-a=srVoltar][data-v="1"]'); p114.wait_for_selector('#srNomes', timeout=5000)
+        p114.select_option('#srEsporte', 'society'); p114.fill('#srPorTime', '5'); p114.fill('#srNomes', LISTA114)
+        p114.click('[data-a=srLer]'); p114.wait_for_selector('#srPasso2', timeout=5000)
+        p114.locator('#srLista .sr-nota').nth(0).select_option('9')
+        p114.click('[data-a=srSortear]'); p114.wait_for_selector('#srTimes', timeout=5000)
+        times114 = p114.evaluate("[...document.querySelectorAll('#srTimes .team')].map(t=>[...t.querySelectorAll('li')].map(li=>li.querySelector('.pn').firstChild.textContent.trim()).sort())")
+        p114.click('[data-a=srSalvar]'); p114.wait_for_selector('#le', timeout=15000); p114.wait_for_timeout(500)
+        ok('#/criar' in p114.url and p114.locator('#authSorteio').count() == 1, 'CT-KAN-245-02: "Salvar como meu grupo" leva ao cadastro, que avisa que o sorteio está guardado')
+        p114.wait_for_function("document.querySelector('#lpais') && document.querySelector('#lpais').options.length > 10", timeout=15000)
+        p114.fill('#le', 'v114@teste.com'); p114.fill('#lp', 'Jogo@2026'); p114.fill('#lp2', 'Jogo@2026'); p114.keyboard.press('Enter')
+        p114.wait_for_selector('#ngDoSorteio', timeout=15000); p114.wait_for_timeout(500)
+        f114 = p114.evaluate("[document.getElementById('ngBox').dataset.sp, document.getElementById('ngt').value, document.getElementById('ngDoSorteio').textContent]")
+        ok(f114[0] == 'society' and f114[1] == '5' and 'Os 13 jogadores do sorteio entram no elenco' in f114[2],
+           f'CT-KAN-245-02: depois do cadastro, o "Novo grupo" abre com o esporte e o tamanho do time do sorteio e avisa o que vem junto ({f114})')
+        p114.fill('#ngn', 'Turma do Sorteio'); p114.click('#dlg [data-a=criarGrupoDoSorteio]')
+        p114.wait_for_function("location.hash.startsWith('#/g/')", timeout=15000); p114.wait_for_timeout(4000)
+        ok('Grupo criado com os 13 jogadores e os times de hoje.' in p114.inner_text('#toast'), f'CT-KAN-245-02: avisa "Grupo criado com os 13 jogadores e os times de hoje." ({p114.inner_text("#toast")!r})')
+        p114.reload(); p114.wait_for_timeout(2500); p114.click('[data-a=tab][data-v=rodada]'); p114.wait_for_timeout(1500)
+        r114 = p114.evaluate("""(()=>{const nm=id=>S.jog[id]&&S.jog[id].name;const r=Object.entries(S.rod).find(([k,v])=>v.times)||[];const rd=r[1]||{};
+          const per=Object.keys(S.jog).find(k=>S.jog[k].name==='Peró'),mar=Object.keys(S.jog).find(k=>S.jog[k].name==='Marcos');
+          return {jog:Object.keys(S.jog).length, nota:((S.rat||{}).nivel||{})[per]||null, pos:[S.jog[per].pos, S.jog[mar].pos], tipo:((S.pc||{}).tipos||{})[per]||null,
+            times:(rd.times||[]).map(t=>t.players.map(nm).sort()), sor:rd.sor?[rd.sor.n,rd.sor.aj]:null, vao:Object.values(S.pres||{}).filter(p=>p.s==='in').length,
+            rascunho:localStorage.getItem('nj-sorteio-rapido')}})()""")
+        ok(r114['jog'] == 13 and r114['nota'] == 9 and r114['pos'] == ['MEI', 'GOL'] and r114['tipo'] == 'mensalista' and r114['rascunho'] is None,
+           f'CT-KAN-245-02: o grupo novo tem os 13 jogadores (mensalistas), com posição e nota, e o rascunho saiu do aparelho ({r114})')
+        ok(sorted(r114['times']) == sorted(times114) and r114['sor'] == [1, 0] and r114['vao'] == 13 and p114.locator('.teams .team').count() == 2,
+           f'CT-KAN-245-02: os times sorteados continuam visíveis na rodada de hoje, com todos confirmados e "1º sorteio" ({r114["times"]}, {r114["sor"]})')
+        # Quem desistiu descarta o sorteio
+        p114.goto(URL + '#/sortear'); p114.wait_for_selector('#srPasso1', timeout=15000)
+        p114.select_option('#srEsporte', 'society'); p114.fill('#srPorTime', '5'); p114.fill('#srNomes', LISTA114)
+        p114.click('[data-a=srLer]'); p114.wait_for_selector('#srPasso2', timeout=5000)
+        p114.click('[data-a=srSortear]'); p114.wait_for_selector('#srTimes', timeout=5000)
+        p114.click('[data-a=srSalvar]'); p114.wait_for_selector('#ngDoSorteio [data-a=descartarSorteio]', timeout=15000)
+        p114.click('#ngDoSorteio [data-a=descartarSorteio]'); p114.wait_for_timeout(600)
+        ds114 = p114.evaluate("[!!localStorage.getItem('nj-sorteio-rapido'), document.getElementById('dlg').open]")
+        ok(ds114 == [False, False] and 'Sorteio descartado.' in p114.inner_text('#toast'), f'CT-KAN-245-09: "Descartar o sorteio" apaga o sorteio guardado e fecha o "Novo grupo" ({ds114})')
+        # Conta já logada: "Salvar como meu grupo" abre o "Novo grupo" direto e cria o grupo com o sorteio
+        p114.goto(URL + '#/sortear'); p114.wait_for_selector('#srPasso1', timeout=15000)
+        p114.select_option('#srEsporte', 'society'); p114.fill('#srPorTime', '5'); p114.fill('#srNomes', LISTA114)
+        p114.click('[data-a=srLer]'); p114.wait_for_selector('#srPasso2', timeout=5000)
+        p114.click('[data-a=srSortear]'); p114.wait_for_selector('#srTimes', timeout=5000)
+        p114.click('[data-a=srSalvar]'); p114.wait_for_selector('#ngDoSorteio', timeout=15000)
+        p114.fill('#ngn', 'Segundo Grupo'); p114.click('#dlg [data-a=criarGrupoDoSorteio]')
+        p114.wait_for_function("location.hash.startsWith('#/g/')", timeout=15000); p114.wait_for_timeout(4000)
+        lg114 = p114.evaluate("[Object.keys(S.jog).length, !!localStorage.getItem('nj-sorteio-rapido'), S.app && S.app.name]")
+        ok(lg114 == [13, False, 'Segundo Grupo'], f'CT-KAN-245-09: com a conta já aberta, "Salvar como meu grupo" vai direto ao "Novo grupo" e o grupo nasce com o sorteio ({lg114})')
+        p114.evaluate("localStorage.removeItem('nj-sorteio-rapido')")
+        ctx114.close()
+        # Tela de entrar e English (visitante)
+        ctx114b = b.new_context(viewport={'width': 360, 'height': 740}, service_workers='block', locale='en-US')
+        p114b = ctx114b.new_page(); p114b.on('pageerror', lambda e: errs.append(str(e)))
+        p114b.goto(URL + '#/entrar'); p114b.wait_for_selector('#authSortear', timeout=15000); p114b.wait_for_timeout(500)
+        ok(p114b.inner_text('#authSortear') == 'Draw without signing up', f'CT-KAN-245-10: a tela de entrar tem o atalho para sortear sem cadastro ({p114b.inner_text("#authSortear")!r})')
+        p114b.click('#authSortear'); p114b.wait_for_selector('#srPasso1', timeout=15000)
+        p114b.fill('#srPorTime', '5'); p114b.fill('#srNomes', '\n'.join('P%d' % i for i in range(10))); p114b.click('[data-a=srLer]'); p114b.wait_for_selector('#srPasso2', timeout=5000)
+        p114b.click('[data-a=srSortear]'); p114b.wait_for_selector('#srTimes', timeout=5000); p114b.wait_for_timeout(300)
+        en114 = p114b.inner_text('main')
+        falta114 = p114b.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(sr|apr|login)\\./.test(k))")
+        ok('Teams drawn' in en114 and 'Save as my group' in en114 and 'Team 1' in en114 and not falta114,
+           f'CT-KAN-245-11: em English, o sorteio sem conta vem traduzido ({en114[:140]!r}, {falta114})')
+        ctx114b.close()
+
     if parte('b'):
         # ---------- v35 (KAN-142): "Continuar com o Google" na aba errada entra ou cria a conta e avisa (navegador separado)
         ctx3 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block'); p3 = ctx3.new_page()

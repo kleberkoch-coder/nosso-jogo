@@ -30,7 +30,8 @@ import { renderPublicRodada } from '../telas/publico-rodada.js';
    chega; sem internet, avisa que não carregou. */
 let apresentacao = null,
   voto = null,
-  aval = null;
+  aval = null,
+  rapido = null;
 function baixar(promessa, guardar, onde = main) {
   onde.replaceChildren(el('div', 'empty muted', tx('comum.carregando')));
   promessa.then(
@@ -138,6 +139,12 @@ function renderCore() {
   }
   $('#tabsnav').hidden = true;
   $('#gsub').textContent = tx('render.subtitulo');
+  /* KAN-245: sortear times agora, sem cadastro (baixa só quando aberto). */
+  if (R.n === 'sortear') {
+    $('#topright').replaceChildren(el('a', 'chip', tx('render.inicio'), { href: '#/' }));
+    if (!rapido) return baixar(import('../telas/SorteioRapido'), m => (rapido = m));
+    return rapido.montarSorteioRapido(main);
+  }
   // Com conta: "⇄ Grupos" (fora da página inicial) e o botão da conta, que abre o menu com país e Sair (KAN-166).
   $('#topright').replaceChildren(
     ...(logged

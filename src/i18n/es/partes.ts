@@ -841,4 +841,11 @@ export default {
   'colar.nada': 'Nada para marcar: elige quién es cada uno o vuelve.',
   'colar.feito': 'Lista marcada: {vao} van y {nao} no van.',
   'colar.fechada': 'La lista está cerrada. Reábrela para pegar.',
+  /* KAN-245: pt-BR-grupodosorteio.ts */
+  'srg.aviso':
+    'Los {n} jugadores del sorteo entran al plantel, con las posiciones y las notas, y los equipos quedan en la jornada de hoy.',
+  'srg.descartar': 'Descartar el sorteo',
+  'srg.descartado': 'Sorteo descartado.',
+  'srg.pronto': 'Grupo creado con los {n} jugadores y los equipos de hoy.',
+  'srg.demorou': 'El grupo se creó, pero los jugadores del sorteo no entraron. Agrégalos en la pestaña Jugadores.',
 };

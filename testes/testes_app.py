@@ -5479,11 +5479,16 @@ with sync_playwright() as pw:
         p114.select_option('#srEsporte', 'society'); p114.wait_for_timeout(100)
         ok(p114.input_value('#srPorTime') == '6', f'CT-KAN-245-01: trocar o esporte sugere o tamanho do time dele (society: {p114.input_value("#srPorTime")})')
         p114.fill('#srPorTime', '5')
-        p114.fill('#srNomes', 'Kleber\nPeró'); p114.click('[data-a=srLer]'); p114.wait_for_timeout(300)
-        p114.click('[data-a=srSortear]'); p114.wait_for_timeout(400)
-        ok('Faltam 8 para dois times de 5.' in p114.inner_text('#toast') and p114.locator('#srTimes').count() == 0,
-           f'CT-KAN-245-03: com 2 nomes e 5 por time, avisa quantos faltam e não sorteia ({p114.inner_text("#toast")!r})')
+        p114.fill('#srNomes', 'Kleber\nPeró'); p114.click('[data-a=srLer]'); p114.wait_for_selector('#srSortearBtn', timeout=5000)
+        f114b = p114.evaluate("[document.getElementById('srSortearBtn').textContent, document.getElementById('srSortearBtn').disabled]")
+        ok(f114b == ['Faltam 8 para sortear', True] and p114.locator('#srTimes').count() == 0,
+           f'CT-KAN-245-03 (CT-KAN-270-02): com 2 nomes e 5 por time, o botão diz quantos faltam e não sorteia ({f114b})')
         p114.click('[data-a=srVoltar][data-v="1"]'); p114.wait_for_selector('#srNomes', timeout=5000)
+        # KAN-269: nome completo com 6 palavras ou mais, um por linha, entra no sorteio
+        p114.fill('#srNomes', 'Ana\nMaria Clara de Souza Lima Ferreira\nBia'); p114.click('[data-a=srLer]'); p114.wait_for_selector('#srPasso2', timeout=5000)
+        n269 = p114.evaluate("[...document.querySelectorAll('#srLista .sr-nome')].map(e=>e.textContent)")
+        ok(n269 == ['Ana', 'Maria Clara de Souza Lima Ferreira', 'Bia'], f'CT-KAN-269-01: "Maria Clara de Souza Lima Ferreira" (6 palavras, sem número) entra no sorteio ({n269})')
+        p114.click('#srBarra [data-a=srVoltar]'); p114.wait_for_selector('#srNomes', timeout=5000)
         LISTA114 = """Lista 28/09 das 20:30 as 22h - 👍🏻 ou ❌ - Responder até as 13:00
 1 - Kleber (Z) ❌️
 2 - Peró (M) 👍🏼
@@ -5504,6 +5509,9 @@ with sync_playwright() as pw:
         p114.fill('#srNomes', LISTA114); p114.click('[data-a=srLer]'); p114.wait_for_selector('#srPasso2', timeout=5000); p114.wait_for_timeout(200)
         n114 = p114.evaluate("[...document.querySelectorAll('#srLista .sr-nome')].map(e=>e.textContent)")
         gk114 = p114.evaluate("[...document.querySelectorAll('#srLista li')].filter(li=>li.querySelector('.sr-pos').value==='GOL').map(li=>li.querySelector('.sr-nome').textContent)")
+        bar114 = p114.evaluate("(()=>{const b=document.getElementById('srSortearBtn').getBoundingClientRect();return {txt:document.getElementById('srSortearBtn').textContent,topo:Math.round(b.top),base:Math.round(b.bottom),alt:Math.round(b.height),dentro:b.bottom<=innerHeight+0.5&&b.top>=0,rolagem:document.documentElement.scrollWidth>innerWidth}})()")
+        ok(bar114['txt'] == 'Sortear times (13)' and bar114['dentro'] and bar114['alt'] >= 44 and not bar114['rolagem'],
+           f'CT-KAN-270-01: em 360px, "Sortear times (13)" fica visível sem rolar, numa barra fixa, sem rolagem lateral ({bar114})')
         ok(len(n114) == 13 and 'Kleber' not in n114 and 'Cristian' not in n114 and n114[0] == 'Peró' and gk114 == ['Marcos', 'Jones'],
            f'CT-KAN-245-01: da lista do WhatsApp entram só os 13 com 👍, e "(goleiro)" já vem como goleiro ({n114}, {gk114})')
         for i, nota in [(0, '9'), (1, '9'), (2, '3')]:

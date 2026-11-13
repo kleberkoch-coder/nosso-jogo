@@ -74,6 +74,9 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo de toda janela (pelada-v106, KAN-250); **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v115)
+- **Sorteio sem conta, passo 2** (KAN-270): "Voltar" e "Sortear times (12)" saem do fim da lista e vão para uma **Barra de ação fixa** no rodapé (`acao-fixa sr-fixa`: a mesma da aba Rodada, sem as margens negativas, com cantos de 14px em cima). "Voltar" (`btn`) com a largura do texto e "Sortear times (12)" (`btn bib`, 44px) no resto; em duplas, "Sortear duplas (8)". Faltando gente, o botão fica desligado e diz "Faltam 2 para sortear", como na aba Rodada.
+
 ## Componentes (pelada-v114)
 - **Sorteio sem conta** (KAN-245; `telas/SorteioRapido.tsx`, CSS `sorteio-rapido.css`, sob demanda): página de até 640px, com "← Início" no cabeçalho e três passos num `panel`:
   - **1.** Título "Sortear times agora" (h2), "Sem cadastro…" em `small muted`, Esporte (`sel`) e Jogadores por time (`inp`, 120px) lado a lado, "Quem vai jogar" (campo grande `sr-nomes`, 200px) com a ajuda embaixo e "Continuar" (`primary`, largura toda).

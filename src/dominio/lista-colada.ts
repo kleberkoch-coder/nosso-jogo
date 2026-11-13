@@ -2,6 +2,8 @@
    respondeu, e casa cada nome com o elenco ou os avulsos. Teste em testes/regras/lista-colada.test.mjs.
    - A marca da linha manda: 👍 ✅ 🤙 👊 💪 ✔ = vai; ❌ ✖ 👎 🚫 ⛔ = não vai. Linha sem marca, numa lista que usa marcas,
      é "sem resposta" (não muda nada). Lista sem nenhuma marca: todo nome é "vai".
+   - Linha sem número com mais de 5 palavras e pontuação (ou mais de 8 palavras) é frase solta e é ignorada; um nome
+     completo sem pontuação entra (KAN-269).
    - Seções: "Não vão", "Fora" e "Ausentes" = não vai; "Espera", "Suplentes" e "Reservas" = vai, no fim da lista;
      "Goleiros" marca quem vem embaixo como goleiro. Título, data, horário e regras da lista são ignorados.
    - Parênteses: "(avulso)" e "(convidado)" = avulso; "(goleiro)" e "(gol)" = goleiro; até 3 letras ("(M)", "(LE)") =
@@ -144,8 +146,10 @@ export function lerLista(texto: string): LinhaLida[] {
         continue;
       }
       if (ehTitulo(t)) continue;
-      /* Frase solta (regra, aviso): mais de 5 palavras sem número na frente. */
-      if (normalizar(t.replace(EMOJI, '')).split(' ').length > 5) continue;
+      /* Frase solta (regra, aviso): sem número na frente, mais de 5 palavras e pontuação de frase, ou mais de 8
+         palavras. Um nome completo sem pontuação ("Maria Clara de Souza Lima Ferreira") é nome (KAN-269). */
+      const palavras = normalizar(t.replace(EMOJI, '')).split(' ').length;
+      if ((palavras > 5 && /[:,.;!?]/.test(t.replace(/\([^()]*\)/g, ''))) || palavras > 8) continue;
     }
     const p = lerPessoa(t);
     if (p) itens.push(Object.assign(p, { goleiro: p.goleiro || golSecao, secao }));

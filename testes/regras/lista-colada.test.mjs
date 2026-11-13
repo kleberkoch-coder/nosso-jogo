@@ -173,3 +173,24 @@ test('CT-KAN-244-09: posição de quem é novo vem da sigla ou de "goleiro"', ()
   assert.equal(posicaoDe(l({ pos: 'Z' }), ks, 'GOL'), '');
   assert.equal(posicaoDe(l({ goleiro: true }), ['LEV', 'PON'], 'GOL'), '');
 });
+
+test('CT-KAN-269-01: nome completo sem número e sem pontuação entra, mesmo com 6 palavras ou mais; frase com pontuação continua ignorada', () => {
+  const ls = lerLista('Ana\nMaria Clara de Souza Lima Ferreira\nÃçéíõü Joãozinho da Silva Pereira Lima\nBia');
+  assert.deepEqual(
+    ls.map(l => [l.nome, l.s]),
+    [
+      ['Ana', 'in'],
+      ['Maria Clara de Souza Lima Ferreira', 'in'],
+      ['Ãçéíõü Joãozinho da Silva Pereira Lima', 'in'],
+      ['Bia', 'in'],
+    ]
+  );
+  assert.deepEqual(
+    lerLista('Quem não pagar até sexta, não joga.\nAna').map(l => l.nome),
+    ['Ana']
+  );
+  assert.deepEqual(
+    lerLista('Lembrem de levar a bola e os coletes pro jogo de hoje à noite\nAna').map(l => l.nome),
+    ['Ana']
+  );
+});

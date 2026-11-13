@@ -8,7 +8,7 @@ import { render } from 'preact';
 import { COL, SPORTS, corClara, porTimePadrao } from '../dominio/esportes.js';
 import { WA } from '../dominio/contato';
 import { lerLista, posicaoDe } from '../dominio/lista-colada';
-import { sortearRapido, textoRapido, type JogadorRapido, type TimeRapido } from '../dominio/sorteio-rapido';
+import { faltamPara, sortearRapido, textoRapido, type JogadorRapido, type TimeRapido } from '../dominio/sorteio-rapido';
 import estilo from '../estilos/sorteio-rapido.css' with { type: 'text' };
 import { juntarTextos, tx } from '../i18n/index.js';
 import textos from '../i18n/pt-BR-sorteiorapido';
@@ -114,14 +114,24 @@ function Passo2() {
           </li>
         ))}
       </ul>
-      <div class="row sr-botoes">
-        <button class="btn" data-a="srVoltar" data-v="1">
-          {tx('sr.voltar')}
-        </button>
-        <button class="btn primary" data-a="srSortear">
-          {tx('sr.sortear')}
-        </button>
-      </div>
+    </div>
+  );
+}
+
+/* KAN-270: "Voltar" e "Sortear times (12)" numa barra fixa no rodapé (a Barra de ação fixa do Design System), visível
+   sem rolar a lista; faltando gente, o botão diz quantos faltam. */
+function BarraSortear() {
+  const falta = faltamPara(est.js.length, est.porTime, duplas());
+  return (
+    <div class="acao-fixa sr-fixa" id="srBarra">
+      <button class="btn" data-a="srVoltar" data-v="1">
+        {tx('sr.voltar')}
+      </button>
+      <button class="btn bib" data-a="srSortear" id="srSortearBtn" disabled={!!falta}>
+        {falta
+          ? tx(falta === 1 ? 'sr.falta1' : 'sr.faltamN', { n: falta })
+          : tx(duplas() ? 'sr.sortearDuplas' : 'sr.sortearTimes', { n: est.js.length })}
+      </button>
     </div>
   );
 }
@@ -210,6 +220,7 @@ function Tela() {
   return (
     <div class="sr-tela">
       {est.passo === 1 ? <Passo1 /> : est.passo === 2 ? <Passo2 /> : <Passo3 />}
+      {est.passo === 2 ? <BarraSortear /> : null}
       <p class="small muted sr-rodape">{tx('sr.privacidade')}</p>
     </div>
   );

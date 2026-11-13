@@ -7,7 +7,7 @@
    - usuarios/{uid}/aparelhos/{id}: cada celular que recebe avisos (token do Firebase Cloud Messaging e idioma).
    - grupos/{gid}/privado/avisos: horas antes do jogo para o aviso de "faltam pessoas" (o grupo todo).
    - avisosEnviados/{gid}_{rid}: o aviso de "faltam pessoas" já foi desta rodada (só o servidor lê e grava).
-   - sistema/avisos: quantos avisos saíram no mês (teto de gasto: passou do limite, para até o mês virar). */
+   - avisosEnviados/_teto: quantos avisos saíram no mês (teto de gasto: passou do limite, para até o mês virar). */
 import {
   agoraNoFuso,
   faltaAlgo,
@@ -77,7 +77,7 @@ const mesDe = (ms: number) => new Date(ms).toISOString().slice(0, 7);
 
 /* Reserva n avisos no teto do mês; devolve falso se passou do limite. */
 export async function cabeNoTeto(db: Db, n: number, agora: number, limite = LIMITE_MES): Promise<boolean> {
-  const ref = db.doc('sistema/avisos'),
+  const ref = db.doc('avisosEnviados/_teto'),
     mes = mesDe(agora);
   return db.runTransaction(async t => {
     const d = (await t.get(ref)).data() || {};

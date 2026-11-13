@@ -9,6 +9,7 @@
    - O texto do aviso leva só nome, grupo, data, hora e contagem: nada de notas, caixa ou contatos. */
 import { TOTAL, faltaTotal, minimoValido } from './posicoes.ts';
 import { proximasFixas, type Fixo } from './rodadas-fixas.ts';
+import { TEXTOS } from '../i18n/avisos-servidor.ts';
 
 export type Marca = 'in' | 'out';
 export type Presenca = { s?: Marca | string; by?: string; nome?: string; pos?: string };
@@ -118,54 +119,7 @@ export function faltas(
   return { total: { n: confirmados.length, min: t.min, falta: t.falta }, pos };
 }
 
-/* ---------- Textos (três idiomas; o servidor não carrega o dicionário do app) ---------- */
-const TEXTOS: Record<Idioma, Record<string, string>> = {
-  'pt-BR': {
-    vai: '✅ {nome} vai',
-    naoVai: '❌ {nome} não vai',
-    mudouVai: '🔁 {nome} mudou para Vou',
-    mudouNaoVai: '⚠️ {nome} desistiu',
-    corpoResposta: '{grupo} · {data} · {n} confirmados',
-    corpoResposta1: '{grupo} · {data} · 1 confirmado',
-    faltaTitulo: '⏰ Faltam {n} para o mínimo',
-    faltaTitulo1: '⏰ Falta 1 para o mínimo',
-    faltaPosTitulo: '⏰ Falta gente para o mínimo',
-    faltaCorpo: '{grupo} · {data} às {hora} · {conf} de {min} confirmados',
-    faltaCorpoSemTotal: '{grupo} · {data} às {hora} · {conf} confirmados',
-    faltaPos: 'falta {n} {pos}',
-    alguem: 'Alguém',
-  },
-  en: {
-    vai: '✅ {nome} is in',
-    naoVai: "❌ {nome} can't make it",
-    mudouVai: '🔁 {nome} changed to In',
-    mudouNaoVai: '⚠️ {nome} dropped out',
-    corpoResposta: '{grupo} · {data} · {n} confirmed',
-    corpoResposta1: '{grupo} · {data} · 1 confirmed',
-    faltaTitulo: '⏰ {n} more needed for the minimum',
-    faltaTitulo1: '⏰ 1 more needed for the minimum',
-    faltaPosTitulo: '⏰ Not enough players for the minimum',
-    faltaCorpo: '{grupo} · {data} at {hora} · {conf} of {min} confirmed',
-    faltaCorpoSemTotal: '{grupo} · {data} at {hora} · {conf} confirmed',
-    faltaPos: '{n} {pos} missing',
-    alguem: 'Someone',
-  },
-  es: {
-    vai: '✅ {nome} va',
-    naoVai: '❌ {nome} no va',
-    mudouVai: '🔁 {nome} cambió a Voy',
-    mudouNaoVai: '⚠️ {nome} se bajó',
-    corpoResposta: '{grupo} · {data} · {n} confirmados',
-    corpoResposta1: '{grupo} · {data} · 1 confirmado',
-    faltaTitulo: '⏰ Faltan {n} para el mínimo',
-    faltaTitulo1: '⏰ Falta 1 para el mínimo',
-    faltaPosTitulo: '⏰ Falta gente para el mínimo',
-    faltaCorpo: '{grupo} · {data} a las {hora} · {conf} de {min} confirmados',
-    faltaCorpoSemTotal: '{grupo} · {data} a las {hora} · {conf} confirmados',
-    faltaPos: 'falta {n} {pos}',
-    alguem: 'Alguien',
-  },
-};
+/* ---------- Textos (três idiomas, em i18n/avisos-servidor.ts: o servidor não carrega o dicionário do app) ---------- */
 export const CHAVES_TEXTO = Object.keys(TEXTOS['pt-BR']);
 export const textosDe = (l: Idioma) => TEXTOS[l];
 

@@ -1495,3 +1495,49 @@ describe('material do grupo (KAN-190)', () => {
     await assertFails(updateDoc(doc(db.anon(), G), { 'cfg.mat': mat }));
   });
 });
+
+describe('avisos no celular (KAN-242)', () => {
+  const ap = { token: 'tok-123', lang: 'pt-BR', em: 1, plat: 'android' };
+  test('cada conta grava, lê e apaga só os próprios celulares', async () => {
+    await assertSucceeds(setDoc(doc(db.adm(), 'usuarios/adm/aparelhos/cel-12345678'), ap));
+    await assertSucceeds(getDoc(doc(db.adm(), 'usuarios/adm/aparelhos/cel-12345678')));
+    await assertFails(getDoc(doc(db.outro(), 'usuarios/adm/aparelhos/cel-12345678')));
+    await assertFails(setDoc(doc(db.outro(), 'usuarios/adm/aparelhos/cel-87654321'), ap));
+    await assertFails(setDoc(doc(db.anon(), 'usuarios/anon1/aparelhos/cel-12345678'), ap));
+    await assertFails(setDoc(doc(db.adm(), 'usuarios/adm/aparelhos/cel-12345679'), Object.assign({ nota: 9 }, ap)));
+    await assertFails(
+      setDoc(doc(db.adm(), 'usuarios/adm/aparelhos/cel-12345679'), Object.assign({}, ap, { lang: 'fr' }))
+    );
+    await assertFails(
+      setDoc(doc(db.adm(), 'usuarios/adm/aparelhos/cel-12345679'), Object.assign({}, ap, { token: '' }))
+    );
+    await assertSucceeds(deleteDoc(doc(db.adm(), 'usuarios/adm/aparelhos/cel-12345678')));
+  });
+  test('o administrador liga os avisos do grupo só para si; quem não é administrador não liga', async () => {
+    const av = { gid: 'g1', uid: 'adm', ligado: true, em: 1 };
+    await assertSucceeds(setDoc(doc(db.adm(), 'avisos/g1_adm'), av));
+    await assertSucceeds(getDoc(doc(db.adm(), 'avisos/g1_adm')));
+    await assertSucceeds(getDoc(doc(db.dono(), 'avisos/g1_dono'))); // ainda não existe: lê vazio
+    await assertFails(getDoc(doc(db.dono(), 'avisos/g1_adm')));
+    await assertFails(setDoc(doc(db.dono(), 'avisos/g1_adm'), av)); // para outro administrador
+    await assertFails(setDoc(doc(db.outro(), 'avisos/g1_outro'), { gid: 'g1', uid: 'outro', ligado: true, em: 1 }));
+    await assertFails(setDoc(doc(db.adm(), 'avisos/g2_adm'), { gid: 'g1', uid: 'adm', ligado: true, em: 1 })); // id errado
+    await assertFails(setDoc(doc(db.anon(), 'avisos/g1_anon1'), { gid: 'g1', uid: 'anon1', ligado: true, em: 1 }));
+    await assertFails(setDoc(doc(db.adm(), 'avisos/g1_adm'), Object.assign({ extra: 1 }, av)));
+    await assertSucceeds(setDoc(doc(db.adm(), 'avisos/g1_adm'), Object.assign({}, av, { ligado: false, em: 2 })));
+    await assertSucceeds(deleteDoc(doc(db.adm(), 'avisos/g1_adm')));
+  });
+  test('horas do aviso de faltam pessoas: qualquer administrador, de 1 a 24; jogador não lê', async () => {
+    await assertSucceeds(setDoc(doc(db.adm(), G + '/privado/avisos'), { horas: 5 }));
+    await assertFails(setDoc(doc(db.adm(), G + '/privado/avisos'), { horas: 0 }));
+    await assertFails(setDoc(doc(db.adm(), G + '/privado/avisos'), { horas: 25 }));
+    await assertFails(setDoc(doc(db.adm(), G + '/privado/avisos'), { horas: 3, x: 1 }));
+    await assertFails(setDoc(doc(db.outro(), G + '/privado/avisos'), { horas: 3 }));
+    await assertSucceeds(getDoc(doc(db.dono(), G + '/privado/avisos')));
+    await assertFails(getDoc(doc(db.anon(), G + '/privado/avisos')));
+  });
+  test('ninguém lê nem grava os avisos já mandados', async () => {
+    await assertFails(getDoc(doc(db.adm(), 'avisosEnviados/g1_r1')));
+    await assertFails(setDoc(doc(db.adm(), 'avisosEnviados/_teto'), { mes: '2026-11', n: 0 }));
+  });
+});

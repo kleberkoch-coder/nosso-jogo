@@ -1,6 +1,6 @@
 /* KAN-242: funções dos avisos no EMULADOR do Firebase (Firestore + funções). Roda na automação "Testes do app"
    (tarefa "funcoes"), com:
-   npx firebase emulators:exec --only functions,firestore --project demo-nosso-jogo "node --test testes/funcoes/"
+   npx firebase emulators:exec --only functions,firestore --project demo-nosso-jogo "node --test testes/funcoes/*.test.mjs"
    No emulador a função não manda para o celular: grava o aviso em avisosTeste, que o teste confere. */
 import { test, before } from 'node:test';
 import assert from 'node:assert/strict';

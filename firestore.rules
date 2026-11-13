@@ -374,6 +374,40 @@ service cloud.firestore {
     // Lista "Meus grupos" de cada conta: só a própria pessoa lê e grava.
     match /usuarios/{uid} {
       allow read, write: if realUser() && request.auth.uid == uid;
+
+      // KAN-242 (pelada-v116): celulares que recebem os avisos (token do Firebase Cloud Messaging, idioma e quando
+      // ligou). Só a própria conta lê, grava e apaga; o servidor lê para mandar os avisos.
+      match /aparelhos/{did} {
+        allow read, delete: if realUser() && request.auth.uid == uid;
+        allow create, update: if realUser() && request.auth.uid == uid && did.matches('[A-Za-z0-9_-]{8,40}')
+          && request.resource.data.keys().hasOnly(['token', 'lang', 'em', 'plat'])
+          && request.resource.data.token is string
+          && request.resource.data.token.size() > 0 && request.resource.data.token.size() <= 4096
+          && request.resource.data.get('lang', 'pt-BR') in ['pt-BR', 'en', 'es']
+          && request.resource.data.em is int
+          && request.resource.data.get('plat', '') is string && request.resource.data.get('plat', '').size() <= 20;
+      }
+    }
+
+    // KAN-242 (pelada-v116): cada administrador liga os avisos de um grupo para si (avisos/{grupo}_{conta}). Só ele lê,
+    // grava e apaga o próprio, e só ligado a um grupo de que é administrador. O servidor confere de novo ao mandar.
+    match /avisos/{id} {
+      allow read: if realUser() && (resource == null || resource.data.uid == request.auth.uid);
+      allow delete: if realUser() && resource.data.uid == request.auth.uid;
+      allow create, update: if realUser()
+        && request.resource.data.keys().hasOnly(['gid', 'uid', 'ligado', 'em'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.gid is string && request.resource.data.gid.size() <= 64
+        && id == request.resource.data.gid + '_' + request.auth.uid
+        && (resource == null || resource.data.gid == request.resource.data.gid)
+        && isMember(request.resource.data.gid)
+        && request.resource.data.ligado is bool
+        && request.resource.data.em is int;
+    }
+
+    // Avisos de "faltam pessoas" já mandados e o teto do mês (_teto): só o servidor (que não passa pelas regras).
+    match /avisosEnviados/{id} {
+      allow read, write: if false;
     }
 
     // KAN-239 (pelada-v105): falhas no uso (comprovante do App Check que não veio, erro de código, gravação recusada),
@@ -498,7 +532,10 @@ service cloud.firestore {
         allow write: if (doc == 'caixa' && pode(gid, 'caixa') && pago(gid)) || (doc == 'contatos' && pode(gid, 'elenco'))
           || (doc == 'convite' && pode(gid, 'config')) || (doc == 'ratings' && pode(gid, 'notas'))
           || (doc == 'afast' && pode(gid, 'elenco'))
-          || (!(doc in ['caixa', 'contatos', 'convite', 'ratings', 'afast']) && adminAtivo(gid));
+          // KAN-242: horas antes do jogo para o aviso de "faltam pessoas" (1 a 24), de qualquer administrador.
+          || (doc == 'avisos' && adminAtivo(gid) && request.resource.data.keys().hasOnly(['horas'])
+              && request.resource.data.horas is int && request.resource.data.horas >= 1 && request.resource.data.horas <= 24)
+          || (!(doc in ['caixa', 'contatos', 'convite', 'ratings', 'afast', 'avisos']) && adminAtivo(gid));
       }
 
       // KAN-201: elenco só com a permissão de elenco. Quem tem a de caixa ajusta só a marca de vaga (KAN-63), que segue o tipo.

@@ -104,7 +104,7 @@ jobs:
         run: |
           set -o pipefail
           status=0
-          npx firebase emulators:exec --only functions,firestore --project demo-nosso-jogo "node --test testes/funcoes/" 2>&1 | tee "$RUNNER_TEMP/funcoes.txt" || status=$?
+          npx firebase emulators:exec --only functions,firestore --project demo-nosso-jogo "node --test testes/funcoes/*.test.mjs" 2>&1 | tee "$RUNNER_TEMP/funcoes.txt" || status=$?
           grep -E "^\s*not ok [0-9]+ - " "$RUNNER_TEMP/funcoes.txt" | sed -E 's/^\s*not ok [0-9]+ - /::error::Função falhou: /' || true
           grep -iE "error|erro" "$RUNNER_TEMP/funcoes.txt" | grep -v "^#" | head -6 | sed -E 's/^\s*/::warning::Detalhe: /' || true
           test "$status" -eq 0 || exit "$status"

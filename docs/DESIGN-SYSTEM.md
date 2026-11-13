@@ -74,6 +74,14 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo de toda janela (pelada-v106, KAN-250); **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v116)
+- **Janela Avisos no celular** (KAN-242; `ui/AvisosJanela.tsx`, CSS `avisos.css`, sob demanda; aberta pelo item "🔔 Avisos no celular" do menu da conta): título (h3), a explicação em `small muted` e, conforme o estado do celular:
+  - **desligado:** "🔔 Receber avisos neste celular" (`btn primary av-ligar`, largura toda, 44px, com o foco) e a ajuda embaixo;
+  - **ligado:** a lista de grupos (`av-grupos`): cada grupo num cartão (`av-grupo`, borda `line`, cantos de 12px) com o **interruptor** (`av-liga`, `role=switch`, linha inteira de 44px: nome em negrito à esquerda e o selo `av-estado` à direita: "Ligado" em `in-fill` com `on-in` e borda `in`, ou "Desligado" com borda `field-border` e texto `muted`); ligado, embaixo, "Se faltar gente para o mínimo, avisar" com o combo de horas (`sel`, 44px, largura toda) ou, sem mínimo, a orientação com o link "Definir mínimo" (`linkbtn`, 44px);
+  - **iPhone sem instalar, bloqueado ou sem suporte:** a explicação em `warn-alt` (no iPhone, com "Como instalar", `btn`).
+  - Rodapé: "Desligar neste celular" (`btn ghost`, só ligado) e "Fechar" (`btn`).
+- **Aviso no celular** (fora do app, desenhado pelo sistema): título curto com emoji ("✅ João vai", "⚠️ João desistiu", "⏰ Faltam 3 para o mínimo"), corpo "{grupo} · {data} · N confirmados", ícone do app (`icon-192`) e o selo `favicon-32`.
+
 ## Componentes (pelada-v115)
 - **Sorteio sem conta, passo 2** (KAN-270): "Voltar" e "Sortear times (12)" saem do fim da lista e vão para uma **Barra de ação fixa** no rodapé (`acao-fixa sr-fixa`: a mesma da aba Rodada, sem as margens negativas, com cantos de 14px em cima). "Voltar" (`btn`) com a largura do texto e "Sortear times (12)" (`btn bib`, 44px) no resto; em duplas, "Sortear duplas (8)". Faltando gente, o botão fica desligado e diz "Faltam 2 para sortear", como na aba Rodada.
 

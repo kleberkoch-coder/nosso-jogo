@@ -1,161 +1,38 @@
 {
   "_leia": "KAN-170: cada tipo de dado que o app grava (lido do código por testes/tipos-gravados.mjs) aponta para os casos do roteiro de gravação (testes/persistencia_app.py) que gravam, recarregam e conferem. Tipo novo sem caso barra a proposta (testes/conferir-entrega.mjs). 'fora:' só com o motivo.",
-  "usuarios": [
-    "P01",
-    "P17"
-  ],
-  "grupos": [
-    "P02",
-    "P24"
-  ],
-  "grupos/membros": [
-    "P02",
-    "P25"
-  ],
-  "grupos/convites": [
-    "P25"
-  ],
-  "falhas": [
-    "fora: só o portal lê (o app só grava, sem ler de volta); conferido em testes_app.py (CT-KAN-239) e nas regras do Firebase no emulador"
-  ],
-  "contas": [
-    "P02",
-    "P24"
-  ],
-  "contas/historico": [
-    "fora: gravado só pelo portal (entrada com a conta Google da administração), que o roteiro de gravação não abre; conferido em testes_app.py (CT-KAN-117) e nas regras do Firebase no emulador"
-  ],
-  "config/app": [
-    "P02",
-    "P03",
-    "P16",
-    "P21",
-    "P22",
-    "P23",
-    "P35",
-    "P38"
-  ],
-  "jogadores": [
-    "P04",
-    "P05",
-    "P09",
-    "P22",
-    "P39",
-    "P40"
-  ],
-  "privado/ratings": [
-    "P04",
-    "P05",
-    "P06",
-    "P07",
-    "P30",
-    "P40"
-  ],
-  "privado/caixa": [
-    "P05",
-    "P08",
-    "P20",
-    "P26",
-    "P27",
-    "P29",
-    "P31",
-    "P40"
-  ],
-  "privado/afast": [
-    "P26"
-  ],
-  "privado/contatos": [
-    "P05"
-  ],
-  "rodadas": [
-    "P12",
-    "P22",
-    "P23",
-    "P33",
-    "P34",
-    "P36",
-    "P38",
-    "P40"
-  ],
-  "rodadas/extra": [
-    "P33"
-  ],
-  "rodadas/presencas": [
-    "P10",
-    "P11",
-    "P39",
-    "P40"
-  ],
-  "avulsos": [
-    "P11",
-    "P39"
-  ],
-  "rodadas/limites/avulsos": [
-    "P11"
-  ],
-  "rodadas/limites/vagas": [
-    "P22"
-  ],
-  "rodadas/partidas": [
-    "P13",
-    "P13b",
-    "P13c",
-    "P13d"
-  ],
-  "rodadas/partidas/art": [
-    "P13c"
-  ],
-  "resumos": [
-    "P13",
-    "P13d",
-    "P14"
-  ],
-  "resumosCaixa": [
-    "P14",
-    "P28"
-  ],
-  "caixa": [
-    "P14",
-    "P20",
-    "P27",
-    "P28",
-    "P29",
-    "P31"
-  ],
-  "votacoes": [
-    "P15",
-    "P35"
-  ],
-  "avaliacoes": [
-    "P30"
-  ],
-  "avaliacoes/notas": [
-    "P30"
-  ],
-  "votacoes/votos": [
-    "P15b",
-    "P37"
-  ],
-  "votacoes/trocas": [
-    "P15b"
-  ],
-  "privado/convite": [
-    "P15c"
-  ],
-  "membros": [
-    "P25",
-    "fora: forma de entrar do administrador (via), gravada sozinha ao entrar; conferida em testes_app.py (CT-KAN-98-01) e nas regras do Firebase"
-  ],
-  "privado/migracao": [
-    "fora: marca de migração gravada sozinha uma vez por grupo; conferida em testes_app.py (CT-KAN-86) e nas regras do Firebase"
-  ],
-  "avisos": [
-    "P41"
-  ],
-  "usuarios/aparelhos": [
-    "P41"
-  ],
-  "grupos/privado/avisos": [
-    "P41"
-  ]
+  "usuarios": ["P01", "P17"],
+  "grupos": ["P02", "P24"],
+  "grupos/membros": ["P02", "P25"],
+  "grupos/convites": ["P25"],
+  "falhas": ["fora: só o portal lê (o app só grava, sem ler de volta); conferido em testes_app.py (CT-KAN-239) e nas regras do Firebase no emulador"],
+  "contas": ["P02", "P24"],
+  "contas/historico": ["fora: gravado só pelo portal (entrada com a conta Google da administração), que o roteiro de gravação não abre; conferido em testes_app.py (CT-KAN-117) e nas regras do Firebase no emulador"],
+  "config/app": ["P02", "P03", "P16", "P21", "P22", "P23", "P35", "P38"],
+  "jogadores": ["P04", "P05", "P09", "P22", "P39", "P40"],
+  "privado/ratings": ["P04", "P05", "P06", "P07", "P30", "P40"],
+  "privado/caixa": ["P05", "P08", "P20", "P26", "P27", "P29", "P31", "P40"],
+  "privado/afast": ["P26"],
+  "privado/contatos": ["P05"],
+  "rodadas": ["P12", "P22", "P23", "P33", "P34", "P36", "P38", "P40"],
+  "rodadas/extra": ["P33"],
+  "rodadas/presencas": ["P10", "P11", "P39", "P40"],
+  "avulsos": ["P11", "P39"],
+  "rodadas/limites/avulsos": ["P11"],
+  "rodadas/limites/vagas": ["P22"],
+  "rodadas/partidas": ["P13", "P13b", "P13c", "P13d"],
+  "rodadas/partidas/art": ["P13c"],
+  "resumos": ["P13", "P13d", "P14"],
+  "resumosCaixa": ["P14", "P28"],
+  "caixa": ["P14", "P20", "P27", "P28", "P29", "P31"],
+  "votacoes": ["P15", "P35"],
+  "avaliacoes": ["P30"],
+  "avaliacoes/notas": ["P30"],
+  "votacoes/votos": ["P15b", "P37"],
+  "votacoes/trocas": ["P15b"],
+  "privado/convite": ["P15c"],
+  "membros": ["P25", "fora: forma de entrar do administrador (via), gravada sozinha ao entrar; conferida em testes_app.py (CT-KAN-98-01) e nas regras do Firebase"],
+  "privado/migracao": ["fora: marca de migração gravada sozinha uma vez por grupo; conferida em testes_app.py (CT-KAN-86) e nas regras do Firebase"],
+  "avisos": ["P41"],
+  "usuarios/aparelhos": ["P41"],
+  "grupos/privado/avisos": ["P41"]
 }

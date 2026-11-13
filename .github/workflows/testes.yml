@@ -112,6 +112,39 @@ jobs:
           test "${pass:-0}" -gt 0 || { echo "::error::Nenhum teste das funções rodou."; exit 1; }
           echo "::notice::Funções no emulador: ${pass} testes passaram."
 
+  # KAN-242: confere, sem publicar nada, se a conta do GitHub tem as permissões para publicar as funções (ensaio do
+  # "Publicar as funções"). Roda só à mão (Actions → Testes do app → Run workflow), antes do primeiro Merge com funções.
+  funcoes-permissoes:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Montar as funções
+        run: |
+          npm install --no-audit --no-fund
+          node funcoes/montar.mjs
+          (cd funcoes && npm install --no-audit --no-fund)
+      - name: Ensaio da publicação (não publica)
+        env:
+          CHAVE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        shell: bash
+        run: |
+          test -n "$CHAVE" || { echo "::error::Falta o segredo FIREBASE_SERVICE_ACCOUNT no GitHub."; exit 1; }
+          echo "$CHAVE" > "$RUNNER_TEMP/chave.json"
+          python3 -c "import json,sys;print('::notice::Conta: '+json.load(open(sys.argv[1])).get('client_email','?'))" "$RUNNER_TEMP/chave.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/chave.json"
+          set +e
+          npx --yes firebase-tools@14 deploy --only functions --project nosso-jogo-f4762 --non-interactive --dry-run 2>&1 | tee "$RUNNER_TEMP/saida.txt"
+          status=${PIPESTATUS[0]}
+          rm -f "$RUNNER_TEMP/chave.json"
+          grep -iE "error|erro|permission|denied|forbidden|not enabled|has not been used|missing|required" "$RUNNER_TEMP/saida.txt" | tail -12 | while IFS= read -r l; do echo "::warning::$l"; done
+          test "$status" -eq 0 || { echo "::error::O ensaio da publicação das funções falhou (veja os avisos)."; exit "$status"; }
+          echo "::notice::Ensaio das funções: tudo certo para publicar no Merge."
+
   # KAN-220: o roteiro se divide em 3 partes que rodam ao mesmo tempo (PARTE=a, b e c; ver testes/testes_app.py).
   # Juntas levam o tempo da mais longa (cerca de 8 min), em vez dos 20 min de uma só.
   testes-parte:

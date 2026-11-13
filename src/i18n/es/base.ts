@@ -148,6 +148,7 @@ export default {
   'conta.pais': 'País y formatos',
   'conta.tema': 'Tema',
   'conta.plano': 'Plan y funciones',
+  'conta.avisos': 'Avisos en el celular',
   'conta.sair': 'Salir',
   'soVer.aviso':
     'Solo puedes ver este grupo: su plan permite menos administradores invitados y tú entraste después. Para volver a editar, habla con el organizador.',

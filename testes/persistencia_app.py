@@ -1043,6 +1043,55 @@ with sync_playwright() as pw:
     ok(r40b == r40, f'CT-KAN-170-P40: e também depois de sair e entrar ({r40b})')
     c40.close()
 
+    # P41 avisos no celular (KAN-242): o celular (usuarios/{uid}/aparelhos), os grupos ligados (avisos/{grupo}_{conta}) e o
+    # horário do aviso de "faltam pessoas" (grupos/{gid}/privado/avisos), com as regras do Firebase. Sem o Firebase Cloud
+    # Messaging de verdade (token de teste). Confere depois de recarregar; ao sair da conta, o celular sai da lista.
+    c41 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block', timezone_id='America/Sao_Paulo', permissions=['notifications'])
+    c41.add_init_script("window.__njTokenTeste = 'token-de-teste-41'")
+    p41 = c41.new_page(); p41.on('pageerror', lambda e: errs.append(str(e)))
+    E41 = 'avisos41@teste.com'
+    p41.goto(URL + '#/criar'); p41.wait_for_function("document.querySelector('#lpais') && document.querySelector('#lpais').options.length > 10", timeout=20000)
+    p41.fill('#le', E41); p41.fill('#lp', SENHA); p41.fill('#lp2', SENHA); p41.wait_for_timeout(200)
+    p41.click('[data-a=signup]'); p41.wait_for_selector('#ngn', timeout=20000)
+    p41.fill('#ngn', 'Avisos FC'); p41.click('[data-a=createGroup]')
+    p41.wait_for_function("location.hash.startsWith('#/g/')", timeout=20000)
+    g41 = p41.url.split('#/g/')[1].split('/')[0]
+    pronto(p41)
+    p41.click('#topright [data-a=contaMenu]'); p41.wait_for_timeout(300); p41.click('.theme-menu [data-a=avisosDlg]')
+    p41.wait_for_selector('#avLigar', timeout=20000); p41.click('#avLigar')
+    p41.wait_for_selector('#avGrupos [data-a=avisosGrupo][aria-checked=true]', timeout=20000)
+    gravou(p41); pronto(p41)
+    # Lê de volta pela própria janela (o que o app mostra depois de recarregar).
+    def janela41():
+        p41.click('#topright [data-a=contaMenu]'); p41.wait_for_timeout(300); p41.click('.theme-menu [data-a=avisosDlg]')
+        p41.wait_for_selector('#avGrupos li', timeout=20000); p41.wait_for_timeout(300)
+        r = J(p41, "(()=>{const j=document.getElementById('avisosJanela');return [j.dataset.estado,[...j.querySelectorAll('[data-a=avisosGrupo]')].map(b=>b.getAttribute('aria-checked'))]})()")
+        return r
+    r41 = janela41()
+    ok(r41 == ['ligado', ['true']], f'CT-KAN-170-P41: os avisos ligados neste celular e no grupo continuam depois de recarregar ({r41})')
+    # Mínimo do grupo para aparecer o horário; muda para 5h e desliga o grupo.
+    p41.click('#dlg [data-a=close]'); p41.wait_for_timeout(300)
+    p41.click('[data-a=tab][data-v=rodada]'); p41.wait_for_timeout(700)
+    p41.click('[data-a=abrirMinimos]'); p41.wait_for_selector('#dlg input', timeout=10000)
+    p41.locator('#dlg input').first.fill('4'); p41.click('#dlg .dlg-f .btn.primary'); p41.wait_for_timeout(1200)
+    p41.select_option('#avGrupos select', '5'); p41.wait_for_timeout(1500)
+    p41.click('#avGrupos [data-a=avisosGrupo]'); p41.wait_for_selector('#avGrupos [data-a=avisosGrupo][aria-checked=false]', timeout=10000)
+    gravou(p41); pronto(p41)
+    r41b = janela41()
+    p41.click('#avGrupos [data-a=avisosGrupo]'); p41.wait_for_selector('#avGrupos select', timeout=10000)
+    h41 = J(p41, "document.querySelector('#avGrupos select').value")
+    ok(r41b == ['ligado', ['false']] and h41 == '5', f'CT-KAN-170-P41: grupo desligado e o horário de 5h continuam depois de recarregar ({r41b}, {h41})')
+    p41.click('#dlg [data-a=close]'); p41.wait_for_timeout(300)
+    sair_e_esperar(p41)
+    p41.goto(URL + '#/entrar'); p41.wait_for_selector('#le', timeout=20000); p41.wait_for_timeout(300)
+    p41.fill('#le', E41); p41.fill('#lp', SENHA); p41.keyboard.press('Enter'); p41.wait_for_timeout(2500)
+    p41.goto(URL + '#/g/' + g41); pronto(p41)
+    p41.click('#topright [data-a=contaMenu]'); p41.wait_for_timeout(300); p41.click('.theme-menu [data-a=avisosDlg]')
+    p41.wait_for_selector('#avisosJanela', timeout=20000); p41.wait_for_timeout(500)
+    ok(J(p41, "document.getElementById('avisosJanela').dataset.estado") == 'desligado' and J(p41, "localStorage.getItem('nj-avisos')") is None,
+       'CT-KAN-170-P41: ao sair da conta, o celular deixa de receber (volta a "Receber avisos neste celular")')
+    c41.close()
+
     ok(not errs, 'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))
     b.close()
 

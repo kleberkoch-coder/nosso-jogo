@@ -13,6 +13,7 @@ import { acoes as afastamento } from './acoes/afastamento';
 import { acoes as avaliacao } from './acoes/avaliacao';
 import { acoes as extra } from './acoes/extra';
 import { acoes as colar } from './acoes/colar-lista';
+import { acoes as avisos, renovarDepois } from './acoes/avisos';
 import { ACT } from './acoes.js';
 import { tx } from './i18n/index.js';
 import { main, toast } from './nucleo/util.js';
@@ -69,8 +70,12 @@ export const ACOES = Object.assign(
   afastamento,
   avaliacao,
   extra,
-  colar
+  colar,
+  avisos
 );
+
+/* KAN-242: quem ligou os avisos neste celular renova o endereço de entrega depois que o app abre. */
+renovarDepois();
 
 /* Abas sob demanda (KAN-180): Caixa, Histórico, Votação e Ranking baixam na primeira vez que a aba é aberta, como a Partida.
    Cada uma traz a tela (ver, e montar quando é componente) e as próprias ações, que entram no ACT. */

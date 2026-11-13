@@ -848,4 +848,33 @@ export default {
   'srg.descartado': 'Sorteo descartado.',
   'srg.pronto': 'Grupo creado con los {n} jugadores y los equipos de hoy.',
   'srg.demorou': 'El grupo se creó, pero los jugadores del sorteo no entraron. Agrégalos en la pestaña Jugadores.',
+
+  /* KAN-242: pt-BR-avisos.ts */
+  'av.titulo': 'Avisos en el celular',
+  'av.ajuda':
+    'Recibe un aviso cuando alguien responda por el enlace (va, no va o cambió de idea) y cuando falte gente para el mínimo cerca del partido.',
+  'av.ligar': '🔔 Recibir avisos en este celular',
+  'av.ligarAjuda': 'El celular pedirá permiso una vez. Cada administrador los activa en su propio celular.',
+  'av.desligar': 'Desactivar en este celular',
+  'av.fechar': 'Cerrar',
+  'av.desligado': 'Avisos desactivados en este celular.',
+  'av.ligado': 'Avisos activados en este celular. Elige los grupos:',
+  'av.semGrupos': 'Todavía no administras ningún grupo.',
+  'av.on': 'Activado',
+  'av.off': 'Desactivado',
+  'av.horas': 'Falta gente: avisar',
+  'av.horasN': '{n} h antes del partido',
+  'av.horasSalvas': 'Horario del aviso guardado para el grupo.',
+  'av.semMinimo': 'Para avisar cuando falte gente, define el mínimo del partido.',
+  'av.definirMinimo': 'Definir mínimo',
+  'av.minimoAqui': 'Toca "Definir mínimo" en el cuadro de la fecha.',
+  'av.instalarIphone':
+    'En iPhone, los avisos solo funcionan con la app instalada en la pantalla de inicio. Instálala y abre Nosso Jogo desde el ícono para activarlos.',
+  'av.comoInstalar': 'Cómo instalar',
+  'av.negado':
+    'Las notificaciones de Nosso Jogo están bloqueadas en este celular. Permítelas en la configuración del navegador (Notificaciones del sitio) y vuelve aquí.',
+  'av.semSuporte': 'Este navegador no recibe avisos. Usa Chrome en Android o la app instalada en iPhone.',
+  'av.naoLigou': 'No se pudieron activar los avisos. Revisa la conexión e intenta de nuevo.',
+  'av.pronto': '¡Listo! Recibirás los avisos en este celular.',
+  'av.demo': 'Modo demostración: la pantalla funciona, pero ningún aviso llega al celular.',
 };

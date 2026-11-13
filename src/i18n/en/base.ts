@@ -145,6 +145,7 @@ export default {
   'conta.pais': 'Country and formats',
   'conta.tema': 'Theme',
   'conta.plano': 'Plan and features',
+  'conta.avisos': 'Phone notifications',
   'conta.sair': 'Sign out',
   'soVer.aviso':
     'You can only view this group: its plan allows fewer invited admins, and you joined later. To edit again, talk to the organizer.',

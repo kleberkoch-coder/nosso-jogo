@@ -55,7 +55,7 @@ document.addEventListener('click', e => {
   const el = e.target.closest('[data-a]');
   if (!el || el.disabled || el.classList.contains('busy')) return;
   /* KAN-204: convidado além do limite do plano só vê; o que grava fica escondido e, se chegar aqui, é barrado. */
-  if (S.route && S.route.n === 'admin' && soVer() && !SO_VER.has(el.dataset.a)) {
+  if (S.route && S.route.n === 'admin' && soVer() && !SO_VER.has(el.dataset.a) && !/^avisos/.test(el.dataset.a)) {
     e.preventDefault();
     toast(tx('soVer.barrado'));
     return;

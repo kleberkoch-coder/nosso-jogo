@@ -844,4 +844,33 @@ export default {
   'srg.descartado': 'Draw discarded.',
   'srg.pronto': "Group created with the {n} players and today's teams.",
   'srg.demorou': 'The group was created, but the players from the draw did not come in. Add them in the Players tab.',
+
+  /* KAN-242: pt-BR-avisos.ts */
+  'av.titulo': 'Phone notifications',
+  'av.ajuda':
+    'Get a notification when someone answers through the link (in, out or changed their mind) and when the game is short of the minimum close to kickoff.',
+  'av.ligar': '🔔 Get notifications on this phone',
+  'av.ligarAjuda': 'Your phone will ask for permission once. Each admin turns them on on their own phone.',
+  'av.desligar': 'Turn off on this phone',
+  'av.fechar': 'Close',
+  'av.desligado': 'Notifications are off on this phone.',
+  'av.ligado': 'Notifications are on for this phone. Choose the groups:',
+  'av.semGrupos': "You don't manage any group yet.",
+  'av.on': 'On',
+  'av.off': 'Off',
+  'av.horas': 'Short of players: notify',
+  'av.horasN': '{n}h before the game',
+  'av.horasSalvas': 'Notification time saved for the group.',
+  'av.semMinimo': 'To get a notice when players are missing, set the minimum for the game.',
+  'av.definirMinimo': 'Set minimum',
+  'av.minimoAqui': 'Tap "Set minimum" in the game panel.',
+  'av.instalarIphone':
+    'On iPhone, notifications only work with the app installed on the home screen. Install it and open Nosso Jogo from the icon to turn them on.',
+  'av.comoInstalar': 'How to install',
+  'av.negado':
+    "Notifications from Nosso Jogo are blocked on this phone. Allow them in your browser's site settings (Notifications) and come back here.",
+  'av.semSuporte': "This browser can't receive notifications. Use Chrome on Android or the installed app on iPhone.",
+  'av.naoLigou': "Couldn't turn on notifications. Check your connection and try again.",
+  'av.pronto': "Done! You'll get notifications on this phone.",
+  'av.demo': 'Demo mode: the screen works, but no notification reaches the phone.',
 };

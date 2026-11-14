@@ -72,6 +72,7 @@ export function syncName() {
     sportName: a.sportName || '',
     ativo: a.ativo !== false,
     criado: a.createdAt || null,
+    logo: a.logo || null,
   };
   if (Object.keys(want).some(k => (g[k] ?? null) !== (want[k] ?? null)))
     upMyGroup(S.gid as string, want).catch(() => {});

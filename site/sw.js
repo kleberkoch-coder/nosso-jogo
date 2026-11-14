@@ -1,6 +1,6 @@
 /* Service worker do site da pelada.
    Ao publicar uma nova versão, troque o número abaixo para os celulares atualizarem. */
-const VERSION = 'pelada-v117';
+const VERSION = 'pelada-v118';
 const SHELL = ['./', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png'];
 /* Preenchidas na montagem (build.mjs, KAN-149): pedaços de código do link público e da gestão. */
@@ -31,7 +31,7 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys()
-    .then(keys => Promise.all(keys.filter(k => k !== VERSION).map(k => caches.delete(k))))
+    .then(keys => Promise.all(keys.filter(k => k !== VERSION && k !== LOGOS).map(k => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
 
@@ -41,6 +41,7 @@ self.addEventListener('message', e => {
   if (e.data === 'gestao') e.waitUntil(caches.open(VERSION).then(c => c.addAll(GESTAO)).catch(() => {}));
 });
 
+const LOGOS = 'nj-logos';
 const CDN = u => u.hostname === 'fonts.googleapis.com' || u.hostname === 'fonts.gstatic.com' ||
   (u.hostname === 'www.gstatic.com' && u.pathname.startsWith('/firebasejs/'));
 
@@ -72,6 +73,22 @@ self.addEventListener('fetch', e => {
       const net = fetch(req).then(res => { if (res && (res.ok || res.type === 'opaque')) c.put(req, res.clone()); return res; }).catch(() => hit);
       return hit || net;
     }));
+  }
+  // KAN-273: logotipo do grupo (Firebase Storage). Cada troca tem nome novo, então a cópia guardada vale para
+  // sempre: abre na hora, também sem internet. Guarda no máximo 30 (os mais antigos saem).
+  if (url.hostname === 'firebasestorage.googleapis.com' && /%2Flogo-\d+\.(webp|jpg)$/.test(url.pathname)) {
+    e.respondWith(caches.open(LOGOS).then(async c => {
+      const hit = await c.match(req);
+      if (hit) return hit;
+      const res = await fetch(req);
+      if (res && (res.ok || res.type === 'opaque')) {
+        await c.put(req, res.clone());
+        const ks = await c.keys();
+        for (const k of ks.slice(0, Math.max(0, ks.length - 30))) await c.delete(k);
+      }
+      return res;
+    }));
+    return;
   }
   // Dados (Firestore, login) passam direto: o próprio Firebase cuida do modo offline.
 });

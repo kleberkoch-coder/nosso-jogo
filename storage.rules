@@ -1,0 +1,33 @@
+rules_version = '2';
+// Regras do Firebase Storage (KAN-273, pelada-v118): só o logotipo do grupo, em grupos/{gid}/logo-{momento}.webp
+// (ou .jpg). Publicadas pela automação "Publicar regras do Firebase" quando este arquivo muda na main.
+// - Ler: qualquer um (o logotipo aparece no link do jogador e no da votação, que não têm conta).
+// - Gravar: administrador do grupo com a permissão Configurações (o organizador sempre), em grupo não bloqueado.
+//   O app já reduz para 256 × 256; aqui o teto é 300 KB, só imagem WebP ou JPEG, e nunca por cima de outro arquivo.
+// - Apagar: o mesmo administrador (o app apaga o logotipo antigo depois de trocar).
+// Qualquer outro caminho fica fechado.
+service firebase.storage {
+  match /b/{bucket}/o {
+    function membro(gid) {
+      return /databases/(default)/documents/grupos/$(gid)/membros/$(request.auth.uid);
+    }
+    function grupo(gid) {
+      return /databases/(default)/documents/grupos/$(gid);
+    }
+    function podeConfig(gid) {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous'
+        && firestore.exists(membro(gid))
+        && firestore.get(grupo(gid)).data.get('bloq', false) != true
+        && (firestore.get(grupo(gid)).data.owner == request.auth.uid
+            || firestore.get(membro(gid)).data.get('perm', null) == null
+            || firestore.get(membro(gid)).data.get('perm', {}).get('config', false) == true);
+    }
+    match /grupos/{gid}/{arq} {
+      allow get: if arq.matches('logo-[0-9]{10,16}[.](webp|jpg)');
+      allow create: if arq.matches('logo-[0-9]{10,16}[.](webp|jpg)') && podeConfig(gid)
+        && request.resource.size < 300 * 1024
+        && request.resource.contentType.matches('image/(webp|jpeg)');
+      allow delete: if arq.matches('logo-[0-9]{10,16}[.](webp|jpg)') && podeConfig(gid);
+    }
+  }
+}

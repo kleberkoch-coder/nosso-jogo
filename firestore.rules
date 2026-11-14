@@ -463,7 +463,10 @@ service cloud.firestore {
         // KAN-204: a lista de convidados (adms) só o organizador arruma; quem entra ou sai pelo convite usa as regras abaixo.
         && (!('adms' in request.resource.data.diff(resource.data).affectedKeys()) || isOwner(gid))
         // KAN-117: o bloqueio (bloq) só o portal muda.
-        && !('bloq' in request.resource.data.diff(resource.data).affectedKeys());
+        && !('bloq' in request.resource.data.diff(resource.data).affectedKeys())
+        // KAN-273 (pelada-v118): logotipo = só o nome do arquivo no Storage (logo-{momento}.webp ou .jpg).
+        && (!('logo' in request.resource.data) || (request.resource.data.logo is string
+            && request.resource.data.logo.matches('logo-[0-9]{10,16}[.](webp|jpg)')));
       // KAN-117 (pelada-v101): o administrador do portal bloqueia e desbloqueia os grupos de uma conta (só o campo bloq).
       allow update: if adminPortal() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bloq'])
         && request.resource.data.get('bloq', false) is bool;

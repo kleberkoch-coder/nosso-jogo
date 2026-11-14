@@ -22,6 +22,7 @@ import { tx } from '../i18n/index.js';
 import { LOCAL } from '../i18n/formatos.js';
 import { desmontarPublico } from '../telas/PublicoRodada.tsx';
 import { botaoConta } from './menu-conta.ts';
+import { srcLogo } from './logo-src';
 import { carregarEntrar, entrarPronto } from '../nucleo/carga-entrar';
 import { renderPublicRodada } from '../telas/publico-rodada.js';
 
@@ -116,6 +117,12 @@ function renderCore() {
     logged = !!(S.user && !S.user.anon);
   const title = R.n === 'home' || R.n === 'auth' ? APP : S.app ? gname() : APP;
   $('#gname').textContent = title;
+  /* KAN-273: logotipo do grupo ao lado do nome (gestão, link do jogador e link da votação). */
+  const lg = $('#glogo'),
+    ls = title === APP ? '' : srcLogo(S.gid, S.app && S.app.logo);
+  lg.hidden = !ls;
+  lg.onerror = () => (lg.hidden = true);
+  if (ls && lg.getAttribute('src') !== ls) lg.src = ls;
   document.title = title;
   // KAN-169: com conta, o tema fica no menu da conta; sem conta (link, login, apresentação), o botão continua.
   $('#themeBtn').hidden = logged && R.n !== 'r' && R.n !== 'v' && R.n !== 'a';

@@ -1541,3 +1541,17 @@ describe('avisos no celular (KAN-242)', () => {
     await assertFails(setDoc(doc(db.adm(), 'avisosEnviados/_teto'), { mes: '2026-11', n: 0 }));
   });
 });
+
+describe('logotipo do grupo no documento (KAN-273)', () => {
+  test('CT-KAN-273-05: o grupo guarda só o nome do arquivo; sem Configurações não troca', async () => {
+    await assertSucceeds(updateDoc(doc(db.dono(), G), { logo: 'logo-1731600000000.webp' }));
+    await assertSucceeds(updateDoc(doc(db.adm(), G), { logo: 'logo-1731600000001.jpg' }));
+    await assertFails(updateDoc(doc(db.dono(), G), { logo: 'https://site-qualquer.com/x.png' }));
+    await assertFails(updateDoc(doc(db.dono(), G), { logo: 12 }));
+    await assertSucceeds(updateDoc(doc(db.dono(), G), { logo: deleteField() }));
+    await env.withSecurityRulesDisabled(ctx =>
+      setDoc(doc(ctx.firestore(), G + '/membros/adm'), { uid: 'adm', role: 'admin', perm: { config: false } })
+    );
+    await assertFails(updateDoc(doc(db.adm(), G), { logo: 'logo-1731600000002.webp' }));
+  });
+});

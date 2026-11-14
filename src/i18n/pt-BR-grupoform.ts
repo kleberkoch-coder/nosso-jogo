@@ -36,4 +36,18 @@ export default {
   'grupo.porTimeInvalido': 'Informe de 1 a 30 jogadores por time.',
   /* KAN-246 (pelada-v109) */
   'grupo.verSorteio': 'Mostrar no link e no WhatsApp a hora e o número do sorteio',
+  /* KAN-273: logotipo do grupo. */
+  'logo.titulo': 'Logotipo do grupo',
+  'logo.atual': 'Logotipo atual',
+  'logo.escolher': 'Escolher imagem',
+  'logo.trocar': 'Trocar imagem',
+  'logo.remover': 'Remover logotipo',
+  'logo.limites':
+    'JPG, PNG, WebP ou GIF, até {mb} MB. A imagem é cortada em quadrado e aparece no topo do app e dos links. GIF animado fica parado.',
+  'logo.tipoRuim': 'Esse tipo de arquivo não serve. Use JPG, PNG, WebP ou GIF.',
+  'logo.grande': 'A imagem passa de {mb} MB. Escolha uma menor.',
+  'logo.naoAbriu': 'Não deu para abrir essa imagem. Tente outra.',
+  'logo.naoSalvou': 'Não deu para salvar o logotipo. Confira a internet e tente de novo.',
+  'logo.salvo': 'Logotipo salvo.',
+  'logo.removido': 'Logotipo removido.',
 };

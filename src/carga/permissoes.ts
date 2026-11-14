@@ -1,6 +1,6 @@
 /* Dados que dependem das permissões do administrador (KAN-201; KAN-225, saiu de rotas.js): caixa, contatos e convite.
    Roda ao começar e a cada mudança no cadastro do administrador, então liberar ou tirar vale na hora. */
-import { migrarPrivado, sincronizarVagas } from '../dominio/caixa-gestao';
+import { migrarPrivado, sincronizarAfast, sincronizarVagas } from '../dominio/caixa-gestao';
 import { posso } from '../dominio/grupo.js';
 import { GB, S, SUBS, drop, sub, w } from '../nucleo/estado';
 import { op } from '../nucleo/backend.js';
@@ -22,6 +22,7 @@ export function syncPerm() {
       S.pc = d;
       migrarPrivado();
       sincronizarVagas();
+      sincronizarAfast();
     },
     () => {
       S.pc = null;

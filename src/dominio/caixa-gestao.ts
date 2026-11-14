@@ -2,7 +2,7 @@
    vai no link do jogador). */
 import * as banco from '../nucleo/backend.js';
 import { GB, S as estado, clean, gp, w } from '../nucleo/estado.js';
-import { cl } from '../nucleo/util.js';
+import { cl, today } from '../nucleo/util.js';
 import { changed } from '../ui/render.js';
 import { CAIXA_K, ptipo } from './caixa.js';
 import { isAdmin, posso, recurso } from './grupo.js';
@@ -93,4 +93,27 @@ export function sincronizarVagas() {
     st().ajVagas = false;
   };
   w(GB.lote(aj.map(([id, m]) => ({ tipo: 'patch', p: 'jogadores/' + id, o: { vaga: m } })))).then(fim, fim);
+}
+
+/* KAN-271: a marca pública "af" (só as datas dos afastamentos atuais e futuros, sem motivo) para o link mostrar o afastado
+   como "Não vou". Precisa da permissão de Elenco (grava no jogador) e do caixa (o ciclo da mensalidade, para as datas);
+   roda quando o elenco, os afastamentos ou o caixa chegam, e grava só quem precisa mudar. */
+export function sincronizarAfast() {
+  const L = st().loaded || {};
+  if (st().ajAfast || !st().dataOn || !isAdmin() || !posso('elenco') || !L.jog || !L.af || !L.pc) return;
+  /* A conta baixa só aqui (dominio/afast-link.ts), para a gestão abrir leve; quase sempre não há nada a mudar. */
+  st().ajAfast = true;
+  const fim = () => {
+    st().ajAfast = false;
+  };
+  const apagar = (banco as Obj).op.apagar;
+  import('./afast-link')
+    .then(m => {
+      const aj = m.marcasAfastParaAjustar(st().jog, st().af || {}, (st().pc || {}).ciclo, today());
+      if (!aj.length) return;
+      return w(
+        GB.lote(aj.map(([id, af]) => ({ tipo: 'patch', p: 'jogadores/' + id, o: { af: af.length ? af : apagar() } })))
+      );
+    })
+    .then(fim, fim);
 }

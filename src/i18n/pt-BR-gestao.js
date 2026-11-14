@@ -379,4 +379,8 @@ export default {
   'mat.naoVai': '{pessoa} não vai e está com: {nome}',
   'mat.cobrar': 'Cobrar no WhatsApp',
   'mat.cobrarTexto': '{e} {nomes}: vocês estão com {nome} do grupo. Vão ao jogo de {data}? Responda aqui: {link}',
+  /* KAN-272: data de nascimento e aniversariantes. */
+  'niver.campo': 'Nascimento',
+  'niver.ajuda': 'Só administradores veem. Serve para lembrar o aniversário.',
+  'niver.invalido': 'Data de nascimento inválida: confira o dia, o mês e o ano.',
 };

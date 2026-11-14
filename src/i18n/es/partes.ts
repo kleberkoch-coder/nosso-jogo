@@ -473,6 +473,7 @@ export default {
   'importar.aviso.tipo': 'Tipo no reconocido: queda como mensual.',
   'importar.aviso.tel': 'Teléfono inválido: queda sin teléfono.',
   'importar.aviso.email': 'Correo inválido: queda sin correo.',
+  'importar.aviso.nasc': 'Fecha de nacimiento no reconocida (usa dd/mm/aaaa): queda sin fecha.',
   /* pt-BR-partida.ts */
   'partida.pontoTime': '{ponto} — {time}',
   'partida.quemMarcou': '¿Quién marcó?',
@@ -877,4 +878,8 @@ export default {
   'av.naoLigou': 'No se pudieron activar los avisos. Revisa la conexión e intenta de nuevo.',
   'av.pronto': '¡Listo! Recibirás los avisos en este celular.',
   'av.demo': 'Modo demostración: la pantalla funciona, pero ningún aviso llega al celular.',
+  /* pt-BR-niver.ts */
+  'niver.rotulo': 'Cumpleaños el {data}',
+  'niver.mes': '🎂 Cumpleaños de {mes}',
+  'niver.dia': 'día {dia}',
 };

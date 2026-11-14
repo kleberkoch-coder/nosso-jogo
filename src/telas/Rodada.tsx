@@ -31,6 +31,7 @@ import { avulsosEsgotados, limite } from '../dominio/limites';
 import { hora } from '../dominio/rodadas.js';
 import { tp, tx } from '../i18n/index.js';
 import { afastadoEm, afastamentoDe, compDe, confirmaramAfastados } from '../nucleo/afast';
+import { Bolo } from '../ui/Bolo';
 import { presAlterada } from '../nucleo/edicoes.js';
 import { parteExtra } from '../acoes/extra';
 import { S as estado } from '../nucleo/estado.js';
@@ -386,6 +387,8 @@ function Presenca({ r, inn, carregou, avs }: { r: Rodada; inn: string[]; carrego
               <Tag>· {tx('rodg.avulso')}</Tag>
             </>
           ) : null}
+          {/* KAN-272: 🎂 na semana do aniversário (pela data da rodada). */}
+          <Bolo id={id} data={r.date} />
           {presAlterada(id) ? <TAG_MUDADO /> : null}
           {espera(id) ? <Tag classe="alt tag-espera">{tx('vagas.aguardando')}</Tag> : null}
         </span>

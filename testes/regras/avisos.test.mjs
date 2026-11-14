@@ -101,3 +101,16 @@ test('CT-KAN-242-06: textos sem notas nem contatos, nos três idiomas, e o link 
   for (const l of ['en', 'es']) assert.deepEqual(Object.keys(textosDe(l)).sort(), [...CHAVES_TEXTO].sort());
   assert.equal(linkDaRodada('g1', 'f-2026-11-13-2000'), './#/g/g1/r/f-2026-11-13-2000');
 });
+
+test('CT-KAN-272-04: texto do aviso de aniversário, com um ou mais nomes, nos três idiomas', async () => {
+  const { textoAniversario } = await import('../../src/dominio/avisos.ts');
+  assert.deepEqual(textoAniversario(['João'], { grupo: 'G' }, 'pt-BR'), {
+    titulo: '🎂 Hoje é aniversário de João',
+    corpo: 'G · mande os parabéns!',
+  });
+  assert.equal(
+    textoAniversario(['Ana', 'Bia', 'Caio'], { grupo: 'G' }, 'pt-BR').titulo,
+    '🎂 Hoje fazem aniversário: Ana, Bia e Caio'
+  );
+  assert.equal(textoAniversario(['Ann', 'Bob'], { grupo: 'G' }, 'en').titulo, '🎂 Birthdays today: Ann and Bob');
+});

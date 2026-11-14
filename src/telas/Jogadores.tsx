@@ -12,6 +12,8 @@ import { waUrl } from '../nucleo/edicoes.js';
 import { afastamentoDe, etiqueta } from '../nucleo/afast';
 import { S as estado } from '../nucleo/estado.js';
 import { Nota, Pos } from '../ui/componentes';
+import { Aniversariantes, Bolo } from '../ui/Bolo';
+import { today } from '../nucleo/util.js';
 
 type Jogador = { id: string; name: string; criado?: number; ativo?: boolean };
 type Avulso = { nome?: string; criado?: number };
@@ -90,6 +92,8 @@ function LinhaJogador({ p }: { p: Jogador }) {
             <span class="tag alt afast-tag">{etiqueta(af[1])}</span>
           </>
         ) : null}
+        {/* KAN-272: 🎂 na semana do aniversário. */}
+        <Bolo id={p.id} data={today()} />
         <br />
         <span class="tag">
           {posso('caixa') ? tx('tipo.' + ptipo(p.id)) + ' · ' : ''}
@@ -188,6 +192,7 @@ function JogadoresTela() {
           </details>
         ) : null}
       </div>
+      {elenco ? <Aniversariantes ids={ps.map(p => p.id)} hoje={today()} /> : null}
       <div class="panel">
         <h3>{tx('jogadores.avulsosTitulo')}</h3>
         <p class="small muted" style="margin-top:-6px">

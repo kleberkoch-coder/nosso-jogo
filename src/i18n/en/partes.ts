@@ -471,6 +471,7 @@ export default {
   'importar.aviso.tipo': 'Type not recognized: set as monthly.',
   'importar.aviso.tel': 'Invalid phone: left without a phone.',
   'importar.aviso.email': 'Invalid email: left without an email.',
+  'importar.aviso.nasc': 'Date of birth not recognized (use mm/dd/yyyy or dd/mm/yyyy as in your country): left empty.',
   /* pt-BR-partida.ts */
   'partida.pontoTime': '{ponto} — {time}',
   'partida.quemMarcou': 'Who scored?',
@@ -873,4 +874,8 @@ export default {
   'av.naoLigou': "Couldn't turn on notifications. Check your connection and try again.",
   'av.pronto': "Done! You'll get notifications on this phone.",
   'av.demo': 'Demo mode: the screen works, but no notification reaches the phone.',
+  /* pt-BR-niver.ts */
+  'niver.rotulo': 'Birthday on {data}',
+  'niver.mes': '🎂 Birthdays in {mes}',
+  'niver.dia': 'day {dia}',
 };

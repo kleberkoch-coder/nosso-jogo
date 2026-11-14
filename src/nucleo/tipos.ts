@@ -95,7 +95,7 @@ export type Jogador = {
   [k: string]: unknown;
 };
 export type Avulso = { nome: string; pos?: string; criado?: number };
-export type Contato = { tel?: string; email?: string };
+export type Contato = { tel?: string; email?: string; nasc?: string }; // KAN-272: nasc = "AAAA-MM-DD"
 export type Notas = { stars?: Mapa<number>; nivel?: Mapa<number>; sep?: [string, string][] };
 
 /* ---- rodada, presença e partidas ---- */

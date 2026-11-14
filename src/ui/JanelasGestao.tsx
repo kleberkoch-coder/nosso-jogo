@@ -7,7 +7,7 @@ import { resumo } from '../dominio/times.ts';
 import { juntarTextos, tp, tx } from '../i18n/index.js';
 import { fdia, fmtL, lvl, normName, pname, posso, ppos, recurso } from '../dominio/grupo.js';
 import { S } from '../nucleo/estado.js';
-import { $, toast } from '../nucleo/util.js';
+import { $, toast, today } from '../nucleo/util.js';
 import { openDlg } from './dialogos.js';
 import { CampoPosicao, Pos } from './componentes';
 import { CampoNota, CampoTelefone, CampoTipo, LinhaAfastamento } from './Campos';
@@ -83,6 +83,14 @@ export function playerDlg(id: string | null, prefill?: any) {
           placeholder={tx('contato.emailExemplo')}
         />
       </label>
+      {/* KAN-272: data de nascimento, só para quem tem Elenco (fica com o telefone, em privado/contatos). */}
+      {posso('elenco') ? (
+        <label class="f">
+          <span>{tx('niver.campo')}</span>
+          <input class="inp" id="pnasc" type="date" min="1900-01-01" max={today()} value={ct.nasc || ''} />
+          <span class="small muted">{tx('niver.ajuda')}</span>
+        </label>
+      ) : null}
       {p ? (
         <p class="small muted" style="margin-top:-4px">
           {p.ativo === false ? (

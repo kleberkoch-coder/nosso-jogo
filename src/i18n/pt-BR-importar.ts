@@ -31,4 +31,5 @@ export default {
   'importar.aviso.tipo': 'Tipo não reconhecido: fica mensalista.',
   'importar.aviso.tel': 'Telefone inválido: fica sem telefone.',
   'importar.aviso.email': 'E-mail inválido: fica sem e-mail.',
+  'importar.aviso.nasc': 'Data de nascimento não reconhecida (use dd/mm/aaaa): fica sem data.',
 };

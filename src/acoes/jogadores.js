@@ -32,6 +32,13 @@ const acoes = {
     }
     const ct = lerContato('ptel', 'pmail');
     if (!ct) return;
+    /* KAN-272: data de nascimento (só com Elenco; vazio = sem data). */
+    const nasc = $('#pnasc') ? val('pnasc') : undefined;
+    if (nasc && !(/^\d{4}-\d{2}-\d{2}$/.test(nasc) && nasc >= '1900-01-01' && nasc <= today())) {
+      toast(tx('niver.invalido'));
+      $('#pnasc')?.focus();
+      return;
+    }
     const comCaixa = !!$('#ptp'),
       recebe = $('#prj')?.checked,
       vj = +val('prv');
@@ -103,7 +110,7 @@ const acoes = {
         else delete a.porJogo[id];
       });
     if ($('#plv')) editRat(a => setLvl(a, id, v));
-    saveContato(id, ct.tel, ct.email);
+    saveContato(id, ct.tel, ct.email, nasc);
     if (nw && S.avul[nw]) {
       delete S.avul[nw];
       w(GB.del('avulsos/' + nw));
@@ -200,7 +207,11 @@ const acoes = {
     /* Tudo de uma vez: os jogadores num lote só, e um registro só para tipos, notas e contatos. */
     const contatos = Object.assign({}, S.cont || {});
     novos.forEach((it, i) => {
-      if (it.tel || it.email) contatos[ids[i]] = { tel: it.tel || '', email: it.email || '' };
+      if (it.tel || it.email || it.nasc)
+        contatos[ids[i]] = Object.assign(
+          { tel: it.tel || '', email: it.email || '' },
+          it.nasc ? { nasc: it.nasc } : {}
+        );
     });
     S.cont = contatos;
     const ps = [
@@ -208,7 +219,7 @@ const acoes = {
       editPc(a => novos.forEach((it, i) => (a.tipos[ids[i]] = it.tipo))),
       editRat(a => novos.forEach((it, i) => it.nota != null && setLvl(a, ids[i], it.nota))),
     ];
-    if (novos.some(it => it.tel || it.email)) ps.push(w(GB.set('privado/contatos', clean(contatos))));
+    if (novos.some(it => it.tel || it.email || it.nasc)) ps.push(w(GB.set('privado/contatos', clean(contatos))));
     changed();
     closeDlg();
     toast(tp('importar.feito', novos.length));

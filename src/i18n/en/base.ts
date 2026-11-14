@@ -54,6 +54,7 @@ export default {
   'publico.listaFechadaTexto': 'The organizer closed the list. Talk to them if you need to change something.',
   'publico.instrucao': "Find your name and tap I'm in or I'm out.",
   'publico.voce': 'you',
+  'publico.afastado': '· away',
   'publico.avulso': '· guest',
   'publico.vai': 'In',
   'publico.naoVai': 'Out',

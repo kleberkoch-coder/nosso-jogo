@@ -31,6 +31,7 @@ import { precisaVaga, situacao } from '../dominio/vagas';
 import { ACT } from '../acoes.js';
 import { comPessoa } from '../dominio/material';
 import { textoSorteio } from '../ui/linha-sorteio';
+import { afastadoNaData } from '../dominio/afast-data';
 
 type Rodada = {
   id: string;
@@ -133,7 +134,9 @@ function Aviso({ titulo, texto, extra }: { titulo: string; texto: string; extra?
 
 function Linha({ id, r, me }: { id: string; r: Rodada; me: string | null }) {
   const S = st();
-  const s = (S.pres[id] as Presenca | undefined)?.s;
+  /* KAN-271: afastado na data da rodada, sem resposta, aparece como "Não vou" (sem gravar nada; se voltou, toca em Vou). */
+  const af = afastadoNaData(((S.jog || {})[id] || {}).af, r.date),
+    s = (S.pres[id] as Presenca | undefined)?.s || (af ? 'out' : undefined);
   /* KAN-124: quem confirmou ganha, logo abaixo da própria linha, o botão de pôr o jogo na agenda. */
   const agenda =
     id === me && s === 'in' && !r.locked && !r.cancelada ? (
@@ -160,7 +163,12 @@ function Linha({ id, r, me }: { id: string; r: Rodada; me: string | null }) {
     <>
       <li class={id === me ? 'me-row' : ''}>
         <Pos id={id} />
-        <NomeNaLista nome={pname(id)} voce={id === me} avulso={isAvulso(id)} />
+        <NomeNaLista
+          nome={pname(id)}
+          voce={id === me}
+          avulso={isAvulso(id)}
+          afastado={af && !(S.pres[id] as Presenca | undefined)?.s}
+        />
         {r.locked ? (
           <span class="tag" style={{ color: s === 'in' ? 'var(--in)' : s === 'out' ? 'var(--out)' : '' }}>
             {s === 'in' ? tx('publico.vai') : s === 'out' ? tx('publico.naoVai') : '—'}

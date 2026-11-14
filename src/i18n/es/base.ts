@@ -53,6 +53,7 @@ export default {
   'publico.listaFechadaTexto': 'El organizador cerró la lista. Habla con él si necesitas cambiar algo.',
   'publico.instrucao': 'Busca tu nombre y toca Voy o No voy.',
   'publico.voce': 'tú',
+  'publico.afastado': '· ausente',
   'publico.avulso': '· invitado',
   'publico.vai': 'Va',
   'publico.naoVai': 'No va',

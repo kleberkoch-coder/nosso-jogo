@@ -5709,6 +5709,44 @@ with sync_playwright() as pw:
            'CT-KAN-242-05: com a permissão bloqueada, a janela explica como liberar, sem quebrar')
         ctx116b.close()
 
+        # ---------- v117 (KAN-271): afastado aparece como "Não vou" no link (sem o motivo)
+        ctx117 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+        p117 = ctx117.new_page(); p117.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p117, 'criar')
+        p117.fill('#le', 'v117@teste.com'); p117.fill('#lp', 'Jogo@2026'); p117.fill('#lp2', 'Jogo@2026'); p117.keyboard.press('Enter'); p117.wait_for_selector('#ngBox', timeout=12000)
+        p117.fill('#ngn', 'Afastados FC'); p117.click('[data-a=pickSport][data-v=futebol]'); p117.click('[data-a=createGroup]')
+        p117.wait_for_function("location.hash.startsWith('#/g/')"); p117.wait_for_timeout(1500)
+        g117 = p117.url.split('#/g/')[1].split('/')[0]
+        p117.click('[data-a=tab][data-v=jogadores]'); p117.wait_for_timeout(300); p117.click('[data-a=seed]'); p117.wait_for_timeout(1500)
+        p117.click('[data-a=tab][data-v=rodada]'); p117.wait_for_timeout(800)
+        r117 = p117.evaluate("S.rid"); d117 = p117.evaluate("(S.rod[S.rid]||{}).date || S.rid.slice(2,12)")
+        (j1, n1), (j2, n2) = p117.evaluate("Object.keys(S.jog).slice(0,2).map(k=>[k,S.jog[k].name])")
+        mes117 = d117[:7]
+        p117.evaluate(PUT, {f'grupos/{g117}/privado/afast': {'a117': {'pid': j1, 'mot': 'Lesao', 'obs': 'joelho', 'de': mes117, 'ate': mes117}}})
+        p117.reload(); p117.wait_for_timeout(2500)
+        p117.wait_for_function("(window.S && S.jog && Object.values(S.jog).some(j=>j && j.af))", timeout=10000)
+        m117 = p117.evaluate(LER, f'grupos/{g117}/jogadores/{j1}')
+        ok(m117 and m117.get('af') and m117['af'][0]['de'] <= d117 <= (m117['af'][0]['ate'] or '9999') and 'joelho' not in json.dumps(m117) and 'Lesao' not in json.dumps(m117),
+           f'CT-KAN-271-04: a gestão grava no jogador só as datas do afastamento, sem motivo ({m117.get("af") if m117 else None})')
+        p117.goto(URL + '#/p/' + g117 + '/r/' + r117); p117.wait_for_timeout(2000)
+        LINHA117 = """(n=>{const li=[...document.querySelectorAll('li')].find(l=>(l.querySelector('.pn-txt')||{}).textContent===n);if(!li)return null;
+          const b=v=>{const x=li.querySelector('[data-a=pubMark][data-v='+v+']');return x?x.getAttribute('aria-pressed'):null};return {txt:li.textContent, naoVou:b('out'), vou:b('in')}})"""
+        lin117, lin117b = p117.evaluate(LINHA117, n1), p117.evaluate(LINHA117, n2)
+        ok(lin117 and lin117['naoVou'] == 'true' and lin117['vou'] == 'false' and '· afastado' in lin117['txt'] and 'Lesão' not in lin117['txt']
+           and lin117b and '· afastado' not in lin117b['txt'] and lin117b['naoVou'] == 'false',
+           f'CT-KAN-271-01: no link, o afastado aparece com "Não vou" marcado e "· afastado", sem o motivo; os outros, normais ({lin117}, {lin117b})')
+        p117.locator('li', has=p117.locator('.pn-txt', has_text=n1)).locator('[data-a=pubMark][data-v=in]').click(); p117.wait_for_timeout(1200)
+        pres117 = p117.evaluate(LER, f'grupos/{g117}/rodadas/{r117}/presencas/{j1}')
+        ok(pres117 and pres117.get('s') == 'in', f'CT-KAN-271-02: o afastado que voltou toca em "Vou" e a presença grava "vai" ({pres117})')
+        # Afastamento que acabou no mês anterior: a marca sai e ele volta ao normal no link
+        ant117 = p117.evaluate("m=>{const [a,b]=m.split('-').map(Number);const t=a*12+b-2;return Math.floor(t/12)+'-'+String(t%12+1).padStart(2,'0')}", mes117)
+        p117.goto(URL + '#/g/' + g117); p117.wait_for_timeout(1500)
+        p117.evaluate(PUT, {f'grupos/{g117}/privado/afast': {'a117': {'pid': j1, 'mot': 'Lesao', 'de': ant117, 'ate': ant117}}})
+        p117.reload(); p117.wait_for_timeout(2500)
+        p117.wait_for_function("j=>!(S.jog[j]||{}).af", arg=j1, timeout=10000)
+        ok((p117.evaluate(LER, f'grupos/{g117}/jogadores/{j1}') or {}).get('af') is None, 'CT-KAN-271-03: afastamento que acabou tira a marca do jogador')
+        ctx117.close()
+
     if parte('b'):
         # ---------- v35 (KAN-142): "Continuar com o Google" na aba errada entra ou cria a conta e avisa (navegador separado)
         ctx3 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block'); p3 = ctx3.new_page()

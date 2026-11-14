@@ -1,6 +1,6 @@
 /* Carga da gestão (KAN-225, saiu de rotas.js): o que todo administrador lê ao abrir o grupo. As abas pedem o resto
    (carga/abas.ts) e as permissões ligam caixa, contatos e convite (carga/permissoes.ts). */
-import { migrarPrivado, sincronizarVagas } from '../dominio/caixa-gestao';
+import { migrarPrivado, sincronizarAfast, sincronizarVagas } from '../dominio/caixa-gestao';
 import { S, sub, subQ } from '../nucleo/estado';
 import { limparTokens, syncPerm } from './permissoes';
 import { Q_PROX, Q_REC, dia, juntarRod, regAvulsos, subLimCfg } from './rodada';
@@ -19,6 +19,7 @@ export function startData() {
     S.jog = d || {};
     migrarPrivado();
     sincronizarVagas();
+    sincronizarAfast();
   });
   subQ('rodF', 'rodadas', Object.assign({ de: dia(-1) }, Q_PROX), d => {
     S.rodF = d || {};
@@ -34,6 +35,7 @@ export function startData() {
   /* KAN-208: afastamentos (motivo e período), para todo administrador; o link do jogador não lê. */
   sub('af', 'privado/afast', d => {
     S.af = d || {};
+    sincronizarAfast();
   });
   sub('vot', 'votacoes', d => {
     S.vot = d || {};

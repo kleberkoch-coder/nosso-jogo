@@ -5747,6 +5747,112 @@ with sync_playwright() as pw:
         ok((p117.evaluate(LER, f'grupos/{g117}/jogadores/{j1}') or {}).get('af') is None, 'CT-KAN-271-03: afastamento que acabou tira a marca do jogador')
         ctx117.close()
 
+        # ---------- v118 (KAN-272): data de nascimento na ficha, 🎂 na semana do aniversário, aniversariantes do mês
+        ctx118 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+        p118 = ctx118.new_page(); p118.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p118, 'criar')
+        p118.fill('#le', 'v118@teste.com'); p118.fill('#lp', 'Jogo@2026'); p118.fill('#lp2', 'Jogo@2026'); p118.keyboard.press('Enter'); p118.wait_for_selector('#ngBox', timeout=12000)
+        p118.fill('#ngn', 'Logo e Niver Futebol Clube'); p118.click('[data-a=pickSport][data-v=futebol]'); p118.click('[data-a=createGroup]')
+        p118.wait_for_function("location.hash.startsWith('#/g/')"); p118.wait_for_timeout(1500)
+        g118 = p118.url.split('#/g/')[1].split('/')[0]
+        p118.click('[data-a=tab][data-v=jogadores]'); p118.wait_for_timeout(300); p118.click('[data-a=seed]'); p118.wait_for_timeout(1500)
+        hoje118 = p118.evaluate("(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')})()")
+        nasc118 = '1990-' + (hoje118[5:] if hoje118[5:] != '02-29' else '02-28')
+        (j118, n118) = p118.evaluate("Object.keys(S.jog).map(k=>[k,S.jog[k].name]).sort((a,b)=>a[1].localeCompare(b[1]))[0]")
+        p118.click(f'[data-a=editPlayer][data-p="{j118}"]'); p118.wait_for_selector('#pnasc', timeout=5000)
+        f118 = p118.evaluate("(()=>{const i=document.getElementById('pnasc'),l=i.closest('label');return {tipo:i.type,max:i.max,rot:l.querySelector('span').textContent,alt:Math.round(i.getBoundingClientRect().height)}})()")
+        ok(f118['tipo'] == 'date' and f118['max'] == hoje118 and f118['rot'] == 'Nascimento' and f118['alt'] >= 36,
+           f'CT-KAN-272-01: a ficha do jogador tem "Nascimento" (data, até hoje) ({f118})')
+        p118.fill('#pnasc', '2999-01-01'); p118.click('#dlg [data-a=savePlayer]'); p118.wait_for_timeout(500)
+        ok('Data de nascimento inválida' in p118.inner_text('#toast') and p118.evaluate("document.getElementById('dlg').open"),
+           'CT-KAN-272-01: data no futuro não salva e avisa')
+        p118.fill('#pnasc', nasc118); p118.click('#dlg [data-a=savePlayer]'); p118.wait_for_timeout(1200)
+        ct118 = p118.evaluate(LER, f'grupos/{g118}/privado/contatos') or {}
+        ok((ct118.get(j118) or {}).get('nasc') == nasc118, f'CT-KAN-272-01: a data grava em privado/contatos, só para administradores ({ct118.get(j118)})')
+        pub118 = p118.evaluate(LER, f'grupos/{g118}/jogadores/{j118}') or {}
+        ok('nasc' not in json.dumps(pub118) and nasc118 not in json.dumps(pub118), f'CT-KAN-272-01: a data não vai para o cadastro público do jogador ({pub118})')
+        p118.wait_for_selector('#aniversariantes', timeout=8000)
+        bolo118 = p118.evaluate("n=>{const li=[...document.querySelectorAll('#jogRaiz li, .plist li')].find(l=>l.textContent.includes(n)&&!l.closest('#aniversariantes'));return li?!!li.querySelector('.bolo'):null}", n118)
+        an118 = p118.inner_text('#aniversariantes')
+        ok(bolo118 is True and n118 in an118 and ('dia %d' % int(nasc118[8:])) in an118 and '🎂 Aniversariantes de' in an118,
+           f'CT-KAN-272-02/03: 🎂 ao lado do nome e o jogador em "Aniversariantes do mês" ({bolo118}, {an118[:80]!r})')
+        rol118 = p118.evaluate("document.documentElement.scrollWidth>innerWidth")
+        ok(not rol118, 'CT-KAN-272-03: em 360px, a aba Jogadores não tem rolagem lateral')
+        p118.evaluate("document.getElementById('aniversariantes').scrollIntoView({block:'center'})"); p118.wait_for_timeout(200)
+        p118.screenshot(path=f'{OUT}/v118-aniversario.png')
+        for tema in ['light', 'dark']:
+            p118.emulate_media(color_scheme=tema); p118.wait_for_timeout(200)
+            bd118 = p118.evaluate(CHK)
+            ok(not bd118, f'CT-KAN-272-03: contraste da aba Jogadores no tema {tema} ({bd118[:4]})')
+        p118.emulate_media(color_scheme='light')
+        # O link do jogador nunca mostra o aniversário
+        p118.click('[data-a=tab][data-v=rodada]'); p118.wait_for_timeout(800); r118 = p118.evaluate("S.rid")
+        p118.goto(URL + '#/p/' + g118 + '/r/' + r118); p118.wait_for_timeout(2000)
+        ok(p118.locator('.bolo').count() == 0 and '🎂' not in p118.inner_text('main'), 'CT-KAN-272-02: o link do jogador não mostra o 🎂 (a data é só dos administradores)')
+
+        # ---------- v118 (KAN-273): logotipo do grupo
+        p118.goto(URL + '#/g/' + g118); p118.wait_for_timeout(1500)
+        p118.click('[data-a=tab][data-v=grupo]'); p118.wait_for_timeout(400)
+        p118.click('[data-a=editGroup]'); p118.wait_for_selector('#logoGrupo', timeout=8000)
+        lim118 = p118.inner_text('#logoLimites')
+        ok('JPG, PNG, WebP ou GIF, até 5 MB' in lim118 and p118.inner_text('#logoEscolher') == 'Escolher imagem',
+           f'CT-KAN-273-09: Editar grupo mostra os limites do logotipo na tela ({lim118!r})')
+        p118.set_input_files('#logoArq', files=[{'name': 'logo.svg', 'mimeType': 'image/svg+xml', 'buffer': b'<svg xmlns="http://www.w3.org/2000/svg"/>'}]); p118.wait_for_timeout(300)
+        ok('Use JPG, PNG, WebP ou GIF' in p118.inner_text('#logoErr'), f'CT-KAN-273-06: SVG é recusado com mensagem clara ({p118.inner_text("#logoErr")!r})')
+        p118.set_input_files('#logoArq', files=[{'name': 'grande.png', 'mimeType': 'image/png', 'buffer': b'\x89PNG' + b'0' * (5 * 1024 * 1024 + 10)}]); p118.wait_for_timeout(300)
+        ok('passa de 5 MB' in p118.inner_text('#logoErr'), f'CT-KAN-273-06: arquivo acima de 5 MB é recusado com mensagem clara ({p118.inner_text("#logoErr")!r})')
+        icone118 = next(c for c in [os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'site', 'icons', 'icon-512.png'), os.path.join('site', 'icons', 'icon-512.png')] if os.path.exists(c))
+        p118.set_input_files('#logoArq', icone118)
+        p118.wait_for_function("!!(S.app&&S.app.logo)", timeout=10000); p118.wait_for_timeout(600)
+        lg118 = p118.evaluate(LER, f'grupos/{g118}') or {}
+        nome118 = lg118.get('logo') or ''
+        ok(re.fullmatch(r'logo-\d{10,16}\.(webp|jpg)', nome118) is not None and 'Logotipo salvo' in p118.inner_text('#toast'),
+           f'CT-KAN-273-02: escolher a imagem grava o logotipo na hora (o grupo guarda só o nome do arquivo) ({nome118!r})')
+        p118.click('#dlg [data-a=close]'); p118.wait_for_timeout(300)
+        p118.wait_for_function("(()=>{const i=document.getElementById('glogo');return i&&!i.hidden&&i.complete&&i.naturalWidth>0})()", timeout=8000)
+        cab118 = p118.evaluate("(()=>{const i=document.getElementById('glogo'),r=i.getBoundingClientRect();return {w:i.naturalWidth,h:i.naturalHeight,lado:Math.round(r.width),rol:document.documentElement.scrollWidth>innerWidth}})()")
+        ok(cab118['w'] == 256 and cab118['h'] == 256 and cab118['lado'] == 44 and not cab118['rol'],
+           f'CT-KAN-273-07: o logotipo aparece no cabeçalho, cortado em 256 × 256 (44px no celular, sem rolagem lateral) ({cab118})')
+        p118.evaluate("scrollTo(0,0)"); p118.wait_for_timeout(200); p118.screenshot(path=f'{OUT}/v118-logo-gestao.png')
+        for rota, nomeCt in [('/r/' + r118, 'CT-KAN-273-10: link do jogador'), ('/v/' + r118, 'CT-KAN-273-10: link da votação')]:
+            p118.goto(URL + '#/p/' + g118 + rota); p118.wait_for_timeout(2000)
+            vis118 = p118.evaluate("(()=>{const i=document.getElementById('glogo');return !!i&&!i.hidden&&i.naturalWidth===256})()")
+            ok(vis118, f'{nomeCt} mostra o logotipo do grupo')
+        p118.screenshot(path=f'{OUT}/v118-logo-link.png')
+        p118.goto(URL + '#/'); p118.wait_for_timeout(1500)
+        mg118 = p118.evaluate("(()=>{const i=document.querySelector('.grupo-linha img.gem');return i?{ok:i.complete&&i.naturalWidth===256,lado:Math.round(i.getBoundingClientRect().width)}:null})()")
+        ok(mg118 and mg118['ok'] and mg118['lado'] == 40, f'CT-KAN-273-10: "Meus grupos" mostra o logotipo no lugar do ícone do esporte ({mg118})')
+        # Remover
+        p118.goto(URL + '#/g/' + g118); p118.wait_for_timeout(1500)
+        p118.click('[data-a=tab][data-v=grupo]'); p118.wait_for_timeout(400)
+        p118.click('[data-a=editGroup]'); p118.wait_for_selector('#logoTirar', timeout=8000)
+        p118.click('#logoTirar'); p118.wait_for_function("!(S.app&&S.app.logo)", timeout=8000); p118.wait_for_timeout(500)
+        dem118 = p118.evaluate("k=>localStorage.getItem(k)", f'pelada-logo:{g118}:{nome118}')
+        ok('logo' not in (p118.evaluate(LER, f'grupos/{g118}') or {}) and dem118 is None and p118.evaluate("document.getElementById('glogo').hidden"),
+           'CT-KAN-273-02: "Remover logotipo" tira do grupo, apaga a imagem e o cabeçalho volta ao normal')
+        ctx118.close()
+        # Em English
+        ctx118b = b.new_context(viewport={'width': 360, 'height': 740}, service_workers='block', locale='en-US', timezone_id='America/Sao_Paulo')
+        p118b = ctx118b.new_page(); p118b.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p118b, 'criar')
+        p118b.fill('#le', 'v118en@teste.com'); p118b.fill('#lp', 'Jogo@2026'); p118b.fill('#lp2', 'Jogo@2026'); p118b.keyboard.press('Enter'); p118b.wait_for_selector('#ngBox', timeout=12000)
+        p118b.fill('#ngn', 'Logo FC'); p118b.click('[data-a=pickSport][data-v=futebol]'); p118b.click('[data-a=createGroup]')
+        p118b.wait_for_function("location.hash.startsWith('#/g/')"); p118b.wait_for_timeout(1500)
+        p118b.click('[data-a=tab][data-v=jogadores]'); p118b.wait_for_timeout(300); p118b.click('[data-a=seed]'); p118b.wait_for_timeout(1500)
+        jb118 = p118b.evaluate("Object.keys(S.jog)[0]")
+        p118b.click(f'[data-a=editPlayer][data-p="{jb118}"]'); p118b.wait_for_selector('#pnasc', timeout=5000)
+        en118 = p118b.inner_text('#dlg')
+        p118b.fill('#pnasc', nasc118); p118b.click('#dlg [data-a=savePlayer]'); p118b.wait_for_selector('#aniversariantes', timeout=8000)
+        en118 += p118b.inner_text('#aniversariantes')
+        p118b.click('[data-a=tab][data-v=grupo]'); p118b.wait_for_timeout(400)
+        p118b.click('[data-a=editGroup]'); p118b.wait_for_selector('#logoGrupo', timeout=8000)
+        en118 += p118b.inner_text('#logoGrupo')
+        falta118 = p118b.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(niver|logo)\\./.test(k))")
+        ok('Date of birth' in en118 and 'Birthdays in' in en118 and 'Group logo' in en118 and 'JPG, PNG, WebP or GIF, up to 5 MB' in en118
+           and not re.search(r'\b(Nascimento|Aniversariantes|Logotipo|Escolher|até)\b', en118) and not falta118,
+           f'CT-KAN-272-01/CT-KAN-273-09: em English, aniversário e logotipo vêm traduzidos ({en118[-160:]!r}, {falta118})')
+        ctx118b.close()
+
     if parte('b'):
         # ---------- v35 (KAN-142): "Continuar com o Google" na aba errada entra ou cria a conta e avisa (navegador separado)
         ctx3 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block'); p3 = ctx3.new_page()

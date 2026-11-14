@@ -246,8 +246,8 @@ jobs:
           python - <<'PY'
           import re, pathlib
           p = pathlib.Path('/tmp/emu/index.html'); s = p.read_text(encoding='utf-8')
-          cfg = ('window.FIREBASE_CONFIG = {apiKey:"teste-emulador",authDomain:"localhost",projectId:"demo-nosso-jogo"};'
-                 'window.FIREBASE_EMULADOR = {firestore:"127.0.0.1:8080",auth:"http://127.0.0.1:9099"};')
+          cfg = ('window.FIREBASE_CONFIG = {apiKey:"teste-emulador",authDomain:"localhost",projectId:"demo-nosso-jogo",storageBucket:"demo-nosso-jogo.appspot.com"};'
+                 'window.FIREBASE_EMULADOR = {firestore:"127.0.0.1:8080",auth:"http://127.0.0.1:9099",storage:"127.0.0.1:9199"};')
           s, n = re.subn(r'window\.FIREBASE_CONFIG\s*=\s*\{.*?\};', lambda m: cfg, s, count=1, flags=re.S)
           assert n == 1, 'Não achei window.FIREBASE_CONFIG'
           s = re.sub(r'window\.APP_CHECK_KEY\s*=\s*"[^"]*";?', 'window.APP_CHECK_KEY = "";', s)
@@ -258,7 +258,7 @@ jobs:
         run: |
           (cd /tmp/emu && python -m http.server 8765 >/dev/null 2>&1 &)
           sleep 2
-          npx firebase emulators:exec --only firestore,auth --project demo-nosso-jogo "python testes/persistencia_app.py http://127.0.0.1:8765/index.html"
+          npx firebase emulators:exec --only firestore,auth,storage --project demo-nosso-jogo "python testes/persistencia_app.py http://127.0.0.1:8765/index.html"
       - name: Guardar o resultado
         if: always()
         uses: actions/upload-artifact@v4

@@ -61,10 +61,13 @@ type Ref = {
 };
 type Fb = { storage: () => { ref: (p: string) => Ref } };
 
-let carregando: Promise<void> | null = null;
+let carregando: Promise<void> | null = null,
+  usandoEmulador = false;
 function bibliotecaStorage(): Promise<Fb> {
   const fb = (window as unknown as { firebase: Fb & { SDK_VERSION?: string } }).firebase;
   if (typeof fb.storage === 'function') return Promise.resolve(fb);
+  /* Testes no emulador do Firebase (KAN-170): grava no Storage do emulador. */
+  const em = (window as unknown as { FIREBASE_EMULADOR?: { storage?: string } }).FIREBASE_EMULADOR?.storage;
   carregando =
     carregando ||
     new Promise<void>((res, rej) => {
@@ -77,7 +80,14 @@ function bibliotecaStorage(): Promise<Fb> {
       };
       document.head.appendChild(s);
     });
-  return carregando.then(() => fb);
+  return carregando.then(() => {
+    if (em && !usandoEmulador) {
+      usandoEmulador = true;
+      const [h, p] = em.split(':');
+      (fb.storage() as unknown as { useEmulator: (h: string, p: number) => void }).useEmulator(h!, +p!);
+    }
+    return fb;
+  });
 }
 const caminho = (gid: string, nome: string) => 'grupos/' + gid + '/' + nome;
 

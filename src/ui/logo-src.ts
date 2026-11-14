@@ -14,6 +14,11 @@ export function srcLogo(gid: string | null | undefined, nome: unknown): string {
       return '';
     }
   }
-  const C = (window as unknown as { FIREBASE_CONFIG?: { storageBucket?: string } }).FIREBASE_CONFIG || {};
-  return enderecoLogo(C.storageBucket || '', gid, nome);
+  const W = window as unknown as {
+    FIREBASE_CONFIG?: { storageBucket?: string };
+    FIREBASE_EMULADOR?: { storage?: string };
+  };
+  /* Testes no emulador do Firebase (KAN-170): o Storage do emulador. */
+  const em = W.FIREBASE_EMULADOR?.storage;
+  return enderecoLogo((W.FIREBASE_CONFIG || {}).storageBucket || '', gid, nome, em ? 'http://' + em : undefined);
 }

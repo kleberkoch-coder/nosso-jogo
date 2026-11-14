@@ -15,6 +15,7 @@ import { S as estado } from '../nucleo/estado.js';
 import { brl, diaSemana } from '../nucleo/util.js';
 import { numeroVersao } from '../nucleo/versao.js';
 import { THEMES, effTheme, getTheme } from '../ui/tema.js';
+import { srcLogo } from '../ui/logo-src';
 
 const st = () => estado;
 type Fixo = { dow: number; ini: string; fim?: string; place?: string };
@@ -172,7 +173,12 @@ function GrupoTela() {
       <div class="panel">
         <div class="row between" style="align-items:flex-start">
           <div class="row" style="align-items:center">
-            <span class="gem">{sport().e}</span>
+            {/* KAN-273: o logotipo do grupo, se tiver. */}
+            {srcLogo(S.gid, (a as { logo?: string }).logo) ? (
+              <img class="gem" src={srcLogo(S.gid, (a as { logo?: string }).logo)} alt="" width={40} height={40} />
+            ) : (
+              <span class="gem">{sport().e}</span>
+            )}
             <div>
               <h2 style="margin:0">{gname()}</h2>
               <div class="small muted">

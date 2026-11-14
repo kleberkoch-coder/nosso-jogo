@@ -6,7 +6,7 @@
 # num navegador limpo (sem nada guardado no aparelho) e confere tudo outra vez, direto do banco.
 # Os casos têm código P01, P02…; testes/persistencia-cobertura.json liga cada tipo de dado gravado a um caso,
 # e a conferência da entrega barra gravação nova sem caso aqui.
-import json, os, sys
+import json, os, re, sys
 from playwright.sync_api import sync_playwright
 
 URL = sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:8765/index.html'
@@ -1093,7 +1093,50 @@ with sync_playwright() as pw:
        'CT-KAN-170-P41: ao sair da conta, o celular deixa de receber (volta a "Receber avisos neste celular")')
     c41.close()
 
-    ok(not errs, 'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))
+    # P42 data de nascimento (KAN-272): grava em privado/contatos (campo nasc, só administradores) pela ficha do jogador.
+    # P43 logotipo do grupo (KAN-273): a imagem no Storage do emulador e o nome do arquivo no grupo (campo logo), com as
+    # regras do Storage (que leem os administradores no Firestore). Confere depois de recarregar e de sair e entrar.
+    c42 = novo(); p42 = c42.new_page()
+    p42.on('pageerror', lambda e: errs.append(str(e)))
+    E42 = 'niver42@teste.com'
+    p42.goto(URL + '#/criar'); p42.wait_for_function("document.querySelector('#lpais') && document.querySelector('#lpais').options.length > 10", timeout=20000)
+    p42.fill('#le', E42); p42.fill('#lp', SENHA); p42.fill('#lp2', SENHA); p42.wait_for_timeout(200)
+    p42.click('[data-a=signup]'); p42.wait_for_selector('#ngn', timeout=20000)
+    p42.fill('#ngn', 'Niver e Logo FC'); p42.click('[data-a=createGroup]')
+    p42.wait_for_function("location.hash.startsWith('#/g/')", timeout=20000)
+    g42 = p42.url.split('#/g/')[1].split('/')[0]
+    pronto(p42)
+    p42.click('[data-a=tab][data-v=jogadores]'); p42.wait_for_timeout(500)
+    p42.click('[data-a=addPlayer]'); p42.wait_for_selector('#pnasc', timeout=20000)
+    p42.fill('#pnm', 'Aniversariante'); p42.fill('#pnasc', '1990-03-20')
+    p42.click('#dlg [data-a=savePlayer]'); p42.wait_for_timeout(1500)
+    gravou(p42); pronto(p42)
+    ler42 = "(()=>{const id=Object.keys(S.jog).find(k=>S.jog[k].name==='Aniversariante');return id?((S.cont||{})[id]||{}).nasc||null:'sem jogador'})()"
+    r42 = J(p42, ler42)
+    ok(r42 == '1990-03-20', f'CT-KAN-170-P42: a data de nascimento continua depois de recarregar ({r42})')
+    # Logotipo
+    p42.click('[data-a=tab][data-v=grupo]'); p42.wait_for_timeout(500)
+    p42.click('[data-a=editGroup]'); p42.wait_for_selector('#logoArq', state='attached', timeout=20000)
+    icone42 = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'site', 'icons', 'icon-512.png')
+    p42.set_input_files('#logoArq', icone42)
+    p42.wait_for_function("!!(S.app&&S.app.logo) || !!(document.getElementById('logoErr')||{}).textContent", timeout=30000)
+    err42 = J(p42, "(document.getElementById('logoErr')||{}).textContent||''")
+    p42.click('#dlg [data-a=close]'); p42.wait_for_timeout(300)
+    gravou(p42); pronto(p42)
+    ler43 = ("(async()=>{const n=S.app&&S.app.logo;if(!n)return [null,0];const i=document.getElementById('glogo');"
+             "await new Promise(r=>{if(i.complete)r();else{i.onload=r;i.onerror=r;setTimeout(r,8000)}});return [n,i.hidden?0:i.naturalWidth]})()")
+    r43 = J(p42, ler43)
+    ok(r43[0] is not None and re.fullmatch(r'logo-\d{10,16}\.(webp|jpg)', r43[0]) is not None and r43[1] == 256,
+       f'CT-KAN-170-P43: o logotipo (imagem no Storage e nome no grupo) continua depois de recarregar ({r43}, {err42!r})')
+    sair_e_esperar(p42)
+    p42.goto(URL + '#/entrar'); p42.wait_for_selector('#le', timeout=20000); p42.wait_for_timeout(300)
+    p42.fill('#le', E42); p42.fill('#lp', SENHA); p42.keyboard.press('Enter'); p42.wait_for_timeout(2500)
+    p42.goto(URL + '#/g/' + g42); pronto(p42); p42.wait_for_timeout(1500)
+    r42b, r43b = J(p42, ler42), J(p42, ler43)
+    ok(r42b == r42 and r43b == r43, f'CT-KAN-170-P42/P43: e também depois de sair e entrar ({r42b}, {r43b})')
+    c42.close()
+
+    ok(not errs,'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))
     b.close()
 
 n = sum(1 for r in res if r['ok'])

@@ -4,13 +4,12 @@ const NOME = /^logo-\d{10,16}\.(webp|jpg)$/;
 export const nomeLogoValido = (s: unknown): s is string => typeof s === 'string' && NOME.test(s);
 
 /* Endereço público do arquivo no Storage (leitura liberada pelas regras do Storage). */
-export function enderecoLogo(bucket: string, gid: string, nome: unknown): string {
+export function enderecoLogo(
+  bucket: string,
+  gid: string,
+  nome: unknown,
+  base = 'https://firebasestorage.googleapis.com'
+): string {
   if (!bucket || !gid || !nomeLogoValido(nome)) return '';
-  return (
-    'https://firebasestorage.googleapis.com/v0/b/' +
-    bucket +
-    '/o/' +
-    encodeURIComponent('grupos/' + gid + '/' + nome) +
-    '?alt=media'
-  );
+  return base + '/v0/b/' + bucket + '/o/' + encodeURIComponent('grupos/' + gid + '/' + nome) + '?alt=media';
 }

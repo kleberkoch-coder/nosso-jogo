@@ -34,8 +34,16 @@ jobs:
           print(f"::notice::Chave da conta {d.get('client_email','?')} no projeto {d.get('project_id','?')}")
           PY2
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/chave.json"
+          # O Storage ativado em 11/2026 não responde "qual é o espaço padrão" (a ferramenta parava com "Storage has not
+          # been set up"). Aqui o endereço vai escrito, só nesta publicação (o firebase.json do emulador fica igual).
+          python3 - <<'PY3'
+          import json
+          d = json.load(open('firebase.json'))
+          d['storage'] = [{'bucket': 'nosso-jogo-f4762.firebasestorage.app', 'rules': 'storage.rules'}]
+          json.dump(d, open('firebase.json', 'w'), indent=2)
+          PY3
           set +e
-          npx --yes firebase-tools@13 deploy --only firestore:rules,storage --project nosso-jogo-f4762 --non-interactive 2>&1 | tee "$RUNNER_TEMP/saida.txt"
+          npx --yes firebase-tools@14 deploy --only firestore:rules,storage --project nosso-jogo-f4762 --non-interactive 2>&1 | tee "$RUNNER_TEMP/saida.txt"
           status=${PIPESTATUS[0]}
           rm -f "$RUNNER_TEMP/chave.json"
           if [ "$status" -ne 0 ]; then

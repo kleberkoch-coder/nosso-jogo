@@ -5637,6 +5637,8 @@ with sync_playwright() as pw:
         pref116 = p116.evaluate(LER, f'avisos/{g116}_{uid116}')
         ok(ap116 == [['demo-token', 'pt-BR', 'web']] and pref116 and pref116['ligado'] is True and pref116['gid'] == g116 and pref116['uid'] == uid116,
            f'CT-KAN-242-01: ligar grava este celular (token e idioma) e já liga o grupo ({ap116}, {pref116})')
+        nv116 = p116.inner_text('#avNiverElenco') if p116.locator('#avNiverElenco').count() else ''
+        ok('"Elenco e contatos"' in nv116, f'CT-KAN-278-05: a janela explica que o aviso de aniversário só chega para quem tem Elenco ({nv116!r})')
         gr116 = p116.evaluate("(()=>{const b=document.querySelector('#avGrupos [data-a=avisosGrupo]');return {nome:b.querySelector('.av-nome').textContent,ck:b.getAttribute('aria-checked'),alt:Math.round(b.getBoundingClientRect().height),semMin:!!document.querySelector('#avGrupos [data-a=avisosMinimo]'),sel:!!document.querySelector('#avGrupos select')}})()")
         ok(gr116 == {'nome': 'Avisos FC', 'ck': 'true', 'alt': gr116['alt'], 'semMin': True, 'sel': False} and gr116['alt'] >= 44,
            f'CT-KAN-242-05: o grupo aparece ligado (44px); sem mínimo, a janela orienta "Definir mínimo" em vez do horário ({gr116})')

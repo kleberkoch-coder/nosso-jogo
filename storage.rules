@@ -2,7 +2,8 @@ rules_version = '2';
 // Regras do Firebase Storage (KAN-273, pelada-v118): só o logotipo do grupo, em grupos/{gid}/logo-{momento}.webp
 // (ou .jpg). Publicadas pela automação "Publicar regras do Firebase" quando este arquivo muda na main.
 // - Ler: qualquer um (o logotipo aparece no link do jogador e no da votação, que não têm conta).
-// - Gravar: administrador do grupo com a permissão Configurações (o organizador sempre), em grupo não bloqueado.
+// - Gravar: administrador do grupo com a permissão Configurações (o organizador sempre), em grupo não bloqueado,
+//   dentro do limite de administradores do plano e com a conta não bloqueada (KAN-281).
 //   O app já reduz para 256 × 256; aqui o teto é 300 KB, só imagem WebP ou JPEG, e nunca por cima de outro arquivo.
 // - Apagar: o mesmo administrador (o app apaga o logotipo antigo depois de trocar).
 // Qualquer outro caminho fica fechado.
@@ -14,13 +15,29 @@ service firebase.storage {
     function grupo(gid) {
       return /databases/(default)/documents/grupos/$(gid);
     }
+    // KAN-281 (pelada-v121): as mesmas conferências do adminAtivo() do Firestore, com no máximo 2 documentos lidos
+    // (o limite das regras do Storage): o grupo e o cadastro do administrador.
+    // - Convidado além do limite do plano só vê: o limite sai do espelho do plano no grupo (pl; Grátis 1, A 2, B 5).
+    // - Conta bloqueada: o grupo dela (bloq) ou, nos grupos em que é convidada, o cadastro (bloq, marcado pelo portal).
+    function limitePl(g) {
+      let p = g.get('pl', {});
+      let vale = p.get('ate', null) == null || p.get('ate', 0) > request.time.toMillis();
+      return vale && p.get('id', '') == 'B' ? 5 : (vale && p.get('id', '') == 'A' ? 2 : 1);
+    }
+    function dentroDoLimite(g) {
+      let a = g.get('adms', null);
+      return a == null || (a.hasAny([request.auth.uid])
+        && (a.size() <= limitePl(g) || a[0:limitePl(g)].hasAny([request.auth.uid])));
+    }
     function podeConfig(gid) {
+      let g = firestore.get(grupo(gid)).data;
+      let m = firestore.get(membro(gid)).data;
       return request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous'
         && firestore.exists(membro(gid))
-        && firestore.get(grupo(gid)).data.get('bloq', false) != true
-        && (firestore.get(grupo(gid)).data.owner == request.auth.uid
-            || firestore.get(membro(gid)).data.get('perm', null) == null
-            || firestore.get(membro(gid)).data.get('perm', {}).get('config', false) == true);
+        && g.get('bloq', false) != true && m.get('bloq', false) != true
+        && (g.owner == request.auth.uid
+            || (dentroDoLimite(g)
+                && (m.get('perm', null) == null || m.get('perm', {}).get('config', false) == true)));
     }
     match /grupos/{gid}/{arq} {
       allow get: if arq.matches('logo-[0-9]{10,16}[.](webp|jpg)');

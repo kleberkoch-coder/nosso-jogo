@@ -27,4 +27,6 @@ export default {
   'av.naoLigou': 'Não deu para ligar os avisos. Confira a internet e tente de novo.',
   'av.pronto': 'Pronto! Você vai receber os avisos neste celular.',
   'av.demo': 'Modo demonstração: a tela funciona, mas nenhum aviso chega ao celular.',
+  'av.niverElenco':
+    'O aviso de aniversário só chega para quem tem a permissão "Elenco e contatos", que é quem vê a data de nascimento.',
 };

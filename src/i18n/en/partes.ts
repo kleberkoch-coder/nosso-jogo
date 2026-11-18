@@ -889,6 +889,8 @@ export default {
   'av.naoLigou': "Couldn't turn on notifications. Check your connection and try again.",
   'av.pronto': "Done! You'll get notifications on this phone.",
   'av.demo': 'Demo mode: the screen works, but no notification reaches the phone.',
+  'av.niverElenco':
+    'The birthday notification only reaches those with the "Roster and contacts" permission, who are the ones that see the date of birth.',
   /* pt-BR-niver.ts */
   'niver.rotulo': 'Birthday on {data}',
   'niver.mes': '🎂 Birthdays in {mes}',

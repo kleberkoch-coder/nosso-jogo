@@ -40,7 +40,10 @@ export function registrarFalha(t: Tipo, mensagem: unknown, pilha?: unknown) {
               { v: VERSAO, r, g, hoje: today() },
               (backend as any).op.agora()
             );
-            if (o && d.cabeNoAparelho(today())) return b.patch('falhas/' + b.newId(), o);
+            /* KAN-280: identificador {conta}_{dia}_{n}: as regras aceitam no máximo 20 por conta e por dia. */
+            const dia = d.diaDaFalha(Date.now()),
+              n = d.cabeNoAparelho(String(dia));
+            if (o && n) return b.patch('falhas/' + S.user.uid + '_' + dia + '_' + n, o);
           })
           .catch(() => {}),
       3000

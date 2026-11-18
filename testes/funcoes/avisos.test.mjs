@@ -12,6 +12,7 @@ import {
   aoResponder,
   cabeNoGrupo,
   cabeNoMes,
+  verificarAvisos,
   verificarFaltas,
 } from '../../funcoes/src/logica.ts';
 
@@ -68,14 +69,18 @@ test('CT-KAN-242-07: resposta pelo link avisa só quem ligou; token que não val
 });
 
 test('CT-KAN-242-08: troca pelo link avisa; gravação de administrador e repetição não avisam', async () => {
+  /* KAN-279: a troca logo depois da primeira resposta fica no freio (no máximo 1 aviso da mesma pessoa a cada 10 min) e
+     a rotina manda a resposta mais recente depois do intervalo. */
   await db.doc('grupos/' + G + '/rodadas/r1/presencas/j1').set({ s: 'out', t: 2, by: 'anonimo1', dev: 'anonimo1' });
-  const fim = Date.now() + 20000;
-  let titulos = [];
-  while (Date.now() < fim && !titulos.includes('⚠️ João desistiu')) {
-    titulos = (await avisosDe('r-r1-j1')).map(a => a.titulo);
-    await sleep(500);
-  }
-  assert.ok(titulos.includes('⚠️ João desistiu'));
+  await sleep(4000);
+  assert.ok(!(await avisosDe('r-r1-j1', 1000)).some(a => a.titulo === '⚠️ João desistiu'), 'a troca ficou no freio');
+  const guardados = [];
+  const r = await verificarAvisos(db, async ms => (guardados.push(...ms), ms.map(() => 'ok')), Date.now() + 11 * 60e3, {
+    faltas: false,
+    niver: false,
+  });
+  assert.ok(r.guardadas.includes(G + '/r1/j1'), 'CT-KAN-279-01: a rotina manda a resposta guardada');
+  assert.ok(guardados.length >= 1 && guardados.every(a => a.titulo === '⚠️ João desistiu' && a.tag === 'r-r1-j1'));
   /* Pela lógica direto (sem esperar o gatilho): administrador e mesma resposta. */
   const nada = async () => [];
   assert.equal(
@@ -170,7 +175,7 @@ test('CT-KAN-242-12: falhas dos avisos vão para o banco de falhas (envio recusa
     assert.equal(
       await aoResponder(
         db,
-        { gid: G, rid: 'r1', pid: 'j1' },
+        { gid: G, rid: 'r1', pid: 'mes' + i },
         { s: i % 2 ? 'in' : 'out' },
         { s: i % 2 ? 'out' : 'in', by: 'anonimo9' },
         async ms => (nada.push(...ms), ms.map(() => 'ok')),
@@ -201,7 +206,7 @@ test('CT-KAN-275-03: grupo que passou do teto do dia para sozinho; os outros con
     assert.equal(
       await aoResponder(
         db,
-        { gid: G, rid: 'r1', pid: 'j1' },
+        { gid: G, rid: 'r1', pid: 'dia' + i },
         { s: i % 2 ? 'in' : 'out' },
         { s: i % 2 ? 'out' : 'in', by: 'z' },
         enviar,
@@ -242,4 +247,121 @@ test('CT-KAN-272-04: aniversário às 9h no fuso do grupo, uma vez por dia, só 
   assert.equal(meus.length, 1);
   assert.equal(meus[0].titulo, '🎂 Hoje é aniversário de João');
   assert.equal(meus[0].corpo, 'Pelada do Niver · mande os parabéns!');
+});
+
+test('CT-KAN-278-01 a 04: o aviso de aniversário só vai para quem tem Elenco; a resposta vai para todos', async () => {
+  const H = 'gNiverPerm';
+  await db.doc('grupos/' + H).set({ name: 'Niver FC', owner: 'org8', cfg: { fuso: 'America/Sao_Paulo' } });
+  const adms = {
+    org8: { role: 'owner' },
+    antigo8: { role: 'admin' },
+    sem8: { role: 'admin', perm: { caixa: false, notas: false, elenco: false, config: false } },
+    com8: { role: 'admin', perm: { caixa: false, notas: false, elenco: true, config: false } },
+  };
+  for (const [u, m] of Object.entries(adms)) {
+    await db.doc('grupos/' + H + '/membros/' + u).set(Object.assign({ uid: u }, m));
+    await db.doc('avisos/' + H + '_' + u).set({ gid: H, uid: u, ligado: true });
+    await db.doc('usuarios/' + u + '/aparelhos/c').set({ token: 'tk-' + u, lang: 'pt-BR' });
+  }
+  await db.doc('grupos/' + H + '/jogadores/b1').set({ name: 'Bia', ativo: true });
+  await db.doc('grupos/' + H + '/privado/contatos').set({ b1: { nasc: '1992-04-15' } });
+  const env = [];
+  const enviar = async ms => (env.push(...ms), ms.map(() => 'ok'));
+  const { verificarAniversarios } = await import('../../funcoes/src/logica.ts');
+  assert.deepEqual(await verificarAniversarios(db, enviar, Date.UTC(2027, 3, 15, 12, 20)), [H + '/2027-04-15']);
+  const niver = env
+    .filter(m => m.tag === 'n-' + H + '-2027-04-15')
+    .map(m => m.token)
+    .sort();
+  assert.deepEqual(
+    niver,
+    ['tk-antigo8', 'tk-com8', 'tk-org8'],
+    'organizador, convidado de antes das permissões e convidado com Elenco; nunca o sem Elenco'
+  );
+  /* CT-KAN-278-04: a resposta pelo link continua indo para o convidado sem Elenco. */
+  env.length = 0;
+  assert.equal(
+    await aoResponder(
+      db,
+      { gid: H, rid: 'q8', pid: 'b1' },
+      null,
+      { s: 'in', by: 'anon8' },
+      enviar,
+      Date.UTC(2027, 3, 15, 13)
+    ),
+    'enviados:4'
+  );
+  assert.ok(env.some(m => m.token === 'tk-sem8'));
+});
+
+test('CT-KAN-279-01: 20 trocas em 2 minutos: 1 aviso na hora e, depois do intervalo, só a resposta mais recente', async () => {
+  const H = 'gFreio';
+  await db.doc('grupos/' + H).set({ name: 'Freio FC', owner: 'org9', cfg: {} });
+  await db.doc('grupos/' + H + '/membros/org9').set({ uid: 'org9', role: 'owner' });
+  await db.doc('avisos/' + H + '_org9').set({ gid: H, uid: 'org9', ligado: true });
+  await db.doc('usuarios/org9/aparelhos/c').set({ token: 'tk-org9', lang: 'pt-BR' });
+  await db.doc('grupos/' + H + '/jogadores/z1').set({ name: 'Zeca' });
+  const todos = [];
+  const enviar = async ms => (todos.push(...ms), ms.map(() => 'ok'));
+  const env = {
+    get length() {
+      return meus().length;
+    },
+  };
+  const meus = () => todos.filter(m => m.tag === 'r-f1-z1');
+  const t0 = Date.UTC(2027, 7, 10, 18);
+  const rs = [];
+  for (let i = 0; i < 20; i++) {
+    const s = i % 2 ? 'out' : 'in',
+      antes = i ? { s: i % 2 ? 'in' : 'out' } : null;
+    rs.push(await aoResponder(db, { gid: H, rid: 'f1', pid: 'z1' }, antes, { s, by: 'anonZ' }, enviar, t0 + i * 6000));
+  }
+  assert.equal(rs[0], 'enviados:1');
+  assert.ok(
+    rs.slice(1).every(r => r === 'freio'),
+    'as outras 19 ficam no freio'
+  );
+  assert.equal(env.length, 1, 'um aviso só no intervalo');
+  /* Antes de 10 minutos, a rotina não manda; depois, manda a mais recente (a 20ª: "Não vou"), uma vez. */
+  await verificarAvisos(db, enviar, t0 + 5 * 60e3, { faltas: false, niver: false });
+  assert.equal(env.length, 1);
+  await verificarAvisos(db, enviar, t0 + 11 * 60e3, { faltas: false, niver: false });
+  assert.equal(env.length, 2);
+  assert.equal(meus()[1].titulo, '⚠️ Zeca desistiu');
+  await verificarAvisos(db, enviar, t0 + 30 * 60e3, { faltas: false, niver: false });
+  assert.equal(env.length, 2, 'não manda de novo');
+});
+
+test('CT-KAN-279-02: teto das respostas esgotado não cala o aviso de faltam pessoas', async () => {
+  const H = 'gTetoResp';
+  await db.doc('grupos/' + H).set({
+    name: 'Teto FC',
+    owner: 'org10',
+    cfg: { fuso: 'America/Sao_Paulo', minPos: { _total: 10 }, fixos: [] },
+  });
+  await db.doc('grupos/' + H + '/membros/org10').set({ uid: 'org10', role: 'owner' });
+  await db.doc('avisos/' + H + '_org10').set({ gid: H, uid: 'org10', ligado: true });
+  await db.doc('usuarios/org10/aparelhos/c').set({ token: 'tk-org10', lang: 'pt-BR' });
+  await db.doc('grupos/' + H + '/rodadas/t1').set({ date: '2027-09-10', time: '20:00' });
+  await db.doc('avisosEnviados/_teto_' + H).set({ k: '2027-09-10', n: LIMITE_GRUPO_DIA, avisou: true });
+  const env = [];
+  const enviar = async ms => (env.push(...ms), ms.map(() => 'ok'));
+  assert.equal(
+    await aoResponder(
+      db,
+      { gid: H, rid: 't1', pid: 'k1' },
+      null,
+      { s: 'in', by: 'anonK' },
+      enviar,
+      Date.UTC(2027, 8, 10, 20)
+    ),
+    'enviados:0',
+    'a resposta já não sai (teto das respostas)'
+  );
+  const feitos = await verificarFaltas(db, enviar, Date.UTC(2027, 8, 10, 21)); // 18h em São Paulo, jogo às 20h
+  assert.deepEqual(feitos, [H + '/t1']);
+  assert.ok(
+    env.some(m => m.tag === 'f-t1' && m.token === 'tk-org10'),
+    'faltam pessoas sai pelo teto da rotina'
+  );
 });

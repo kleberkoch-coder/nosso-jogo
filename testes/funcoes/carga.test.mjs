@@ -125,3 +125,24 @@ test('CT-KAN-275-02: 50 respostas pelo link em 10 s no mesmo grupo: todos os avi
   assert.equal(enviados.length, 50);
   assert.ok(max <= 12, `leituras por resposta: até ${max}`);
 });
+
+test('CT-KAN-279-04: troca barrada pelo freio termina sem ler administradores nem celulares', async () => {
+  const G = 'cargaFreio';
+  await db.doc('grupos/' + G).set({ name: 'Freio', owner: 'donoF', cfg: {} });
+  await db.doc('grupos/' + G + '/membros/donoF').set({ uid: 'donoF', role: 'owner' });
+  await db.doc('avisos/' + G + '_donoF').set({ gid: G, uid: 'donoF', ligado: true });
+  await db.doc('usuarios/donoF/aparelhos/c').set({ token: 'tk-f', lang: 'pt-BR' });
+  const enviar = async ms => ms.map(() => 'ok');
+  const t0 = Date.UTC(2027, 10, 1, 18);
+  assert.equal(
+    await aoResponder(db, { gid: G, rid: 'x', pid: 'p' }, null, { s: 'in', by: 'anonF' }, enviar, t0),
+    'enviados:1'
+  );
+  const { db: d2, n } = contador(db);
+  assert.equal(
+    await aoResponder(d2, { gid: G, rid: 'x', pid: 'p' }, { s: 'in' }, { s: 'out', by: 'anonF' }, enviar, t0 + 1000),
+    'freio'
+  );
+  console.log(`Carga das funções: troca barrada pelo freio com ${n.leituras} leituras`);
+  assert.ok(n.leituras <= 2, `leituras: ${n.leituras}`);
+});

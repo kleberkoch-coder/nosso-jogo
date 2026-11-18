@@ -81,10 +81,11 @@ test('CT-KAN-275-01: a rotina de 15 minutos avalia 1.000 grupos em menos de 30 s
 
 test('CT-KAN-275-02: 50 respostas pelo link em 10 s no mesmo grupo: todos os avisos, sem erro, até 12 leituras cada', async () => {
   const G = 'cargaLink';
-  await db.doc('grupos/' + G).set({ name: 'Carga link', owner: 'dono', cfg: {} });
-  await db.doc('grupos/' + G + '/membros/dono').set({ uid: 'dono', role: 'owner' });
-  await db.doc('avisos/' + G + '_dono').set({ gid: G, uid: 'dono', ligado: true });
-  await db.doc('usuarios/dono/aparelhos/celcarga').set({ token: 'token-carga', lang: 'pt-BR' });
+  /* Conta própria (donoCarga): o "dono" dos outros testes já tem celulares registrados. */
+  await db.doc('grupos/' + G).set({ name: 'Carga link', owner: 'donoCarga', cfg: {} });
+  await db.doc('grupos/' + G + '/membros/donoCarga').set({ uid: 'donoCarga', role: 'owner' });
+  await db.doc('avisos/' + G + '_donoCarga').set({ gid: G, uid: 'donoCarga', ligado: true });
+  await db.doc('usuarios/donoCarga/aparelhos/celcarga').set({ token: 'token-carga', lang: 'pt-BR' });
   await db.doc('grupos/' + G + '/rodadas/rc').set({ date: '2027-07-02', time: '20:00' });
   const enviados = [],
     leituras = [],

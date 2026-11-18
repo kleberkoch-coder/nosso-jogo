@@ -74,6 +74,14 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo de toda janela (pelada-v106, KAN-250); **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v118)
+- **Logotipo do grupo no cabeçalho** (KAN-273; `#glogo.glogo` em `site/index.html`, dentro de `.marca`, à esquerda do nome): quadrado de 56px (44px até 420px), cantos de 14px (12px no celular), `object-fit: cover`, fundo branco e borda de 2px branca a 35%. Aparece na gestão, no link do jogador e no da votação quando o grupo tem logotipo; sem logotipo, o cabeçalho fica como antes. Imagem decorativa (`alt` vazio): o nome do grupo está do lado.
+- **Logotipo no lugar do ícone** (`img.gem`): em "Meus grupos" e na aba Grupo, a imagem ocupa o mesmo quadrado de 40px do ícone do esporte (`gem`), com `object-fit: cover` e fundo branco.
+- **Campo Logotipo do grupo** (`ui/LogoGrupo.tsx`, em Editar grupo, logo abaixo do nome): rótulo (`lbl`), a prévia (`gem logo-prev`; sem logotipo, 🖼️), "Escolher imagem" ou "Trocar imagem" e "Remover logotipo" (`btn sm`, com carregando), e embaixo, sempre visível, os limites em `small muted`: "JPG, PNG, WebP ou GIF, até 5 MB…". Arquivo recusado: a mensagem em `err` logo abaixo.
+- **🎂 Aniversário** (KAN-272; `ui/Aniversario.tsx`): `tag bolo` com 🎂 ao lado do nome, no elenco e na presença da Rodada (rótulo para leitor de tela: "Aniversário em 14/11").
+- **Painel Aniversariantes do mês** (`#aniversariantes`, na aba Jogadores, antes de Avulsos): `panel` com o título "🎂 Aniversariantes de novembro" (h3) e uma `plist`: nome com 🎂 à esquerda e "dia 14" (`tag`) à direita. Some quando ninguém faz aniversário no mês.
+- **Campo Nascimento** na ficha do jogador: `input type=date` (`inp`), com a ajuda "Só administradores veem…" em `small muted`.
+
 ## Componentes (pelada-v116)
 - **Janela Avisos no celular** (KAN-242; `ui/AvisosJanela.tsx`, CSS `avisos.css`, sob demanda; aberta pelo item "🔔 Avisos no celular" do menu da conta): título (h3), a explicação em `small muted` e, conforme o estado do celular:
   - **desligado:** "🔔 Receber avisos neste celular" (`btn primary av-ligar`, largura toda, 44px, com o foco) e a ajuda embaixo;

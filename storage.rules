@@ -24,7 +24,7 @@ service firebase.storage {
     }
     match /grupos/{gid}/{arq} {
       allow get: if arq.matches('logo-[0-9]{10,16}[.](webp|jpg)');
-      allow create: if arq.matches('logo-[0-9]{10,16}[.](webp|jpg)') && podeConfig(gid)
+      allow create: if resource == null && arq.matches('logo-[0-9]{10,16}[.](webp|jpg)') && podeConfig(gid)
         && request.resource.size < 300 * 1024
         && request.resource.contentType.matches('image/(webp|jpeg)');
       allow delete: if arq.matches('logo-[0-9]{10,16}[.](webp|jpg)') && podeConfig(gid);

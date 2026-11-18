@@ -74,6 +74,10 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo de toda janela (pelada-v106, KAN-250); **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v120)
+- **Aviso de conexão instável** (KAN-276 e KAN-277; `#recon.bar-upd.bar-recon` em `site/index.html`, comportamento em `nucleo/conexao.ts`): a mesma barra flutuante da "Nova versão disponível" (fundo `ink`, texto `bg`, cantos de 12px, sombra `shadow-float`), 76px acima do rodapé (fica acima da Barra de ação fixa e da barra de nova versão), largura do conteúdo até 92% da tela. À esquerda o texto ("A conexão com o servidor ficou instável. Recarregue a página para continuar." ou "Este aparelho perdeu a cópia local dos dados…"); à direita **Recarregar** (`btn bib`, 44px, com carregando). `role="status"`. Contraste AA nos dois temas; em 360px, o texto quebra em até 3 linhas e o botão fica inteiro.
+- A barra **Nova versão disponível** passou a vir no idioma da pessoa ("New version available." / "Update").
+
 ## Componentes (pelada-v119)
 - Sem componente nem estilo novo. Só mudou de arquivo (KAN-274, para a gestão abrir mais leve): a **ficha do jogador**, **Adicionar avulso** e **Editar avulso** saíram de `ui/JanelasGestao.tsx` para `ui/JanelasJogador.tsx` (sob demanda, mesmos ids, classes e `data-a`); o **menu da conta** aberto foi para `ui/menu-conta-aberto.ts` (o botão continua em `ui/menu-conta.ts`). A aparência é a mesma.
 

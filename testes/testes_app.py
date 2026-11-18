@@ -5853,6 +5853,73 @@ with sync_playwright() as pw:
            f'CT-KAN-272-01/CT-KAN-273-09: em English, aniversário e logotipo vêm traduzidos ({en118[-160:]!r}, {falta118})')
         ctx118b.close()
 
+        # ---------- v120 (KAN-276 e KAN-277): conexão instável (comprovante do App Check) e cópia local do banco que quebrou
+        FALHAS120 = "(()=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2')||'{}');return Object.entries(s).filter(([k])=>/^falhas\\/[^/]+$/.test(k)).map(([,v])=>v)})()"
+        ctx120 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+        ctx120.add_init_script("window.__njConexaoLimite=1500;window.__njConexaoIntervalo=400")
+        p120 = ctx120.new_page(); p120.on('pageerror', lambda e: errs.append(str(e)) if not re.search(r'in-progress transaction|Teste KAN-277', str(e)) else None)
+        abrir_entrada(p120, 'criar')
+        p120.fill('#le', 'v120@teste.com'); p120.fill('#lp', 'Jogo@2026'); p120.fill('#lp2', 'Jogo@2026'); p120.keyboard.press('Enter'); p120.wait_for_selector('#ngBox', timeout=12000)
+        p120.fill('#ngn', 'Conexão FC'); p120.click('[data-a=pickSport][data-v=futebol]'); p120.click('[data-a=createGroup]')
+        p120.wait_for_function("location.hash.startsWith('#/g/')"); p120.wait_for_timeout(1500)
+        ok(p120.evaluate("document.getElementById('recon').hidden"), 'CT-KAN-276-03: sem problema de conexão, nenhum aviso')
+        # A internet volta: pede um comprovante novo
+        p120.evaluate("window.__njPedidos=[];dispatchEvent(new Event('online'))")
+        ok(p120.evaluate("window.__njPedidos") == [True], f'CT-KAN-276-01: quando a internet volta, o app pede um comprovante novo do App Check ({p120.evaluate("window.__njPedidos")})')
+        # Sem comprovante: antes do limite, só tenta de novo; passado o limite, o aviso aparece
+        p120.evaluate("document.dispatchEvent(new CustomEvent('nj-appcheck-falhou',{detail:'appCheck/throttled'}))")
+        p120.wait_for_timeout(500)
+        ok(p120.evaluate("document.getElementById('recon').hidden") and len(p120.evaluate("window.__njPedidos")) >= 2,
+           'CT-KAN-276-01: sem comprovante, o app tenta de novo sozinho e ainda não incomoda com aviso')
+        p120.wait_for_function("!document.getElementById('recon').hidden", timeout=5000)
+        rc120 = p120.evaluate("""(()=>{const e=document.getElementById('recon'),b=document.getElementById('reconBtn'),r=e.getBoundingClientRect();
+          return {txt:e.textContent,alt:Math.round(b.getBoundingClientRect().height),dentro:r.left>=0&&r.right<=innerWidth,rol:document.documentElement.scrollWidth>innerWidth,role:e.getAttribute('role')}})()""")
+        ok('ficou instável' in rc120['txt'] and 'Recarregar' in rc120['txt'] and rc120['alt'] >= 44 and rc120['dentro'] and not rc120['rol'] and rc120['role'] == 'status',
+           f'CT-KAN-276-03: sem comprovante por mais que o limite, aparece o aviso com Recarregar (44px, dentro da tela em 360px) ({rc120})')
+        p120.screenshot(path=f'{OUT}/v120-conexao.png')
+        for tema in ['light', 'dark']:
+            p120.emulate_media(color_scheme=tema); p120.wait_for_timeout(200)
+            bd120 = [x for x in p120.evaluate(CHK) if 'instável' in str(x) or 'Recarregar' in str(x)]
+            ok(not bd120, f'CT-KAN-276-03: contraste do aviso de conexão no tema {tema} ({bd120[:3]})')
+        p120.emulate_media(color_scheme='light')
+        # O comprovante volta sozinho: o aviso some e a recuperação vai para o coletor de falhas
+        p120.evaluate("document.dispatchEvent(new CustomEvent('nj-appcheck-ok'))"); p120.wait_for_timeout(3800)
+        rec120 = [f for f in p120.evaluate(FALHAS120) if f.get('m') == 'appCheck/recuperou']
+        ok(p120.evaluate("document.getElementById('recon').hidden") and len(rec120) == 1 and rec120[0].get('t') == 'appcheck',
+           f'CT-KAN-276-01: quando o comprovante volta, o aviso some e a recuperação fica registrada para o Portal ({rec120})')
+        # Aba que volta a aparecer depois de sem comprovante: pede de novo
+        p120.evaluate("window.__njPedidos=[];document.dispatchEvent(new CustomEvent('nj-appcheck-falhou',{detail:'appCheck/fetch-network-error'}));"
+                      "Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>'hidden'});document.dispatchEvent(new Event('visibilitychange'));"
+                      "Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>'visible'});document.dispatchEvent(new Event('visibilitychange'))")
+        ok(True in p120.evaluate("window.__njPedidos"), f'CT-KAN-276-02: a aba que volta a aparecer pede um comprovante novo ({p120.evaluate("window.__njPedidos")})')
+        p120.evaluate("document.dispatchEvent(new CustomEvent('nj-appcheck-ok'))"); p120.wait_for_timeout(300)
+        # KAN-277: a cópia local do banco quebrou (Safari do iPhone): aviso na hora; Recarregar recarrega e o aviso some
+        p120.evaluate("setTimeout(()=>Promise.reject(new Error('Attempt to get records from database without an in-progress transaction')),0)")
+        p120.wait_for_function("!document.getElementById('recon').hidden", timeout=4000)
+        tb120 = p120.inner_text('#recon')
+        ok('perdeu a cópia local' in tb120 and 'Recarregar' in tb120, f'CT-KAN-277-01: a cópia local que quebrou mostra o aviso com Recarregar na hora ({tb120!r})')
+        p120.evaluate("document.dispatchEvent(new CustomEvent('nj-appcheck-ok'))"); p120.wait_for_timeout(200)
+        ok(not p120.evaluate("document.getElementById('recon').hidden"), 'CT-KAN-277-01: o aviso do banco local não some sozinho (só recarregando resolve)')
+        p120.click('#reconBtn'); p120.wait_for_load_state('load'); p120.wait_for_timeout(1500)
+        ok(p120.evaluate("document.getElementById('recon').hidden") and '#/g/' in p120.url, 'CT-KAN-277-01: Recarregar recarrega a página e o aviso some')
+        # Um erro qualquer não mostra o aviso
+        p120.evaluate("setTimeout(()=>Promise.reject(new Error('Teste KAN-277: x is null')),0)"); p120.wait_for_timeout(500)
+        ok(p120.evaluate("document.getElementById('recon').hidden"), 'CT-KAN-277-01: um erro que não é da cópia local não mostra o aviso')
+        ctx120.close()
+        # Em English
+        ctx120b = b.new_context(viewport={'width': 360, 'height': 740}, service_workers='block', locale='en-US', timezone_id='America/Sao_Paulo')
+        ctx120b.add_init_script("window.__njConexaoLimite=800;window.__njConexaoIntervalo=300")
+        p120b = ctx120b.new_page(); p120b.on('pageerror', lambda e: errs.append(str(e)))
+        p120b.goto(URL); p120b.wait_for_timeout(1500)
+        p120b.evaluate("document.dispatchEvent(new CustomEvent('nj-appcheck-falhou',{detail:'appCheck/throttled'}))")
+        p120b.wait_for_function("!document.getElementById('recon').hidden", timeout=4000)
+        en120 = p120b.inner_text('#recon') + ' | ' + p120b.evaluate("document.querySelector('#upd span').textContent+' '+document.getElementById('updBtn').textContent")
+        falta120 = p120b.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(conexao|pwa)\\./.test(k))")
+        ok('became unstable' in en120 and 'Reload' in en120 and 'New version available.' in en120 and 'Update' in en120
+           and not re.search(r'\b(instável|Recarregar|Nova versão|Atualizar)\b', en120) and not falta120,
+           f'CT-KAN-276-03: em English, o aviso de conexão e a barra de nova versão vêm traduzidos ({en120!r}, {falta120})')
+        ctx120b.close()
+
     if parte('b'):
         # ---------- v35 (KAN-142): "Continuar com o Google" na aba errada entra ou cria a conta e avisa (navegador separado)
         ctx3 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block'); p3 = ctx3.new_page()

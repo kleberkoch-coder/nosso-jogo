@@ -17,10 +17,14 @@ import {
 
 const req = createRequire(new URL('../../funcoes/package.json', import.meta.url));
 const { initializeApp } = req('firebase-admin/app');
-const { getFirestore } = req('firebase-admin/firestore');
+const { FieldValue, getFirestore } = req('firebase-admin/firestore');
 
 initializeApp({ projectId: 'demo-nosso-jogo' });
-const db = getFirestore();
+/* somar: o mesmo que as funções passam (index.ts). */
+const somar = n => FieldValue.increment(n);
+const db = new Proxy(getFirestore(), {
+  get: (f, k) => (k === 'somar' ? somar : typeof f[k] === 'function' ? f[k].bind(f) : f[k]),
+});
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 async function avisosDe(tag, ms = 20000) {

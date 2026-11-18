@@ -11,7 +11,7 @@ import { aoResponder, verificarAvisos } from '../../funcoes/src/logica.ts';
 
 const req = createRequire(new URL('../../funcoes/package.json', import.meta.url));
 const { initializeApp, getApps } = req('firebase-admin/app');
-const { getFirestore } = req('firebase-admin/firestore');
+const { FieldValue, getFirestore } = req('firebase-admin/firestore');
 
 if (!getApps().length) initializeApp({ projectId: 'demo-nosso-jogo' });
 const db = getFirestore();
@@ -40,6 +40,7 @@ function contador(base) {
     doc: id => ref(q.doc(id)),
   });
   const db2 = {
+    somar: n => FieldValue.increment(n),
     doc: p => ref(base.doc(p)),
     collection: p => consulta(base.collection(p)),
     runTransaction: f =>

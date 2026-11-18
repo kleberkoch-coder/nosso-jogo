@@ -7,7 +7,7 @@ import { setGlobalOptions } from 'firebase-functions/v2';
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { initializeApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 import { REGIAO } from './config';
 import { aoResponder, registrarFalha, verificarAvisos, type Db, type Enviar } from './logica';
@@ -16,7 +16,13 @@ initializeApp();
 /* KAN-275: até 10 cópias (cada uma atende um aviso por vez com 256 MB); a rotina de 15 min tem 120 s. */
 setGlobalOptions({ region: REGIAO, maxInstances: 10, memory: '256MiB', timeoutSeconds: 60 });
 
-const db = () => getFirestore() as unknown as Db;
+/* KAN-275: somar = FieldValue.increment (contadores do teto sem transação). */
+const somar = (n: number) => FieldValue.increment(n);
+const db = () =>
+  new Proxy(getFirestore(), {
+    get: (f, k) =>
+      k === 'somar' ? somar : typeof (f as any)[k] === 'function' ? (f as any)[k].bind(f) : (f as any)[k],
+  }) as unknown as Db;
 const NO_EMULADOR = process.env.FUNCTIONS_EMULATOR === 'true';
 const TOKEN_INVALIDO = ['messaging/registration-token-not-registered', 'messaging/invalid-registration-token'];
 

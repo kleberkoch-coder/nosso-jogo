@@ -9,11 +9,12 @@
    - avisosEnviados/{gid}_{rid}: o aviso de "faltam pessoas" já foi desta rodada (só o servidor lê e grava).
    - falhas/{id}: falhas dos avisos (tipo "aviso"), no mesmo banco de falhas do app, que o Portal mostra: envio recusado
      pelo Firebase, erro na função e teto do mês atingido. Sem nada pessoal: só o grupo, o motivo e quantos.
-   - avisosEnviados/_teto_{gid}_{dia}: quantos avisos o grupo mandou no dia (KAN-275: teto por grupo, para um abusador
+   - avisosEnviados/_teto_{gid}: quantos avisos o grupo mandou no dia (k = o dia) (KAN-275: teto por grupo, para um abusador
      trocando a resposta pelo link não gastar os avisos de todos). Passou, só esse grupo para até o dia virar.
-   - avisosEnviados/_teto_{mes}_{parte}: o teto do mês para todos, dividido em PARTES documentos (cada envio grava numa
+   - avisosEnviados/_teto_mes_{parte}: o teto do mês (k = o mês) para todos, dividido em PARTES documentos (cada envio grava numa
      parte sorteada: um documento só não aguentaria muitas gravações por segundo). Último recurso contra gasto.
-   Falha de teto vai para o banco de falhas uma vez só por dia (por grupo) ou por parte e mês (global). */
+   Falha de teto vai para o banco de falhas uma vez só por dia (por grupo, e uma no total para o teto do mês), com a
+   marca em avisosEnviados/_teto_{gid}_marca e avisosEnviados/_teto_mes_marca. */
 import {
   agoraNoFuso,
   faltaAlgo,
@@ -55,6 +56,8 @@ export type Db = {
   doc(p: string): Ref;
   collection(p: string): Query & { doc(id: string): Ref };
   runTransaction<T>(f: (t: Transacao) => Promise<T>): Promise<T>;
+  /* Valor que soma no próprio servidor (FieldValue.increment): várias gravações ao mesmo tempo sem disputa. */
+  somar(n: number): unknown;
 };
 type Transacao = { get(r: Ref): Promise<Snap>; set(r: Ref, d: Record<string, unknown>): unknown };
 
@@ -93,36 +96,62 @@ export async function destinos(db: Db, gid: string): Promise<Destino[]> {
 const mesDe = (ms: number) => new Date(ms).toISOString().slice(0, 7);
 const diaDe = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 
-/* Reserva n avisos num contador; 'ok', 'cheio' ou 'avisar' (cheio pela primeira vez: registra a falha uma vez só). */
+/* Reserva n avisos num contador; 'ok', 'cheio' ou 'avisar' (cheio pela primeira vez: registra a falha uma vez só).
+   KAN-275 (teste de carga): sem transação no caminho comum. Lê o contador e soma no servidor (somar), então muitas
+   respostas ao mesmo tempo no mesmo grupo não disputam o documento. Pode passar do teto por poucas mensagens (as que
+   leram juntas), o que não importa para um teto de gasto. Só a primeira recusa usa transação, num documento à parte
+   (marca), para a falha ir uma vez só ao banco de falhas; depois, o próprio contador guarda "avisou". */
 type Reserva = 'ok' | 'cheio' | 'avisar';
-async function reservar(db: Db, caminho: string, chave: string, n: number, limite: number): Promise<Reserva> {
+async function reservar(
+  db: Db,
+  caminho: string,
+  chave: string,
+  n: number,
+  limite: number,
+  marca: string,
+  chaveMarca = chave
+): Promise<Reserva> {
   const ref = db.doc(caminho);
-  return db.runTransaction(async t => {
-    const d = (await t.get(ref)).data() || {};
-    const mesmo = d.k === chave;
-    const usados = mesmo ? Number(d.n) || 0 : 0;
-    if (usados + n <= limite) {
-      t.set(ref, { k: chave, n: usados + n });
-      return 'ok' as Reserva;
-    }
-    if (mesmo && d.avisou) return 'cheio' as Reserva;
-    t.set(ref, { k: chave, n: usados, avisou: true });
+  const d = (await ref.get()).data() || {};
+  const mesmo = d.k === chave;
+  const usados = mesmo ? Number(d.n) || 0 : 0;
+  if (usados + n <= limite) {
+    await ref.set(mesmo ? { n: db.somar(n) } : { k: chave, n, avisou: false }, { merge: true });
+    return 'ok';
+  }
+  if (mesmo && d.avisou) return 'cheio';
+  const m = db.doc(marca);
+  const r = await db.runTransaction(async t => {
+    if (((await t.get(m)).data() || {}).k === chaveMarca) return 'cheio' as Reserva;
+    t.set(m, { k: chaveMarca });
     return 'avisar' as Reserva;
   });
+  await ref.set({ k: chave, avisou: true }, { merge: true });
+  return r;
 }
 
 /* Teto do grupo no dia. */
 export const cabeNoGrupo = (db: Db, gid: string, n: number, agora: number, limite = LIMITE_GRUPO_DIA) =>
-  reservar(db, 'avisosEnviados/_teto_' + gid, diaDe(agora), n, limite);
+  reservar(db, 'avisosEnviados/_teto_' + gid, diaDe(agora), n, limite, 'avisosEnviados/_teto_' + gid + '_marca');
 
-/* Teto do mês para todos, numa das PARTES (sorteada, salvo nos testes). Cada parte guarda 1/PARTES do limite. */
+/* Teto do mês para todos, numa das PARTES (sorteada, salvo nos testes). Cada parte guarda 1/PARTES do limite. A falha
+   vai ao banco de falhas no máximo uma vez por dia (marca única, com o dia), seja qual for a parte que encheu. */
 export const cabeNoMes = (
   db: Db,
   n: number,
   agora: number,
   limite = LIMITE_MES,
   parte = Math.floor(Math.random() * PARTES)
-) => reservar(db, 'avisosEnviados/_teto_mes_' + parte, mesDe(agora), n, Math.ceil(limite / PARTES));
+) =>
+  reservar(
+    db,
+    'avisosEnviados/_teto_mes_' + parte,
+    mesDe(agora),
+    n,
+    Math.ceil(limite / PARTES),
+    'avisosEnviados/_teto_mes_marca',
+    diaDe(agora)
+  );
 
 /* Registra uma falha dos avisos no banco de falhas (KAN-239), que o Portal mostra junto com as do app. */
 export async function registrarFalha(db: Db, m: string, gid: string, n: number, agora = Date.now()): Promise<void> {

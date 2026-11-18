@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
-Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D61) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v118 (14/11/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D63) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
+Atualizado na pelada-v119 (18/11/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -252,7 +252,7 @@ Atualizado na pelada-v118 (14/11/2026). Toda entrega que mudar uma regra atualiz
 - **Faltam pessoas:** X horas antes do início do jogo (padrão **3 h**; de 1 a 24, escolhido por grupo por qualquer administrador), se os confirmados estiverem abaixo do mínimo do grupo (total ou por posição, "Definir mínimo"): "⏰ Faltam 3 para o mínimo" com "4 de 10 confirmados · falta 1 GOL". **Uma vez por rodada.** Sem mínimo definido, não avisa: a janela explica e oferece "Definir mínimo" (abre a aba Rodada). Vale para as rodadas gravadas e para a próxima de cada dia fixo; rodada cancelada ou sem horário não avisa. O horário é o do lugar do jogo (fuso do grupo).
 - Tocar no aviso abre o app na rodada do aviso (`#/g/{grupo}/r/{rodada}`).
 - **iPhone:** só com o app instalado na tela de início (iOS 16.4+); sem instalar, a janela explica e mostra "Como instalar". Permissão bloqueada: a janela explica como liberar. Navegador sem suporte: avisa. Nada disso atrapalha o resto do app.
-- **Teto de gasto** (D61): no máximo 3 cópias de cada função ao mesmo tempo e **20 mil avisos por mês**; passou, os avisos param até o mês virar e a falha aparece no Portal (tipo Aviso).
+- **Teto de gasto** (D61, D63; KAN-275, v119): no máximo 10 cópias de cada função ao mesmo tempo; **300 avisos por grupo por dia** (passou, só aquele grupo para até o dia virar; os outros continuam) e **200 mil avisos por mês** para todos (passou, os avisos param até o mês virar). Cada teto atingido aparece no Portal (tipo Aviso) uma vez por dia, não a cada aviso parado. Pronto para 1.000 grupos: a rotina de 15 minutos avalia os grupos em paralelo e para sozinha antes do limite de tempo (registra a falha se cortar).
 - Textos nos três idiomas: os da janela no dicionário do app; os do aviso, no idioma de cada celular (`i18n/avisos-servidor.ts`).
 - **Aniversário** (KAN-272, v118): às 9h no fuso do grupo, "🎂 Hoje é aniversário de João", para os mesmos administradores (ver Jogadores).
 - Fica para depois: lista encheu, desistência com a lista fechada, plano vence em 7 dias, avisos para os jogadores (fase 2).
@@ -296,7 +296,7 @@ Atualizado na pelada-v118 (14/11/2026). Toda entrega que mudar uma regra atualiz
 - Tudo que grava tem caso no roteiro de gravação (KAN-170, `testes/persistencia_app.py`): grava, recarrega (F5), confere e, no fim, entra de novo num navegador limpo e confere tudo. No GitHub, a tarefa "persistencia" roda esse roteiro contra o emulador do Firebase (Firestore e login de verdade, com as regras). A conferência da entrega barra tipo de dado gravado sem caso (`testes/persistencia-cobertura.json`).
 - Código num formato único (Prettier, `.prettierrc.json`); o GitHub recusa código fora do formato (KAN-155).
 - Tela mexida, tela migrada: tela tocada vira componente TypeScript + Preact na mesma entrega, usando `src/ui/componentes.tsx`; componente visual novo entra antes no Design System (KAN-152, KAN-153).
-- A gestão (telas e ações de quem tem conta, página inicial e convite) fica em `src/admin.js` e só baixa quando alguém entra com conta; o link público e a votação nunca a baixam (KAN-149). Tela ou ação nova de gestão entra por lá.
+- A gestão (telas e ações de quem tem conta, página inicial e convite) fica em `src/admin.js` e só baixa quando alguém entra com conta; o link público e a votação nunca a baixam (KAN-149). Tela ou ação nova de gestão entra por lá. Desde a v119 (KAN-274, D63), a montagem junta em menos pedaços o código que o link e a gestão dividem com as partes sob demanda (link 45,7 KB e gestão 81,2 KB no GitHub, folga de 4 e 9 KB).
 
 ## Mapa de impacto (o que mexer quando muda X)
 | Assunto | Tela | Ações | Regra (sem tela) | Dados no Firebase | Testes |

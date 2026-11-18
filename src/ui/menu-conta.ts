@@ -5,25 +5,11 @@
 import { LOCAL } from '../i18n/formatos.js';
 import { tx } from '../i18n/index.js';
 import { IDIOMAS } from '../i18n/idiomas';
-import { carregarAdmin } from '../nucleo/carga-admin.js';
 import { S as estado } from '../nucleo/estado.js';
-import * as tema from './tema.js';
-import { abrirMenu, closeThemeMenu } from './tema.js';
+import { abrirMenu } from './tema.js';
 
 const st = () => estado;
-const temaAtual = () => (tema.themeDef() || tema.THEMES[0]) as string[];
 const inicial = (email: string) => (String(email || '?').trim()[0] || '?').toUpperCase();
-const { fromCodePoint } = String;
-const bandeira = (iso: string) => fromCodePoint(...[...iso].map(c => 127397 + c.charCodeAt(0)));
-function nomePais(iso: string) {
-  try {
-    return new Intl.DisplayNames([LOCAL], { type: 'region' }).of(iso) || iso;
-  } catch (e) {
-    return iso;
-  }
-}
-
-const nomeIdioma = (id: string) => (IDIOMAS.find(i => i.id === id) || IDIOMAS[0]).nome;
 
 /* Idioma (KAN-164): as opções abrem no mesmo lugar do menu da conta, como o tema. Cada nome aparece na própria língua. */
 export function abrirMenuIdioma(anchor: HTMLElement) {
@@ -62,51 +48,7 @@ export function botaoConta(): HTMLButtonElement {
   return b;
 }
 
-function item(icone: string, texto: string, acao: string, dica?: string) {
-  const b = document.createElement('button'),
-    ic = document.createElement('span');
-  b.setAttribute('role', 'menuitem');
-  b.dataset.a = acao;
-  ic.className = 'ic';
-  ic.setAttribute('aria-hidden', 'true');
-  ic.textContent = icone;
-  b.append(ic, texto);
-  if (dica) {
-    const h = document.createElement('span');
-    h.className = 'hint';
-    h.textContent = dica;
-    b.append(h);
-  }
-  return b;
-}
-
-/* Abre o menu: e-mail, "País e formatos" (com o país atual) e "Sair". Tocar num item fecha o menu. */
-export function abrirMenuConta(anchor: HTMLElement) {
-  carregarAdmin().catch(() => {}); // "País e formatos" é da gestão; quem tem conta já costuma ter baixado
-  const S = st(),
-    pais = (S.me && S.me.pais) || 'BR';
-  abrirMenu(anchor, tx('conta.titulo'), (m: HTMLElement) => {
-    const t = document.createElement('p');
-    t.className = 'tm-t conta-email';
-    t.textContent = (S.user && S.user.email) || '';
-    const sep = document.createElement('hr');
-    sep.className = 'menu-sep';
-    m.append(
-      t,
-      item('🌐', tx('conta.pais'), 'contaPais', bandeira(pais) + ' ' + nomePais(pais)),
-      item(temaAtual()[1], tx('conta.tema'), 'temaConta', tx(temaAtual()[2])),
-      item('🗣️', tx('conta.idioma'), 'idiomaConta', nomeIdioma(LOCAL)),
-      item('⭐', tx('conta.plano'), 'planosDlg'),
-      item('🔔', tx('conta.avisos'), 'avisosDlg'),
-      sep,
-      item('↪', tx('conta.sair'), 'logout')
-    );
-    m.addEventListener('click', (e: Event) => {
-      // Fecha este menu; se o item abriu outro (o do tema), deixa o novo aberto.
-      if ((e.target as HTMLElement).closest('[data-a]'))
-        setTimeout(() => {
-          if ((tema as { themeMenuEl: unknown }).themeMenuEl === m) closeThemeMenu();
-        }, 0);
-    });
-  });
-}
+/* KAN-274 (pelada-v119): o menu aberto (e-mail, País e formatos, Tema, Idioma, Plano, Avisos e Sair) baixa no primeiro
+   toque no botão (ui/menu-conta-aberto.ts), porque o link do jogador nunca o usa. */
+export const abrirMenuConta = (anchor: HTMLElement) =>
+  import('./menu-conta-aberto').then(m => m.abrirMenuConta(anchor));

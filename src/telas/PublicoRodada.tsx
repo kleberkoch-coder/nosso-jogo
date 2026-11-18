@@ -29,7 +29,7 @@ import { avulsosEsgotados } from '../dominio/limites';
 import { DEMORA_MS } from '../nucleo/carga';
 import { precisaVaga, situacao } from '../dominio/vagas';
 import { ACT } from '../acoes.js';
-import { comPessoa } from '../dominio/material';
+import { comPessoa } from '../dominio/material-link';
 import { textoSorteio } from '../ui/linha-sorteio';
 import { afastadoNaData } from '../dominio/afast-data';
 

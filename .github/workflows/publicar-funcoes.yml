@@ -5,7 +5,7 @@ name: Publicar as funções
 on:
   push:
     branches: [main]
-    paths: [funcoes/**, src/dominio/avisos.ts, src/dominio/posicoes.ts, src/dominio/rodadas-fixas.ts, firebase.json, .github/workflows/publicar-funcoes.yml]
+    paths: [funcoes/**, src/dominio/avisos.ts, src/dominio/posicoes.ts, src/dominio/rodadas-fixas.ts, src/dominio/aniversario.ts, src/i18n/avisos-servidor.ts, firebase.json, .github/workflows/publicar-funcoes.yml]
   workflow_dispatch:
 
 concurrency: publicar-funcoes

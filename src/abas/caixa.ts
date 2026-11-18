@@ -6,7 +6,7 @@ import { juntarTextos } from '../i18n/index.js';
 import textos from '../i18n/pt-BR-caixa';
 /* Os textos desta parte chegam com ela (KAN-205). */
 juntarTextos(textos);
-import { acoes as acoesCaixa } from '../acoes/caixa.js';
+import { acoes as acoesCaixa } from '../acoes/caixa';
 import { acoes as acoesRateio } from '../acoes/rateio';
 usarEstilo('caixa', estilo);
 const acoes = Object.assign({}, acoesCaixa, acoesRateio);

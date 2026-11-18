@@ -1,44 +1,17 @@
 /* Ações: Conta, login, tema e diálogos gerais. Fazem parte de ACT (src/acoes.js). */
 import { tx } from '../i18n/index.js';
 import { copyText } from '../eventos.js';
-import { B } from '../nucleo/backend.js';
 import { S } from '../nucleo/estado.js';
 import { $, inAppBrowser, toast } from '../nucleo/util.js';
-import { avisar, closeDlg, confirmou, dlg, naoConfirmar, openDlg, responder, val } from '../ui/dialogos.js';
+import { closeDlg, dlg, naoConfirmar, openDlg, responder, val } from '../ui/dialogos.js';
 import { render } from '../ui/render.js';
 import { TEMA_K, applyTheme, closeThemeMenu, openThemeMenu, themeAnchor, themeMenuEl } from '../ui/tema.js';
 import { ACT } from '../acoes.js';
 import { abrirMenuConta, abrirMenuIdioma } from '../ui/menu-conta.ts';
 import { trocarIdioma } from '../nucleo/idioma';
 
-const avisosLigados = () => {
-  try {
-    return !!localStorage.getItem('nj-avisos');
-  } catch (e) {
-    return false;
-  }
-};
-async function sairDaConta(destino, el) {
-  if (!(el && el._conf === 'sim') && !(await B.semPendencias(3000))) {
-    confirmou(el, {
-      titulo: tx('sair.pendentesTitulo'),
-      texto: tx('sair.pendentes'),
-      acao: tx('sair.mesmoAssim'),
-      perigo: true,
-    });
-    return;
-  }
-  if (el) delete el._conf;
-  /* KAN-242: com os avisos ligados neste celular, desliga antes de sair (o celular para de receber). */
-  if (avisosLigados()) await import('../nucleo/avisos-aparelho').then(m => m.desligar()).catch(() => {});
-  const limpou = await B.logout();
-  if (limpou === false) await avisar(tx('sair.outrasAbasTitulo'), tx('sair.outrasAbas'));
-  try {
-    sessionStorage.clear();
-  } catch (e) {}
-  location.replace(location.pathname + location.search + destino);
-  location.reload();
-}
+/* Sair (KAN-80) baixa só quando tocado (acoes/sair.ts, KAN-274): o link do jogador nunca sai de conta. */
+const sairDaConta = (destino, el) => import('./sair').then(m => m.sairDaConta(destino, el));
 const acoes = {
   tab: el => {
     S.tab = el.dataset.v;
@@ -51,7 +24,7 @@ const acoes = {
       closeThemeMenu(true);
       return;
     }
-    abrirMenuConta(el);
+    return abrirMenuConta(el);
   },
   /* Tema pelo menu da conta (KAN-169): abre as três opções no mesmo lugar do menu da conta. */
   temaConta: () => {

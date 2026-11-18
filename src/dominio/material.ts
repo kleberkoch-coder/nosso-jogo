@@ -2,17 +2,16 @@
    rodadas. Regra pura, com teste em testes/regras/material.test.mjs. Fica no grupo (cfg.mat), não na rodada; só
    administradores mudam (as regras do Firebase deixam o dia a dia mexer em cfg.mat e cfg.matHist). O caso real:
    3 bolas, cada uma com uma pessoa, e o risco de nenhuma delas ir ao jogo. */
-export type Item = { id: string; nome: string; com: string | null };
+import type { Item } from './material-link.ts';
+export type { Item } from './material-link.ts';
 export type Troca = { nome: string; de: string | null; para: string | null; em: number };
 export type Resposta = { s?: 'in' | 'out' } | undefined;
 
 export const HIST_MAX = 10;
 
-/* Itens válidos (o que veio do banco pode estar faltando campo). */
-export const itens = (mat: unknown): Item[] =>
-  Array.isArray(mat)
-    ? (mat as Item[]).filter(x => x && typeof x.id === 'string' && typeof x.nome === 'string' && x.nome.trim())
-    : [];
+/* Os itens válidos e o que está com uma pessoa ficam em material-link.ts, porque vão no link do jogador (KAN-274). */
+import { itens } from './material-link.ts';
+export { comPessoa, itens } from './material-link.ts';
 
 /* Situação de cada material na rodada, agrupado pelo nome ("Bola" × 3): quem guarda e já confirmou, quem disse que
    não vai e quem ainda não respondeu. "nenhum" = nenhum de quem guarda confirmou (o aviso em destaque). */
@@ -29,16 +28,6 @@ export function situacao(mat: unknown, pres: Record<string, Resposta>) {
       semResposta = com.filter(p => !pres[p]?.s);
     return { nome, total: xs.length, com, vao, naoVao, semResposta, nenhum: !vao.length };
   });
-}
-
-/* O que está com uma pessoa: [["Bola", 1], ["Coletes", 1]]. */
-export function comPessoa(mat: unknown, pid: string | null | undefined): [string, number][] {
-  if (!pid) return [];
-  const c = new Map<string, number>();
-  itens(mat)
-    .filter(x => x.com === pid)
-    .forEach(x => c.set(x.nome.trim(), (c.get(x.nome.trim()) || 0) + 1));
-  return [...c];
 }
 
 /* Novos itens: "Bola" × 3 vira 3 itens com ids próprios, todos com a mesma pessoa (ou ninguém). */

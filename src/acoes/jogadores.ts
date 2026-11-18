@@ -4,7 +4,7 @@ import { editPc } from '../dominio/caixa-gestao';
 import { posKeys } from '../dominio/esportes.js';
 import { normName, players, pname, posso, ppos, setLvl } from '../dominio/grupo.js';
 import { tp, tx } from '../i18n/index.js';
-import { B } from '../nucleo/backend.js';
+import * as backend from '../nucleo/backend.js';
 import { lerContato } from '../ui/contato-form';
 import { editRat, saveContato } from '../nucleo/edicoes.js';
 import { GB, S, clean, w } from '../nucleo/estado.js';
@@ -16,12 +16,15 @@ import { changed } from '../ui/render.js';
 import { ACT } from '../acoes.js';
 /* Importar da planilha (KAN-159) baixa só quando a janela abre (v59), para a gestão abrir mais leve.
    O service worker guarda essa parte junto com a gestão, então funciona sem sinal depois do primeiro uso. */
-let IMP = null;
+let IMP: typeof import('../ui/ImportarJogadores') | null = null;
 const carregarImportar = () => (IMP ? Promise.resolve(IMP) : import('../ui/ImportarJogadores').then(m => (IMP = m)));
 
-const acoes = {
+type El = HTMLElement & { dataset: DOMStringMap };
+type Op = { tipo: string; p: string; o?: unknown };
+const novoId = (): string => (backend as any).B.newId();
+const acoes: Record<string, (el: El) => unknown> = {
   addPlayer: () => playerDlg(null),
-  editPlayer: el => playerDlg(el.dataset.p),
+  editPlayer: el => playerDlg(el.dataset.p || null),
   star: () => {},
   waLink: () => {},
   savePlayer: el => {
@@ -48,7 +51,7 @@ const acoes = {
       return;
     }
     const nw = el.dataset.new,
-      id = el.dataset.p || nw || B.newId(),
+      id = el.dataset.p || nw || novoId(),
       v = +($('#plv')?.value ?? 0);
     /* Uma pergunta só (KAN-161): nome repetido e/ou valor por jogo muito acima do padrão do grupo. */
     const dup = Object.entries(S.jog).some(([k, x]) => k !== id && normName(x.name) === normName(name)),
@@ -94,7 +97,7 @@ const acoes = {
         name,
         pos: val('ppos'),
         ativo: old.ativo !== false,
-        criado: old.criado || (nw && S.avul[nw]?.criado) || Date.now(),
+        criado: old.criado || (nw && S.avul?.[nw]?.criado) || Date.now(),
       });
     delete data.tipo;
     S.jog[id] = data;
@@ -111,7 +114,7 @@ const acoes = {
       });
     if ($('#plv')) editRat(a => setLvl(a, id, v));
     saveContato(id, ct.tel, ct.email, nasc);
-    if (nw && S.avul[nw]) {
+    if (nw && S.avul?.[nw]) {
       delete S.avul[nw];
       w(GB.del('avulsos/' + nw));
     }
@@ -119,7 +122,7 @@ const acoes = {
     toast(tx('jogador.salvo'));
   },
   toggleJog: el => {
-    const id = el.dataset.p,
+    const id = el.dataset.p || '',
       o = Object.assign({}, S.jog[id]),
       on = o.ativo === false;
     if (
@@ -141,7 +144,7 @@ const acoes = {
     return w(GB.set('jogadores/' + id, clean(o)));
   },
   delPlayer: el => {
-    const id = el.dataset.p;
+    const id = el.dataset.p || '';
     if (
       confirmou(el, {
         titulo: tx('jogador.excluirTitulo', { nome: pname(id) }),
@@ -155,7 +158,7 @@ const acoes = {
     w(GB.del('jogadores/' + id));
     editRat(a => {
       if (a.stars) delete a.stars[id];
-      a.sep = a.sep.filter(s => !s.includes(id));
+      a.sep = a.sep.filter((s: string[]) => !s.includes(id));
     });
     if (((S.pc || {}).tipos || {})[id] || recebePorJogo(id))
       editPc(a => {
@@ -173,13 +176,13 @@ const acoes = {
       return;
     }
     editRat(x => {
-      if (!x.sep.some(s => key(s[0], s[1]) === key(a, b))) x.sep.push([a, b]);
+      if (!x.sep.some((s: string[]) => key(s[0], s[1]) === key(a, b))) x.sep.push([a, b]);
     });
     closeDlg();
   },
   delSep: el =>
     editRat(x => {
-      x.sep.splice(+el.dataset.v, 1);
+      x.sep.splice(Number(el.dataset.v), 1);
     }),
   /* Partidas e caixa: desde a v77 (KAN-209), em acoes/partidas-caixa.ts, que vem com a aba Grupo. */
   /* KAN-159: importar o elenco de uma planilha (colar ou arquivo), com prévia. */
@@ -197,8 +200,8 @@ const acoes = {
     const novos = IMP ? IMP.paraImportar() : [];
     if (!novos.length) return;
     const agora = Date.now(),
-      ops = [],
-      ids = novos.map(() => B.newId());
+      ops: Op[] = [],
+      ids = novos.map(() => novoId());
     novos.forEach((it, i) => {
       const data = { criado: agora, name: it.nome, pos: it.pos || '', ativo: true };
       S.jog[ids[i]] = data;
@@ -226,7 +229,7 @@ const acoes = {
     return Promise.all(ps);
   },
   seed: () => {
-    const ns = [
+    const ns: [string, string, number][] = [
       ['Bruno', 'GOL', 4],
       ['Tiago', 'GOL', 3],
       ['Rafa', 'DEF', 4],
@@ -242,14 +245,14 @@ const acoes = {
       ['Vini', 'ATA', 3],
       ['Alemão', 'ATA', 2],
     ];
-    const ids = ns.map(() => B.newId()),
+    const ids = ns.map(() => novoId()),
       K = posKeys(),
-      map = { GOL: 0, DEF: 1, MEI: 2, ATA: 3 };
+      map: Record<string, number> = { GOL: 0, DEF: 1, MEI: 2, ATA: 3 };
     ns.forEach(([n, p], i) => {
       const d = {
         criado: Date.now(),
         name: n,
-        pos: K.length ? K[Math.min(K.length - 1, map[p])] || K[i % K.length] : '',
+        pos: K.length ? K[Math.min(K.length - 1, map[p]!)] || K[i % K.length] : '',
         ativo: true,
       };
       S.jog[ids[i]] = d;
@@ -261,7 +264,7 @@ const acoes = {
       });
     });
     editRat(a => {
-      ids.forEach((id, i) => setLvl(a, id, ns[i][2] * 2 - (i % 3 === 0 ? 0.5 : 0)));
+      ids.forEach((id, i) => setLvl(a, id, ns[i]![2] * 2 - (i % 3 === 0 ? 0.5 : 0)));
       a.sep.push([ids[6], ids[10]]);
     });
     toast(tx('jogador.exemploCarregado'));

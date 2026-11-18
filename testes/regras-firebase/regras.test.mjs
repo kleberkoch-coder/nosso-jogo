@@ -466,32 +466,43 @@ describe('falhas no uso (KAN-239, pelada-v105)', () => {
     d: '2026-11-11',
     ...extra,
   });
+  /* KAN-280: identificador {conta}_{dia}_{n} (dia em UTC desde 1970, n de 1 a 20). */
+  const DIA = Math.floor(Date.now() / 864e5);
+  const id = (conta, n, dia = DIA) => 'falhas/' + conta + '_' + dia + '_' + n;
   test('qualquer aparelho com login (inclusive o anônimo do link) grava uma falha no formato certo', async () => {
-    await assertSucceeds(setDoc(doc(db.anon(), 'falhas/abcd1234'), falha()));
-    await assertSucceeds(
-      setDoc(doc(db.adm(), 'falhas/abcd1235'), falha({ t: 'erro', m: 'x is null', p: 'at a (x.js:1)' }))
-    );
-    await assertFails(setDoc(doc(db.semLogin(), 'falhas/abcd1236'), falha()));
+    await assertSucceeds(setDoc(doc(db.anon(), id('anon1', 1)), falha()));
+    await assertSucceeds(setDoc(doc(db.adm(), id('adm', 1)), falha({ t: 'erro', m: 'x is null', p: 'at a (x.js:1)' })));
+    await assertFails(setDoc(doc(db.semLogin(), id('anon1', 2)), falha()));
   });
   test('fora do formato é recusado: tipo, campo a mais, texto grande, hora do aparelho, contagem, id', async () => {
-    await assertFails(setDoc(doc(db.anon(), 'falhas/abcd1237'), falha({ t: 'outro' })));
-    await assertFails(setDoc(doc(db.anon(), 'falhas/abcd1237'), falha({ email: 'a@b.com' })));
-    await assertFails(setDoc(doc(db.anon(), 'falhas/abcd1237'), falha({ m: 'x'.repeat(301) })));
-    await assertFails(setDoc(doc(db.anon(), 'falhas/abcd1237'), falha({ p: 'x'.repeat(1501) })));
-    await assertFails(setDoc(doc(db.anon(), 'falhas/abcd1237'), falha({ em: 5 })));
-    await assertFails(setDoc(doc(db.anon(), 'falhas/abcd1237'), falha({ n: 0 })));
-    await assertFails(setDoc(doc(db.anon(), 'falhas/abcd1237'), falha({ disp: 'relógio' })));
+    await assertFails(setDoc(doc(db.anon(), id('anon1', 3)), falha({ t: 'outro' })));
+    await assertFails(setDoc(doc(db.anon(), id('anon1', 3)), falha({ email: 'a@b.com' })));
+    await assertFails(setDoc(doc(db.anon(), id('anon1', 3)), falha({ m: 'x'.repeat(301) })));
+    await assertFails(setDoc(doc(db.anon(), id('anon1', 3)), falha({ p: 'x'.repeat(1501) })));
+    await assertFails(setDoc(doc(db.anon(), id('anon1', 3)), falha({ em: 5 })));
+    await assertFails(setDoc(doc(db.anon(), id('anon1', 3)), falha({ n: 0 })));
+    await assertFails(setDoc(doc(db.anon(), id('anon1', 3)), falha({ disp: 'relógio' })));
     await assertFails(setDoc(doc(db.anon(), 'falhas/x'), falha()));
   });
+  test('KAN-280: no máximo 20 por conta e por dia, só com a própria conta e o dia de hoje', async () => {
+    await assertSucceeds(setDoc(doc(db.anon(), id('anon1', 20)), falha()));
+    await assertFails(setDoc(doc(db.anon(), id('anon1', 21)), falha()), 'o 21º do dia');
+    await assertFails(setDoc(doc(db.anon(), id('anon1', 0)), falha()));
+    await assertFails(setDoc(doc(db.anon(), id('adm', 5)), falha()), 'com o identificador de outra conta');
+    await assertFails(setDoc(doc(db.anon(), id('anon1', 5, DIA - 5)), falha()), 'de outro dia');
+    await assertFails(setDoc(doc(db.anon(), id('anon1', 5, DIA + 5)), falha()), 'de outro dia');
+    await assertFails(setDoc(doc(db.anon(), id('anon1', 20)), falha({ n: 2 })), 'o mesmo número não grava de novo');
+    await assertFails(setDoc(doc(db.anon(), 'falhas/abcd1234'), falha()), 'identificador solto, como antes');
+  });
   test('ninguém além do portal lê, muda ou apaga', async () => {
-    await assertSucceeds(setDoc(doc(db.anon(), 'falhas/abcd1238'), falha()));
-    await assertFails(getDoc(doc(db.anon(), 'falhas/abcd1238')));
-    await assertFails(getDoc(doc(db.dono(), 'falhas/abcd1238')));
-    await assertFails(setDoc(doc(db.anon(), 'falhas/abcd1238'), falha({ n: 2 })));
-    await assertFails(deleteDoc(doc(db.dono(), 'falhas/abcd1238')));
-    await assertSucceeds(getDoc(doc(db.portal(), 'falhas/abcd1238')));
+    await assertSucceeds(setDoc(doc(db.anon(), id('anon1', 4)), falha()));
+    await assertFails(getDoc(doc(db.anon(), id('anon1', 4))));
+    await assertFails(getDoc(doc(db.dono(), id('anon1', 4))));
+    await assertFails(setDoc(doc(db.anon(), id('anon1', 4)), falha({ n: 2 })));
+    await assertFails(deleteDoc(doc(db.dono(), id('anon1', 4))));
+    await assertSucceeds(getDoc(doc(db.portal(), id('anon1', 4))));
     await assertSucceeds(getDocs(collection(db.portal(), 'falhas')));
-    await assertSucceeds(deleteDoc(doc(db.portal(), 'falhas/abcd1238')));
+    await assertSucceeds(deleteDoc(doc(db.portal(), id('anon1', 4))));
   });
 });
 
@@ -882,6 +893,14 @@ describe('bloqueio de conta e limites pelo portal (KAN-117, pelada-v101)', () =>
         acao: 'apagar',
       })
     );
+  });
+  test('KAN-281: o portal marca o cadastro do convidado de conta bloqueada; ninguém mais mexe nele', async () => {
+    await assertSucceeds(updateDoc(doc(db.portal(), G + '/membros/adm'), { bloq: true }));
+    await assertSucceeds(updateDoc(doc(db.portal(), G + '/membros/adm'), { bloq: false }));
+    await assertFails(updateDoc(doc(db.portal(), G + '/membros/adm'), { bloq: 'sim' }));
+    await assertFails(updateDoc(doc(db.portal(), G + '/membros/adm'), { role: 'owner' }));
+    await assertFails(updateDoc(doc(db.adm(), G + '/membros/adm'), { bloq: true }), 'o próprio convidado');
+    await assertFails(updateDoc(doc(db.dono(), G + '/membros/adm'), { bloq: true }), 'o organizador');
   });
   test('ninguém além do portal mexe no bloqueio (nem o organizador)', async () => {
     await assertFails(updateDoc(doc(db.dono(), G), { bloq: true }));

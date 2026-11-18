@@ -194,13 +194,17 @@ export function registro(
   return o;
 }
 
-/* O limite do dia, guardado no aparelho (sem armazenamento, grava assim mesmo). */
-export function cabeNoAparelho(hoje: string): boolean {
+/* O limite do dia, guardado no aparelho. Devolve o número do registro no dia (1 a MAX_DIA) ou 0 se passou do limite.
+   KAN-280: o número entra no identificador ({conta}_{dia}_{n}), e as regras do Firebase só aceitam de 1 a 20 por conta e
+   por dia; por isso o dia aqui é o mesmo do identificador (dia em UTC, contado desde 1970). Sem armazenamento, usa 1. */
+export function cabeNoAparelho(dia: string): number {
   try {
-    const r = cabeNoDia(JSON.parse(localStorage.getItem('nj-falhas-dia') || 'null'), hoje);
+    const r = cabeNoDia(JSON.parse(localStorage.getItem('nj-falhas-dia') || 'null'), dia);
     localStorage.setItem('nj-falhas-dia', JSON.stringify(r.estado));
-    return r.pode;
+    return r.pode ? r.estado.n : 0;
   } catch {
-    return true;
+    return 1;
   }
 }
+/* KAN-280: dia em UTC (o mesmo que as regras do Firebase calculam com a hora do servidor). */
+export const diaDaFalha = (ms: number) => Math.floor(ms / 864e5);

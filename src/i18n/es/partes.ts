@@ -893,6 +893,8 @@ export default {
   'av.naoLigou': 'No se pudieron activar los avisos. Revisa la conexión e intenta de nuevo.',
   'av.pronto': '¡Listo! Recibirás los avisos en este celular.',
   'av.demo': 'Modo demostración: la pantalla funciona, pero ningún aviso llega al celular.',
+  'av.niverElenco':
+    'El aviso de cumpleaños solo llega a quien tiene el permiso "Plantel y contactos", que es quien ve la fecha de nacimiento.',
   /* pt-BR-niver.ts */
   'niver.rotulo': 'Cumpleaños el {data}',
   'niver.mes': '🎂 Cumpleaños de {mes}',

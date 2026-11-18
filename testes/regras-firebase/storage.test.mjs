@@ -100,3 +100,53 @@ describe('logotipo do grupo no Storage (KAN-273)', () => {
     await assertFails(subir('dono', 'logo-1731600000011.webp'));
   });
 });
+
+describe('logotipo: quem só vê e conta bloqueada (KAN-281)', () => {
+  const grupoCom = o =>
+    env.withSecurityRulesDisabled(ctx =>
+      setDoc(doc(ctx.firestore(), G), Object.assign({ name: 'G1', owner: 'dono', ativo: true, createdAt: 1 }, o))
+    );
+  test('CT-KAN-281-01: convidado com Configurações além do limite do plano não envia nem apaga', async () => {
+    /* Grátis (1 convidado): cfg é o 2º da lista, só vê. */
+    await grupoCom({ adms: ['adm', 'cfg'], pl: { id: 'gratis', ate: null } });
+    await assertFails(subir('cfg', 'logo-1731600000020.webp'));
+    await assertFails(
+      st('cfg')
+        .ref(G + '/logo-1731600000000.webp')
+        .delete()
+    );
+    await assertSucceeds(subir('adm', 'logo-1731600000021.webp'), 'o 1º da lista, dentro do limite');
+    /* Plano A (2 convidados), válido: cfg volta a poder. */
+    await grupoCom({ adms: ['adm', 'cfg'], pl: { id: 'A', ate: Date.now() + 864e5 } });
+    await assertSucceeds(subir('cfg', 'logo-1731600000022.webp'));
+    /* Plano A vencido: volta ao limite do Grátis. */
+    await grupoCom({ adms: ['adm', 'cfg'], pl: { id: 'A', ate: Date.now() - 864e5 } });
+    await assertFails(subir('cfg', 'logo-1731600000023.webp'));
+  });
+  test('CT-KAN-281-02: conta bloqueada (cadastro marcado pelo portal) não envia nem apaga', async () => {
+    await env.withSecurityRulesDisabled(ctx =>
+      setDoc(doc(ctx.firestore(), G + '/membros/cfg'), {
+        uid: 'cfg',
+        role: 'admin',
+        perm: { config: true },
+        bloq: true,
+      })
+    );
+    await assertFails(subir('cfg', 'logo-1731600000024.webp'));
+    await assertFails(
+      st('cfg')
+        .ref(G + '/logo-1731600000000.webp')
+        .delete()
+    );
+  });
+  test('CT-KAN-281-03: organizador e convidado dentro do limite continuam trocando o logotipo', async () => {
+    await grupoCom({ adms: ['cfg'], pl: { id: 'gratis', ate: null } });
+    await assertSucceeds(subir('dono', 'logo-1731600000025.webp'));
+    await assertSucceeds(subir('cfg', 'logo-1731600000026.webp'));
+    await assertSucceeds(
+      st('cfg')
+        .ref(G + '/logo-1731600000000.webp')
+        .delete()
+    );
+  });
+});

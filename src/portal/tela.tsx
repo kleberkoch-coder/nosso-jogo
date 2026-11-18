@@ -64,7 +64,7 @@ const P = {
   /* Plano escolhido no formulário (KAN-240): no Grátis, validade e motivo ficam desligados. */
   planoForm: null as string | null,
   /* KAN-117, 2ª parte (pelada-v101): grupos (para bloquear os da conta), limites contra abuso e a confirmação do bloqueio. */
-  grupos: {} as Record<string, { owner?: string; name?: string; bloq?: boolean }>,
+  grupos: {} as Record<string, { owner?: string; name?: string; bloq?: boolean; adms?: string[] }>,
   limites: null as Record<string, unknown> | null,
   limErro: '',
   limOk: '',
@@ -737,6 +737,15 @@ async function mudarBloqueio(bloquear: boolean) {
   if (motivo) h.obs = motivo;
   const ops: { tipo: string; p: string; o: unknown }[] = [{ tipo: 'patch', p: 'contas/' + uid, o: { bloq } }];
   gids.forEach(g => ops.push({ tipo: 'patch', p: 'grupos/' + g, o: { bloq: bloquear } }));
+  /* KAN-281 (pelada-v121): nos grupos em que a conta é convidada, marca o cadastro de administrador dela, que as regras
+     do Storage (logotipo) leem; as do Firestore já leem a ficha da conta. Só cadastros que existem. */
+  const convidada = Object.keys(P.grupos).filter(
+    g => P.grupos[g] && P.grupos[g]!.owner !== uid && (P.grupos[g]!.adms || []).includes(uid)
+  );
+  for (const g of convidada) {
+    const m = await B.get('grupos/' + g + '/membros/' + uid).catch(() => null);
+    if (m) ops.push({ tipo: 'patch', p: 'grupos/' + g + '/membros/' + uid, o: { bloq: bloquear } });
+  }
   ops.push({ tipo: 'set', p: 'contas/' + uid + '/historico/' + id, o: h });
   try {
     await B.lote(ops);

@@ -74,7 +74,9 @@ export const LIMITE_GRUPO_DIA = 300;
 export const LIMITE_MES = 200000;
 export const PARTES = 10;
 
-type Destino = { uid: string; token: string; lang: Idioma; ref: Ref };
+/* elenco: o administrador pode ver a data de nascimento (KAN-278): o organizador, quem é de antes das permissões (sem
+   perm gravada) ou quem tem a permissão de Elenco. A mesma conta de temPerm nas regras do Firebase. */
+type Destino = { uid: string; token: string; lang: Idioma; ref: Ref; elenco: boolean };
 
 /* Celulares dos administradores que ligaram os avisos do grupo e ainda são administradores. */
 export async function destinos(db: Db, gid: string): Promise<Destino[]> {
@@ -82,12 +84,15 @@ export async function destinos(db: Db, gid: string): Promise<Destino[]> {
   const out: Destino[] = [];
   for (const d of q.docs) {
     const uid = String((d.data() || {}).uid || '');
-    if (!uid || !(await db.doc('grupos/' + gid + '/membros/' + uid).get()).exists) continue;
+    const m = uid ? await db.doc('grupos/' + gid + '/membros/' + uid).get() : null;
+    if (!m || !m.exists) continue;
+    const md = m.data() || {},
+      elenco = md.role === 'owner' || md.perm == null || (md.perm || {}).elenco === true;
     const ap = await db.collection('usuarios/' + uid + '/aparelhos').get();
     ap.docs.forEach(a => {
       const x = a.data() || {};
       if (typeof x.token === 'string' && x.token)
-        out.push({ uid, token: x.token, lang: idiomaValido(x.lang), ref: a.ref });
+        out.push({ uid, token: x.token, lang: idiomaValido(x.lang), ref: a.ref, elenco });
     });
   }
   return out;
@@ -131,8 +136,20 @@ async function reservar(
 }
 
 /* Teto do grupo no dia. */
-export const cabeNoGrupo = (db: Db, gid: string, n: number, agora: number, limite = LIMITE_GRUPO_DIA) =>
-  reservar(db, 'avisosEnviados/_teto_' + gid, diaDe(agora), n, limite, 'avisosEnviados/_teto_' + gid + '_marca');
+/* KAN-279: as respostas pelo link e a rotina (faltam pessoas e aniversário) têm tetos separados, para quem abusa do
+   link não calar os avisos da rotina. */
+export type Teto = 'resp' | 'rotina';
+export const cabeNoGrupo = (
+  db: Db,
+  gid: string,
+  n: number,
+  agora: number,
+  limite = LIMITE_GRUPO_DIA,
+  teto: Teto = 'resp'
+) => {
+  const c = 'avisosEnviados/_teto_' + gid + (teto === 'rotina' ? '_rotina' : '');
+  return reservar(db, c, diaDe(agora), n, limite, c + '_marca');
+};
 
 /* Teto do mês para todos, numa das PARTES (sorteada, salvo nos testes). Cada parte guarda 1/PARTES do limite. A falha
    vai ao banco de falhas no máximo uma vez por dia (marca única, com o dia), seja qual for a parte que encheu. */
@@ -184,10 +201,11 @@ async function mandar(
   ds: Destino[],
   fazer: (d: Destino) => Mensagem,
   enviar: Enviar,
-  agora: number
+  agora: number,
+  teto: Teto = 'resp'
 ) {
   if (!ds.length) return 0;
-  const rg = await cabeNoGrupo(db, gid, ds.length, agora);
+  const rg = await cabeNoGrupo(db, gid, ds.length, agora, LIMITE_GRUPO_DIA, teto);
   if (rg !== 'ok') {
     if (rg === 'avisar')
       await registrarFalha(
@@ -228,25 +246,46 @@ type Grupo = { name?: string; ativo?: boolean; bloq?: boolean; cfg?: Record<stri
 const grupoAtivo = (g: Grupo | undefined) => !!g && g.ativo !== false && !g.bloq;
 const dataDoId = (rid: string) => (/^f-(\d{4}-\d{2}-\d{2})-\d{4}$/.exec(rid) || [])[1] || '';
 
-/* Gravação de uma presença: avisa os administradores se foi uma resposta pelo link (quem gravou não é administrador). */
-export async function aoResponder(
+/* KAN-279: freio por pessoa e rodada. A mesma pessoa gera no máximo 1 aviso de resposta a cada FREIO_MS; o que ela
+   trocar nesse meio fica guardado (pend) e a rotina de 15 minutos manda a resposta mais recente depois do intervalo,
+   se ela for diferente da última avisada. Fica em avisosEnviados/{gid}_{rid}_{pid}_r. */
+export const FREIO_MS = 10 * 60 * 1000;
+const freioRef = (db: Db, gid: string, rid: string, pid: string) =>
+  db.doc('avisosEnviados/' + gid + '_' + rid + '_' + pid + '_r');
+async function passaNoFreio(
   db: Db,
   ids: { gid: string; rid: string; pid: string },
-  antes: Presenca | null | undefined,
-  depois: Presenca | null | undefined,
+  s: string,
+  nome: string,
+  agora: number
+): Promise<boolean> {
+  const ref = freioRef(db, ids.gid, ids.rid, ids.pid);
+  return db.runTransaction(async t => {
+    const d = (await t.get(ref)).data() || {};
+    if (typeof d.t === 'number' && agora - d.t < FREIO_MS) {
+      t.set(ref, Object.assign({}, d, { pend: true, ps: s, nome: nome || d.nome || '' }));
+      return false;
+    }
+    t.set(ref, { gid: ids.gid, rid: ids.rid, pid: ids.pid, t: agora, s, pend: false, nome });
+    return true;
+  });
+}
+
+/* Monta e manda o aviso de uma resposta (na hora ou, depois do freio, pela rotina). */
+async function avisarResposta(
+  db: Db,
+  ids: { gid: string; rid: string; pid: string },
+  g: Grupo,
+  tipo: NonNullable<ReturnType<typeof tipoDaResposta>>,
+  nome0: string,
   enviar: Enviar,
-  agora = Date.now()
+  agora: number
 ): Promise<string> {
-  const tipo = tipoDaResposta(antes, depois);
-  if (!tipo || !depois) return 'sem-mudanca';
   const { gid, rid, pid } = ids;
-  if (depois.by && (await db.doc('grupos/' + gid + '/membros/' + depois.by).get()).exists) return 'administrador';
-  const g = (await db.doc('grupos/' + gid).get()).data() as Grupo | undefined;
-  if (!grupoAtivo(g)) return 'grupo-inativo';
   const ds = await destinos(db, gid);
   if (!ds.length) return 'ninguem';
   const base = 'grupos/' + gid;
-  let nome = String(depois.nome || '');
+  let nome = nome0;
   if (!nome) nome = String(((await db.doc(base + '/jogadores/' + pid).get()).data() || {}).name || '');
   if (!nome) nome = String(((await db.doc(base + '/avulsos/' + pid).get()).data() || {}).nome || '');
   const rod = ((await db.doc(base + '/rodadas/' + rid).get()).data() || {}) as Rodada;
@@ -258,13 +297,13 @@ export async function aoResponder(
       .count()
       .get()
   ).data().count;
-  const formato = (g!.cfg || {}).formato;
+  const formato = (g.cfg || {}).formato;
   const n = await mandar(
     db,
     gid,
     ds,
     d =>
-      Object.assign(textoResposta(tipo, { nome, grupo: g!.name || '', date, confirmados: conf, formato }, d.lang), {
+      Object.assign(textoResposta(tipo, { nome, grupo: g.name || '', date, confirmados: conf, formato }, d.lang), {
         token: d.token,
         lang: d.lang,
         link: linkDaRodada(gid, rid),
@@ -276,10 +315,54 @@ export async function aoResponder(
   return 'enviados:' + n;
 }
 
+/* Gravação de uma presença: avisa os administradores se foi uma resposta pelo link (quem gravou não é administrador).
+   KAN-279: o freio vem antes de ler administradores e celulares. */
+export async function aoResponder(
+  db: Db,
+  ids: { gid: string; rid: string; pid: string },
+  antes: Presenca | null | undefined,
+  depois: Presenca | null | undefined,
+  enviar: Enviar,
+  agora = Date.now()
+): Promise<string> {
+  const tipo = tipoDaResposta(antes, depois);
+  if (!tipo || !depois) return 'sem-mudanca';
+  const { gid } = ids;
+  if (depois.by && (await db.doc('grupos/' + gid + '/membros/' + depois.by).get()).exists) return 'administrador';
+  if (!(await passaNoFreio(db, ids, String(depois.s), String(depois.nome || ''), agora))) return 'freio';
+  const g = (await db.doc('grupos/' + gid).get()).data() as Grupo | undefined;
+  if (!grupoAtivo(g)) return 'grupo-inativo';
+  return avisarResposta(db, ids, g!, tipo, String(depois.nome || ''), enviar, agora);
+}
+
+/* Rotina (KAN-279): respostas que ficaram no freio. Depois do intervalo, manda a mais recente se ela mudou desde o
+   último aviso daquela pessoa. */
+async function respostasGuardadas(db: Db, enviar: Enviar, agora: number): Promise<string[]> {
+  const q = await db.collection('avisosEnviados').where('pend', '==', true).get();
+  const feitos: string[] = [];
+  for (const d of q.docs) {
+    const x = d.data() || {};
+    if (typeof x.t !== 'number' || agora - x.t < FREIO_MS) continue;
+    const ids = { gid: String(x.gid || ''), rid: String(x.rid || ''), pid: String(x.pid || '') };
+    try {
+      await d.ref.set({ t: agora, s: x.ps, pend: false }, { merge: true });
+      const tipo = tipoDaResposta(x.s ? { s: x.s } : null, { s: x.ps });
+      if (!tipo || !ids.gid) continue;
+      const g = (await db.doc('grupos/' + ids.gid).get()).data() as Grupo | undefined;
+      if (!grupoAtivo(g)) continue;
+      await avisarResposta(db, ids, g!, tipo, String(x.nome || ''), enviar, agora);
+      feitos.push(ids.gid + '/' + ids.rid + '/' + ids.pid);
+    } catch (e) {
+      console.error('Avisos: resposta guardada', ids, e);
+    }
+  }
+  return feitos;
+}
+
 const ymd = (d: Date) =>
   d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 
-type Feito = { faltas: string[]; niver: string[]; grupos: number; cortada: boolean };
+type Feito = { faltas: string[]; niver: string[]; grupos: number; cortada: boolean; guardadas: string[] };
 
 /* "Faltam pessoas" de um grupo já lido: rodadas que entraram na janela do aviso e ainda estão abaixo do mínimo.
    Uma vez por rodada (avisosEnviados/{gid}_{rid}). */
@@ -335,7 +418,8 @@ async function faltasDoGrupo(db: Db, gid: string, g: Grupo, enviar: Enviar, agor
           }
         ),
       enviar,
-      agora
+      agora,
+      'rotina'
     );
     feitos.push(gid + '/' + j.id);
   }
@@ -361,7 +445,8 @@ async function niverDoGrupo(db: Db, gid: string, g: Grupo, enviar: Enviar, agora
   }
   await marca.set({ em: agora, gid, n: nomes.length });
   if (!nomes.length) return [];
-  const ds = await destinos(db, gid);
+  /* KAN-278: a data de nascimento é de quem tem Elenco; o aviso vai só para quem pode vê-la. */
+  const ds = (await destinos(db, gid)).filter(d => d.elenco);
   if (!ds.length) return [];
   await mandar(
     db,
@@ -375,7 +460,8 @@ async function niverDoGrupo(db: Db, gid: string, g: Grupo, enviar: Enviar, agora
         tag: 'n-' + gid + '-' + hoje,
       }),
     enviar,
-    agora
+    agora,
+    'rotina'
   );
   return [gid + '/' + hoje];
 }
@@ -391,7 +477,7 @@ export async function verificarAvisos(
   db: Db,
   enviar: Enviar,
   agora = Date.now(),
-  o: { faltas?: boolean; niver?: boolean; relogio?: () => number; tempo?: number } = {}
+  o: { faltas?: boolean; niver?: boolean; guardadas?: boolean; relogio?: () => number; tempo?: number } = {}
 ): Promise<Feito> {
   const fazFaltas = o.faltas !== false,
     fazNiver = o.niver !== false,
@@ -400,7 +486,7 @@ export async function verificarAvisos(
     tempo = o.tempo ?? TEMPO_ROTINA_MS;
   const q = await db.collection('avisos').where('ligado', '==', true).get();
   const gids = [...new Set(q.docs.map(d => String((d.data() || {}).gid || '')).filter(Boolean))];
-  const r: Feito = { faltas: [], niver: [], grupos: 0, cortada: false };
+  const r: Feito = { faltas: [], niver: [], grupos: 0, cortada: false, guardadas: [] };
   let i = 0;
   const um = async () => {
     while (i < gids.length) {
@@ -423,6 +509,13 @@ export async function verificarAvisos(
     }
   };
   await Promise.all(Array.from({ length: Math.min(LOTE, gids.length) }, um));
+  /* KAN-279: as respostas que ficaram no freio. */
+  if (o.guardadas !== false)
+    try {
+      r.guardadas = await respostasGuardadas(db, enviar, agora);
+    } catch (e) {
+      console.error('Avisos: respostas guardadas', e);
+    }
   if (r.cortada)
     await registrarFalha(
       db,
@@ -436,6 +529,6 @@ export async function verificarAvisos(
 
 /* Os dois avisos da rotina, separados (usados nos testes). */
 export const verificarFaltas = async (db: Db, enviar: Enviar, agora = Date.now()) =>
-  (await verificarAvisos(db, enviar, agora, { niver: false })).faltas;
+  (await verificarAvisos(db, enviar, agora, { niver: false, guardadas: false })).faltas;
 export const verificarAniversarios = async (db: Db, enviar: Enviar, agora = Date.now()) =>
-  (await verificarAvisos(db, enviar, agora, { faltas: false })).niver;
+  (await verificarAvisos(db, enviar, agora, { faltas: false, guardadas: false })).niver;

@@ -136,6 +136,10 @@ function Janela() {
         <>
           <p class="small">{tx('av.ligado')}</p>
           <Grupos />
+          {/* KAN-278 */}
+          <p class="small muted" id="avNiverElenco">
+            {tx('av.niverElenco')}
+          </p>
         </>
       )}
       <div class="dlg-f">

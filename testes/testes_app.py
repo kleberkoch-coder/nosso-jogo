@@ -5955,7 +5955,8 @@ with sync_playwright() as pw:
         # Atalho "Jogar com 7 por time": volta ao passo 1 (11 por time) e tenta de novo
         p122.click('#srBarra [data-a=srVoltar]'); p122.wait_for_selector('#srPorTime', timeout=5000)
         ok(p122.input_value('#srPorTime') == '7', f'CT-KAN-282-02: o passo 1 mostra o tamanho trocado no passo 2 ({p122.input_value("#srPorTime")})')
-        p122.fill('#srPorTime', '11'); p122.click('[data-a=srLer]'); p122.wait_for_selector('#srFalta [data-a=srJogarCom]', timeout=5000)
+        p122.wait_for_timeout(200); p122.fill('#srPorTime', '11'); p122.wait_for_timeout(100); p122.click('[data-a=srLer]')
+        p122.wait_for_selector('#srFalta [data-a=srJogarCom]', timeout=5000)
         p122.locator('#srLista .sr-nota').nth(2).select_option('3')
         p122.click('#srFalta [data-a=srJogarCom]'); p122.wait_for_timeout(200)
         j122 = p122.evaluate("[!!document.getElementById('srFalta'), document.getElementById('srSortearBtn').textContent, document.querySelectorAll('#srLista .sr-nota')[2].value]")

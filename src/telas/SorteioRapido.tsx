@@ -16,6 +16,7 @@ import { ACT } from '../acoes.js';
 import { S } from '../nucleo/estado.js';
 import { $, toast } from '../nucleo/util.js';
 import { usarEstilo } from '../ui/estilo';
+import { AvisoFalta } from './SorteioRapidoAviso';
 
 juntarTextos(textos);
 usarEstilo('sorteio-rapido', estilo);
@@ -114,44 +115,6 @@ function Passo2() {
           </li>
         ))}
       </ul>
-    </div>
-  );
-}
-
-/* KAN-282: faltando gente no passo 2, o motivo fica à vista, acima da barra ("Para dois times de 11, faltam 8. Vocês
-   são 14."), com o tamanho do time para trocar ali mesmo e, quando der, o atalho "Jogar com 7 por time". Em duplas, a
-   dupla é fixa: só o motivo. */
-function AvisoFalta() {
-  const total = est.js.length,
-    falta = faltamPara(total, est.porTime, duplas());
-  if (!falta) return null;
-  if (duplas())
-    return (
-      <p class="warn-alt sr-falta" id="srFalta">
-        {tx(falta === 1 ? 'sr.motivoDuplas1' : 'sr.motivoDuplas', { n: falta })}
-      </p>
-    );
-  const sugestao = Math.min(30, Math.floor(total / 2));
-  return (
-    <div class="warn-alt sr-falta" id="srFalta">
-      <p>{tx(falta === 1 ? 'sr.motivo1' : 'sr.motivo', { n: falta, t: est.porTime, total })}</p>
-      <div class="sr-falta-acoes">
-        <label class="f">
-          <span>{tx('sr.porTime')}</span>
-          <select class="sel" id="srPorTimeAviso">
-            {Array.from({ length: 30 }, (_, i) => i + 1).map(n => (
-              <option key={n} value={n} selected={n === est.porTime}>
-                {n}
-              </option>
-            ))}
-          </select>
-        </label>
-        {sugestao >= 3 ? (
-          <button class="btn sm" data-a="srJogarCom" data-v={sugestao}>
-            {tx('sr.jogarCom', { n: sugestao })}
-          </button>
-        ) : null}
-      </div>
     </div>
   );
 }
@@ -260,7 +223,7 @@ function Tela() {
   return (
     <div class="sr-tela">
       {est.passo === 1 ? <Passo1 /> : est.passo === 2 ? <Passo2 /> : <Passo3 />}
-      {est.passo === 2 ? <AvisoFalta /> : null}
+      {est.passo === 2 ? <AvisoFalta total={est.js.length} porTime={est.porTime} duplas={duplas()} /> : null}
       {est.passo === 2 ? <BarraSortear /> : null}
       <p class="small muted sr-rodape">{tx('sr.privacidade')}</p>
     </div>

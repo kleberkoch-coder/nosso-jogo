@@ -1,6 +1,6 @@
 /* Vigia da conexão (KAN-276 e KAN-277, pelada-v120): a regra fica em dominio/conexao.ts.
-   - backend.js avisa nj-appcheck-falhou (sem comprovante) e nj-appcheck-ok (comprovante bom) e dá a função que pede
-     um comprovante novo (definirPedido); no modo demonstração não há App Check, e os testes disparam os eventos;
+   - backend.js avisa nj-appcheck-falhou (sem comprovante) e nj-appcheck-ok (comprovante bom) e atende o pedido de
+     comprovante novo (evento nj-pedir-comprovante); no modo demonstração não há App Check, e os testes disparam os eventos;
    - quando a internet volta ou a aba volta a aparecer, pede um comprovante novo; enquanto estiver sem, tenta de novo a
      cada 30 s; passado o limite, mostra o aviso com Recarregar;
    - se a cópia local do banco quebrar (Safari do iPhone), mostra o aviso na hora;
@@ -15,10 +15,7 @@ type Motivo = '' | 'appcheck' | 'banco';
 type Janela = Window & { __njConexaoLimite?: number; __njConexaoIntervalo?: number };
 const W = window as Janela;
 
-let pedir: (forcar: boolean) => void = () => {};
-export const definirPedido = (f: (forcar: boolean) => void) => {
-  pedir = f;
-};
+const pedir = (forcar: boolean) => document.dispatchEvent(new CustomEvent('nj-pedir-comprovante', { detail: forcar }));
 
 let falhaDesde: number | null = null,
   escondidaDesde: number | null = null,

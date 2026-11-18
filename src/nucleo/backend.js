@@ -1,7 +1,6 @@
 import { cl, idOk, uid } from './util.js';
 import { doBanco, paraBanco, temListaDentroDeLista } from './dados-banco.ts';
 import { esperarServidor } from './carga.ts';
-import { definirPedido } from './conexao';
 
 /* =================== backends =================== */
 function FirebaseBackend(cfg, appCheckKey) {
@@ -32,7 +31,9 @@ function FirebaseBackend(cfg, appCheckKey) {
       } catch (e) {
         /* sem aviso de troca de comprovante nesta versão */
       }
-      definirPedido(pedirComprovante);
+      /* O vigia da conexão (nucleo/conexao.ts) pede por evento, sem importar este arquivo de volta (o portal também usa
+         este arquivo e não tem o vigia). */
+      document.addEventListener('nj-pedir-comprovante', e => pedirComprovante(e.detail));
       setTimeout(() => pedirComprovante(false), 4000);
     } catch (e) {
       console.warn('App Check', e);
@@ -267,7 +268,9 @@ function recusarComoFirestore(o) {
 function LocalBackend() {
   const K = 'pelada-demo-v2';
   /* KAN-276: sem App Check no modo demonstração; os testes contam os pedidos de comprovante novo. */
-  definirPedido(forcar => (window.__njPedidos = window.__njPedidos || []).push(!!forcar));
+  document.addEventListener('nj-pedir-comprovante', e =>
+    (window.__njPedidos = window.__njPedidos || []).push(!!e.detail)
+  );
   let store = {},
     user = null;
   try {

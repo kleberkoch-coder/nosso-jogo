@@ -104,13 +104,15 @@ jobs:
         run: |
           set -o pipefail
           status=0
-          npx firebase emulators:exec --only functions,firestore --project demo-nosso-jogo "node --test testes/funcoes/*.test.mjs" 2>&1 | tee "$RUNNER_TEMP/funcoes.txt" || status=$?
+          npx firebase emulators:exec --only functions,firestore --project demo-nosso-jogo "node --test --test-concurrency=1 testes/funcoes/*.test.mjs" 2>&1 | tee "$RUNNER_TEMP/funcoes.txt" || status=$?
           grep -E "^\s*not ok [0-9]+ - " "$RUNNER_TEMP/funcoes.txt" | sed -E 's/^\s*not ok [0-9]+ - /::error::Função falhou: /' || true
           grep -iE "error|erro" "$RUNNER_TEMP/funcoes.txt" | grep -v "^#" | head -6 | sed -E 's/^\s*/::warning::Detalhe: /' || true
           test "$status" -eq 0 || exit "$status"
           pass=$(grep -oE '^# pass [0-9]+' "$RUNNER_TEMP/funcoes.txt" | grep -oE '[0-9]+' | tail -1)
           test "${pass:-0}" -gt 0 || { echo "::error::Nenhum teste das funções rodou."; exit 1; }
           echo "::notice::Funções no emulador: ${pass} testes passaram."
+          # KAN-275: tempos e leituras do teste de carga das funções.
+          grep -oE "Carga das funções: .*" "$RUNNER_TEMP/funcoes.txt" | sed -E 's/^/::notice::/' || true
 
   # KAN-242: confere, sem publicar nada, se a conta do GitHub tem as permissões para publicar as funções (ensaio do
   # "Publicar as funções"). Roda só à mão (Actions → Testes do app → Run workflow), antes do primeiro Merge com funções.

@@ -9,7 +9,11 @@
    - avisosEnviados/{gid}_{rid}: o aviso de "faltam pessoas" já foi desta rodada (só o servidor lê e grava).
    - falhas/{id}: falhas dos avisos (tipo "aviso"), no mesmo banco de falhas do app, que o Portal mostra: envio recusado
      pelo Firebase, erro na função e teto do mês atingido. Sem nada pessoal: só o grupo, o motivo e quantos.
-   - avisosEnviados/_teto: quantos avisos saíram no mês (teto de gasto: passou do limite, para até o mês virar). */
+   - avisosEnviados/_teto_{gid}_{dia}: quantos avisos o grupo mandou no dia (KAN-275: teto por grupo, para um abusador
+     trocando a resposta pelo link não gastar os avisos de todos). Passou, só esse grupo para até o dia virar.
+   - avisosEnviados/_teto_{mes}_{parte}: o teto do mês para todos, dividido em PARTES documentos (cada envio grava numa
+     parte sorteada: um documento só não aguentaria muitas gravações por segundo). Último recurso contra gasto.
+   Falha de teto vai para o banco de falhas uma vez só por dia (por grupo) ou por parte e mês (global). */
 import {
   agoraNoFuso,
   faltaAlgo,
@@ -37,6 +41,8 @@ type QSnap = { docs: Snap[]; size: number };
 type Query = {
   where(campo: string, op: string, valor: unknown): Query;
   get(): Promise<QSnap>;
+  /* Contagem no servidor (1 leitura, em vez de ler a lista inteira). */
+  count(): { get(): Promise<{ data(): { count: number } }> };
 };
 type Ref = {
   id: string;
@@ -58,8 +64,12 @@ export type Mensagem = Aviso & { token: string; link: string; tag: string; lang:
 export type Resultado = 'ok' | 'invalido' | string;
 export type Enviar = (ms: Mensagem[]) => Promise<Resultado[]>;
 
-/* Teto de gasto: avisos por mês. O envio do Firebase Cloud Messaging é grátis; o que custa é a função rodar. */
-export const LIMITE_MES = 20000;
+/* Teto de gasto (KAN-275). O envio do Firebase Cloud Messaging é grátis; o que custa é a função rodar.
+   - por grupo e por dia: 300 avisos (um grupo grande, com 30 respostas e trocas e 3 administradores, fica bem abaixo);
+   - para todos, por mês: 200 mil (cerca de 400 grupos com aviso), dividido em PARTES contadores. */
+export const LIMITE_GRUPO_DIA = 300;
+export const LIMITE_MES = 200000;
+export const PARTES = 10;
 
 type Destino = { uid: string; token: string; lang: Idioma; ref: Ref };
 
@@ -81,19 +91,38 @@ export async function destinos(db: Db, gid: string): Promise<Destino[]> {
 }
 
 const mesDe = (ms: number) => new Date(ms).toISOString().slice(0, 7);
+const diaDe = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 
-/* Reserva n avisos no teto do mês; devolve falso se passou do limite. */
-export async function cabeNoTeto(db: Db, n: number, agora: number, limite = LIMITE_MES): Promise<boolean> {
-  const ref = db.doc('avisosEnviados/_teto'),
-    mes = mesDe(agora);
+/* Reserva n avisos num contador; 'ok', 'cheio' ou 'avisar' (cheio pela primeira vez: registra a falha uma vez só). */
+type Reserva = 'ok' | 'cheio' | 'avisar';
+async function reservar(db: Db, caminho: string, chave: string, n: number, limite: number): Promise<Reserva> {
+  const ref = db.doc(caminho);
   return db.runTransaction(async t => {
     const d = (await t.get(ref)).data() || {};
-    const usados = d.mes === mes ? Number(d.n) || 0 : 0;
-    if (usados + n > limite) return false;
-    t.set(ref, { mes, n: usados + n });
-    return true;
+    const mesmo = d.k === chave;
+    const usados = mesmo ? Number(d.n) || 0 : 0;
+    if (usados + n <= limite) {
+      t.set(ref, { k: chave, n: usados + n });
+      return 'ok' as Reserva;
+    }
+    if (mesmo && d.avisou) return 'cheio' as Reserva;
+    t.set(ref, { k: chave, n: usados, avisou: true });
+    return 'avisar' as Reserva;
   });
 }
+
+/* Teto do grupo no dia. */
+export const cabeNoGrupo = (db: Db, gid: string, n: number, agora: number, limite = LIMITE_GRUPO_DIA) =>
+  reservar(db, 'avisosEnviados/_teto_' + gid, diaDe(agora), n, limite);
+
+/* Teto do mês para todos, numa das PARTES (sorteada, salvo nos testes). Cada parte guarda 1/PARTES do limite. */
+export const cabeNoMes = (
+  db: Db,
+  n: number,
+  agora: number,
+  limite = LIMITE_MES,
+  parte = Math.floor(Math.random() * PARTES)
+) => reservar(db, 'avisosEnviados/_teto_mes_' + parte, mesDe(agora), n, Math.ceil(limite / PARTES));
 
 /* Registra uma falha dos avisos no banco de falhas (KAN-239), que o Portal mostra junto com as do app. */
 export async function registrarFalha(db: Db, m: string, gid: string, n: number, agora = Date.now()): Promise<void> {
@@ -129,15 +158,29 @@ async function mandar(
   agora: number
 ) {
   if (!ds.length) return 0;
-  if (!(await cabeNoTeto(db, ds.length, agora))) {
+  const rg = await cabeNoGrupo(db, gid, ds.length, agora);
+  if (rg !== 'ok') {
+    if (rg === 'avisar')
+      await registrarFalha(
+        db,
+        'Teto de ' + LIMITE_GRUPO_DIA + ' avisos no dia atingido neste grupo: avisos dele parados até o dia virar',
+        gid,
+        ds.length,
+        agora
+      );
+    return 0;
+  }
+  const rm = await cabeNoMes(db, ds.length, agora);
+  if (rm !== 'ok') {
     console.warn('Avisos: teto do mês atingido; nada enviado.');
-    await registrarFalha(
-      db,
-      'Teto de ' + LIMITE_MES + ' avisos no mês atingido: avisos parados até o mês virar',
-      gid,
-      ds.length,
-      agora
-    );
+    if (rm === 'avisar')
+      await registrarFalha(
+        db,
+        'Teto de ' + LIMITE_MES + ' avisos no mês atingido: avisos parados até o mês virar',
+        gid,
+        ds.length,
+        agora
+      );
     return 0;
   }
   const ms = ds.map(fazer);
@@ -183,8 +226,9 @@ export async function aoResponder(
     await db
       .collection(base + '/rodadas/' + rid + '/presencas')
       .where('s', '==', 'in')
+      .count()
       .get()
-  ).size;
+  ).data().count;
   const formato = (g!.cfg || {}).formato;
   const n = await mandar(
     db,
@@ -206,68 +250,65 @@ export async function aoResponder(
 const ymd = (d: Date) =>
   d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 
-/* A cada 15 minutos: rodadas que entraram na janela do aviso e ainda estão abaixo do mínimo. Uma vez por rodada. */
-export async function verificarFaltas(db: Db, enviar: Enviar, agora = Date.now()): Promise<string[]> {
-  const q = await db.collection('avisos').where('ligado', '==', true).get();
-  const gids = [...new Set(q.docs.map(d => String((d.data() || {}).gid || '')).filter(Boolean))];
+type Feito = { faltas: string[]; niver: string[]; grupos: number; cortada: boolean };
+
+/* "Faltam pessoas" de um grupo já lido: rodadas que entraram na janela do aviso e ainda estão abaixo do mínimo.
+   Uma vez por rodada (avisosEnviados/{gid}_{rid}). */
+async function faltasDoGrupo(db: Db, gid: string, g: Grupo, enviar: Enviar, agora: number): Promise<string[]> {
+  const base = 'grupos/' + gid;
+  const cfg = g.cfg || {};
+  if (!temMinimo(cfg.minPos)) return [];
+  const horas = horasValidas(((await db.doc(base + '/privado/avisos').get()).data() || {}).horas);
+  const local = agoraNoFuso(agora, cfg.fuso);
+  const ini = new Date(local),
+    fim = new Date(local);
+  ini.setDate(ini.getDate() - 1);
+  fim.setDate(fim.getDate() + 2);
+  const rs = await db
+    .collection(base + '/rodadas')
+    .where('date', '>=', ymd(ini))
+    .where('date', '<=', ymd(fim))
+    .get();
+  const docs: Record<string, Rodada> = {};
+  rs.docs.forEach(d => (docs[d.id] = (d.data() || {}) as Rodada));
   const feitos: string[] = [];
-  for (const gid of gids) {
-    const base = 'grupos/' + gid;
-    const g = (await db.doc(base).get()).data() as Grupo | undefined;
-    const cfg = (g && g.cfg) || {};
-    if (!grupoAtivo(g) || !temMinimo(cfg.minPos)) continue;
-    const horas = horasValidas(((await db.doc(base + '/privado/avisos').get()).data() || {}).horas);
-    const local = agoraNoFuso(agora, cfg.fuso);
-    const ini = new Date(local),
-      fim = new Date(local);
-    ini.setDate(ini.getDate() - 1);
-    fim.setDate(fim.getDate() + 2);
-    const rs = await db
-      .collection(base + '/rodadas')
-      .where('date', '>=', ymd(ini))
-      .where('date', '<=', ymd(fim))
+  for (const j of jogosNaJanela(cfg.fixos || [], docs, local, horas)) {
+    const marca = db.doc('avisosEnviados/' + gid + '_' + j.id);
+    if ((await marca.get()).exists) continue;
+    const ps = await db
+      .collection(base + '/rodadas/' + j.id + '/presencas')
+      .where('s', '==', 'in')
       .get();
-    const docs: Record<string, Rodada> = {};
-    rs.docs.forEach(d => (docs[d.id] = (d.data() || {}) as Rodada));
-    const jogos = jogosNaJanela(cfg.fixos || [], docs, local, horas);
-    for (const j of jogos) {
-      const marca = db.doc('avisosEnviados/' + gid + '_' + j.id);
-      if ((await marca.get()).exists) continue;
-      const ps = await db
-        .collection(base + '/rodadas/' + j.id + '/presencas')
-        .where('s', '==', 'in')
-        .get();
-      const conf: { pos?: string }[] = [];
-      for (const p of ps.docs) {
-        const x = p.data() || {};
-        let pos = String(x.pos || '');
-        if (!pos) pos = String(((await db.doc(base + '/jogadores/' + p.id).get()).data() || {}).pos || '');
-        conf.push({ pos });
-      }
-      const f = faltas(conf, cfg.minPos || {});
-      if (!faltaAlgo(f)) continue;
-      const ds = await destinos(db, gid);
-      if (!ds.length) continue;
-      await marca.set({ em: agora, gid, rid: j.id });
-      await mandar(
-        db,
-        gid,
-        ds,
-        d =>
-          Object.assign(
-            textoFalta(f, { grupo: (g && g.name) || '', date: j.date, time: j.time, formato: cfg.formato }, d.lang),
-            {
-              token: d.token,
-              lang: d.lang,
-              link: linkDaRodada(gid, j.id),
-              tag: 'f-' + j.id,
-            }
-          ),
-        enviar,
-        agora
-      );
-      feitos.push(gid + '/' + j.id);
+    const conf: { pos?: string }[] = [];
+    for (const p of ps.docs) {
+      const x = p.data() || {};
+      let pos = String(x.pos || '');
+      if (!pos) pos = String(((await db.doc(base + '/jogadores/' + p.id).get()).data() || {}).pos || '');
+      conf.push({ pos });
     }
+    const f = faltas(conf, cfg.minPos || {});
+    if (!faltaAlgo(f)) continue;
+    const ds = await destinos(db, gid);
+    if (!ds.length) continue;
+    await marca.set({ em: agora, gid, rid: j.id });
+    await mandar(
+      db,
+      gid,
+      ds,
+      d =>
+        Object.assign(
+          textoFalta(f, { grupo: g.name || '', date: j.date, time: j.time, formato: cfg.formato }, d.lang),
+          {
+            token: d.token,
+            lang: d.lang,
+            link: linkDaRodada(gid, j.id),
+            tag: 'f-' + j.id,
+          }
+        ),
+      enviar,
+      agora
+    );
+    feitos.push(gid + '/' + j.id);
   }
   return feitos;
 }
@@ -276,44 +317,96 @@ export async function verificarFaltas(db: Db, enviar: Enviar, agora = Date.now()
    dia por grupo (avisosEnviados/{gid}_niver_{data}), mesmo quando ninguém faz aniversário (assim não relê os contatos
    a cada 15 minutos). Só jogadores ativos do elenco; a data vem de privado/contatos (só o servidor e os
    administradores com Elenco leem). */
-export async function verificarAniversarios(db: Db, enviar: Enviar, agora = Date.now()): Promise<string[]> {
+async function niverDoGrupo(db: Db, gid: string, g: Grupo, enviar: Enviar, agora: number): Promise<string[]> {
+  const base = 'grupos/' + gid;
+  const local = agoraNoFuso(agora, (g.cfg || {}).fuso);
+  if (local.getHours() < HORA_ANIVERSARIO) return [];
+  const hoje = ymd(local),
+    marca = db.doc('avisosEnviados/' + gid + '_niver_' + hoje);
+  if ((await marca.get()).exists) return [];
+  const cont = ((await db.doc(base + '/privado/contatos').get()).data() || {}) as Record<string, { nasc?: string }>;
+  const nomes: string[] = [];
+  for (const id of aniversariantesNoDia(cont, hoje)) {
+    const j = (await db.doc(base + '/jogadores/' + id).get()).data();
+    if (j && j.ativo !== false && j.name) nomes.push(String(j.name));
+  }
+  await marca.set({ em: agora, gid, n: nomes.length });
+  if (!nomes.length) return [];
+  const ds = await destinos(db, gid);
+  if (!ds.length) return [];
+  await mandar(
+    db,
+    gid,
+    ds,
+    d =>
+      Object.assign(textoAniversario(nomes, { grupo: g.name || '' }, d.lang), {
+        token: d.token,
+        lang: d.lang,
+        link: './#/g/' + encodeURIComponent(gid),
+        tag: 'n-' + gid + '-' + hoje,
+      }),
+    enviar,
+    agora
+  );
+  return [gid + '/' + hoje];
+}
+
+/* KAN-275: quantos grupos ao mesmo tempo e o tempo que a rotina se dá antes de parar (a função tem 120 s). */
+export const LOTE = 25;
+export const TEMPO_ROTINA_MS = 90000;
+
+/* A cada 15 minutos (KAN-275): a lista de avisos ligados e cada grupo são lidos uma vez só, e os grupos andam em
+   paralelo, LOTE de cada vez. Se a rotina chegar perto do tempo, para de começar grupos novos e registra a falha
+   "rotina cortada" (os que ficaram entram na próxima, 15 minutos depois). */
+export async function verificarAvisos(
+  db: Db,
+  enviar: Enviar,
+  agora = Date.now(),
+  o: { faltas?: boolean; niver?: boolean; relogio?: () => number; tempo?: number } = {}
+): Promise<Feito> {
+  const fazFaltas = o.faltas !== false,
+    fazNiver = o.niver !== false,
+    relogio = o.relogio || Date.now,
+    inicio = relogio(),
+    tempo = o.tempo ?? TEMPO_ROTINA_MS;
   const q = await db.collection('avisos').where('ligado', '==', true).get();
   const gids = [...new Set(q.docs.map(d => String((d.data() || {}).gid || '')).filter(Boolean))];
-  const feitos: string[] = [];
-  for (const gid of gids) {
-    const base = 'grupos/' + gid;
-    const g = (await db.doc(base).get()).data() as Grupo | undefined;
-    if (!grupoAtivo(g)) continue;
-    const local = agoraNoFuso(agora, ((g && g.cfg) || {}).fuso);
-    if (local.getHours() < HORA_ANIVERSARIO) continue;
-    const hoje = ymd(local),
-      marca = db.doc('avisosEnviados/' + gid + '_niver_' + hoje);
-    if ((await marca.get()).exists) continue;
-    const cont = ((await db.doc(base + '/privado/contatos').get()).data() || {}) as Record<string, { nasc?: string }>;
-    const nomes: string[] = [];
-    for (const id of aniversariantesNoDia(cont, hoje)) {
-      const j = (await db.doc(base + '/jogadores/' + id).get()).data();
-      if (j && j.ativo !== false && j.name) nomes.push(String(j.name));
+  const r: Feito = { faltas: [], niver: [], grupos: 0, cortada: false };
+  let i = 0;
+  const um = async () => {
+    while (i < gids.length) {
+      if (relogio() - inicio > tempo) {
+        r.cortada = true;
+        return;
+      }
+      const gid = gids[i++]!;
+      try {
+        const g = (await db.doc('grupos/' + gid).get()).data() as Grupo | undefined;
+        r.grupos++;
+        if (!grupoAtivo(g)) continue;
+        if (fazFaltas) r.faltas.push(...(await faltasDoGrupo(db, gid, g!, enviar, agora)));
+        if (fazNiver) r.niver.push(...(await niverDoGrupo(db, gid, g!, enviar, agora)));
+      } catch (e) {
+        /* Um grupo com problema não para os outros. */
+        console.error('Avisos: grupo', gid, e);
+        await registrarFalha(db, 'Erro na rotina de avisos: ' + String((e as Error)?.message || e), gid, 1, agora);
+      }
     }
-    await marca.set({ em: agora, gid, n: nomes.length });
-    if (!nomes.length) continue;
-    const ds = await destinos(db, gid);
-    if (!ds.length) continue;
-    await mandar(
+  };
+  await Promise.all(Array.from({ length: Math.min(LOTE, gids.length) }, um));
+  if (r.cortada)
+    await registrarFalha(
       db,
-      gid,
-      ds,
-      d =>
-        Object.assign(textoAniversario(nomes, { grupo: (g && g.name) || '' }, d.lang), {
-          token: d.token,
-          lang: d.lang,
-          link: './#/g/' + encodeURIComponent(gid),
-          tag: 'n-' + gid + '-' + hoje,
-        }),
-      enviar,
+      'Rotina de avisos cortada pelo tempo: ' + (gids.length - r.grupos) + ' grupos ficaram para a próxima',
+      '',
+      gids.length - r.grupos,
       agora
     );
-    feitos.push(gid + '/' + hoje);
-  }
-  return feitos;
+  return r;
 }
+
+/* Os dois avisos da rotina, separados (usados nos testes). */
+export const verificarFaltas = async (db: Db, enviar: Enviar, agora = Date.now()) =>
+  (await verificarAvisos(db, enviar, agora, { niver: false })).faltas;
+export const verificarAniversarios = async (db: Db, enviar: Enviar, agora = Date.now()) =>
+  (await verificarAvisos(db, enviar, agora, { faltas: false })).niver;

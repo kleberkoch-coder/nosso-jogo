@@ -1,6 +1,7 @@
 /* Funções do servidor do Nosso Jogo (Cloud Functions do Firebase, plano Blaze). Primeira: avisos no celular dos
    administradores (KAN-242, pelada-v116). A lógica fica em logica.ts; aqui só se liga ao Firebase.
-   Teto de gasto: no máximo 3 cópias de cada função ao mesmo tempo, 256 MB, e um limite de avisos por mês (logica.ts).
+   Teto de gasto: no máximo 10 cópias de cada função ao mesmo tempo, 256 MB, e limites de avisos por grupo e por mês
+   (logica.ts, KAN-275).
    Montado por funcoes/montar.mjs e publicado pela automação "Publicar as funções" no Merge. */
 import { setGlobalOptions } from 'firebase-functions/v2';
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
@@ -9,10 +10,11 @@ import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 import { REGIAO } from './config';
-import { aoResponder, registrarFalha, verificarAniversarios, verificarFaltas, type Db, type Enviar } from './logica';
+import { aoResponder, registrarFalha, verificarAvisos, type Db, type Enviar } from './logica';
 
 initializeApp();
-setGlobalOptions({ region: REGIAO, maxInstances: 3, memory: '256MiB', timeoutSeconds: 60 });
+/* KAN-275: até 10 cópias (cada uma atende um aviso por vez com 256 MB); a rotina de 15 min tem 120 s. */
+setGlobalOptions({ region: REGIAO, maxInstances: 10, memory: '256MiB', timeoutSeconds: 60 });
 
 const db = () => getFirestore() as unknown as Db;
 const NO_EMULADOR = process.env.FUNCTIONS_EMULATOR === 'true';
@@ -68,12 +70,14 @@ export const avisoResposta = onDocumentWritten('grupos/{gid}/rodadas/{rid}/prese
   })
 );
 
-export const avisoFaltas = onSchedule({ schedule: 'every 15 minutes', timeZone: 'America/Sao_Paulo' }, () =>
-  comFalha('avisoFaltas', '', async () => {
-    const feitos = await verificarFaltas(db(), enviar);
-    if (feitos.length) console.log('Avisos de faltam pessoas', feitos.join(', '));
-    /* KAN-272: aniversariantes do dia, às 9h no fuso do grupo. */
-    const niver = await verificarAniversarios(db(), enviar);
-    if (niver.length) console.log('Avisos de aniversário', niver.join(', '));
-  })
+export const avisoFaltas = onSchedule(
+  { schedule: 'every 15 minutes', timeZone: 'America/Sao_Paulo', timeoutSeconds: 120 },
+  () =>
+    comFalha('avisoFaltas', '', async () => {
+      /* KAN-275: "faltam pessoas" e aniversário (KAN-272) numa passada só, com os grupos em paralelo. */
+      const r = await verificarAvisos(db(), enviar);
+      if (r.faltas.length) console.log('Avisos de faltam pessoas', r.faltas.join(', '));
+      if (r.niver.length) console.log('Avisos de aniversário', r.niver.join(', '));
+      console.log('Rotina de avisos:', r.grupos, 'grupos', r.cortada ? '(cortada pelo tempo)' : '');
+    })
 );

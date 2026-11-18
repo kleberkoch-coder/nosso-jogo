@@ -6,9 +6,9 @@ import { juntarTextos } from './i18n/index.js';
 import { acoes as grupo } from './acoes/grupo';
 import { acoes as rodada } from './acoes/rodada.js';
 import { acoes as avulsos } from './acoes/avulsos';
-import { acoes as jogadores } from './acoes/jogadores.js';
+import { acoes as jogadores } from './acoes/jogadores';
 import { acoes as recalcular } from './acoes/recalcular';
-import { acoes as plano } from './acoes/plano';
+import { acoes as plano } from './acoes/planos-adiar';
 import { acoes as afastamento } from './acoes/afastamento';
 import { acoes as avaliacao } from './acoes/avaliacao';
 import { acoes as extra } from './acoes/extra';
@@ -52,6 +52,7 @@ export { contaRegiao, listaPais, paisAparelho, preencher } from './ui/regiao.ts'
 export { trocarPaisTelefone } from './ui/contato-form';
 /* Planos (KAN-119): quem tem cada recurso, avisos, cadeado das abas e o espelho do plano no grupo. */
 export { sincronizarPlano } from './nucleo/plano';
+export { renderGestao } from './ui/render-gestao';
 export { montarAvisosPlano, montarCadeado, vCadeado } from './ui/Plano';
 /* Os textos da gestão entram no dicionário assim que esta parte chega (KAN-159). */
 juntarTextos(textosGestao);

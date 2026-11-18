@@ -28,9 +28,74 @@ const cssComoTexto = minify => ({
     });
   },
 });
-const montar = minify =>
+/* pelada-v119 (KAN-274): menos pedaços. O esbuild cria um pedaço para cada combinação de partes que divide um código;
+   cada pedaço a mais custa cabeçalho e perde compressão. Para juntar:
+   - toda parte carregada com import() importa também o que o ponto de partida (src/main.js) importa: o código do link
+     fica num pedaço só (mais o que vai embutido no index.html);
+   - toda parte carregada a partir da gestão, e que o link nunca carrega, importa também src/admin.js: o código que a
+     gestão divide com as partes fica num pedaço só.
+   As listas saem de uma primeira montagem (sem minificar). Os imports a mais não mudam o que roda: esses módulos já
+   rodaram antes de qualquer parte abrir. */
+const ADMIN = 'src/admin.js';
+const juntar = j => ({
+  name: 'juntar-pedacos',
+  setup(b) {
+    b.onLoad({ filter: /\.(js|ts|tsx)$/ }, a => {
+      const f = path.relative('.', a.path).split(path.sep).join('/');
+      if (!j.partes.has(f)) return undefined;
+      const imp = alvo => {
+        const r = path.relative(path.dirname(a.path), path.resolve(alvo)).split(path.sep).join('/');
+        return `import ${JSON.stringify(r.startsWith('.') ? r : './' + r)};\n`;
+      };
+      const extra = [...j.doInicio, ...(j.daGestao.has(f) ? [ADMIN] : [])].map(imp).join('');
+      return { contents: extra + fs.readFileSync(a.path, 'utf8'), loader: path.extname(f).slice(1) };
+    });
+  },
+});
+function listasParaJuntar(metafile) {
+  const ins = metafile.inputs;
+  const tipo = (m, k) => (ins[m]?.imports || []).filter(i => i.kind === k && !i.external).map(i => i.path);
+  const fecho = ini => {
+    const s = new Set(),
+      fila = [...ini];
+    while (fila.length) {
+      const m = fila.pop();
+      if (s.has(m)) continue;
+      s.add(m);
+      fila.push(...tipo(m, 'import-statement'));
+    }
+    return s;
+  };
+  const partes = new Set(Object.keys(ins).flatMap(m => tipo(m, 'dynamic-import')));
+  partes.delete('src/main.js');
+  const doLink = fecho(['src/main.js']);
+  for (let mudou = true; mudou; ) {
+    mudou = false;
+    for (const m of [...doLink])
+      for (const d of tipo(m, 'dynamic-import'))
+        if (d !== ADMIN && !doLink.has(d)) {
+          fecho([d]).forEach(x => doLink.add(x));
+          mudou = true;
+        }
+  }
+  const daGestao = new Set(),
+    vistos = new Set(),
+    fila = [...fecho([ADMIN])];
+  while (fila.length) {
+    const m = fila.pop();
+    if (vistos.has(m)) continue;
+    vistos.add(m);
+    for (const d of tipo(m, 'dynamic-import')) {
+      if (d !== ADMIN && !doLink.has(d)) daGestao.add(d);
+      fila.push(...fecho([d]));
+    }
+  }
+  const doInicio = tipo('src/main.js', 'import-statement').filter(f => !f.endsWith('.css'));
+  return { partes, daGestao, doInicio };
+}
+const montar = (minify, j) =>
   esbuild.build({
-    plugins: [cssComoTexto(minify)],
+    plugins: [cssComoTexto(minify), ...(j ? [juntar(j)] : [])],
     entryPoints: ['src/main.js'],
     bundle: true,
     format: minify ? 'esm' : 'iife',
@@ -89,7 +154,8 @@ function pagina(r, modulos) {
     .replace('<!--ESTILOS-->', () => pre + '<style>\n' + css + '</style>')
     .replace('<!--CODIGO-->', () => '<script' + (modulos ? ' type="module"' : '') + '>\n' + js + '</script>');
 }
-const [rMin, rLeg] = await Promise.all([montar(true), montar(false)]);
+const listas = listasParaJuntar((await montar(true)).metafile);
+const [rMin, rLeg] = await Promise.all([montar(true, listas), montar(false)]);
 /* Pedaços que o link público precisa logo (o que main.js importa direto, e o que eles importam) e os da gestão. */
 const pedacos = new Map(rMin.outputFiles.filter(f => /^chunks\/.*\.js$/.test(rel(f))).map(f => [rel(f), f.text]));
 const nucleo = [],

@@ -117,6 +117,8 @@ export default {
   'caixa.despesa': 'Despesa',
   'caixa.apagarRotulo': 'Apagar lançamento: {tipo}, {valor}',
   'caixa.recebido': 'Recebido de {nome}: {valor}',
+  'caixa.cobrancaTitulo': 'Cobrança',
+  'caixa.cobrancaTexto': '💰 *{grupo} — pendências de {mes}*',
   'caixa.desfazer': 'Desfazer',
   'caixa.pagamentoDesfeito': 'Pagamento desfeito.',
   'caixa.apagado': 'Lançamento apagado.',

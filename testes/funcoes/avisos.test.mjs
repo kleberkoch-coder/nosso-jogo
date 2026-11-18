@@ -5,14 +5,26 @@
 import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-import { LIMITE_MES, aoResponder, cabeNoTeto, verificarFaltas } from '../../funcoes/src/logica.ts';
+import {
+  LIMITE_GRUPO_DIA,
+  LIMITE_MES,
+  PARTES,
+  aoResponder,
+  cabeNoGrupo,
+  cabeNoMes,
+  verificarFaltas,
+} from '../../funcoes/src/logica.ts';
 
 const req = createRequire(new URL('../../funcoes/package.json', import.meta.url));
 const { initializeApp } = req('firebase-admin/app');
-const { getFirestore } = req('firebase-admin/firestore');
+const { FieldValue, getFirestore } = req('firebase-admin/firestore');
 
 initializeApp({ projectId: 'demo-nosso-jogo' });
-const db = getFirestore();
+/* somar: o mesmo que as funções passam (index.ts). */
+const somar = n => FieldValue.increment(n);
+const db = new Proxy(getFirestore(), {
+  get: (f, k) => (k === 'somar' ? somar : typeof f[k] === 'function' ? f[k].bind(f) : f[k]),
+});
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 async function avisosDe(tag, ms = 20000) {
@@ -101,12 +113,17 @@ test('CT-KAN-242-09: faltam pessoas na janela: avisa uma vez por rodada; adminis
   assert.deepEqual(await verificarFaltas(db, enviar, agora), [G + '/r2']);
 });
 
-test('CT-KAN-242-10: teto do mês: passou do limite, não envia', async () => {
+test('CT-KAN-242-10: teto do mês (dividido em partes): passou do limite, não envia; mês novo zera', async () => {
   const ms = Date.UTC(2027, 0, 5);
-  assert.equal(await cabeNoTeto(db, 3, ms, 4), true);
-  assert.equal(await cabeNoTeto(db, 2, ms, 4), false);
-  assert.equal(await cabeNoTeto(db, 1, ms, 4), true);
-  assert.equal(await cabeNoTeto(db, 1, Date.UTC(2027, 1, 1), 4), true, 'mês novo zera');
+  /* Limite 40 em 10 partes = 4 por parte. */
+  assert.equal(await cabeNoMes(db, 3, ms, 40, 0), 'ok');
+  assert.equal(await cabeNoMes(db, 2, ms, 40, 0), 'avisar', 'a primeira recusa avisa');
+  assert.equal(await cabeNoMes(db, 2, ms, 40, 0), 'cheio', 'as seguintes, não');
+  assert.equal(await cabeNoMes(db, 1, ms, 40, 0), 'ok');
+  assert.equal(await cabeNoMes(db, 1, Date.UTC(2027, 1, 1), 40, 0), 'ok', 'mês novo zera');
+  assert.equal(await cabeNoGrupo(db, 'gT', 4, ms, 4), 'ok');
+  assert.equal(await cabeNoGrupo(db, 'gT', 1, ms, 4), 'avisar');
+  assert.equal(await cabeNoGrupo(db, 'gT', 1, ms + 864e5, 4), 'ok', 'dia novo zera');
 });
 
 async function falhasAviso(trecho) {
@@ -145,22 +162,62 @@ test('CT-KAN-242-12: falhas dos avisos vão para o banco de falhas (envio recusa
     't',
     'v',
   ]);
-  /* Teto: o mês já chegou no limite; nada sai e a falha fica registrada. */
-  await db.doc('avisosEnviados/_teto').set({ mes: '2026-12', n: LIMITE_MES });
+  /* Teto: o mês já chegou no limite (todas as partes cheias); nada sai e a falha fica registrada uma vez só. */
+  for (let k = 0; k < PARTES; k++)
+    await db.doc('avisosEnviados/_teto_mes_' + k).set({ k: '2026-12', n: Math.ceil(LIMITE_MES / PARTES) });
   const nada = [];
-  assert.equal(
-    await aoResponder(
-      db,
-      { gid: G, rid: 'r1', pid: 'j1' },
-      { s: 'out' },
-      { s: 'in', by: 'anonimo9' },
-      async ms => (nada.push(...ms), ms.map(() => 'ok')),
-      agora
-    ),
-    'enviados:0'
-  );
+  for (let i = 0; i < 3; i++)
+    assert.equal(
+      await aoResponder(
+        db,
+        { gid: G, rid: 'r1', pid: 'j1' },
+        { s: i % 2 ? 'in' : 'out' },
+        { s: i % 2 ? 'out' : 'in', by: 'anonimo9' },
+        async ms => (nada.push(...ms), ms.map(() => 'ok')),
+        agora
+      ),
+      'enviados:0'
+    );
   assert.equal(nada.length, 0);
-  assert.equal((await falhasAviso('avisos no mês atingido')).length, 1);
+  assert.equal(
+    (await falhasAviso('avisos no mês atingido')).length,
+    1,
+    'CT-KAN-275-04: uma falha só, mesmo com 3 tentativas'
+  );
+});
+
+test('CT-KAN-275-03: grupo que passou do teto do dia para sozinho; os outros continuam; uma falha só', async () => {
+  const agora = Date.UTC(2027, 4, 10, 15);
+  await db.doc('avisosEnviados/_teto_' + G).set({ k: '2027-05-10', n: LIMITE_GRUPO_DIA });
+  const H = 'gOutro';
+  await db.doc('grupos/' + H).set({ name: 'Outro', owner: 'o2', cfg: {} });
+  await db.doc('grupos/' + H + '/membros/o2').set({ uid: 'o2', role: 'owner' });
+  await db.doc('avisos/' + H + '_o2').set({ gid: H, uid: 'o2', ligado: true });
+  await db.doc('usuarios/o2/aparelhos/c9').set({ token: 'token-o2', lang: 'pt-BR' });
+  await db.doc('grupos/' + H + '/jogadores/x1').set({ name: 'Xavier' });
+  const env = [];
+  const enviar = async ms => (env.push(...ms), ms.map(() => 'ok'));
+  for (let i = 0; i < 3; i++)
+    assert.equal(
+      await aoResponder(
+        db,
+        { gid: G, rid: 'r1', pid: 'j1' },
+        { s: i % 2 ? 'in' : 'out' },
+        { s: i % 2 ? 'out' : 'in', by: 'z' },
+        enviar,
+        agora
+      ),
+      'enviados:0'
+    );
+  assert.equal(
+    await aoResponder(db, { gid: H, rid: 'q1', pid: 'x1' }, null, { s: 'in', by: 'z' }, enviar, agora),
+    'enviados:1'
+  );
+  assert.deepEqual(
+    env.map(m => m.token),
+    ['token-o2']
+  );
+  assert.equal((await falhasAviso('avisos no dia atingido neste grupo')).length, 1);
 });
 
 test('CT-KAN-272-04: aniversário às 9h no fuso do grupo, uma vez por dia, só do elenco ativo', async () => {

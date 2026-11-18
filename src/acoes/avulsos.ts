@@ -26,7 +26,7 @@ export const acoes: Record<string, (el: El) => unknown> = {
     const regs = Object.entries(S.avul || {})
       .filter(([id]) => !S.jog[id] && S.pres[id]?.s !== 'in')
       .sort((a, b) => (a[1].nome || '').localeCompare(b[1].nome || '', LOCAL));
-    janelaAvulso(regs);
+    return janelaAvulso(regs);
   },
   pickAvulso: el => {
     const id = el.dataset.p || '',
@@ -81,7 +81,7 @@ export const acoes: Record<string, (el: El) => unknown> = {
     const id = el.dataset.p || '',
       a = (S.avul || {})[id] || { nome: pname(id), pos: ppos(id) },
       ct = (S.cont || {})[id] || {};
-    janelaEditarAvulso(id, a, ct.tel || '');
+    return janelaEditarAvulso(id, a, ct.tel || '');
   },
   saveAvEdit: el => {
     const id = el.dataset.p || '',
@@ -124,9 +124,11 @@ export const acoes: Record<string, (el: El) => unknown> = {
   promote: el => {
     const id = el.dataset.p || '',
       p = S.avul?.[id] || { nome: S.pres[id]?.nome, pos: S.pres[id]?.pos };
-    playerDlg(null, { id, name: p?.nome, pos: p?.pos, tipo: 'diarista' });
-    const b = $('[data-a=savePlayer]') as HTMLElement;
-    b.dataset.p = '';
-    b.dataset.new = id;
+    return playerDlg(null, { id, name: p?.nome, pos: p?.pos, tipo: 'diarista' }).then(() => {
+      const b = $('[data-a=savePlayer]') as HTMLElement | null;
+      if (!b) return;
+      b.dataset.p = '';
+      b.dataset.new = id;
+    });
   },
 };

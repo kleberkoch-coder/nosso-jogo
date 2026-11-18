@@ -8,13 +8,6 @@ export default {
   'comum.carregando': 'Carregando…',
   'comum.versao': 'Nosso Jogo · versão {n}',
   'comum.versaoCurta': 'versão {n}',
-  'sair.outrasAbas':
-    'Você saiu da conta. Para apagar também os dados do grupo guardados neste aparelho, feche as outras abas do Nosso Jogo e toque em Sair de novo na próxima vez.',
-  'sair.pendentes':
-    'Ainda há alterações deste aparelho que não chegaram ao servidor (sem sinal?). Se sair agora, elas serão perdidas.',
-  'sair.pendentesTitulo': 'Sair sem enviar as alterações?',
-  'sair.mesmoAssim': 'Sair mesmo assim',
-  'sair.outrasAbasTitulo': 'Você saiu da conta',
   'comum.copiado': 'Copiado.',
   'comum.copieLink': 'Copie o link:',
   'comum.semInternetBarra': 'Sem internet. O que você fizer agora é enviado quando a conexão voltar.',
@@ -79,8 +72,6 @@ export default {
   'publico.rodape': 'Organize seus jogos com o {app} →',
 
   /* abas */
-  'abas.historico': 'Histórico',
-
   /* lista de presença × times sorteados (aba Rodada, pelada-v15) */
   /* painel do link permanente na aba Rodada (KAN-150) */
   /* campo de horário (KAN-151) */
@@ -125,14 +116,6 @@ export default {
   'comum.salvar': 'Salvar',
   /* menu da conta, no cabeçalho (KAN-166) */
   'conta.menu': 'Minha conta ({email})',
-  'conta.titulo': 'Minha conta',
-  'conta.pais': 'País e formatos',
-  'conta.tema': 'Tema',
-  'conta.plano': 'Plano e recursos',
-  'conta.avisos': 'Avisos no celular',
-  'conta.sair': 'Sair',
-  'soVer.aviso':
-    'Você só pode ver este grupo: o plano dele permite menos administradores convidados, e você entrou depois. Para voltar a editar, fale com o organizador.',
   'soVer.barrado': 'Você só pode ver este grupo. Fale com o organizador.',
   /* país da conta, no cadastro (KAN-162); o resto do país, moeda e fuso fica nos textos da gestão */
   'comum.naoCarregouTitulo': 'Não foi possível carregar',
@@ -168,24 +151,6 @@ export default {
   'render.subtitulo': 'Presença, sorteio de times, placar, ranking e caixa dos seus jogos',
   'render.grupos': '⇄ Grupos',
   'render.inicio': '← Início',
-  'render.meusGrupos': 'Meus grupos',
-  'render.naoEncontrado': 'Grupo não encontrado',
-  'render.naoEncontradoTexto': 'Ele pode ter sido excluído.',
-  'render.semAcesso': 'Sem acesso',
-  'render.semAcessoTexto':
-    'Sua conta ({email}) não administra o grupo {grupo}. Peça ao organizador um link de convite.',
-  'render.removerDaLista': 'Remover da minha lista',
-  'render.proxima': 'Próxima: {data}',
-  'render.bloqueado': 'Grupo bloqueado pela administração do Nosso Jogo: só para consulta. Fale com o suporte.',
-  'render.inativo': 'Grupo inativo desde {data}. Os links públicos não aceitam confirmações nem votos.',
-  'render.reativar': 'Reativar',
-  'abas.rodada': 'Rodada',
-  'abas.jogadores': 'Jogadores',
-  'abas.partida': 'Partida',
-  'abas.ranking': 'Ranking',
-  'abas.caixa': 'Caixa',
-  'abas.votacao': 'Votação',
-  'abas.grupo': 'Grupo',
   'tema.titulo': 'Tema',
   'tema.auto': 'Automático',
   'tema.claro': 'Claro',

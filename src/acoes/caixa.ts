@@ -4,15 +4,28 @@ import { foraDoPadrao, referenciaDoGrupo } from '../dominio/caixa-regras';
 import { gname, pname, rodadas } from '../dominio/grupo.js';
 import { tp, tx } from '../i18n/index.js';
 import { shareDlg } from '../ui/Compartilhar';
-import { B } from '../nucleo/backend.js';
+import * as backend from '../nucleo/backend.js';
 import { apagarLanc, salvarLanc } from '../nucleo/partidas.js';
 import { S } from '../nucleo/estado.js';
 import { $, brl, fmonth, toast, toastAcao, today, usarAvisoAcao } from '../nucleo/util.js';
 import { listaAPagar, montarNovoLancamento, montarPagar, pendencias } from '../telas/Caixa.tsx';
 import { dividir } from '../dominio/ciclo';
 import { closeDlg, confirmou, dlg, openDlg, val } from '../ui/dialogos.js';
-import { ACT } from '../acoes.js';
 import { receberRateio } from './rateio';
+
+type El = HTMLElement & { dataset: DOMStringMap };
+type Lanc = {
+  k: string;
+  pid: string | null;
+  v: number;
+  d: string;
+  ref: string;
+  note: string;
+  rat?: string;
+  refs?: string[];
+};
+type Pend = { pid: string; v: number; nome?: string; cob?: string; label?: string };
+const novoId = (): string => (backend as any).B.newId();
 
 /* KAN-161: valor muito acima do padrão do grupo pergunta antes de gravar ("Corrigir valor" volta ao campo). */
 function refGrupo() {
@@ -26,8 +39,8 @@ function refGrupo() {
   });
 }
 /* "Recebi" grava na hora e o aviso oferece "Desfazer" por 6 segundos (KAN-129). */
-function receber(o) {
-  const id = B.newId(),
+function receber(o: Lanc & { pid: string }) {
+  const id = novoId(),
     r = salvarLanc(id, o);
   toastAcao(tx('caixa.recebido', { nome: pname(o.pid), valor: brl(o.v) }), tx('caixa.desfazer'), () => {
     const d = apagarLanc(id);
@@ -36,7 +49,7 @@ function receber(o) {
   });
   return r;
 }
-function valorConferido(el, v, ref, campo) {
+function valorConferido(el: El, v: number, ref: number, campo: string): boolean {
   if (!foraDoPadrao(v, ref)) return true;
   return (
     confirmou(el, {
@@ -56,7 +69,20 @@ function valorConferido(el, v, ref, campo) {
   );
 }
 
-const acoes = {
+/* Apagar (depois da confirmação) também oferece "Desfazer": o lançamento volta com o mesmo código. */
+function apagarLan(id: string) {
+  const o = S.caixa[id];
+  if (!o) return;
+  const r = apagarLanc(id);
+  toastAcao(tx('caixa.apagado'), tx('caixa.desfazer'), () => {
+    const d = salvarLanc(id, o);
+    toast(tx('caixa.apagadoVolta'));
+    return d;
+  });
+  return r;
+}
+
+const acoes: Record<string, (el: El) => unknown> = {
   /* KAN-209: a janela é um componente (telas/Caixa.tsx). */
   addLan: () => {
     openDlg('lanRaiz');
@@ -66,7 +92,10 @@ const acoes = {
   saveLan: el => {
     const k = val('lk'),
       v = +val('lv'),
-      meses = k === 'mensal' ? [...document.querySelectorAll('#lanMeses .lm:checked')].map(x => x.value).sort() : [];
+      meses =
+        k === 'mensal'
+          ? [...document.querySelectorAll<HTMLInputElement>('#lanMeses .lm:checked')].map(x => x.value).sort()
+          : [];
     if (!(v > 0)) {
       toast(tx('caixa.informeValor'));
       return;
@@ -81,7 +110,7 @@ const acoes = {
     }
     if (!valorConferido(el, k === 'mensal' ? v / meses.length : v, refGrupo(), '#lv')) return;
     const d = val('ld') || today(),
-      base = { k, pid: val('lp2') || null, d, note: val('ln') };
+      base: Omit<Lanc, 'v' | 'ref'> = { k, pid: val('lp2') || null, d, note: val('ln') };
     /* KAN-213: entrada ou despesa ligada a um rateio. */
     if ((k === 'entrada' || k === 'despesa') && val('lrat')) base.rat = val('lrat');
     closeDlg();
@@ -89,7 +118,7 @@ const acoes = {
     if (k === 'mensal') {
       toast(meses.length > 1 ? tx('caixa.lancamentosSalvos', { n: meses.length }) : tx('caixa.lancamentoSalvo'));
       return Promise.all(
-        dividir(v, meses).map(([ref, vm]) => salvarLanc(B.newId(), Object.assign({}, base, { v: vm, ref })))
+        dividir(v, meses).map(([ref, vm]) => salvarLanc(novoId(), Object.assign({}, base, { v: vm, ref })))
       );
     }
     let ref = d.slice(0, 7);
@@ -98,11 +127,11 @@ const acoes = {
       ref = r ? r.id : d;
     }
     toast(tx('caixa.lancamentoSalvo'));
-    return salvarLanc(B.newId(), Object.assign({}, base, { v, ref }));
+    return salvarLanc(novoId(), Object.assign({}, base, { v, ref }));
   },
   /* KAN-129: "Recebi" grava na hora e o aviso oferece "Desfazer" por 6 segundos. */
   payPend: el => {
-    const p = pendencias(S.month)[+el.dataset.v];
+    const p = pendencias(S.month)[Number(el.dataset.v)];
     if (!p) return;
     if (p.k === 'rateio') return receberRateio(p.ref, p.pid, p.v);
     return receber({ k: p.k, pid: p.pid, v: p.v, d: today(), ref: p.ref, note: '' });
@@ -110,20 +139,20 @@ const acoes = {
   /* KAN-212: "Receber" no Quadro do ano lança a mensalidade daquela competência (valor do grupo, data de hoje). */
   payMes: el => {
     const pid = el.dataset.p,
-      ref = el.dataset.v;
-    if (!pid || !/^\d{4}-\d{2}$/.test(ref || '')) return;
+      ref = el.dataset.v || '';
+    if (!pid || !/^\d{4}-\d{2}$/.test(ref)) return;
     return receber({ k: 'mensal', pid, v: cfg().mensal, d: today(), ref, note: '' });
   },
   /* A pagar por jogo (KAN-172): a janela lista os jogos acumulados; Paguei lança uma despesa com o total e as rodadas pagas. */
   abrirPagar: el => {
     openDlg('apgRaiz');
-    if (!montarPagar(el.dataset.v)) closeDlg();
+    if (!montarPagar(el.dataset.v || '')) closeDlg();
   },
   pagarJogos: el => {
-    const pid = el.dataset.v,
+    const pid = el.dataset.v || '',
       a = listaAPagar().find(x => x.pid === pid);
     if (!a) return;
-    const refs = [...document.querySelectorAll('#apgLista .apg:checked')].map(x => x.value),
+    const refs = [...document.querySelectorAll<HTMLInputElement>('#apgLista .apg:checked')].map(x => x.value),
       v = Math.round(+val('apgv') * 100) / 100;
     if (!refs.length) {
       toast(tx('caixa.pagarNenhum'));
@@ -135,27 +164,15 @@ const acoes = {
       return;
     }
     if (!valorConferido(el, v, a.v * refs.length, '#apgv')) return;
-    const id = B.newId(),
+    const id = novoId(),
       d = today(),
-      o = { k: 'despesa', pid, v, d, ref: d.slice(0, 7), refs, note: tp('caixa.pagamentoPorJogo', refs.length) };
+      o: Lanc = { k: 'despesa', pid, v, d, ref: d.slice(0, 7), refs, note: tp('caixa.pagamentoPorJogo', refs.length) };
     closeDlg();
     const r = salvarLanc(id, o);
     toastAcao(tx('caixa.pago', { nome: pname(pid), valor: brl(v) }), tx('caixa.desfazer'), () => {
       const x = apagarLanc(id);
       toast(tx('caixa.pagamentoDesfeito'));
       return x;
-    });
-    return r;
-  },
-  /* Apagar (depois da confirmação) também oferece "Desfazer": o lançamento volta com o mesmo código. */
-  _apagarLan: id => {
-    const o = S.caixa[id];
-    if (!o) return;
-    const r = apagarLanc(id);
-    toastAcao(tx('caixa.apagado'), tx('caixa.desfazer'), () => {
-      const d = salvarLanc(id, o);
-      toast(tx('caixa.apagadoVolta'));
-      return d;
     });
     return r;
   },
@@ -170,21 +187,22 @@ const acoes = {
       }) !== 'sim'
     )
       return;
-    return ACT._apagarLan(el.dataset.v);
+    return apagarLan(el.dataset.v || '');
   },
   shareCob: () => {
-    const by = {};
-    pendencias(S.month).forEach(x => (by[x.pid] = by[x.pid] || []).push(x));
+    const by: Record<string, Pend[]> = {};
+    (pendencias(S.month) as Pend[]).forEach(x => (by[x.pid] = by[x.pid] || []).push(x));
     let t =
-      `💰 *${gname()} — pendências de ${fmonth(S.month).toLowerCase()}*\n\n` +
+      tx('caixa.cobrancaTexto', { grupo: gname(), mes: fmonth(S.month).toLowerCase() }) +
+      '\n\n' +
       Object.entries(by)
         .map(
           ([pid, xs]) =>
-            `• ${xs[0].nome || pname(pid)}: ${brl(xs.reduce((s, x) => s + x.v, 0))} (${xs.map(x => x.cob || x.label).join(', ')})`
+            `• ${xs[0]!.nome || pname(pid)}: ${brl(xs.reduce((s, x) => s + x.v, 0))} (${xs.map(x => x.cob || x.label).join(', ')})`
         )
         .join('\n');
     if (cfg().pix) t += `\n\nPix: ${cfg().pix}`;
-    shareDlg('Cobrança', t);
+    shareDlg(tx('caixa.cobrancaTitulo'), t);
   },
 };
 

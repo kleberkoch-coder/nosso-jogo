@@ -58,7 +58,6 @@ function changed() {
 }
 /* Abas de recursos do Plano A (KAN-119): sem o recurso, a aba aparece com o cadeado e o convite. */
 const travada = k => (k === 'caixa' || k === 'votacao' || k === 'historico') && !recurso(k);
-const TABS = ['rodada', 'historico', 'jogadores', 'partida', 'ranking', 'caixa', 'votacao', 'grupo'];
 /* Elemento simples sem montar HTML como texto (KAN-154). */
 function el(tag, cls, txt, attrs) {
   const e = document.createElement(tag);
@@ -69,20 +68,6 @@ function el(tag, cls, txt, attrs) {
 }
 /* Lugar vazio onde uma tela (componente) se desenha: as telas devolvem o id do lugar delas (vRodada, vCaixa…). */
 const lugar = id => el('div', '', '', { id });
-/* Painel de aviso no meio da tela (grupo não encontrado, sem acesso). */
-function painel(titulo, texto, acoes, emLinha) {
-  const p = el('div', 'panel empty auth');
-  p.append(el('h2', '', titulo), el('p', 'muted', texto));
-  if (!emLinha) p.append(...acoes);
-  else {
-    const r = el('div', 'row');
-    r.style.justifyContent = 'center';
-    r.append(...acoes);
-    p.append(r);
-  }
-  return p;
-}
-const meusGrupos = () => el('a', 'btn', tx('render.meusGrupos'), { href: '#/' });
 function render() {
   renderCore();
   applyBusy();
@@ -187,106 +172,9 @@ function renderCore() {
     entrarPronto().montarAuth();
     return;
   }
-  A.sincronizarPlano();
-  if (R.n === 'home') {
-    main.replaceChildren(lugar(A.vHome()));
-    A.montarHome();
-    return;
-  }
-  if (!S.loaded.mem || !S.loaded.app) {
-    main.replaceChildren(el('div', 'empty muted', tx('comum.carregando')));
-    return;
-  }
-  if (!S.app) {
-    main.replaceChildren(painel(tx('render.naoEncontrado'), tx('render.naoEncontradoTexto'), [meusGrupos()]));
-    return;
-  }
-  if (!isAdmin()) {
-    const acoes = [meusGrupos()];
-    if (S.me?.grupos?.[S.gid])
-      acoes.push(el('button', 'btn ghost danger', tx('render.removerDaLista'), { 'data-a': 'forgetGroup' }));
-    main.replaceChildren(
-      painel(tx('render.semAcesso'), tx('render.semAcessoTexto', { email: S.user.email, grupo: gname() }), acoes, true)
-    );
-    return;
-  }
-  const r0 = curRodada();
-  $('#gsub').textContent =
-    `${sport().e} ${sportName()}` +
-    (r0 ? ' · ' : '') +
-    (r0 ? tx('render.proxima', { data: fdate(r0.date) + (r0.time ? ' · ' + hora(r0) : '') }) : '');
-  $('#tabsnav').hidden = false;
-  /* KAN-201: sem a permissão de caixa, a aba Caixa não aparece. */
-  if (S.tab === 'caixa' && !posso('caixa')) S.tab = 'rodada';
-  $('#tabs').replaceChildren(
-    ...TABS.filter(k => k !== 'caixa' || posso('caixa')).map(k => {
-      const b = el('button', 'tab', tx('abas.' + k), {
-        role: 'tab',
-        'aria-selected': String(S.tab === k),
-        'data-a': 'tab',
-        'data-v': k,
-      });
-      if (travada(k)) b.append(' ', el('span', 'tab-trava', '🔒', { 'aria-hidden': 'true' }));
-      return b;
-    })
-  );
-  abasNoLugar();
-  ensurePres();
-  ensureVotos();
-  /* KAN-262: a carga das abas vem com a gestão (src/admin.js). */
-  if (A) A.ensureExtras();
-  /* Abas sob demanda (KAN-180): enquanto a parte não chegou, um lugar para o "Carregando…". */
-  const aba = k => (travada(k) ? A.vCadeado() : A.abaPronta(k) ? A.abaPronta(k).ver() : 'abaRaiz');
-  /* KAN-204: convidado além do limite do plano: tudo à vista, nada que grave. */
-  const soVe = soVer();
-  document.body.classList.toggle('so-ver', soVe);
-  const partes = [lugar('avisosPlanoRaiz')];
-  /* KAN-117: grupo bloqueado pela administração: um aviso só, no lugar do "só vê" e do "inativo". */
-  if (grpBloq()) {
-    const b = el('div', 'inbar', '', { id: 'avisoBloqueado' });
-    b.append(el('span', '', tx('render.bloqueado')));
-    partes.push(b);
-  } else if (soVe) {
-    const b = el('div', 'inbar info', '', { id: 'avisoSoVer' });
-    b.append(el('span', '', tx('soVer.aviso')));
-    partes.push(b);
-  }
-  if (!grpAtivo() && !grpBloq()) {
-    const b = el('div', 'inbar');
-    b.append(el('span', '', tx('render.inativo', { data: fdia(S.app.inativadoEm) })));
-    if (isOwnerMe()) b.append(el('button', 'btn sm', tx('render.reativar'), { 'data-a': 'toggleAtivo' }));
-    partes.push(b);
-  }
-  partes.push(
-    lugar(
-      {
-        rodada: A.vRodada,
-        jogadores: A.vJogadores,
-        partida: () => (A.partidaPronta() ? A.partidaPronta().vPartida() : 'partidaRaiz'),
-        ranking: () => aba('ranking'),
-        caixa: () => aba('caixa'),
-        votacao: () => aba('votacao'),
-        historico: () => aba('historico'),
-        grupo: () => aba('grupo'),
-      }[S.tab]()
-    )
-  );
-  main.replaceChildren(...partes);
-  A.montarAvisosPlano();
-  if (travada(S.tab)) return A.montarCadeado(S.tab);
-  if (A.abaSobDemanda(S.tab)) {
-    const M = A.abaPronta(S.tab);
-    if (!M) return baixar(A.carregarAba(S.tab), null, $('#abaRaiz'));
-    if (M.montar) M.montar();
-  }
-  if (S.tab === 'rodada') A.montarRodada();
-  if (S.tab === 'jogadores') A.montarJogadores();
-  if (S.tab === 'partida') {
-    const P = A.partidaPronta();
-    if (!P) return baixar(A.carregarPartida(), null, $('#partidaRaiz'));
-    P.montarPartida();
-    P.tick();
-  }
+  /* KAN-274 (pelada-v119): a página inicial e a gestão do grupo (abas, avisos, sem acesso) são desenhadas pela parte de
+     gestão (ui/render-gestao.ts), que o link do jogador não baixa. */
+  A.renderGestao({ el, lugar, baixar, travada, abasNoLugar });
 }
 
 /* KAN-72: a aba aberta fica no centro da barra (só quando muda de aba ou de grupo, para não brigar com quem está rolando)

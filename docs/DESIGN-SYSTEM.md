@@ -74,6 +74,9 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo de toda janela (pelada-v106, KAN-250); **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v119)
+- Sem componente nem estilo novo. Só mudou de arquivo (KAN-274, para a gestão abrir mais leve): a **ficha do jogador**, **Adicionar avulso** e **Editar avulso** saíram de `ui/JanelasGestao.tsx` para `ui/JanelasJogador.tsx` (sob demanda, mesmos ids, classes e `data-a`); o **menu da conta** aberto foi para `ui/menu-conta-aberto.ts` (o botão continua em `ui/menu-conta.ts`). A aparência é a mesma.
+
 ## Componentes (pelada-v118)
 - **Logotipo do grupo no cabeçalho** (KAN-273; `#glogo.glogo` em `site/index.html`, dentro de `.marca`, à esquerda do nome): quadrado de 56px (44px até 420px), cantos de 14px (12px no celular), `object-fit: cover`, fundo branco e borda de 2px branca a 35%. Aparece na gestão, no link do jogador e no da votação quando o grupo tem logotipo; sem logotipo, o cabeçalho fica como antes. Imagem decorativa (`alt` vazio): o nome do grupo está do lado.
 - **Logotipo no lugar do ícone** (`img.gem`): em "Meus grupos" e na aba Grupo, a imagem ocupa o mesmo quadrado de 40px do ícone do esporte (`gem`), com `object-fit: cover` e fundo branco.

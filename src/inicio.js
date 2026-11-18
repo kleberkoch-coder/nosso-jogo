@@ -27,6 +27,9 @@ async function boot() {
   const idioma = idiomaInicial();
   if (idioma !== 'pt-BR') await usarIdioma(idioma, ['base']);
   $('#net').textContent = tx('comum.semInternetBarra');
+  /* pelada-v120: a barra de nova versão também no idioma (vinha fixa em português do site/index.html). */
+  $('#upd span').textContent = tx('pwa.novaVersao');
+  $('#updBtn').textContent = tx('pwa.atualizar');
   const C = window.FIREBASE_CONFIG || {};
   if (C.apiKey && C.projectId) {
     try {

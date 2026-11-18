@@ -9,24 +9,32 @@ function FirebaseBackend(cfg, appCheckKey) {
     try {
       firebase.appCheck().activate(new firebase.appCheck.ReCaptchaEnterpriseProvider(appCheckKey), true);
       /* KAN-239: se o comprovante não vier (é o que o Firebase conta como "solicitação inválida"), avisa o coletor de
-         falhas, que grava o navegador e o aparelho (KAN-88). */
+         falhas, que grava o navegador e o aparelho (KAN-88). KAN-276: avisa também quando o comprovante volta, e o vigia
+         da conexão (nucleo/conexao.ts) pede um comprovante novo quando a internet volta ou a aba volta a aparecer. */
       const falhou = e =>
         document.dispatchEvent(new CustomEvent('nj-appcheck-falhou', { detail: (e && (e.code || e.message)) || '?' }));
-      try {
-        firebase.appCheck().onTokenChanged(() => {}, falhou);
-      } catch (e) {
-        /* sem aviso de troca de comprovante nesta versão */
-      }
-      setTimeout(() => {
+      /* Sem comprovante, a biblioteca manda este valor no lugar (é o que o Firebase conta como inválido). */
+      const FALSO = 'eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==';
+      const bom = r => {
+        if (r && r.error) return falhou(r.error);
+        if (r && r.token && r.token !== FALSO) document.dispatchEvent(new CustomEvent('nj-appcheck-ok'));
+      };
+      const pedirComprovante = forcar => {
         try {
-          firebase
-            .appCheck()
-            .getToken(false)
-            .then(r => r && r.error && falhou(r.error), falhou);
+          firebase.appCheck().getToken(!!forcar).then(bom, falhou);
         } catch (e) {
           falhou(e);
         }
-      }, 4000);
+      };
+      try {
+        firebase.appCheck().onTokenChanged(bom, falhou);
+      } catch (e) {
+        /* sem aviso de troca de comprovante nesta versão */
+      }
+      /* O vigia da conexão (nucleo/conexao.ts) pede por evento, sem importar este arquivo de volta (o portal também usa
+         este arquivo e não tem o vigia). */
+      document.addEventListener('nj-pedir-comprovante', e => pedirComprovante(e.detail));
+      setTimeout(() => pedirComprovante(false), 4000);
     } catch (e) {
       console.warn('App Check', e);
     }
@@ -259,6 +267,10 @@ function recusarComoFirestore(o) {
 }
 function LocalBackend() {
   const K = 'pelada-demo-v2';
+  /* KAN-276: sem App Check no modo demonstração; os testes contam os pedidos de comprovante novo. */
+  document.addEventListener('nj-pedir-comprovante', e =>
+    (window.__njPedidos = window.__njPedidos || []).push(!!e.detail)
+  );
   let store = {},
     user = null;
   try {

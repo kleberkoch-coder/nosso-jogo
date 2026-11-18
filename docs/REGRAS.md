@@ -1,7 +1,7 @@
 # Nosso Jogo: regras em vigor (resumo)
 
-Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D63) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
-Atualizado na pelada-v119 (18/11/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
+Leia este arquivo primeiro. Ele traz só o que vale hoje, uma linha por regra. O histórico e o detalhe ficam em `VISAO-DO-PRODUTO.md` (produto), `docs/ARQUITETURA.md` (técnica, decisões D1 a D64) e `DESIGN-SYSTEM.md` (visual). O código entre parênteses é o cartão do Jira.
+Atualizado na pelada-v120 (18/11/2026). Toda entrega que mudar uma regra atualiza a linha aqui, na mesma proposta.
 
 ## Princípios
 - O jogador nunca precisa de conta: confirma e vota pelo link do WhatsApp.
@@ -275,6 +275,7 @@ Atualizado na pelada-v119 (18/11/2026). Toda entrega que mudar uma regra atualiz
 - Dias fixos do grupo: cada horário tem o rótulo em cima, "Início" e "Término (opcional)" (KAN-166).
 - Links do WhatsApp (KAN-234, v94): sempre direto em `api.whatsapp.com/send` (`?text=` para mensagem pronta; `?phone=…&text=` para a conversa de um jogador), nunca `wa.me`: o redirecionamento do wa.me troca os emojis por � no computador. O endereço fica num lugar só (`WA` em `dominio/contato.ts`).
 - Alvos de toque: 44px nos principais, 36px nos pequenos. Contraste WCAG AA nos temas claro e escuro.
+- **Conexão instável** (KAN-276 e KAN-277, v120; regra em `dominio/conexao.ts`, com teste): quando a internet volta ou a aba volta a aparecer (depois de 1 minuto escondida, como o computador que dormiu), o app pede um comprovante novo do App Check; sem comprovante, tenta de novo a cada 30 s. Se continuar sem por **5 minutos**, com a aba visível e com internet, aparece embaixo o aviso "A conexão com o servidor ficou instável. Recarregue a página para continuar." com **Recarregar** (44px). Se a cópia local do banco quebrar (Safari do iPhone, ao voltar do segundo plano), o aviso aparece na hora: "Este aparelho perdeu a cópia local dos dados…". Recarregar espera até 4 s o que estiver por enviar. Vale no link e na gestão, nos três idiomas. Quando o comprovante volta sozinho, o coletor de falhas registra "appCheck/recuperou" (o Portal mostra). A barra de nova versão também passou a vir no idioma.
 - Leitura com internet ruim (KAN-184, regra em `nucleo/carga.ts`, com teste):
   - "Não encontrado" só depois que o servidor confirmar. Com internet, a resposta vazia da cópia do aparelho não vale, e a tela continua em "Carregando…".
   - Erro de rede: o app tenta de novo depois de 1, 2 e 4 segundos. Sem permissão, não repete.

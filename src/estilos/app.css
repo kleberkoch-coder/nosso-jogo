@@ -1131,6 +1131,16 @@ dialog::backdrop {
 .bar-upd .btn {
   padding: 6px 12px;
 }
+/* KAN-276/277: aviso de conexão instável, acima da barra de nova versão e da barra de ação fixa. */
+.bar-recon {
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  z-index: 61;
+  width: max-content;
+}
+.bar-recon .btn {
+  min-height: var(--touch-min);
+  flex: none;
+}
 .foot {
   text-align: center;
   margin-top: 28px;

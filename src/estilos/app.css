@@ -460,6 +460,29 @@ img.gem {
     border-radius: 12px;
   }
 }
+/* KAN-283: o 🌐 é um item do chip (inline-flex), que descartaria o espaço antes de "PT". */
+#langBtn .cab-longo {
+  white-space: pre;
+}
+/* KAN-285: o 🌓 segue o chip-ic registrado no Design System (36 × 36px). */
+#themeBtn {
+  padding: 4px 6px;
+}
+/* KAN-283: "← Início" no computador; até 420px, só "←" num chip-ic de 36 × 36px. */
+.top .cab-curto {
+  display: none;
+}
+@media (max-width: 420px) {
+  .top .cab-curto {
+    display: inline;
+    font-size: 16px;
+  }
+  .chip.chip-volta {
+    min-width: 36px;
+    padding: 4px 8px;
+    justify-content: center;
+  }
+}
 a.chip {
   display: inline-flex;
   align-items: center;
@@ -477,7 +500,7 @@ a.chip {
   cursor: pointer;
 }
 .chip-ic {
-  min-width: 38px;
+  min-width: 36px;
   min-height: var(--touch-compact);
   padding: 4px 10px;
   font-size: 16px;
@@ -1424,9 +1447,10 @@ dialog::backdrop {
   min-width: 0;
   max-width: 100%;
 }
+/* KAN-284: "pre" guarda o espaço do começo (" · jogo fixo"), que o item flex descartava ("Arena 3· jogo fixo"). */
 .linha-local .extra {
   flex: none;
-  white-space: nowrap;
+  white-space: pre;
 }
 [data-corta] {
   display: inline-block;
@@ -1734,6 +1758,20 @@ body.so-ver
   .toprow {
     flex: none;
     flex-wrap: nowrap;
+  }
+  /* KAN-283: sem conta, os chips ficam "PT", 🌓 e "←" (36px de altura) e o subtítulo das telas sem grupo some, para
+     "Nosso Jogo" e o nome do grupo caberem inteiros. */
+  .top .cab-longo {
+    display: none;
+  }
+  .top .sub.sub-app {
+    display: none;
+  }
+  #langBtn {
+    min-width: 44px;
+    padding: 4px 8px;
+    font-size: 13px;
+    font-weight: 700;
   }
   .hero-r h2 {
     font-size: 24px;

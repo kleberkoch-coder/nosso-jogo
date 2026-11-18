@@ -63,6 +63,7 @@ export function renderGestao(u: U) {
     return;
   }
   const r0 = curRodada();
+  $('#gsub').classList.remove('sub-app');
   $('#gsub').textContent =
     `${sport().e} ${sportName()}` +
     (r0 ? ' · ' : '') +

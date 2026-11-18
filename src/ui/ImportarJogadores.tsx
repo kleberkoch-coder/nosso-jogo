@@ -11,7 +11,8 @@ import { telefoneParaLer } from '../dominio/telefone.ts';
 import { juntarTextos, tp, tx } from '../i18n/index.js';
 import textosImportar from '../i18n/pt-BR-importar';
 import { S as estado } from '../nucleo/estado.js';
-import { PAIS } from '../i18n/formatos.js';
+import { FORMATO, PAIS } from '../i18n/formatos.js';
+import { today } from '../nucleo/util.js';
 import { ErroPlanilha, lerArquivo } from './arquivo-planilha.ts';
 /* Os textos desta parte chegam com ela (KAN-205). */
 juntarTextos(textosImportar);
@@ -66,6 +67,8 @@ function Importar() {
   const ctx = {
     posicoes: (sport() as unknown as { pos: [string, string][] }).pos,
     existentes: new Set(Object.values(S.jog || {}).map((p: any) => normName(p.name) as string)),
+    hoje: today(),
+    mesPrimeiro: FORMATO === 'en-US',
     normalizar: (n: string) => normName(n) as string,
     pais: PAIS,
   };

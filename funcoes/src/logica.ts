@@ -19,7 +19,9 @@ import {
   jogosNaJanela,
   linkDaRodada,
   temMinimo,
+  textoAniversario,
   textoFalta,
+  HORA_ANIVERSARIO,
   textoResposta,
   tipoDaResposta,
   type Aviso,
@@ -27,6 +29,7 @@ import {
   type Presenca,
   type Rodada,
 } from '../../src/dominio/avisos.ts';
+import { aniversariantesNoDia } from '../../src/dominio/aniversario.ts';
 
 /* O pedaço do Firestore (biblioteca de administrador) que a lógica usa. */
 type Snap = { id: string; exists: boolean; ref: Ref; data(): Record<string, any> | undefined };
@@ -265,6 +268,52 @@ export async function verificarFaltas(db: Db, enviar: Enviar, agora = Date.now()
       );
       feitos.push(gid + '/' + j.id);
     }
+  }
+  return feitos;
+}
+
+/* KAN-272: às 9h no fuso do grupo (ou na primeira verificação depois), avisa quem faz aniversário hoje. Uma vez por
+   dia por grupo (avisosEnviados/{gid}_niver_{data}), mesmo quando ninguém faz aniversário (assim não relê os contatos
+   a cada 15 minutos). Só jogadores ativos do elenco; a data vem de privado/contatos (só o servidor e os
+   administradores com Elenco leem). */
+export async function verificarAniversarios(db: Db, enviar: Enviar, agora = Date.now()): Promise<string[]> {
+  const q = await db.collection('avisos').where('ligado', '==', true).get();
+  const gids = [...new Set(q.docs.map(d => String((d.data() || {}).gid || '')).filter(Boolean))];
+  const feitos: string[] = [];
+  for (const gid of gids) {
+    const base = 'grupos/' + gid;
+    const g = (await db.doc(base).get()).data() as Grupo | undefined;
+    if (!grupoAtivo(g)) continue;
+    const local = agoraNoFuso(agora, ((g && g.cfg) || {}).fuso);
+    if (local.getHours() < HORA_ANIVERSARIO) continue;
+    const hoje = ymd(local),
+      marca = db.doc('avisosEnviados/' + gid + '_niver_' + hoje);
+    if ((await marca.get()).exists) continue;
+    const cont = ((await db.doc(base + '/privado/contatos').get()).data() || {}) as Record<string, { nasc?: string }>;
+    const nomes: string[] = [];
+    for (const id of aniversariantesNoDia(cont, hoje)) {
+      const j = (await db.doc(base + '/jogadores/' + id).get()).data();
+      if (j && j.ativo !== false && j.name) nomes.push(String(j.name));
+    }
+    await marca.set({ em: agora, gid, n: nomes.length });
+    if (!nomes.length) continue;
+    const ds = await destinos(db, gid);
+    if (!ds.length) continue;
+    await mandar(
+      db,
+      gid,
+      ds,
+      d =>
+        Object.assign(textoAniversario(nomes, { grupo: (g && g.name) || '' }, d.lang), {
+          token: d.token,
+          lang: d.lang,
+          link: './#/g/' + encodeURIComponent(gid),
+          tag: 'n-' + gid + '-' + hoje,
+        }),
+      enviar,
+      agora
+    );
+    feitos.push(gid + '/' + hoje);
   }
   return feitos;
 }

@@ -14,6 +14,7 @@ import textos from '../i18n/pt-BR-grupoform';
 import { S as estado } from '../nucleo/estado.js';
 import { $, diaSemana, toast, uid } from '../nucleo/util.js';
 import { HoraCampo } from '../ui/HoraCampo';
+import { LogoGrupo } from '../ui/LogoGrupo';
 import { val } from '../ui/dialogos.js';
 import { fusoAparelho, listaFuso, listaMoeda, listaPais } from '../ui/regiao.ts';
 
@@ -179,6 +180,8 @@ function GrupoForm({ g, editing }: { g: Grupo; editing: boolean }) {
         <input class="inp" id="ngn" maxLength={40} defaultValue={g.name || ''} placeholder={tx('grupo.nomeExemplo')} />
       </label>
       <div class="err" id="ngErr" style="margin-top:-8px"></div>
+      {/* KAN-273: logotipo do grupo (só em Editar grupo; quem abre tem a permissão Configurações). */}
+      {editing ? <LogoGrupo /> : null}
       <div class="f">
         <span class="lbl">{tx('grupo.frequencia')}</span>
         <span class="seg" style="display:flex">

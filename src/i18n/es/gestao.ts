@@ -421,4 +421,8 @@ export default {
   'mat.naoVai': '{pessoa} no va y tiene: {nome}',
   'mat.cobrar': 'Avisar por WhatsApp',
   'mat.cobrarTexto': '{e} {nomes}: ustedes tienen {nome} del grupo. ¿Van al partido del {data}? Respondan aquí: {link}',
+  /* KAN-272 */
+  'niver.campo': 'Fecha de nacimiento',
+  'niver.ajuda': 'Solo los administradores la ven. Sirve para recordar el cumpleaños.',
+  'niver.invalido': 'Fecha de nacimiento inválida: revisa el día, el mes y el año.',
 };

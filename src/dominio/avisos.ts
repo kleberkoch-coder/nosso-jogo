@@ -181,3 +181,14 @@ export const faltaAlgo = (f: ReturnType<typeof faltas>) => f.total.falta > 0 || 
 /* Endereço que o toque no aviso abre: a rodada na gestão. */
 export const linkDaRodada = (gid: string, rid: string) =>
   './#/g/' + encodeURIComponent(gid) + '/r/' + encodeURIComponent(rid);
+
+/* KAN-272: aviso de aniversário (às 9h no fuso do grupo, uma vez por dia). "João", "João e Pedro", "Ana, Bia e Caio". */
+export const HORA_ANIVERSARIO = 9;
+export function textoAniversario(nomes: string[], o: { grupo: string }, l: Idioma): Aviso {
+  const ns = nomes.filter(Boolean);
+  const lista = ns.length > 1 ? ns.slice(0, -1).join(', ') + ' ' + tt(l, 'e') + ' ' + ns[ns.length - 1] : ns[0] || '';
+  return {
+    titulo: (ns.length > 1 ? tt(l, 'niverN', { nomes: lista }) : tt(l, 'niver1', { nome: lista })).slice(0, 120),
+    corpo: tt(l, 'niverCorpo', { grupo: o.grupo }),
+  };
+}

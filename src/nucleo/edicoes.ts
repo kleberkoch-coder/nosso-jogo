@@ -65,12 +65,14 @@ function editApp(fn: (a: Obj & { cfg: Obj }) => void) {
   changed();
   return w(GB.set('config/app', clean(a)));
 }
-function saveContato(id: string, tel: string, email: string) {
+/* KAN-272: nasc (data de nascimento) só muda quando vem; sem ela (janela do avulso), fica a que estava. */
+function saveContato(id: string, tel: string, email: string, nasc?: string) {
   if (!posso('elenco')) return;
   const c = cl(st().cont) || {},
-    o = c[id] || {};
-  if ((o.tel || '') === (tel || '') && (o.email || '') === (email || '')) return;
-  if (tel || email) c[id] = { tel: tel || '', email: email || '' };
+    o = c[id] || {},
+    n = nasc === undefined ? o.nasc || '' : nasc;
+  if ((o.tel || '') === (tel || '') && (o.email || '') === (email || '') && (o.nasc || '') === n) return;
+  if (tel || email || n) c[id] = Object.assign({ tel: tel || '', email: email || '' }, n ? { nasc: n } : {});
   else delete c[id];
   st().cont = c;
   return w(GB.set('privado/contatos', clean(c)));

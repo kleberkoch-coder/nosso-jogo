@@ -3,9 +3,10 @@
    Regra pura, sem tela: testada em testes/regras/planilha.test.mjs. */
 import { emailValido } from './contato.ts';
 import { normalizarTelefone } from './telefone.ts';
+import { lerNascimento } from './aniversario.ts';
 
-export type Campo = 'nome' | 'pos' | 'nota' | 'tipo' | 'tel' | 'email';
-export type Aviso = 'nomeLongo' | 'posicao' | 'nota' | 'tipo' | 'tel' | 'email';
+export type Campo = 'nome' | 'pos' | 'nota' | 'tipo' | 'tel' | 'email' | 'nasc';
+export type Aviso = 'nomeLongo' | 'posicao' | 'nota' | 'tipo' | 'tel' | 'email' | 'nasc';
 export type Item = {
   linha: number;
   nome: string;
@@ -14,6 +15,7 @@ export type Item = {
   tipo: 'mensalista' | 'diarista' | 'isento';
   tel?: string;
   email?: string;
+  nasc?: string; // KAN-272: "AAAA-MM-DD"
   situacao: 'novo' | 'existe' | 'repetido';
   avisos: Aviso[];
 };
@@ -22,10 +24,12 @@ export type Contexto = {
   existentes: Set<string>; // nomes já no elenco, normalizados
   normalizar: (nome: string) => string;
   pais?: string; // país do grupo: telefone sem "+" segue a regra dele (KAN-162); sem país, Brasil
+  hoje?: string; // KAN-272: para a data de nascimento (até hoje)
+  mesPrimeiro?: boolean; // KAN-272: país que escreve o mês antes do dia (EUA)
 };
 
 export const LIMITE_IMPORTACAO = 100;
-const ORDEM: Campo[] = ['nome', 'pos', 'nota', 'tipo', 'tel', 'email'];
+const ORDEM: Campo[] = ['nome', 'pos', 'nota', 'tipo', 'tel', 'email', 'nasc'];
 const semAcento = (s: string) =>
   String(s || '')
     .normalize('NFD')
@@ -75,6 +79,8 @@ function colunasPeloTitulo(cab: string[]): (Campo | null)[] | null {
     // Título não tem números ("Jogador 7" é um nome, não um título) e é curto.
     if (!s || /\d/.test(s) || s.length > 30) return null;
     if (/(mail|correo)/.test(s)) return 'email';
+    // KAN-272: data de nascimento (Nascimento, Aniversário, Birthday, Cumpleaños, Fecha de nacimiento).
+    if (/(nasc|aniver|birth|cumple)/.test(s)) return 'nasc';
     if (/(tel|whats|zap|cel|fone|phone)/.test(s)) return 'tel';
     if (/^(pos|posicao|funcao)/.test(s)) return 'pos';
     if (/(nota|nivel|estrela|rating|level|star)/.test(s)) return 'nota';
@@ -151,6 +157,9 @@ export function interpretar(linhas: string[][], ctx: Contexto): { itens: Item[];
     const email = val('email');
     if (email && !emailValido(email)) avisos.push('email');
     else if (email) it.email = email;
+    const nasc = lerNascimento(val('nasc'), ctx.hoje || new Date().toISOString().slice(0, 10), ctx.mesPrimeiro);
+    if (nasc === null) avisos.push('nasc');
+    else if (nasc) it.nasc = nasc;
     const chave = ctx.normalizar(nome);
     if (ctx.existentes.has(chave)) it.situacao = 'existe';
     else if (vistos.has(chave)) it.situacao = 'repetido';

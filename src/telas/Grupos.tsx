@@ -9,8 +9,17 @@ import { tx } from '../i18n/index.js';
 import { S as estado } from '../nucleo/estado.js';
 import { numeroVersao } from '../nucleo/versao.js';
 import { AvisosPlano } from '../ui/Plano';
+import { srcLogo } from '../ui/logo-src';
 
-type MeuGrupo = { name?: string; sport?: string; sportName?: string; role?: string; ativo?: boolean; criado?: number };
+type MeuGrupo = {
+  logo?: string;
+  name?: string;
+  sport?: string;
+  sportName?: string;
+  role?: string;
+  ativo?: boolean;
+  criado?: number;
+};
 const st = () => estado;
 const esporte = (k?: string) => (SPORTS as Record<string, { e: string; n: string }>)[k || 'futebol'] || SPORTS.futebol;
 
@@ -18,7 +27,12 @@ function LinhaGrupo({ gid, g }: { gid: string; g: MeuGrupo }) {
   return (
     /* KAN-131: o leitor diz "Abrir" com o nome do grupo, e tocar em qualquer ponto do cartão abre o grupo. */
     <li class="grupo-linha">
-      <span class="gem">{esporte(g.sport).e}</span>
+      {/* KAN-273: o logotipo do grupo, se tiver; senão, o ícone do esporte. */}
+      {srcLogo(gid, g.logo) ? (
+        <img class="gem" src={srcLogo(gid, g.logo)} alt="" width={40} height={40} />
+      ) : (
+        <span class="gem">{esporte(g.sport).e}</span>
+      )}
       <span class="pn">
         <b>{g.name || tx('inicio.grupo')}</b>
         <br />

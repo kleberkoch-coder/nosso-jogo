@@ -9,7 +9,7 @@ import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 import { REGIAO } from './config';
-import { aoResponder, registrarFalha, verificarFaltas, type Db, type Enviar } from './logica';
+import { aoResponder, registrarFalha, verificarAniversarios, verificarFaltas, type Db, type Enviar } from './logica';
 
 initializeApp();
 setGlobalOptions({ region: REGIAO, maxInstances: 3, memory: '256MiB', timeoutSeconds: 60 });
@@ -72,5 +72,8 @@ export const avisoFaltas = onSchedule({ schedule: 'every 15 minutes', timeZone: 
   comFalha('avisoFaltas', '', async () => {
     const feitos = await verificarFaltas(db(), enviar);
     if (feitos.length) console.log('Avisos de faltam pessoas', feitos.join(', '));
+    /* KAN-272: aniversariantes do dia, às 9h no fuso do grupo. */
+    const niver = await verificarAniversarios(db(), enviar);
+    if (niver.length) console.log('Avisos de aniversário', niver.join(', '));
   })
 );

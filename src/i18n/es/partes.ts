@@ -354,6 +354,19 @@ export default {
   'pc.salvo': 'Configuración guardada.',
   'pc.negativo': 'El valor no puede ser negativo.',
   /* pt-BR-grupoform.ts */
+  'logo.titulo': 'Logotipo del grupo',
+  'logo.atual': 'Logotipo actual',
+  'logo.escolher': 'Elegir imagen',
+  'logo.trocar': 'Cambiar imagen',
+  'logo.remover': 'Quitar logotipo',
+  'logo.limites':
+    'JPG, PNG, WebP o GIF, hasta {mb} MB. La imagen se recorta en cuadrado y aparece arriba en la app y en los enlaces. Un GIF animado queda fijo.',
+  'logo.tipoRuim': 'Ese tipo de archivo no sirve. Usa JPG, PNG, WebP o GIF.',
+  'logo.grande': 'La imagen supera los {mb} MB. Elige una más pequeña.',
+  'logo.naoAbriu': 'No se pudo abrir esa imagen. Prueba con otra.',
+  'logo.naoSalvou': 'No se pudo guardar el logotipo. Revisa la conexión e inténtalo de nuevo.',
+  'logo.salvo': 'Logotipo guardado.',
+  'logo.removido': 'Logotipo quitado.',
   'regiao.moeda': 'Moneda',
   'regiao.fuso': 'Zona horaria',
   'regiao.titulo': 'País, moneda y zona horaria',
@@ -473,6 +486,7 @@ export default {
   'importar.aviso.tipo': 'Tipo no reconocido: queda como mensual.',
   'importar.aviso.tel': 'Teléfono inválido: queda sin teléfono.',
   'importar.aviso.email': 'Correo inválido: queda sin correo.',
+  'importar.aviso.nasc': 'Fecha de nacimiento no reconocida (usa dd/mm/aaaa): queda sin fecha.',
   /* pt-BR-partida.ts */
   'partida.pontoTime': '{ponto} — {time}',
   'partida.quemMarcou': '¿Quién marcó?',
@@ -877,4 +891,8 @@ export default {
   'av.naoLigou': 'No se pudieron activar los avisos. Revisa la conexión e intenta de nuevo.',
   'av.pronto': '¡Listo! Recibirás los avisos en este celular.',
   'av.demo': 'Modo demostración: la pantalla funciona, pero ningún aviso llega al celular.',
+  /* pt-BR-niver.ts */
+  'niver.rotulo': 'Cumpleaños el {data}',
+  'niver.mes': '🎂 Cumpleaños de {mes}',
+  'niver.dia': 'día {dia}',
 };

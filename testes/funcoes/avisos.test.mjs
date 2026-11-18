@@ -162,3 +162,27 @@ test('CT-KAN-242-12: falhas dos avisos vão para o banco de falhas (envio recusa
   assert.equal(nada.length, 0);
   assert.equal((await falhasAviso('avisos no mês atingido')).length, 1);
 });
+
+test('CT-KAN-272-04: aniversário às 9h no fuso do grupo, uma vez por dia, só do elenco ativo', async () => {
+  const { verificarAniversarios } = await import('../../funcoes/src/logica.ts');
+  const H = 'gNiver';
+  await db.doc('grupos/' + H).set({ name: 'Pelada do Niver', owner: 'dono', cfg: { fuso: 'America/Sao_Paulo' } });
+  await db.doc('grupos/' + H + '/membros/dono').set({ uid: 'dono', role: 'owner' });
+  await db.doc('avisos/' + H + '_dono').set({ gid: H, uid: 'dono', ligado: true });
+  await db.doc('grupos/' + H + '/jogadores/n1').set({ name: 'João', ativo: true });
+  await db.doc('grupos/' + H + '/jogadores/n2').set({ name: 'Pedro', ativo: false });
+  await db
+    .doc('grupos/' + H + '/privado/contatos')
+    .set({ n1: { tel: '', nasc: '1990-03-20' }, n2: { nasc: '1985-03-20' } });
+  const enviados = [];
+  const enviar = async ms => (enviados.push(...ms), ms.map(() => 'ok'));
+  /* Em março de 2027 (o teste das falhas deixou dezembro de 2026 no teto). 8h30 em São Paulo (11h30 UTC): ainda não. */
+  assert.deepEqual(await verificarAniversarios(db, enviar, Date.UTC(2027, 2, 20, 11, 30)), []);
+  /* 9h15: avisa, uma vez. */
+  assert.deepEqual(await verificarAniversarios(db, enviar, Date.UTC(2027, 2, 20, 12, 15)), [H + '/2027-03-20']);
+  assert.deepEqual(await verificarAniversarios(db, enviar, Date.UTC(2027, 2, 20, 12, 30)), []);
+  const meus = enviados.filter(m => m.tag === 'n-' + H + '-2027-03-20');
+  assert.equal(meus.length, 1);
+  assert.equal(meus[0].titulo, '🎂 Hoje é aniversário de João');
+  assert.equal(meus[0].corpo, 'Pelada do Niver · mande os parabéns!');
+});

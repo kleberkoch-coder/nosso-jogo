@@ -18,6 +18,10 @@ export const TEXTOS: Record<IdiomaAviso, Record<string, string>> = {
     faltaCorpoSemTotal: '{grupo} · {data} às {hora} · {conf} confirmados',
     faltaPos: 'falta {n} {pos}',
     alguem: 'Alguém',
+    niver1: '🎂 Hoje é aniversário de {nome}',
+    niverN: '🎂 Hoje fazem aniversário: {nomes}',
+    niverCorpo: '{grupo} · mande os parabéns!',
+    e: 'e',
   },
   en: {
     vai: '✅ {nome} is in',
@@ -33,6 +37,10 @@ export const TEXTOS: Record<IdiomaAviso, Record<string, string>> = {
     faltaCorpoSemTotal: '{grupo} · {data} at {hora} · {conf} confirmed',
     faltaPos: '{n} {pos} missing',
     alguem: 'Someone',
+    niver1: "🎂 It's {nome}'s birthday today",
+    niverN: '🎂 Birthdays today: {nomes}',
+    niverCorpo: '{grupo} · send your wishes!',
+    e: 'and',
   },
   es: {
     vai: '✅ {nome} va',
@@ -48,5 +56,9 @@ export const TEXTOS: Record<IdiomaAviso, Record<string, string>> = {
     faltaCorpoSemTotal: '{grupo} · {data} a las {hora} · {conf} confirmados',
     faltaPos: 'falta {n} {pos}',
     alguem: 'Alguien',
+    niver1: '🎂 Hoy es el cumpleaños de {nome}',
+    niverN: '🎂 Hoy cumplen años: {nomes}',
+    niverCorpo: '{grupo} · ¡mándale tus felicitaciones!',
+    e: 'y',
   },
 };

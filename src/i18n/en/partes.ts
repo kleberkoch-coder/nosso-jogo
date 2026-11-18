@@ -352,6 +352,19 @@ export default {
   'pc.salvo': 'Settings saved.',
   'pc.negativo': "The amount can't be negative.",
   /* pt-BR-grupoform.ts */
+  'logo.titulo': 'Group logo',
+  'logo.atual': 'Current logo',
+  'logo.escolher': 'Choose image',
+  'logo.trocar': 'Change image',
+  'logo.remover': 'Remove logo',
+  'logo.limites':
+    'JPG, PNG, WebP or GIF, up to {mb} MB. The image is cropped to a square and shows at the top of the app and the links. Animated GIFs become still.',
+  'logo.tipoRuim': "This file type won't work. Use JPG, PNG, WebP or GIF.",
+  'logo.grande': 'The image is over {mb} MB. Choose a smaller one.',
+  'logo.naoAbriu': "Couldn't open this image. Try another one.",
+  'logo.naoSalvou': "Couldn't save the logo. Check your connection and try again.",
+  'logo.salvo': 'Logo saved.',
+  'logo.removido': 'Logo removed.',
   'regiao.moeda': 'Currency',
   'regiao.fuso': 'Time zone',
   'regiao.titulo': 'Country, currency and time zone',
@@ -471,6 +484,7 @@ export default {
   'importar.aviso.tipo': 'Type not recognized: set as monthly.',
   'importar.aviso.tel': 'Invalid phone: left without a phone.',
   'importar.aviso.email': 'Invalid email: left without an email.',
+  'importar.aviso.nasc': 'Date of birth not recognized (use mm/dd/yyyy or dd/mm/yyyy as in your country): left empty.',
   /* pt-BR-partida.ts */
   'partida.pontoTime': '{ponto} — {time}',
   'partida.quemMarcou': 'Who scored?',
@@ -873,4 +887,8 @@ export default {
   'av.naoLigou': "Couldn't turn on notifications. Check your connection and try again.",
   'av.pronto': "Done! You'll get notifications on this phone.",
   'av.demo': 'Demo mode: the screen works, but no notification reaches the phone.',
+  /* pt-BR-niver.ts */
+  'niver.rotulo': 'Birthday on {data}',
+  'niver.mes': '🎂 Birthdays in {mes}',
+  'niver.dia': 'day {dia}',
 };

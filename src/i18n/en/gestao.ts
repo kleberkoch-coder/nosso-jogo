@@ -418,4 +418,8 @@ export default {
   'mat.naoVai': "{pessoa} isn't coming and has: {nome}",
   'mat.cobrar': 'Ask on WhatsApp',
   'mat.cobrarTexto': "{e} {nomes}: you have the group's {nome}. Are you coming on {data}? Answer here: {link}",
+  /* KAN-272 */
+  'niver.campo': 'Date of birth',
+  'niver.ajuda': 'Only admins see it. Used to remember birthdays.',
+  'niver.invalido': 'Invalid date of birth: check the day, month and year.',
 };

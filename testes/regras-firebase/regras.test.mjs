@@ -899,7 +899,7 @@ describe('bloqueio de conta e limites pelo portal (KAN-117, pelada-v101)', () =>
     await assertSucceeds(updateDoc(doc(db.portal(), G + '/membros/adm'), { bloq: false }));
     await assertFails(updateDoc(doc(db.portal(), G + '/membros/adm'), { bloq: 'sim' }));
     await assertFails(updateDoc(doc(db.portal(), G + '/membros/adm'), { role: 'owner' }));
-    await assertFails(updateDoc(doc(db.adm(), G + '/membros/adm'), { bloq: false }), 'o próprio convidado');
+    await assertFails(updateDoc(doc(db.adm(), G + '/membros/adm'), { bloq: true }), 'o próprio convidado');
     await assertFails(updateDoc(doc(db.dono(), G + '/membros/adm'), { bloq: true }), 'o organizador');
   });
   test('ninguém além do portal mexe no bloqueio (nem o organizador)', async () => {

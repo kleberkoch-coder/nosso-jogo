@@ -116,6 +116,8 @@ function renderCore() {
   const lg = $('#glogo'),
     ls = title === APP ? '' : srcLogo(S.gid, S.app && S.app.logo);
   lg.hidden = !ls;
+  /* KAN-287: nas telas sem grupo (título "Nosso Jogo"), o símbolo do app ao lado do nome, como na apresentação. */
+  $('#amarca').hidden = title !== APP;
   lg.onerror = () => (lg.hidden = true);
   if (ls && lg.getAttribute('src') !== ls) lg.src = ls;
   document.title = title;

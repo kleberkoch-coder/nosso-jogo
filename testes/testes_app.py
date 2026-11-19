@@ -6039,6 +6039,38 @@ with sync_playwright() as pw:
         q122.screenshot(path=f'{OUT}/v122-link-360.png')
         c122p.close()
 
+        # ---------- v123 (KAN-287): símbolo do app ao lado de "Nosso Jogo" nas telas sem grupo
+        MARCA123 = """(()=>{const m=document.getElementById('amarca'),g=document.getElementById('gname'),r=m.getBoundingClientRect();
+          return {vis:!m.hidden&&r.width>0,tam:[Math.round(r.width),Math.round(r.height)],esq:r.right<=g.getBoundingClientRect().left,oculto:m.getAttribute('aria-hidden'),
+          nome:g.textContent,cabe:g.scrollWidth<=g.clientWidth+1,rol:document.documentElement.scrollWidth>innerWidth}})()"""
+        ctx123 = b.new_context(viewport={'width': 360, 'height': 740}, service_workers='block', locale='pt-BR', timezone_id='America/Sao_Paulo')
+        p123 = ctx123.new_page(); p123.on('pageerror', lambda e: errs.append(str(e)))
+        for rota in ['entrar', 'criar', 'sortear']:
+            if rota == 'sortear':
+                p123.goto(URL + '#/sortear'); p123.wait_for_selector('#srPasso1', timeout=15000); p123.wait_for_timeout(300)
+            else:
+                abrir_entrada(p123, rota)
+            for tema in ['light', 'dark']:
+                p123.emulate_media(color_scheme=tema); p123.wait_for_timeout(100)
+                m123 = p123.evaluate(MARCA123)
+                ok(m123['vis'] and m123['tam'] == [28, 28] and m123['esq'] and m123['oculto'] == 'true' and m123['nome'] == 'Nosso Jogo' and m123['cabe'] and not m123['rol'],
+                   f'CT-KAN-287-01/02/04: em 360px ({rota}, tema {tema}), o símbolo aparece à esquerda de "Nosso Jogo", que continua inteiro, sem rolagem lateral ({m123})')
+        p123.emulate_media(color_scheme='light')
+        p123.screenshot(path=f'{OUT}/v123-simbolo-360.png')
+        p123.set_viewport_size({'width': 1280, 'height': 800}); p123.wait_for_timeout(200)
+        md123 = p123.evaluate(MARCA123)
+        ok(md123['vis'] and md123['tam'] == [44, 44] and md123['cabe'], f'CT-KAN-287-01: no computador, o símbolo tem 44px ao lado de "Nosso Jogo" ({md123})')
+        p123.set_viewport_size({'width': 360, 'height': 740})
+        abrir_entrada(p123, 'criar')
+        p123.fill('#le', 'v123@teste.com'); p123.fill('#lp', 'Jogo@2026'); p123.fill('#lp2', 'Jogo@2026'); p123.keyboard.press('Enter'); p123.wait_for_selector('#ngBox', timeout=12000)
+        mg123 = p123.evaluate(MARCA123)
+        p123.fill('#ngn', 'Símbolo FC'); p123.click('[data-a=pickSport][data-v=futebol]'); p123.click('[data-a=createGroup]')
+        p123.wait_for_function("location.hash.startsWith('#/g/')"); p123.wait_for_timeout(1500)
+        mo123 = p123.evaluate(MARCA123)
+        ok(mg123['vis'] and not mo123['vis'] and mo123['nome'] == 'Símbolo FC',
+           f'CT-KAN-287-01/03: em Meus grupos o símbolo aparece; com o grupo aberto, some e fica o nome do grupo ({mg123["vis"]}, {mo123})')
+        ctx123.close()
+
     if parte('b'):
         # ---------- v35 (KAN-142): "Continuar com o Google" na aba errada entra ou cria a conta e avisa (navegador separado)
         ctx3 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block'); p3 = ctx3.new_page()

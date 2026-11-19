@@ -3355,7 +3355,8 @@ with sync_playwright() as pw:
         p35 = ctx35.new_page(); p35.on('pageerror', lambda e: errs.append(str(e)))
         p35.on('console', lambda m: falta84.append(m.text) if m.type == 'warning' and m.text.startswith('Texto sem tradução') else None)
         abrir_entrada(p35, 'criar')
-        ok(p35.inner_text('#topright').strip() == '← Início', f'CT-KAN-218-02: na tela de criar conta, o cabeçalho mostra "← Início" ({p35.inner_text("#topright")!r})')
+        ok(p35.inner_text('#topright').strip() == '←' and p35.get_attribute('#topright a.chip', 'aria-label') == 'Voltar ao início',
+           f'CT-KAN-218-02 (CT-KAN-283-03): na tela de criar conta em 360px, o cabeçalho mostra "←", lido como "Voltar ao início" ({p35.inner_text("#topright")!r})')
         p35.fill('#le', 'textos84@teste.com'); p35.fill('#lp', 'Jogo@2026'); p35.fill('#lp2', 'Jogo@2026'); p35.keyboard.press('Enter')
         p35.wait_for_selector('#ngBox', timeout=12000)
         ok(p35.inner_text('#dlg h3').strip() == 'Novo grupo', 'CT-KAN-218-03: "Novo grupo" (ação agora sob demanda) abre depois do cadastro com o título traduzido')
@@ -5921,6 +5922,122 @@ with sync_playwright() as pw:
            and not re.search(r'\b(instável|Recarregar|Nova versão|Atualizar)\b', en120) and not falta120,
            f'CT-KAN-276-03: em English, o aviso de conexão e a barra de nova versão vêm traduzidos ({en120!r}, {falta120})')
         ctx120b.close()
+
+        # ---------- v122 (KAN-282): sorteio sem conta, faltando gente: o motivo à vista e o tamanho do time ali mesmo
+        ctx122 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+        p122 = ctx122.new_page(); p122.on('pageerror', lambda e: errs.append(str(e)))
+        p122.goto(URL + '#/sortear'); p122.wait_for_selector('#srPasso1', timeout=15000); p122.wait_for_timeout(300)
+        NOMES122 = '\n'.join(['Ana', 'Bia', 'Caio', 'Duda', 'Edu', 'Fabi', 'Gil', 'Helô', 'Ivo', 'Juca', 'Kika', 'Léo', 'Mel', 'Nina'])
+        p122.select_option('#srEsporte', 'futebol'); p122.fill('#srPorTime', '11'); p122.fill('#srNomes', NOMES122)
+        p122.click('[data-a=srLer]'); p122.wait_for_selector('#srPasso2', timeout=5000); p122.wait_for_timeout(200)
+        p122.evaluate("window.scrollTo(0, document.body.scrollHeight)"); p122.wait_for_timeout(150)
+        av122 =p122.evaluate("""(()=>{const a=document.getElementById('srFalta'),b=document.getElementById('srSortearBtn'),s=document.getElementById('srPorTimeAviso'),j=document.querySelector('#srFalta [data-a=srJogarCom]');
+          const lb=s&&s.closest('label');return {txt:a&&a.querySelector('p').textContent,btn:b.textContent,off:b.disabled,v:s&&s.value,rot:lb&&lb.textContent.replace(s.textContent,'').trim(),
+          jog:j&&j.textContent,alt:[s,j].map(e=>e?Math.round(e.getBoundingClientRect().height):0),acima:a&&a.getBoundingClientRect().bottom<=document.getElementById('srBarra').getBoundingClientRect().top+0.5,
+          rol:document.documentElement.scrollWidth>innerWidth}})()""")
+        ok(av122['txt'] == 'Para dois times de 11, faltam 8. Vocês são 14.' and av122['btn'] == 'Faltam 8 para sortear' and av122['off'] and av122['acima'],
+           f'CT-KAN-282-01: com 14 nomes em Futebol (11 por time), o motivo aparece acima da barra e o botão continua desligado ({av122})')
+        ok(av122['v'] == '11' and av122['rot'] == 'Jogadores por time' and av122['jog'] == 'Jogar com 7 por time' and min(av122['alt']) >= 44 and not av122['rol'],
+           f'CT-KAN-282-05: o aviso tem o combo "Jogadores por time" (11) e o atalho "Jogar com 7 por time", com 44px, sem rolagem lateral em 360px ({av122})')
+        for tema in ['light', 'dark']:
+            p122.emulate_media(color_scheme=tema); p122.wait_for_timeout(150)
+            bd122 = [x for x in p122.evaluate(CHK) if 'faltam' in str(x) or 'Jogar com' in str(x) or 'Jogadores por' in str(x)]
+            ok(not bd122, f'CT-KAN-282-05: contraste do aviso no tema {tema} ({bd122[:3]})')
+        p122.emulate_media(color_scheme='light')
+        p122.screenshot(path=f'{OUT}/v122-sorteio-falta-360.png', full_page=True)
+        # Posição e nota escolhidas antes de trocar o tamanho continuam
+        p122.locator('#srLista .sr-pos').nth(0).select_option('GOL'); p122.locator('#srLista .sr-nota').nth(1).select_option('8')
+        p122.select_option('#srPorTimeAviso', '7'); p122.wait_for_timeout(200)
+        tr122 = p122.evaluate("""(()=>{const b=document.getElementById('srSortearBtn');return {aviso:!!document.getElementById('srFalta'),btn:b.textContent,off:b.disabled,foco:document.activeElement&&document.activeElement.id,
+          pos:document.querySelectorAll('#srLista .sr-pos')[0].value,nota:document.querySelectorAll('#srLista .sr-nota')[1].value}})()""")
+        ok(tr122 == {'aviso': False, 'btn': 'Sortear times (14)', 'off': False, 'foco': 'srSortearBtn', 'pos': 'GOL', 'nota': '8'},
+           f'CT-KAN-282-02: trocar para 7 no combo do aviso libera "Sortear times (14)" sem voltar ao passo 1, e a posição e a nota continuam ({tr122})')
+        # Atalho "Jogar com 7 por time": volta ao passo 1 (11 por time) e tenta de novo
+        p122.click('#srBarra [data-a=srVoltar]'); p122.wait_for_selector('#srPorTime', timeout=5000)
+        ok(p122.input_value('#srPorTime') == '7', f'CT-KAN-282-02: o passo 1 mostra o tamanho trocado no passo 2 ({p122.input_value("#srPorTime")})')
+        p122.wait_for_timeout(200); p122.fill('#srPorTime', '11'); p122.wait_for_timeout(100); p122.click('[data-a=srLer]')
+        p122.wait_for_selector('#srFalta [data-a=srJogarCom]', timeout=5000)
+        p122.locator('#srLista .sr-nota').nth(2).select_option('3')
+        p122.click('#srFalta [data-a=srJogarCom]'); p122.wait_for_timeout(200)
+        j122 = p122.evaluate("[!!document.getElementById('srFalta'), document.getElementById('srSortearBtn').textContent, document.querySelectorAll('#srLista .sr-nota')[2].value]")
+        ok(j122 == [False, 'Sortear times (14)', '3'], f'CT-KAN-282-03: "Jogar com 7 por time" libera o sorteio e a nota digitada continua ({j122})')
+        # KAN-245: depois de sortear, o foco vai para "Times sorteados"
+        p122.click('#srSortearBtn'); p122.wait_for_selector('#srTimes', timeout=5000); p122.wait_for_timeout(200)
+        f122 = p122.evaluate("[document.activeElement&&document.activeElement.id, document.activeElement&&document.activeElement.textContent, document.querySelectorAll('#srTimes .team').length]")
+        ok(f122 == ['srTimesTitulo', 'Times sorteados', 2], f'CT-KAN-245-10: depois de sortear, o foco vai para "Times sorteados" (leitor de tela) ({f122})')
+        # Duplas: só o motivo, sem combo
+        p122.click('[data-a=srVoltar][data-v="2"]'); p122.wait_for_selector('#srPasso2', timeout=5000); p122.click('[data-a=srVoltar][data-v="1"]'); p122.wait_for_selector('#srNomes', timeout=5000)
+        p122.select_option('#srEsporte', 'beach_tennis'); p122.fill('#srPorTime', '2'); p122.fill('#srNomes', 'Ana\nBia\nCaio')
+        p122.click('[data-a=srLer]'); p122.wait_for_selector('#srPasso2', timeout=5000); p122.wait_for_timeout(200)
+        d122 = p122.evaluate("[document.getElementById('srFalta')&&document.getElementById('srFalta').textContent, !!document.getElementById('srPorTimeAviso'), document.getElementById('srSortearBtn').textContent]")
+        ok(d122 == ['Para duas duplas, falta 1.', False, 'Falta 1 para sortear'], f'CT-KAN-282-04: Beach tennis com 3 nomes: "Para duas duplas, falta 1.", sem combo de tamanho ({d122})')
+
+        # ---------- v122 (KAN-283 e KAN-285): cabeçalho sem conta compacto no celular
+        def cab122(pg):
+            return pg.evaluate("""(()=>{const r=e=>e?[Math.round(e.getBoundingClientRect().width),Math.round(e.getBoundingClientRect().height)]:null,g=document.getElementById('gname'),l=document.getElementById('langBtn'),
+              v=document.querySelector('#topright a.chip');return {nome:g.textContent,cabe:g.scrollWidth<=g.clientWidth+1,lang:l.innerText.trim().replace(/\\s+/g,' '),langT:r(l),langA:l.getAttribute('aria-label'),
+              tema:r(document.getElementById('themeBtn')),temaA:document.getElementById('themeBtn').getAttribute('aria-label'),volta:v?v.innerText.trim():null,voltaT:r(v),voltaA:v&&v.getAttribute('aria-label'),
+              sub:getComputedStyle(document.getElementById('gsub')).display!=='none'&&!!document.getElementById('gsub').textContent,rol:document.documentElement.scrollWidth>innerWidth}})()""")
+        for rota in ['sortear', 'entrar', 'criar']:
+            if rota == 'sortear':
+                p122.goto(URL + '#/sortear'); p122.reload(); p122.wait_for_selector('#srPasso1', timeout=15000); p122.wait_for_timeout(300)
+            else:
+                abrir_entrada(p122, rota)
+            for tema in ['light', 'dark']:
+                p122.emulate_media(color_scheme=tema); p122.wait_for_timeout(100)
+                c122 = cab122(p122)
+                ok(c122['nome'] == 'Nosso Jogo' and c122['cabe'] and c122['lang'] == 'PT' and c122['langT'][0] <= 44 and c122['langT'][1] >= 36 and c122['tema'] == [36, 36]
+                   and c122['volta'] == '←' and c122['voltaT'] == [36, 36] and not c122['sub'] and not c122['rol'],
+                   f'CT-KAN-283-01/03: em 360px ({rota}, tema {tema}), "Nosso Jogo" cabe inteiro, os chips são "PT", 🌓 e "←" (36px) e o subtítulo some ({c122})')
+            p122.emulate_media(color_scheme='light')
+        ok(c122['langA'] == 'Idioma: Português' and (c122['temaA'] or '').startswith('Tema:') and c122['voltaA'] == 'Voltar ao início',
+           f'CT-KAN-283-04: o leitor de tela ouve "Idioma: Português", "{c122["temaA"]}" e "Voltar ao início" ({c122})')
+        p122.screenshot(path=f'{OUT}/v122-cabecalho-360.png')
+        p122.set_viewport_size({'width': 1280, 'height': 800}); p122.wait_for_timeout(200)
+        c122d = cab122(p122)
+        ok(c122d['lang'] == '🌐 PT' and c122d['langT'][0] >= 60 and c122d['volta'] == '← Início' and c122d['sub'] and c122d['tema'] == [36, 36],
+           f'CT-KAN-283-05: no computador, o cabeçalho continua "🌐 PT", "← Início" e o subtítulo; o 🌓 segue o chip-ic de 36px (KAN-285) ({c122d})')
+        ctx122.close()
+        ctx122e = b.new_context(viewport={'width': 360, 'height': 740}, service_workers='block', locale='en-US', timezone_id='America/Sao_Paulo')
+        p122e = ctx122e.new_page(); p122e.on('pageerror', lambda e: errs.append(str(e)))
+        p122e.goto(URL + '#/sortear'); p122e.wait_for_selector('#srPasso1', timeout=15000); p122e.wait_for_timeout(300)
+        ce122 = cab122(p122e)
+        p122e.select_option('#srEsporte', 'futebol'); p122e.fill('#srPorTime', '11'); p122e.fill('#srNomes', NOMES122)
+        p122e.click('[data-a=srLer]'); p122e.wait_for_selector('#srFalta', timeout=5000)
+        en122 = p122e.inner_text('#srFalta')
+        falta122 = p122e.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(sr|render|conta)\\./.test(k))")
+        ok(ce122['lang'] == 'EN' and ce122['langT'][0] <= 44 and ce122['langA'] == 'Language: English' and ce122['voltaA'] == 'Back to home' and not ce122['rol'],
+           f'CT-KAN-283-06: em English, o chip mostra "EN" no mesmo tamanho, sem rolagem lateral ({ce122})')
+        ok('For two teams of 11, 8 more are needed. You have 14.' in en122 and 'Players per team' in en122 and 'Play with 7 per team' in en122
+           and not re.search(r'\b(Para|faltam|Vocês|Jogar|Jogadores)\b', en122) and not falta122,
+           f'CT-KAN-282-06: em English, o aviso vem traduzido ({en122!r}, {falta122})')
+        ctx122e.close()
+
+        # ---------- v122 (KAN-283 e KAN-284): link do jogador e cartão da rodada
+        ctx122r = b.new_context(viewport={'width': 360, 'height': 740}, service_workers='block', timezone_id='America/Sao_Paulo')
+        p122r = ctx122r.new_page(); p122r.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p122r, 'criar')
+        p122r.fill('#le', 'v122@teste.com'); p122r.fill('#lp', 'Jogo@2026'); p122r.fill('#lp2', 'Jogo@2026'); p122r.keyboard.press('Enter'); p122r.wait_for_selector('#ngBox', timeout=12000)
+        p122r.fill('#ngn', 'Racha do Bairro'); p122r.click('[data-a=pickSport][data-v=futebol]'); p122r.click('[data-a=createGroup]')
+        p122r.wait_for_function("location.hash.startsWith('#/g/')"); p122r.wait_for_timeout(1500)
+        g122 = p122r.url.split('#/g/')[1]
+        p122r.click('[data-a=tab][data-v=rodada]'); p122r.wait_for_timeout(800)
+        ll122 = p122r.evaluate("""(()=>{const l=document.querySelector('.hero-r .linha-local');if(!l)return null;const c=l.querySelector('[data-corta]'),x=l.querySelector('.extra');
+          const rg=document.createRange(),t=x.firstChild;const i=t.textContent.indexOf('·');rg.setStart(t,i);rg.setEnd(t,i+1);
+          return {txt:c.textContent+x.textContent,gap:Math.round(rg.getBoundingClientRect().left-c.getBoundingClientRect().right),rol:document.documentElement.scrollWidth>innerWidth}})()""")
+        ok(ll122 and ll122['txt'].startswith('Local a definir · jogo fixo') and ll122['gap'] >= 2 and not ll122['rol'],
+           f'CT-KAN-284-01/02: a linha do local do dia fixo mostra "Local a definir · jogo fixo", com espaço antes do "·" ({ll122})')
+        est122 = ctx122r.storage_state()
+        ctx122r.close()
+        c122p = b.new_context(viewport={'width': 360, 'height': 740}, service_workers='block', locale='pt-BR', timezone_id='America/Sao_Paulo', storage_state=est122)
+        c122p.add_init_script("if(!sessionStorage.getItem('saiu')){localStorage.removeItem('pelada-demo-v2-u');sessionStorage.setItem('saiu','1')}")
+        q122 = c122p.new_page(); q122.on('pageerror', lambda e: errs.append(str(e)))
+        q122.goto(URL + f'#/p/{g122}'); q122.wait_for_selector('.hero-r', timeout=10000); q122.wait_for_timeout(400)
+        cp122 = cab122(q122)
+        ok(cp122['nome'] == 'Racha do Bairro' and cp122['cabe'] and cp122['lang'] == 'PT' and cp122['tema'] == [36, 36] and cp122['sub'] and not cp122['rol'],
+           f'CT-KAN-283-02: no link do jogador em 360px, "Racha do Bairro" aparece inteiro, e o subtítulo do grupo continua ({cp122})')
+        q122.screenshot(path=f'{OUT}/v122-link-360.png')
+        c122p.close()
 
     if parte('b'):
         # ---------- v35 (KAN-142): "Continuar com o Google" na aba errada entra ou cria a conta e avisa (navegador separado)

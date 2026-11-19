@@ -156,6 +156,7 @@ export default {
   'render.subtitulo': 'Presença, sorteio de times, placar, ranking e caixa dos seus jogos',
   'render.grupos': '⇄ Grupos',
   'render.inicio': '← Início',
+  'render.voltarInicio': 'Voltar ao início',
   'tema.titulo': 'Tema',
   'tema.auto': 'Automático',
   'tema.claro': 'Claro',
@@ -176,6 +177,7 @@ export default {
   'dia.5': 'Sexta',
   'dia.6': 'Sábado',
   'conta.idioma': 'Idioma',
+  'conta.idiomaAtual': 'Idioma: {nome}',
   'demo.aviso':
     'Modo demonstração: os dados ficam só neste navegador. Configure o Firebase (LEIA-ME.md) para usar com o grupo.',
   'zap.confirmeAqui': 'Confirme sua presença aqui:',

@@ -16,6 +16,7 @@ import { ACT } from '../acoes.js';
 import { S } from '../nucleo/estado.js';
 import { $, toast } from '../nucleo/util.js';
 import { usarEstilo } from '../ui/estilo';
+import { AvisoFalta } from './SorteioRapidoAviso';
 
 juntarTextos(textos);
 usarEstilo('sorteio-rapido', estilo);
@@ -181,7 +182,9 @@ function Passo3() {
   return (
     <>
       <div class="panel sr" id="srPasso3">
-        <h2 class="sr-titulo">{tx('sr.times')}</h2>
+        <h2 class="sr-titulo" id="srTimesTitulo" tabIndex={-1}>
+          {tx('sr.times')}
+        </h2>
         <div class="teams" id="srTimes">
           {est.times.map((t, i) => (
             <Time key={i} t={t} i={i} />
@@ -220,6 +223,7 @@ function Tela() {
   return (
     <div class="sr-tela">
       {est.passo === 1 ? <Passo1 /> : est.passo === 2 ? <Passo2 /> : <Passo3 />}
+      {est.passo === 2 ? <AvisoFalta total={est.js.length} porTime={est.porTime} duplas={duplas()} /> : null}
       {est.passo === 2 ? <BarraSortear /> : null}
       <p class="small muted sr-rodape">{tx('sr.privacidade')}</p>
     </div>
@@ -300,12 +304,18 @@ const acoes: Record<string, (el: HTMLElement & { dataset: DOMStringMap }) => unk
       chave: sp().key || null,
     });
     if (r.faltam) {
-      toast(tx(duplas() ? 'sr.faltamDuplas' : 'sr.faltam', { n: r.faltam, t: est.porTime }));
+      toast(
+        duplas()
+          ? tx(r.faltam === 1 ? 'sr.motivoDuplas1' : 'sr.motivoDuplas', { n: r.faltam })
+          : tx(r.faltam === 1 ? 'sr.motivo1' : 'sr.motivo', { n: r.faltam, t: est.porTime, total: est.js.length })
+      );
       return;
     }
     est.times = r.times!;
-    ir(3);
+    /* KAN-245: o leitor de tela vai direto para "Times sorteados". */
+    ir(3, '#srTimesTitulo');
   },
+  srJogarCom: el => trocarTamanho(+el.dataset.v!),
   srSalvar: () => {
     const d: Rascunho = {
       v: 1,
@@ -326,12 +336,34 @@ const acoes: Record<string, (el: HTMLElement & { dataset: DOMStringMap }) => unk
 };
 Object.assign(ACT, acoes);
 
+/* KAN-282: troca o tamanho do time no passo 2 sem perder as posições e as notas já escolhidas. Liberado o sorteio, o
+   foco vai para o botão da barra (o aviso some). */
+function trocarTamanho(n: number) {
+  if (!(n >= 1 && n <= 30)) return;
+  lerAjustes();
+  est.porTime = n;
+  desenhar();
+  const foco = $(faltamPara(est.js.length, n, duplas()) ? '#srPorTimeAviso' : '#srSortearBtn') as HTMLElement | null;
+  foco?.focus();
+}
+
+/* O que a pessoa digita no passo 1 fica guardado na hora: um redesenho da tela (a conta anônima que termina de entrar,
+   por exemplo) não volta o tamanho do time nem a lista ao que era antes. */
+document.addEventListener('input', e => {
+  const i = e.target as HTMLInputElement;
+  if (!i || est.passo !== 1) return;
+  if (i.id === 'srNomes') est.texto = i.value;
+  if (i.id === 'srPorTime' && +i.value >= 1 && +i.value <= 30 && Number.isInteger(+i.value)) est.porTime = +i.value;
+});
+
 /* Trocar o esporte: o tamanho do time acompanha, se ainda estava no padrão do esporte anterior. */
 document.addEventListener('change', e => {
   const s = e.target as HTMLSelectElement;
   if (s && s.id === 'srEsporte') {
     const i = $('#srPorTime') as HTMLInputElement | null;
     if (i && +i.value === porTimePadrao(est.esporte)) i.value = String(porTimePadrao(s.value));
+    if (i && +i.value >= 1 && +i.value <= 30) est.porTime = +i.value;
     est.esporte = s.value;
   }
+  if (s && s.id === 'srPorTimeAviso') trocarTamanho(+s.value);
 });

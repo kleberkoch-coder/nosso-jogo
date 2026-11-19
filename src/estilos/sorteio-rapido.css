@@ -39,6 +39,30 @@
   margin-top: 14px;
   gap: 8px;
 }
+/* KAN-282: faltando gente, o motivo acima da barra, com o tamanho do time e o atalho "Jogar com 7 por time". */
+.sr-falta {
+  margin: 12px 0 0;
+}
+.sr-falta p {
+  margin: 0;
+}
+.sr-falta-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 12px;
+  margin-top: 8px;
+}
+.sr-falta-acoes .f {
+  margin: 0;
+}
+.sr-falta-acoes .sel {
+  width: auto;
+  min-width: 88px;
+}
+.sr-falta-acoes .btn.sm {
+  min-height: 44px;
+}
 /* KAN-270: barra fixa do passo 2 ("Voltar" e "Sortear times (12)"), sem sair das margens da página. */
 .acao-fixa.sr-fixa {
   margin: 0;

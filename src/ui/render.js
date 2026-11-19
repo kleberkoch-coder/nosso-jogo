@@ -20,6 +20,7 @@ import { ensurePres, ensureVotos } from '../rotas';
 import { adm, carregarAdmin } from '../nucleo/carga-admin.js';
 import { tx } from '../i18n/index.js';
 import { LOCAL } from '../i18n/formatos.js';
+import { IDIOMAS } from '../i18n/idiomas.ts';
 import { desmontarPublico } from '../telas/PublicoRodada.tsx';
 import { botaoConta } from './menu-conta.ts';
 import { srcLogo } from './logo-src';
@@ -93,8 +94,17 @@ function subtituloCompleto() {
     }
   });
 }
+/* KAN-283: "← Início" no computador e só "←" (chip-ic, 36 × 36px) até 420px, com o nome inteiro para o leitor de tela. */
+function voltarInicio() {
+  const a = el('a', 'chip chip-volta', '', { href: '#/', 'aria-label': tx('render.voltarInicio') }),
+    curto = el('span', 'cab-curto', '←'),
+    longo = el('span', 'cab-longo', tx('render.inicio'));
+  a.append(curto, longo);
+  return a;
+}
 function renderCore() {
   document.body.classList.remove('is-landing');
+  $('#gsub').classList.remove('sub-app');
   const demo = $('#demo');
   demo.hidden = !(B && B.demo);
   if (!demo.hidden) demo.textContent = tx('demo.aviso'); // KAN-164: no idioma da pessoa
@@ -114,8 +124,15 @@ function renderCore() {
   /* KAN-164: sem conta (apresentação, entrar, link), o idioma fica num botão no topo; com conta, no menu da conta. */
   const lb = $('#langBtn');
   lb.hidden = $('#themeBtn').hidden;
-  lb.textContent = '🌐 ' + (LOCAL === 'pt-BR' ? 'PT' : LOCAL.toUpperCase());
-  lb.setAttribute('aria-label', tx('conta.idioma'));
+  /* KAN-283: até 420px o chip mostra só a sigla ("PT"); o 🌐 fica num pedaço que some no celular (.cab-longo). */
+  const ic = document.createElement('span');
+  ic.className = 'cab-longo';
+  ic.textContent = '🌐 ';
+  lb.replaceChildren(ic, LOCAL === 'pt-BR' ? 'PT' : LOCAL.toUpperCase());
+  lb.setAttribute(
+    'aria-label',
+    tx('conta.idiomaAtual', { nome: (IDIOMAS.find(i => i.id === LOCAL) || IDIOMAS[0]).nome })
+  );
   $('#installBtn').textContent = tx('pwa.botao');
   if (R.n !== 'r') desmontarPublico();
   if (R.n === 'r') return renderPublicRodada();
@@ -131,9 +148,11 @@ function renderCore() {
   }
   $('#tabsnav').hidden = true;
   $('#gsub').textContent = tx('render.subtitulo');
+  /* KAN-283: o subtítulo das telas sem grupo some no celular (a gestão do grupo troca o texto e tira a marca). */
+  $('#gsub').classList.add('sub-app');
   /* KAN-245: sortear times agora, sem cadastro (baixa só quando aberto). */
   if (R.n === 'sortear') {
-    $('#topright').replaceChildren(el('a', 'chip', tx('render.inicio'), { href: '#/' }));
+    $('#topright').replaceChildren(voltarInicio());
     if (!rapido) return baixar(import('../telas/SorteioRapido'), m => (rapido = m));
     return rapido.montarSorteioRapido(main);
   }
@@ -144,7 +163,7 @@ function renderCore() {
         ? [el('button', 'chip', tx('render.grupos'), { 'data-a': 'groupsDlg' })]
         : []
       : R.n === 'auth'
-        ? [el('a', 'chip', tx('render.inicio'), { href: '#/' })]
+        ? [voltarInicio()]
         : [])
   );
   if (logged) $('#topright').append(botaoConta());

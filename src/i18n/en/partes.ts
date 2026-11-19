@@ -837,6 +837,7 @@ export default {
   'colar.vao': 'Going ({n})',
   'colar.naoVao': 'Not going ({n})',
   'colar.semMarca': 'No mark, nothing changes: {nomes}',
+  'colar.ignoradas': 'Left out because it looks like a sentence: {linhas}. If it is a name, put a number in front.',
   'colar.parecido': 'Similar to {nome}?',
   'colar.novo': 'New to the group',
   'colar.espera': 'Waiting list',

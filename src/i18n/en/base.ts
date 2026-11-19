@@ -675,6 +675,10 @@ export default {
   'sr.motivoDuplas': 'For two pairs, {n} more are needed.',
   'sr.motivoDuplas1': 'For two pairs, 1 more is needed.',
   'sr.jogarCom': 'Play with {n} per team',
+  'sr.ignorada1':
+    'Left out because it looks like a sentence: {linhas}. If it is a name, go back and put a number in front (1 - Name).',
+  'sr.ignoradas':
+    'Left out because they look like sentences: {linhas}. If they are names, go back and put a number in front (1 - Name).',
   'sr.times': 'Teams drawn',
   'sr.zap': 'Send on WhatsApp',
   'sr.deNovo': 'Draw again',

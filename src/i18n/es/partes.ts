@@ -841,6 +841,7 @@ export default {
   'colar.vao': 'Van ({n})',
   'colar.naoVao': 'No van ({n})',
   'colar.semMarca': 'Sin marca, no cambia: {nomes}',
+  'colar.ignoradas': 'Quedó fuera por parecer una frase: {linhas}. Si es un nombre, pon un número delante.',
   'colar.parecido': '¿Parecido a {nome}?',
   'colar.novo': 'Nuevo en el grupo',
   'colar.espera': 'En espera',

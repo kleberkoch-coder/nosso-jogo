@@ -74,6 +74,9 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo de toda janela (pelada-v106, KAN-250); **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v124)
+- **Linha que ficou de fora** (KAN-269): no sorteio sem conta, passo 2, logo abaixo da ajuda, a caixa `warn-alt` (`#srIgnoradas`, `role="status"`) "Ficou de fora porque parece uma frase: “…”. Se for um nome, volte e ponha um número na frente (1 - Nome)."; no Colar lista, na prévia, a mesma frase em `small muted` (`#colarIgnoradas`), antes de "Sem marca, não muda". Sem classe nova.
+
 ## Componentes (pelada-v123)
 - **Símbolo do app no cabeçalho** (KAN-287; `#amarca.app-marca` em `site/index.html`, dentro de `.marca`, à esquerda do nome): o mesmo desenho do `ld-mark` da apresentação (quadrado `pitch-2` com borda interna branca a 20%, círculo `chalk` e o centro `bib`), com 44 × 44px e cantos de 12px no computador; até 420px, 28 × 28px e cantos de 8px, e para "Nosso Jogo" caber inteiro em 360px o nome fica em 26px e os espaços em 8px. Só nas telas cujo título é "Nosso Jogo" (sem grupo aberto); decorativo (`aria-hidden`).
 

@@ -3,7 +3,8 @@
    - A marca da linha manda: 👍 ✅ 🤙 👊 💪 ✔ = vai; ❌ ✖ 👎 🚫 ⛔ = não vai. Linha sem marca, numa lista que usa marcas,
      é "sem resposta" (não muda nada). Lista sem nenhuma marca: todo nome é "vai".
    - Linha sem número com mais de 5 palavras e pontuação (ou mais de 8 palavras) é frase solta e é ignorada; um nome
-     completo sem pontuação entra (KAN-269).
+     completo sem pontuação entra (KAN-269), e a abreviação com ponto ("José A. da Silva") não conta como pontuação.
+     Cada linha ignorada assim vai para a lista `ignoradas`, para a tela avisar (nunca some calada, v124).
    - Seções: "Não vão", "Fora" e "Ausentes" = não vai; "Espera", "Suplentes" e "Reservas" = vai, no fim da lista;
      "Goleiros" marca quem vem embaixo como goleiro. Título, data, horário e regras da lista são ignorados.
    - Parênteses: "(avulso)" e "(convidado)" = avulso; "(goleiro)" e "(gol)" = goleiro; até 3 letras ("(M)", "(LE)") =
@@ -122,7 +123,7 @@ function lerPessoa(bruta: string): Item | null {
   return { nome: nome.slice(0, 40).trim(), s, avulso, goleiro, pos };
 }
 
-export function lerLista(texto: string): LinhaLida[] {
+export function lerLista(texto: string, ignoradas?: string[]): LinhaLida[] {
   const linhas = String(texto || '').split(/\r?\n/);
   const itens: (Item & { secao: Secao | null })[] = [];
   let secao: Secao | null = null,
@@ -148,8 +149,14 @@ export function lerLista(texto: string): LinhaLida[] {
       if (ehTitulo(t)) continue;
       /* Frase solta (regra, aviso): sem número na frente, mais de 5 palavras e pontuação de frase, ou mais de 8
          palavras. Um nome completo sem pontuação ("Maria Clara de Souza Lima Ferreira") é nome (KAN-269). */
-      const palavras = normalizar(t.replace(EMOJI, '')).split(' ').length;
-      if ((palavras > 5 && /[:,.;!?]/.test(t.replace(/\([^()]*\)/g, ''))) || palavras > 8) continue;
+      const palavras = normalizar(t.replace(EMOJI, '')).split(' ').length,
+        pontuacao = /[:,.;!?]/.test(
+          t.replace(/\([^()]*\)/g, '').replace(/(^|[\s(])\p{Lu}\.(?=\s|$)/gu, '$1') /* "A." é abreviação */
+        );
+      if ((palavras > 5 && pontuacao) || palavras > 8) {
+        if (ignoradas && /\p{L}/u.test(t)) ignoradas.push(t.length > 60 ? t.slice(0, 59).trimEnd() + '…' : t);
+        continue;
+      }
     }
     const p = lerPessoa(t);
     if (p) itens.push(Object.assign(p, { goleiro: p.goleiro || golSecao, secao }));

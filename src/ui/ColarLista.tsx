@@ -29,6 +29,7 @@ const novoId = (): string => (banco as Obj).B.newId();
 /* O texto colado fica guardado enquanto a janela está aberta, para o "Voltar" não perder nada. */
 let texto = '';
 let lidas: LinhaLida[] = [];
+let ignoradas: string[] = [];
 
 function Passo1() {
   return (
@@ -143,6 +144,12 @@ function Previa({ op, times }: { op: Opcoes; times: boolean }) {
           </ul>
         </>
       ) : null}
+      {ignoradas.length ? (
+        /* KAN-269: linha que pareceu frase e ficou de fora; nunca some calada. */
+        <p class="small muted colar-sem" id="colarIgnoradas">
+          {tx('colar.ignoradas', { linhas: ignoradas.map(l => '“' + l + '”').join(', ') })}
+        </p>
+      ) : null}
       {sem.length ? (
         <p class="small muted colar-sem" id="colarSem">
           {tx('colar.semMarca', { nomes: sem.map(l => l.nome).join(', ') })}
@@ -184,7 +191,8 @@ export const acoes: Record<string, (el: El) => unknown> = {
   colarLista: () => abrir(),
   colarLer: () => {
     texto = val('colarTexto');
-    lidas = lerLista(texto);
+    ignoradas = [];
+    lidas = lerLista(texto, ignoradas);
     if (!lidas.length) {
       toast(tx('colar.semNomes'));
       ($('#colarTexto') as HTMLTextAreaElement | null)?.focus();

@@ -26,15 +26,23 @@ type Obj = Record<string, any>;
 type Passo = 1 | 2 | 3;
 type Rascunho = { v: 1; esporte: string; porTime: number; js: JogadorRapido[]; times: TimeRapido[]; em: number };
 
-const est: { passo: Passo; esporte: string; porTime: number; texto: string; js: JogadorRapido[]; times: TimeRapido[] } =
-  {
-    passo: 1,
-    esporte: 'futebol',
-    porTime: porTimePadrao('futebol'),
-    texto: '',
-    js: [],
-    times: [],
-  };
+const est: {
+  passo: Passo;
+  esporte: string;
+  porTime: number;
+  texto: string;
+  js: JogadorRapido[];
+  times: TimeRapido[];
+  ignoradas: string[];
+} = {
+  passo: 1,
+  esporte: 'futebol',
+  porTime: porTimePadrao('futebol'),
+  texto: '',
+  js: [],
+  times: [],
+  ignoradas: [],
+};
 
 const sp = (): Obj => (SPORTS as Obj)[est.esporte] || (SPORTS as Obj).futebol;
 const duplas = () => est.porTime === 2;
@@ -90,6 +98,14 @@ function Passo2() {
     <div class="panel sr" id="srPasso2">
       <h2 class="sr-titulo">{tx('sr.ajustar', { n: est.js.length })}</h2>
       <p class="small muted">{tx(ps.length ? 'sr.ajustarAjuda' : 'sr.ajustarAjudaSemPos')}</p>
+      {est.ignoradas.length ? (
+        /* KAN-269: linha que pareceu frase e ficou de fora; nunca some calada. */
+        <p class="warn-alt" id="srIgnoradas" role="status">
+          {tx(est.ignoradas.length === 1 ? 'sr.ignorada1' : 'sr.ignoradas', {
+            linhas: est.ignoradas.map(l => '“' + l + '”').join(', '),
+          })}
+        </p>
+      ) : null}
       <ul class="plist" id="srLista">
         {est.js.map((j, i) => (
           <li key={i} class="sr-linha">
@@ -277,7 +293,8 @@ const acoes: Record<string, (el: HTMLElement & { dataset: DOMStringMap }) => unk
     est.esporte = e;
     est.porTime = pt;
     /* Da lista do WhatsApp entra só quem vai: quem tem ❌ ou não respondeu fica de fora. */
-    const ls = lerLista(est.texto).filter(l => l.s === 'in');
+    est.ignoradas = [];
+    const ls = lerLista(est.texto, est.ignoradas).filter(l => l.s === 'in');
     if (!ls.length) {
       toast(tx('sr.semNomes'));
       ($('#srNomes') as HTMLTextAreaElement).focus();

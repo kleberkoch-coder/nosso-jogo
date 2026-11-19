@@ -684,6 +684,10 @@ export default {
   'sr.motivoDuplas': 'Para dos parejas, faltan {n}.',
   'sr.motivoDuplas1': 'Para dos parejas, falta 1.',
   'sr.jogarCom': 'Jugar con {n} por equipo',
+  'sr.ignorada1':
+    'Quedó fuera porque parece una frase: {linhas}. Si es un nombre, vuelve y pon un número delante (1 - Nombre).',
+  'sr.ignoradas':
+    'Quedaron fuera porque parecen frases: {linhas}. Si son nombres, vuelve y pon un número delante (1 - Nombre).',
   'sr.times': 'Equipos sorteados',
   'sr.zap': 'Enviar por WhatsApp',
   'sr.deNovo': 'Sortear de nuevo',

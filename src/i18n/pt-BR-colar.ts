@@ -12,6 +12,7 @@ export default {
   'colar.vao': 'Vão ({n})',
   'colar.naoVao': 'Não vão ({n})',
   'colar.semMarca': 'Sem marca, não muda: {nomes}',
+  'colar.ignoradas': 'Ficou de fora por parecer frase: {linhas}. Se for um nome, ponha um número na frente.',
   'colar.parecido': 'Parecido com {nome}?',
   'colar.novo': 'Novo no grupo',
   'colar.espera': 'Na espera',

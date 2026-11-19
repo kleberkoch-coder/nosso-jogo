@@ -31,6 +31,10 @@ export default {
   'sr.motivoDuplas': 'Para duas duplas, faltam {n}.',
   'sr.motivoDuplas1': 'Para duas duplas, falta 1.',
   'sr.jogarCom': 'Jogar com {n} por time',
+  'sr.ignorada1':
+    'Ficou de fora porque parece uma frase: {linhas}. Se for um nome, volte e ponha um número na frente (1 - Nome).',
+  'sr.ignoradas':
+    'Ficaram de fora porque parecem frases: {linhas}. Se forem nomes, volte e ponha um número na frente (1 - Nome).',
   'sr.times': 'Times sorteados',
   'sr.zap': 'Mandar no WhatsApp',
   'sr.deNovo': 'Sortear de novo',

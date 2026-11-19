@@ -194,3 +194,19 @@ test('CT-KAN-269-01: nome completo sem número e sem pontuação entra, mesmo co
     ['Ana']
   );
 });
+
+test('CT-KAN-269-03 a 06: abreviação com ponto é nome; linha longa demais fica de fora, mas vai para a lista de ignoradas', () => {
+  const ign = [];
+  const ls = lerLista(
+    'Ana\nJosé A. da Silva Pereira Neto\nMaria Clara de Souza Lima Ferreira dos Santos Neto\nBia\nQuem não pagar até sexta, não joga.',
+    ign
+  );
+  assert.deepEqual(
+    ls.map(l => l.nome),
+    ['Ana', 'José A. da Silva Pereira Neto', 'Bia']
+  );
+  assert.deepEqual(ign, ['Maria Clara de Souza Lima Ferreira dos Santos Neto', 'Quem não pagar até sexta, não joga.']);
+  const ign2 = [];
+  lerLista('Lista 28/09 das 20:30 às 22h\n1 - Maria Clara de Souza Lima Ferreira dos Santos Neto 👍', ign2);
+  assert.deepEqual(ign2, [], 'título e linha numerada não são avisados');
+});

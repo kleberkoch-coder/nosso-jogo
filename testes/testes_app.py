@@ -6071,6 +6071,45 @@ with sync_playwright() as pw:
            f'CT-KAN-287-01/03: em Meus grupos o símbolo aparece; com o grupo aberto, some e fica o nome do grupo ({mg123["vis"]}, {mo123})')
         ctx123.close()
 
+        # ---------- v124 (KAN-269): nenhum nome some calado no sorteio sem conta e no Colar lista
+        ctx124 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block', locale='pt-BR', timezone_id='America/Sao_Paulo')
+        p124 = ctx124.new_page(); p124.on('pageerror', lambda e: errs.append(str(e)))
+        p124.goto(URL + '#/sortear'); p124.wait_for_selector('#srPasso1', timeout=15000); p124.wait_for_timeout(300)
+        def sr124(texto):
+            if p124.locator('#srPasso1').count() == 0:
+                p124.click('#srBarra [data-a=srVoltar]'); p124.wait_for_selector('#srNomes', timeout=5000)
+            p124.fill('#srNomes', texto); p124.wait_for_timeout(100); p124.click('[data-a=srLer]'); p124.wait_for_selector('#srPasso2', timeout=5000); p124.wait_for_timeout(150)
+            return p124.evaluate("[[...document.querySelectorAll('#srLista .sr-nome')].map(e=>e.textContent), (document.getElementById('srIgnoradas')||{}).textContent||'']")
+        a124 = sr124('Ana\nJosé A. da Silva Pereira Neto\nBia')
+        ok(a124[0] == ['Ana', 'José A. da Silva Pereira Neto', 'Bia'] and not a124[1],
+           f'CT-KAN-269-03: "José A. da Silva Pereira Neto" (abreviação com ponto) entra no sorteio ({a124})')
+        b124 = sr124('Ana\nMaria Clara de Souza Lima Ferreira dos Santos Neto\nBia')
+        ok(b124[0] == ['Ana', 'Bia'] and 'Maria Clara de Souza Lima Ferreira dos Santos Neto' in b124[1] and 'ponha um número na frente' in b124[1],
+           f'CT-KAN-269-04: o nome de 9 palavras não some calado: o passo 2 avisa qual linha ficou de fora e como incluir ({b124})')
+        c124 = sr124('1 - Ana\n2 - Maria Clara de Souza Lima Ferreira dos Santos Neto\n3 - Bia')
+        ok(len(c124[0]) == 3 and c124[0][1].startswith('Maria Clara de Souza') and len(c124[0][1]) <= 40 and not c124[1],
+           f'CT-KAN-269-04: com número na frente, o nome longo entra, cortado em 40 letras ({c124})')
+        d124 = sr124('1 - Ana\nPessoal, quem vai hoje confirma aqui por favor!\n2 - Bia')
+        ok(d124[0] == ['Ana', 'Bia'] and 'Pessoal, quem vai hoje' in d124[1], f'CT-KAN-269-05: a frase continua fora e é mostrada no aviso ({d124})')
+        for tema in ['light', 'dark']:
+            p124.emulate_media(color_scheme=tema); p124.wait_for_timeout(100)
+            bd124 = [x for x in p124.evaluate(CHK) if 'frase' in str(x)]
+            ok(not bd124 and p124.evaluate("document.documentElement.scrollWidth<=innerWidth"), f'CT-KAN-269-05: contraste do aviso no tema {tema}, sem rolagem lateral ({bd124[:2]})')
+        p124.emulate_media(color_scheme='light')
+        # Colar lista da aba Rodada: o mesmo leitor
+        abrir_entrada(p124, 'criar')
+        p124.fill('#le', 'v124@teste.com'); p124.fill('#lp', 'Jogo@2026'); p124.fill('#lp2', 'Jogo@2026'); p124.keyboard.press('Enter'); p124.wait_for_selector('#ngBox', timeout=12000)
+        p124.fill('#ngn', 'Lista FC'); p124.click('[data-a=pickSport][data-v=futebol]'); p124.click('[data-a=createGroup]')
+        p124.wait_for_function("location.hash.startsWith('#/g/')"); p124.wait_for_timeout(1500)
+        p124.click('[data-a=tab][data-v=rodada]'); p124.wait_for_selector('[data-a=colarLista]', timeout=10000)
+        p124.click('[data-a=colarLista]'); p124.wait_for_selector('#colarTexto', timeout=10000)
+        p124.fill('#colarTexto', 'Ana\nJosé A. da Silva Pereira Neto\nMaria Clara de Souza Lima Ferreira dos Santos Neto\nBia')
+        p124.click('#dlg [data-a=colarLer]'); p124.wait_for_selector('#colarResumo', timeout=5000)
+        e124 = p124.evaluate("[document.getElementById('colarResumo').textContent, (document.getElementById('colarIgnoradas')||{}).textContent||'', [...document.querySelectorAll('#colarVao .colar-linha')].length]")
+        ok(e124[0].startswith('3 vão') and 'Maria Clara de Souza Lima Ferreira dos Santos Neto' in e124[1],
+           f'CT-KAN-269-06: no Colar lista, a abreviação entra e a linha longa aparece no aviso, como no sorteio sem conta ({e124})')
+        ctx124.close()
+
     if parte('b'):
         # ---------- v35 (KAN-142): "Continuar com o Google" na aba errada entra ou cria a conta e avisa (navegador separado)
         ctx3 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block'); p3 = ctx3.new_page()

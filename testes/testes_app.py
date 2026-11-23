@@ -6411,7 +6411,10 @@ with sync_playwright() as pw:
            f'CT-KAN-294-17: em English, os campos novos vêm traduzidos ({falta127})')
         ctx127e.close()
 
+    # v128: a parte b passou de 12 min com o bloco novo; os blocos novos com navegador próprio vão para a parte c.
+    if parte('c'):
         # ---------- v128 (KAN-297, KAN-298, KAN-286, KAN-302, KAN-303)
+        import base64
         AVISO128 = """(()=>{const t=document.getElementById('toast'),r=t.getBoundingClientRect(),d=document.querySelector('dialog[open]');
           return {dentro:!!d&&d.contains(t),op:getComputedStyle(t).opacity,txt:t.textContent,vis:r.top>=0&&r.bottom<=innerHeight&&r.left>=0&&r.right<=innerWidth&&r.width>0}})()"""
         for larg128, alt128 in [(360, 740), (390, 844)]:

@@ -3727,6 +3727,9 @@ with sync_playwright() as pw:
         p41 = ctx41.new_page(); p41.on('pageerror', lambda e: errs.append(str(e)))
         p41.clock.install(time=datetime.datetime(2026, 11, 4, 12, 0, 0, tzinfo=BRT90))
         p41.goto(URL + '#/g/' + g40); p41.wait_for_timeout(2500)
+        # v127: espera o dicionário em inglês chegar (a conta é lida depois de abrir; na máquina do GitHub pode passar de 2,5 s)
+        try: p41.wait_for_function("(document.querySelector('.tabs')||{}).innerText?.includes('Players')", timeout=10000)
+        except Exception: pass
         ok('Players' in p41.inner_text('.tabs'), 'CT-KAN-164-06: em outro aparelho (navegador em português, sem escolha guardada), o idioma vem da conta')
         ctx41.close()
         # Outro administrador (outra conta, navegador em português) continua em português

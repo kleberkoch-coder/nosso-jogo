@@ -6303,6 +6303,111 @@ with sync_playwright() as pw:
            f'CT-KAN-294-06: em English, a janela de cards e o card vêm traduzidos ({en126[:120]!r}, {falta126})')
         ctx126e.close()
 
+        # ---------- v127 (KAN-294 fase 2, KAN-301): Clássico metálico, imagem de fundo e tirar o fundo liso da foto
+        import base64
+        ctx127 = b.new_context(viewport={'width': 360, 'height': 740}, service_workers='block', locale='pt-BR', timezone_id='America/Sao_Paulo')
+        p127 = ctx127.new_page(); p127.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p127, 'criar')
+        p127.fill('#le', 'v127@teste.com'); p127.fill('#lp', 'Jogo@2026'); p127.fill('#lp2', 'Jogo@2026'); p127.keyboard.press('Enter'); p127.wait_for_selector('#ngBox', timeout=12000)
+        p127.fill('#ngn', 'Metal FC'); p127.click('[data-a=pickSport][data-v=futebol]'); p127.click('[data-a=createGroup]')
+        p127.wait_for_function("location.hash.startsWith('#/g/')"); p127.wait_for_timeout(1500)
+        p127.click('[data-a=tab][data-v=jogadores]'); p127.wait_for_timeout(300); p127.click('[data-a=seed]'); p127.wait_for_timeout(1500)
+        def png127(js):
+            return base64.b64decode(p127.evaluate("(()=>{const c=document.createElement('canvas');c.width=600;c.height=800;const x=c.getContext('2d');" + js + ";return c.toDataURL('image/png').split(',')[1]})()"))
+        liso127 = png127("x.fillStyle='#f4f4f4';x.fillRect(0,0,600,800);x.fillStyle='#c33';x.fillRect(220,300,160,500)")
+        variado127 = png127("for(let i=0;i<600;i+=20)for(let j=0;j<800;j+=20){x.fillStyle=`rgb(${(i*7)%255},${(j*3)%255},${(i+j)%255})`;x.fillRect(i,j,20,20)};x.fillStyle='#c33';x.fillRect(220,300,160,500)")
+        pids127 = p127.eval_on_selector_all('[data-a=editPlayer]', 'bs=>bs.slice(0,3).map(b=>b.dataset.p)')
+        def ficha127(pid):
+            p127.click(f'[data-a=editPlayer][data-p="{pid}"]'); p127.wait_for_selector('#fotoJogador', timeout=10000)
+            if p127.locator('#fotoAut').count(): p127.check('#fotoAut')
+        canto127 = """async(pid)=>{const i=document.querySelector('#fotoJogador img.foto-prev');if(!i)return null;await new Promise(r=>{if(i.complete)r();else{i.onload=r;setTimeout(r,3000)}});
+          const k=document.createElement('canvas');k.width=i.naturalWidth;k.height=i.naturalHeight;const x=k.getContext('2d');x.drawImage(i,0,0);return [i.naturalWidth,i.naturalHeight,x.getImageData(1,1,1,1).data[3]]}"""
+        # Fundo liso: a ficha mostra antes e depois e pergunta
+        ficha127(pids127[0])
+        p127.set_input_files('#fotoArq', files=[{'name': 'liso.png', 'mimeType': 'image/png', 'buffer': liso127}])
+        p127.wait_for_selector('#fotoSemFundo', timeout=15000); p127.wait_for_timeout(300)
+        s127 = p127.evaluate("""(()=>{const b=[...document.querySelectorAll('#fotoSemFundo .btn')];return {txt:document.getElementById('fotoSemFundo').innerText,
+          imgs:document.querySelectorAll('#fotoSemFundo img').length,alt:b.map(x=>Math.round(x.getBoundingClientRect().height)),gravou:!!S.jog[%r].foto,
+          rol:document.getElementById('dlg').scrollWidth>document.getElementById('dlg').clientWidth+1}})()""" % pids127[0])
+        ok('Fundo liso encontrado' in s127['txt'] and s127['imgs'] == 2 and min(s127['alt']) >= 44 and not s127['gravou'] and not s127['rol'],
+           f'CT-KAN-301-04: com fundo liso, a ficha mostra antes e "sem fundo" e pergunta antes de gravar (44px, 360px) ({s127})')
+        p127.click('#fotoUsarSem'); p127.wait_for_function(f"!!(S.jog['{pids127[0]}']||{{}}).foto", timeout=15000); p127.wait_for_timeout(500)
+        c127 = p127.evaluate(canto127, pids127[0])
+        ok(c127 and c127[2] == 0 and c127[0] < 600, f'CT-KAN-301-01: "Usar sem fundo" grava a foto com o fundo transparente e o espaço vazio cortado ({c127})')
+        p127.click('#dlg [data-a=close]'); p127.wait_for_timeout(300)
+        # Manter como estava: grava a foto original
+        ficha127(pids127[1])
+        p127.set_input_files('#fotoArq', files=[{'name': 'liso.png', 'mimeType': 'image/png', 'buffer': liso127}])
+        p127.wait_for_selector('#fotoManter', timeout=15000); p127.click('#fotoManter')
+        p127.wait_for_function(f"!!(S.jog['{pids127[1]}']||{{}}).foto", timeout=15000); p127.wait_for_timeout(500)
+        m127 = p127.evaluate(canto127, pids127[1])
+        ok(m127 and m127[2] == 255 and m127[0] == 600, f'CT-KAN-301-04: "Manter como estava" grava a foto como veio ({m127})')
+        p127.click('#dlg [data-a=close]'); p127.wait_for_timeout(300)
+        # Fundo variado: grava direto, sem perguntar
+        ficha127(pids127[2])
+        p127.set_input_files('#fotoArq', files=[{'name': 'quadra.png', 'mimeType': 'image/png', 'buffer': variado127}])
+        p127.wait_for_function(f"!!(S.jog['{pids127[2]}']||{{}}).foto", timeout=15000); p127.wait_for_timeout(400)
+        ok(p127.locator('#fotoSemFundo').count() == 0, 'CT-KAN-301-03: foto com fundo variado grava direto, sem oferecer tirar o fundo')
+        p127.click('#dlg [data-a=close]'); p127.wait_for_timeout(300)
+        # Clássico metálico
+        p127.click('[data-a=tab][data-v=grupo]'); p127.wait_for_selector('#cardsPainel [data-a=cardsAbrir]', timeout=15000)
+        p127.click('#cardsPainel [data-a=cardsAbrir]'); p127.wait_for_selector('#cardsJanela svg.card-svg', timeout=15000); p127.wait_for_timeout(300)
+        op127 = p127.eval_on_selector_all('#cardModelo option', 'os=>os.map(o=>o.textContent)')
+        ok(op127[:4] == ['Clássico', 'Clássico metálico', 'Destaque', 'Escudo'], f'CT-KAN-294-15: "Clássico metálico" entre os prontos ({op127})')
+        p127.select_option('#cardModelo', 'p-metalico'); p127.wait_for_timeout(200)
+        p127.click('#cardCopiar'); p127.wait_for_selector('#cardMetal', timeout=5000)
+        def svg127():
+            return p127.evaluate("""(()=>{const s=document.querySelector('#cardsJanela svg.card-svg');return {stops:[...s.querySelectorAll('linearGradient stop')].map(x=>x.getAttribute('stop-color')),
+              caminho:(s.querySelector('clipPath path')||{getAttribute:()=>''}).getAttribute('d'),fora:[...s.querySelectorAll('text')].filter(t=>{const b=t.getBBox();return b.x<0||b.x+b.width>400}).length,
+              img:!!s.querySelector(':scope > image[href^="data:"]')}})()""")
+        ouro127 = svg127()
+        p127.select_option('#cardMetal', 'time'); p127.wait_for_selector('#ccMetal', timeout=3000)
+        p127.evaluate("(()=>{const i=document.getElementById('ccMetal');i.value='#0e3b82';i.dispatchEvent(new Event('input',{bubbles:true}))})()"); p127.wait_for_timeout(200)
+        time127 = svg127()
+        p127.select_option('#cardForma', 'arco'); p127.wait_for_timeout(200)
+        arco127 = svg127()
+        ok('#f6e3a1' in ouro127['stops'] and '#0e3b82' in time127['stops'] and arco127['caminho'] != time127['caminho'] and arco127['fora'] == 0,
+           f'CT-KAN-294-15: o acabamento (ouro, metal na cor do time) e o formato (Arco) mudam a prévia na hora, sem texto fora ({ouro127["stops"][:2]}, {time127["stops"][:3]})')
+        # Imagem de fundo enviada
+        p127.select_option('#cffora', 'imagem'); p127.wait_for_selector('#cfforaImg', timeout=3000)
+        h127 = p127.evaluate("Math.round(document.getElementById('cfforaImg').getBoundingClientRect().height)")
+        p127.set_input_files('#cfforaArq', files=[{'name': 'gif.gif', 'mimeType': 'image/gif', 'buffer': b'GIF89a'}]); p127.wait_for_timeout(300)
+        e127 = p127.inner_text('#cardModeloEd')
+        p127.set_input_files('#cfforaArq', files=[{'name': 'fundo.png', 'mimeType': 'image/png', 'buffer': variado127}])
+        p127.wait_for_function("!!document.querySelector('#cardsJanela svg.card-svg > image')", timeout=15000); p127.wait_for_timeout(300)
+        i127 = svg127()
+        ok(h127 >= 44 and 'JPG, PNG ou WebP' in e127 and i127['img'] and p127.evaluate("document.getElementById('cfforaImg').textContent") == 'Trocar imagem',
+           f'CT-KAN-294-16: fundo de fora com imagem: GIF recusado, a imagem enviada aparece na prévia e o botão vira "Trocar imagem" ({h127}, {i127["img"]})')
+        bd127 = []
+        for tema in ['light', 'dark']:
+            p127.emulate_media(color_scheme=tema); p127.wait_for_timeout(150)
+            bd127 += [x for x in p127.evaluate(CHK) if 'card' in str(x).lower() or 'metal' in str(x).lower()]
+        p127.emulate_media(color_scheme='light')
+        rol127 = p127.evaluate("document.getElementById('dlg').scrollWidth>document.getElementById('dlg').clientWidth+1")
+        ok(not bd127 and not rol127, f'CT-KAN-294-17: novos campos com contraste nos dois temas e sem rolagem lateral em 360px ({bd127[:3]})')
+        p127.screenshot(path=f'{OUT}/v127-metal-360.png')
+        p127.click('#dlg [data-a=cardsSalvar]'); p127.wait_for_timeout(1000)
+        p127.reload(); p127.wait_for_function("window.S && S.loaded && S.loaded.app", timeout=20000); p127.wait_for_timeout(800)
+        g127 = p127.evaluate("(()=>{const m=Object.values(((S.app.cfg||{}).cards||{}).modelos||{})[0]||{};return [m.base,m.metal,m.corMetal,m.forma,m.fora&&m.fora.t,/^fundo-\\d+\\.(webp|jpg)$/.test((m.fora||{}).img||''),!!localStorage.getItem('pelada-fundo:'+S.gid+':'+(m.fora||{}).img)]})()")
+        ok(g127 == ['metalico', 'time', '#0e3b82', 'arco', 'imagem', True, True], f'CT-KAN-294-16: o metálico e a imagem de fundo continuam depois de recarregar ({g127})')
+        ctx127.close()
+        # Em English
+        ctx127e = b.new_context(viewport={'width': 360, 'height': 740}, service_workers='block', locale='en-US', timezone_id='America/Sao_Paulo')
+        p127e = ctx127e.new_page(); p127e.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p127e, 'criar')
+        p127e.fill('#le', 'v127en@teste.com'); p127e.fill('#lp', 'Jogo@2026'); p127e.fill('#lp2', 'Jogo@2026'); p127e.keyboard.press('Enter'); p127e.wait_for_selector('#ngBox', timeout=12000)
+        p127e.fill('#ngn', 'Metal FC'); p127e.click('[data-a=pickSport][data-v=futebol]'); p127e.click('[data-a=createGroup]')
+        p127e.wait_for_function("location.hash.startsWith('#/g/')"); p127e.wait_for_timeout(1500)
+        p127e.click('[data-a=tab][data-v=grupo]'); p127e.wait_for_selector('#cardsPainel [data-a=cardsAbrir]', timeout=15000)
+        p127e.click('#cardsPainel [data-a=cardsAbrir]'); p127e.wait_for_selector('#cardsJanela', timeout=15000)
+        p127e.select_option('#cardModelo', 'p-metalico'); p127e.click('#cardCopiar'); p127e.wait_for_selector('#cardMetal', timeout=5000)
+        p127e.select_option('#cffora', 'imagem'); p127e.wait_for_timeout(200)
+        en127 = p127e.inner_text('#cardsJanela')
+        falta127 = p127e.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(card|foto)/.test(k))")
+        ok('Frame finish' in en127 and 'Shield shape' in en127 and 'Choose image' in en127 and not re.search(r'\b(Acabamento|Formato|Escolher imagem|Ouro)\b', en127) and not falta127,
+           f'CT-KAN-294-17: em English, os campos novos vêm traduzidos ({falta127})')
+        ctx127e.close()
+
     if parte('b'):
         # ---------- v35 (KAN-142): "Continuar com o Google" na aba errada entra ou cria a conta e avisa (navegador separado)
         ctx3 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block'); p3 = ctx3.new_page()

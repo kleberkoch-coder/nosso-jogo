@@ -17,13 +17,13 @@ import {
   valor,
 } from '../../src/dominio/cards.ts';
 
-test('CT-KAN-294-07: sem nada gravado, cada tipo de card usa o pronto padrão; 3 prontos com espaços conhecidos', () => {
+test('CT-KAN-294-07: sem nada gravado, cada tipo de card usa o pronto padrão; 4 prontos com espaços conhecidos', () => {
   const c = lerCards(undefined);
   assert.deepEqual(Object.keys(c.modelos), []);
   assert.equal(c.usos.perfil.m, 'p-classico');
   assert.equal(c.usos.craque.m, 'p-destaque');
-  assert.deepEqual(Object.keys(PRONTOS).sort(), ['p-classico', 'p-destaque', 'p-escudo']);
-  assert.deepEqual(ESPACOS, { classico: 6, destaque: 2, escudo: 6 });
+  assert.deepEqual(Object.keys(PRONTOS).sort(), ['p-classico', 'p-destaque', 'p-escudo', 'p-metalico']);
+  assert.deepEqual(ESPACOS, { classico: 6, destaque: 2, escudo: 6, metalico: 6 });
 });
 
 test('CT-KAN-294-08: o que vem do banco é limpo (cor inválida, tipo de fundo estranho, id com código, estatística desconhecida)', () => {
@@ -124,4 +124,26 @@ test('CT-KAN-294-10: números do período pelos resumos do mês (temporada, mês
   assert.equal(valor('aprov', { aprov: 55.6 }), '56%');
   assert.equal(valor('premios', { premios: 5 }), '5x');
   assert.equal(valor('gols', {}), '—');
+});
+
+test('CT-KAN-294-15: Clássico metálico: acabamento e formato conferidos; metal na cor do time gera o degradê', async () => {
+  const { coresDoMetal, limparModelo, PRONTOS } = await import('../../src/dominio/cards.ts');
+  const m = limparModelo({ base: 'metalico', metal: 'platina', forma: 'losango', corMetal: 'azul' });
+  assert.equal(m.metal, 'ouro');
+  assert.equal(m.forma, 'coroa');
+  assert.equal(m.corMetal, PRONTOS['p-metalico'].corMetal);
+  assert.equal(limparModelo({ base: 'classico', metal: 'ouro' }).metal, undefined);
+  const t = coresDoMetal({ ...m, metal: 'time', corMetal: '#0e3b82' });
+  assert.equal(t.length, 5);
+  assert.equal(t[2], '#0e3b82');
+  assert.ok(t.every(c => /^#[0-9a-f]{6}$/.test(c)));
+  assert.notDeepEqual(coresDoMetal({ ...m, metal: 'prata' }), coresDoMetal({ ...m, metal: 'bronze' }));
+});
+
+test('CT-KAN-294-16: fundo de imagem só com nome de arquivo válido; sem ele, vira cor lisa', async () => {
+  const { limparModelo } = await import('../../src/dominio/cards.ts');
+  const ok = limparModelo({ base: 'escudo', dentro: { t: 'imagem', img: 'fundo-1732370000000.webp', c1: '#112233' } });
+  assert.deepEqual(ok.dentro, { t: 'imagem', c1: '#112233', c2: ok.dentro.c2, img: 'fundo-1732370000000.webp' });
+  for (const img of ['https://x.com/a.webp', 'fundo-1.webp', '../logo-1732370000000.webp', undefined])
+    assert.equal(limparModelo({ base: 'escudo', fora: { t: 'imagem', img } }).fora.t, 'cor', String(img));
 });

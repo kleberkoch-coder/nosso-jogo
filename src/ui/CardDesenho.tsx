@@ -1,7 +1,7 @@
 /* Desenho de um card do grupo (KAN-294, pelada-v126): um SVG só (400 × 500, a proporção 4:5 da imagem que vai para o
    WhatsApp no KAN-295), montado a partir do modelo (dominio/cards.ts) e dos dados do jogador. Desenho próprio do
    Nosso Jogo. Sem HTML em texto: tudo em elementos do Preact. Vem sob demanda com a janela de cards. */
-import type { Fundo, Modelo } from '../dominio/cards';
+import { coresDoMetal, type Fundo, type Modelo } from '../dominio/cards';
 import { APP } from '../dominio/esportes.js';
 
 export type DadosCard = {
@@ -28,10 +28,27 @@ const FORMA: Record<string, string> = {
   escudo:
     'M62 44 H170 L200 28 L230 44 H338 Q348 44 348 54 V368 Q348 390 330 402 L200 466 L70 402 Q52 390 52 368 V54 Q52 44 62 44Z',
 };
+/* Formatos do Clássico metálico (v127). */
+const FORMA_METAL: Record<string, string> = {
+  coroa: FORMA.classico!,
+  reto: 'M92 50 H308 L340 82 V380 Q340 406 316 420 L200 474 L84 420 Q60 406 60 380 V82Z',
+  arco: 'M62 92 Q200 22 338 92 V384 Q338 408 316 420 L200 474 L84 420 Q62 408 62 384Z',
+};
+/* Endereço da imagem de fundo enviada pelo grupo (v127); quem desenha informa (ui/cards-src.ts). */
+type Src = (nome: string) => string;
 
 /* Fundo (cor, degradê, listras, pontos ou mármore) ocupando a área toda; o recorte vem de quem usa. */
-function Preenche({ f, id }: { f: Fundo; id: string }) {
+function Preenche({ f, id, src }: { f: Fundo; id: string; src?: Src }) {
   if (f.t === 'cor') return <rect width={W} height={H} fill={f.c1} />;
+  if (f.t === 'imagem') {
+    const u = f.img && src ? src(f.img) : '';
+    return (
+      <>
+        <rect width={W} height={H} fill={f.c1} />
+        {u ? <image href={u} width={W} height={H} preserveAspectRatio="xMidYMid slice" /> : null}
+      </>
+    );
+  }
   if (f.t === 'grad')
     return (
       <>
@@ -155,10 +172,10 @@ function Foto({ d, x, y, w, h }: { d: DadosCard; x: number; y: number; w: number
   );
 }
 
-export function CardDesenho({ m, d, rotulo }: { m: Modelo; d: DadosCard; rotulo: string }) {
+export function CardDesenho({ m, d, rotulo, src }: { m: Modelo; d: DadosCard; rotulo: string; src?: Src }) {
   const k = 'cd' + ++seq,
-    forma = FORMA[m.base]!;
-  const fundoFora = <Preenche f={m.fora} id={k + 'f'} />;
+    forma = m.base === 'metalico' ? FORMA_METAL[m.forma || 'coroa']! : FORMA[m.base]!;
+  const fundoFora = <Preenche f={m.fora} id={k + 'f'} src={src} />;
   const dentro = (
     <>
       <defs>
@@ -167,7 +184,7 @@ export function CardDesenho({ m, d, rotulo }: { m: Modelo; d: DadosCard; rotulo:
         </clipPath>
       </defs>
       <g clip-path={`url(#${k}c)`}>
-        <Preenche f={m.dentro} id={k + 'd'} />
+        <Preenche f={m.dentro} id={k + 'd'} src={src} />
       </g>
     </>
   );
@@ -204,6 +221,65 @@ export function CardDesenho({ m, d, rotulo }: { m: Modelo; d: DadosCard; rotulo:
           </g>
         ))}
         <Escudinho x={200} y={458} r={11} d={d} m={m} id={k + 'e'} />
+      </>
+    );
+  } else if (m.base === 'metalico') {
+    const cores = coresDoMetal(m),
+      g = `url(#${k}m)`,
+      coroa = (m.forma || 'coroa') === 'coroa',
+      n = Math.max(1, d.campos.length),
+      larg = coroa ? 252 : 220,
+      x0 = (W - larg) / 2,
+      passo = larg / n,
+      tamR = Math.min(...d.campos.map(c => caber(c.r, 12, passo - 4)), 12);
+    corpo = (
+      <>
+        <defs>
+          <linearGradient id={k + 'm'} x1="0" y1="0" x2="1" y2="1">
+            {cores.map((c, i) => (
+              <stop key={i} offset={i / (cores.length - 1)} stop-color={c} />
+            ))}
+          </linearGradient>
+          <linearGradient id={k + 'b'} x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#ffffff" stop-opacity="0" />
+            <stop offset=".5" stop-color="#ffffff" stop-opacity=".38" />
+            <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
+          </linearGradient>
+          <filter id={k + 's'}>
+            <feDropShadow dx="0" dy="6" stdDeviation="8" flood-opacity=".35" />
+          </filter>
+        </defs>
+        <g filter={`url(#${k}s)`}>
+          <path d={forma} fill={g} transform="translate(200 258) scale(1.045) translate(-200 -258)" />
+        </g>
+        {dentro}
+        <g clip-path={`url(#${k}c)`}>
+          <rect x="0" y="352" width={W} height="150" fill="#ffffff" opacity=".35" />
+          <path d="M290 0 L380 0 L190 500 L100 500Z" fill={`url(#${k}b)`} />
+        </g>
+        <path d={forma} fill="none" stroke={g} stroke-width="3" />
+        <path
+          d={forma}
+          transform="translate(200 258) scale(.945) translate(-200 -258)"
+          fill="none"
+          stroke={g}
+          stroke-width="1.6"
+        />
+        <Foto d={d} x={156} y={coroa ? 74 : 92} w={180} h={coroa ? 278 : 260} />
+        <Texto x={112} y={166} t={d.grande} tam={54} max={84} cor={m.letra} />
+        <Texto x={112} y={184} t={d.rotGrande} tam={12} max={84} cor={m.letra} esp={1} />
+        <line x1="92" y1="194" x2="132" y2="194" stroke={g} stroke-width="2" />
+        <Texto x={112} y={218} t={d.pos} tam={22} max={84} cor={m.letra} />
+        <line x1="110" y1="354" x2="290" y2="354" stroke={g} stroke-width="2" />
+        <Texto x={200} y={388} t={d.nome} tam={34} max={240} cor={m.letra} />
+        {d.campos.map((c, i) => (
+          <g key={i}>
+            <Texto x={x0 + passo * (i + 0.5)} y={410} t={c.r} tam={tamR} max={passo - 4} cor={m.letra} peso={600} />
+            <Texto x={x0 + passo * (i + 0.5)} y={434} t={c.v} tam={22} max={passo - 2} cor={m.letra} />
+          </g>
+        ))}
+        <circle cx="200" cy="456" r="13" fill={g} />
+        <Escudinho x={200} y={456} r={10} d={d} m={{ ...m, linha: m.letra }} id={k + 'e'} />
       </>
     );
   } else if (m.base === 'destaque') {

@@ -6,7 +6,7 @@
 # num navegador limpo (sem nada guardado no aparelho) e confere tudo outra vez, direto do banco.
 # Os casos têm código P01, P02…; testes/persistencia-cobertura.json liga cada tipo de dado gravado a um caso,
 # e a conferência da entrega barra gravação nova sem caso aqui.
-import json, os, re, sys
+import base64, json, os, re, sys
 from playwright.sync_api import sync_playwright
 
 URL = sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:8765/index.html'
@@ -1169,13 +1169,21 @@ with sync_playwright() as pw:
     p42.click('#cardCopiar'); p42.wait_for_selector('#cardModeloEd', timeout=10000)
     p42.select_option('#cffora', 'cor')
     p42.evaluate("(()=>{const i=document.getElementById('cffora1');i.value='#0b2a5b';i.dispatchEvent(new Event('input',{bubbles:true}))})()")
+    # v127 (KAN-294, fase 2): o fundo de dentro com uma imagem enviada (Storage do emulador, grupos/{gid}/cards/fundo-*)
+    png45 = J(p42, "(()=>{const c=document.createElement('canvas');c.width=400;c.height=500;const x=c.getContext('2d');"
+                   "x.fillStyle='#246';x.fillRect(0,0,400,500);x.fillStyle='#fff';x.fillRect(0,200,400,40);return c.toDataURL('image/png').split(',')[1]})()")
+    p42.select_option('#cfdentro', 'imagem'); p42.wait_for_selector('#cfdentroArq', state='attached', timeout=5000)
+    p42.set_input_files('#cfdentroArq', files=[{'name': 'fundo.png', 'mimeType': 'image/png', 'buffer': base64.b64decode(png45)}])
+    p42.wait_for_function("!!document.querySelector('#cardsJanela image[preserveAspectRatio*=slice]') || !!document.querySelector('#cardModeloEd .err')", timeout=30000)
+    err45 = J(p42, "(document.querySelector('#cardModeloEd .err')||{}).textContent||''")
     p42.click('.card-tipos [data-tipo=craque]'); p42.wait_for_timeout(200); p42.select_option('#cardGrande', 'votos')
     p42.click('#dlg [data-a=cardsSalvar]'); p42.wait_for_timeout(1200)
     gravou(p42); pronto(p42)
     ler45 = ("(()=>{const c=(S.app.cfg||{}).cards||{};const ms=Object.values(c.modelos||{});const u=c.usos||{};"
-             "return [ms.length, ms[0]&&ms[0].fora&&ms[0].fora.c1, ms[0]&&ms[0].fora&&ms[0].fora.t, (u.perfil||{}).m in (c.modelos||{}), (u.craque||{}).grande]})()")
+             "return [ms.length, ms[0]&&ms[0].fora&&ms[0].fora.c1, ms[0]&&ms[0].fora&&ms[0].fora.t, (u.perfil||{}).m in (c.modelos||{}), (u.craque||{}).grande,"
+             " ms[0]&&ms[0].dentro&&ms[0].dentro.t, /^fundo-\\d{10,16}\\.(webp|jpg)$/.test((ms[0]&&ms[0].dentro&&ms[0].dentro.img)||'')]})()")
     r45 = J(p42, ler45)
-    ok(r45 == [1, '#0b2a5b', 'cor', True, 'votos'], f'CT-KAN-170-P45: os cards do grupo (modelo copiado e editado, número grande do craque) continuam depois de recarregar ({r45})')
+    ok(r45 == [1, '#0b2a5b', 'cor', True, 'votos', 'imagem', True], f'CT-KAN-170-P45: os cards do grupo (modelo copiado e editado, fundo com imagem no Storage, número grande do craque) continuam depois de recarregar ({r45}, {err45!r})')
     sair_e_esperar(p42)
     p42.goto(URL + '#/entrar'); p42.wait_for_selector('#le', timeout=20000); p42.wait_for_timeout(300)
     p42.fill('#le', E42); p42.fill('#lp', SENHA); p42.keyboard.press('Enter'); p42.wait_for_timeout(2500)

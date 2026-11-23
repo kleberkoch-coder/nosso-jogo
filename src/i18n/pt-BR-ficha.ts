@@ -52,4 +52,10 @@ export default {
   'avulso.registradoEm': 'Registrado em {data}',
   'niver.campo': 'Nascimento',
   'niver.ajuda': 'Só administradores veem. Serve para lembrar o aniversário.',
+  'foto.semFundoTitulo': 'Fundo liso encontrado.',
+  'foto.semFundoTexto': 'Quer usar a foto sem o fundo? Ela fica melhor no card.',
+  'foto.antes': 'Antes',
+  'foto.depois': 'Sem fundo',
+  'foto.usarSemFundo': 'Usar sem fundo',
+  'foto.manter': 'Manter como estava',
 };

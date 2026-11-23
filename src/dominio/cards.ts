@@ -5,9 +5,13 @@
    Gravado em grupos/{gid}.cfg.cards = { modelos: {id: Modelo}, usos: {tipo: Uso} }. As regras do Firebase conferem o
    formato básico e o Plano A; aqui o app limpa tudo o que lê (o documento do grupo é público). */
 
-export type Base = 'classico' | 'destaque' | 'escudo';
-export type TipoFundo = 'cor' | 'grad' | 'listras' | 'pontos' | 'marmore';
-export type Fundo = { t: TipoFundo; c1: string; c2: string };
+export type Base = 'classico' | 'destaque' | 'escudo' | 'metalico';
+export type TipoFundo = 'cor' | 'grad' | 'listras' | 'pontos' | 'marmore' | 'imagem';
+/* img: nome do arquivo no Storage (grupos/{gid}/cards/fundo-{momento}.webp), só no tipo "imagem" (v127). */
+export type Fundo = { t: TipoFundo; c1: string; c2: string; img?: string };
+/* Clássico metálico (v127): o acabamento da moldura, o formato do escudo e, no "metal na cor do time", a cor base. */
+export type Metal = 'ouro' | 'prata' | 'bronze' | 'time';
+export type Forma = 'coroa' | 'reto' | 'arco';
 export type Modelo = {
   n: string;
   base: Base;
@@ -18,21 +22,28 @@ export type Modelo = {
   faixa: string;
   letraFaixa: string;
   placa: string;
+  metal?: Metal;
+  forma?: Forma;
+  corMetal?: string;
 };
 export type TipoCard = 'perfil' | 'craque' | 'artilheiro' | 'garcom';
 export type Periodo = 'ano' | 'mes' | 'tudo';
 export type Uso = { m: string; titulo: string; grande: string; campos: string[]; per: Periodo };
 export type Cards = { modelos: Record<string, Modelo>; usos: Partial<Record<TipoCard, Uso>> };
 
-export const BASES: Base[] = ['classico', 'destaque', 'escudo'];
-export const TIPOS_FUNDO: TipoFundo[] = ['cor', 'grad', 'listras', 'pontos', 'marmore'];
+export const BASES: Base[] = ['classico', 'metalico', 'destaque', 'escudo'];
+export const TIPOS_FUNDO: TipoFundo[] = ['cor', 'grad', 'listras', 'pontos', 'marmore', 'imagem'];
+export const METAIS: Metal[] = ['ouro', 'prata', 'bronze', 'time'];
+export const FORMAS: Forma[] = ['coroa', 'reto', 'arco'];
+export const nomeFundoValido = (n: unknown): n is string =>
+  typeof n === 'string' && /^fundo-\d{10,16}\.(webp|png|jpg)$/.test(n);
 export const TIPOS: TipoCard[] = ['perfil', 'craque', 'artilheiro', 'garcom'];
 export const PERIODOS: Periodo[] = ['ano', 'mes', 'tudo'];
 export const MAX_MODELOS = 12;
 export const MAX_NOME = 30;
 export const MAX_TITULO = 24;
 /* Espaços de estatística de cada desenho. */
-export const ESPACOS: Record<Base, number> = { classico: 6, destaque: 2, escudo: 6 };
+export const ESPACOS: Record<Base, number> = { classico: 6, destaque: 2, escudo: 6, metalico: 6 };
 
 /* Estatísticas que um card pode mostrar. "rodada" só nos cards da rodada; "ast" só em esporte com assistência. */
 export type Estat = { k: string; rodada?: boolean; ast?: boolean };
@@ -65,6 +76,20 @@ export const PRONTOS: Record<string, Modelo> = {
     faixa: '#ffffff',
     letraFaixa: '#4a3d25',
     placa: '#ffffff',
+  },
+  'p-metalico': {
+    n: '',
+    base: 'metalico',
+    fora: { t: 'listras', c1: '#d7d7d7', c2: '#ffffff' },
+    dentro: { t: 'marmore', c1: '#f4f1ea', c2: '#8e877a' },
+    linha: '#c9a04a',
+    letra: '#4a3b1f',
+    faixa: '#ffffff',
+    letraFaixa: '#4a3b1f',
+    placa: '#ffffff',
+    metal: 'ouro',
+    forma: 'coroa',
+    corMetal: '#3e72d0',
   },
   'p-destaque': {
     n: '',
@@ -119,8 +144,12 @@ const idOk = (id: unknown): id is string => typeof id === 'string' && /^[A-Za-z0
 
 function fundo(v: unknown, padrao: Fundo): Fundo {
   const o = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;
-  const t = TIPOS_FUNDO.includes(o.t as TipoFundo) ? (o.t as TipoFundo) : padrao.t;
-  return { t, c1: cor(o.c1, padrao.c1), c2: cor(o.c2, padrao.c2) };
+  let t = TIPOS_FUNDO.includes(o.t as TipoFundo) ? (o.t as TipoFundo) : padrao.t;
+  /* Imagem só com um nome de arquivo válido; sem ele, volta à cor lisa. */
+  if (t === 'imagem' && !nomeFundoValido(o.img)) t = 'cor';
+  const f: Fundo = { t, c1: cor(o.c1, padrao.c1), c2: cor(o.c2, padrao.c2) };
+  if (t === 'imagem') f.img = o.img as string;
+  return f;
 }
 
 /* Um modelo lido do banco: tudo conferido, com o pronto da mesma base como padrão. */
@@ -139,6 +168,13 @@ export function limparModelo(v: unknown): Modelo | null {
     faixa: cor(o.faixa, p.faixa),
     letraFaixa: cor(o.letraFaixa, p.letraFaixa),
     placa: cor(o.placa, p.placa),
+    ...(o.base === 'metalico'
+      ? {
+          metal: METAIS.includes(o.metal as Metal) ? (o.metal as Metal) : p.metal!,
+          forma: FORMAS.includes(o.forma as Forma) ? (o.forma as Forma) : p.forma!,
+          corMetal: cor(o.corMetal, p.corMetal!),
+        }
+      : {}),
   };
 }
 
@@ -225,7 +261,7 @@ export function contraste(a: string, b: string) {
 /* A cor de fundo que fica atrás das letras principais do card (a média do fundo de dentro, ou a placa). */
 export function fundoDasLetras(m: Modelo): string {
   if (m.base === 'destaque') return m.placa;
-  if (m.dentro.t === 'cor') return m.dentro.c1;
+  if (m.dentro.t === 'cor' || m.dentro.t === 'imagem') return m.dentro.c1;
   const a = parseInt(m.dentro.c1.slice(1), 16),
     b = parseInt(m.dentro.c2.slice(1), 16);
   const peso = m.dentro.t === 'grad' ? 0.5 : 0.2;
@@ -292,3 +328,27 @@ export const EXEMPLO: Numeros = {
   votos: 8,
   votosPct: 62,
 };
+
+/* Clássico metálico (v127): as cores do degradê da moldura (escuro, claro, médio, brilho, escuro). "time" gera o metal
+   a partir de uma cor (a do time): mais escura nas pontas, mais clara no meio e um brilho quase branco. */
+const METAL_FIXO: Record<Exclude<Metal, 'time'>, string[]> = {
+  ouro: ['#7a5a1e', '#f6e3a1', '#c9a04a', '#fff4cf', '#8a6420'],
+  prata: ['#5e6670', '#f4f6f8', '#a9b1ba', '#ffffff', '#6b737c'],
+  bronze: ['#5a3018', '#f0c39a', '#b36e3c', '#ffe1c4', '#6e3a1c'],
+};
+function misturar(c: string, alvo: number, peso: number) {
+  const n = parseInt(c.slice(1), 16);
+  return (
+    '#' +
+    [16, 8, 0]
+      .map(s => Math.round(((n >> s) & 255) * (1 - peso) + alvo * peso))
+      .map(v => v.toString(16).padStart(2, '0'))
+      .join('')
+  );
+}
+export function coresDoMetal(m: Modelo): string[] {
+  const metal = m.metal || 'ouro';
+  if (metal !== 'time') return METAL_FIXO[metal];
+  const c = m.corMetal && corOk(m.corMetal) ? m.corMetal : '#3e72d0';
+  return [misturar(c, 0, 0.55), misturar(c, 255, 0.75), c, '#ffffff', misturar(c, 0, 0.4)];
+}

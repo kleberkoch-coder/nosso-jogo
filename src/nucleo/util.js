@@ -42,8 +42,16 @@ const fmonth = m => {
   const t = new Date(m + '-15T12:00').toLocaleDateString(LOCAL, { month: 'long', year: 'numeric' });
   return t.charAt(0).toUpperCase() + t.slice(1);
 };
+/* KAN-297 (pelada-v128): com uma janela aberta (showModal, camada de cima), o aviso vai para dentro dela, senão fica
+   escondido atrás; quando ela fecha, volta para a página. */
+function lugarDoAviso(t) {
+  const d = document.querySelector('dialog[open]');
+  const pai = d || document.body;
+  if (t.parentNode !== pai) pai.append(t);
+}
 function toast(m, ms) {
   const t = $('#toast');
+  lugarDoAviso(t);
   avisoAcao = null;
   t.classList.remove('acao');
   t.textContent = m;
@@ -57,6 +65,7 @@ let avisoAcao = null,
   avisoParado = false;
 function toastAcao(m, rotulo, fn, ms) {
   const t = $('#toast');
+  lugarDoAviso(t);
   t.textContent = '';
   const sp = document.createElement('span');
   sp.textContent = m;
@@ -87,6 +96,13 @@ function usarAvisoAcao() {
 }
 const tt = $('#toast');
 if (tt) {
+  document.addEventListener(
+    'close',
+    e => {
+      if (tt.parentNode === e.target) document.body.append(tt);
+    },
+    true
+  );
   tt.addEventListener('pointerenter', () => {
     avisoParado = true;
   });

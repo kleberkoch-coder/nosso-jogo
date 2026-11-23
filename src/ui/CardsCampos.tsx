@@ -1,10 +1,20 @@
-/* Campos dos modelos do grupo na janela de cards (KAN-294): cor, fundo (com a imagem enviada, v127) e o acabamento do
-   Clássico metálico (v127). Separados de ui/CardsJanela.tsx, que ficaria grande demais. */
+/* Campos dos modelos do grupo na janela de cards (KAN-294): cor, fundo (com a imagem enviada, v127, e os fundos prontos,
+   v128) e o acabamento do Clássico metálico (v127). Separados de ui/CardsJanela.tsx, que ficaria grande demais. */
 import { useRef, useState } from 'preact/hooks';
-import { FORMAS, METAIS, TIPOS_FUNDO, type Forma, type Fundo, type Metal, type Modelo } from '../dominio/cards';
+import {
+  FORMAS,
+  FUNDOS_PRONTOS,
+  METAIS,
+  TIPOS_FUNDO,
+  type Forma,
+  type Fundo,
+  type Metal,
+  type Modelo,
+} from '../dominio/cards';
 import { tx } from '../i18n/index.js';
 import { S as estado } from '../nucleo/estado.js';
 import { FUNDO_MAX_MB, FUNDO_TIPOS, arquivoFundo, subirFundo } from '../acoes/fundo-card';
+import { FundoPronto } from './fundos-prontos';
 
 const st = () => estado as Record<string, any>;
 
@@ -73,6 +83,30 @@ export function ImagemFundo({ k, f, on }: { k: string; f: Fundo; on: (f: Fundo) 
   );
 }
 
+/* KAN-303 (v128): galeria de fundos prontos, cada miniatura já nas cores do modelo. */
+function GaleriaFundos({ k, f, on }: { k: string; f: Fundo; on: (f: Fundo) => void }) {
+  return (
+    <div class="card-prontos" id={'cf' + k + 'Prontos'} role="group" aria-label={tx('card.fundosProntos')}>
+      {FUNDOS_PRONTOS.map(p => (
+        <button
+          key={p}
+          type="button"
+          class="card-pronto"
+          data-p={p}
+          aria-pressed={f.p === p}
+          aria-label={tx('card.pronto.' + p)}
+          title={tx('card.pronto.' + p)}
+          onClick={() => on({ ...f, p })}
+        >
+          <svg viewBox="0 0 400 500" aria-hidden="true">
+            <FundoPronto p={p} c1={f.c1} c2={f.c2} id={'mini-' + k + '-' + p} />
+          </svg>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function FundoCampos({ k, f, on }: { k: string; f: Fundo; on: (f: Fundo) => void }) {
   return (
     <fieldset class="card-fundo">
@@ -90,6 +124,7 @@ export function FundoCampos({ k, f, on }: { k: string; f: Fundo; on: (f: Fundo) 
         ))}
       </select>
       {f.t === 'imagem' ? <ImagemFundo k={k} f={f} on={on} /> : null}
+      {f.t === 'pronto' ? <GaleriaFundos k={k} f={f} on={on} /> : null}
       <div class="card-cores">
         <Cor
           id={'cf' + k + '1'}

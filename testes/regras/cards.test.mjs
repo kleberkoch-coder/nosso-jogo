@@ -147,3 +147,38 @@ test('CT-KAN-294-16: fundo de imagem só com nome de arquivo válido; sem ele, v
   for (const img of ['https://x.com/a.webp', 'fundo-1.webp', '../logo-1732370000000.webp', undefined])
     assert.equal(limparModelo({ base: 'escudo', fora: { t: 'imagem', img } }).fora.t, 'cor', String(img));
 });
+
+test('CT-KAN-302-01 a 04: imagens que sobram ao salvar ou ao fechar sem salvar', async () => {
+  const { imagensParaApagar, imagensUsadas, lerCards } = await import('../../src/dominio/cards.ts');
+  const img = (n, d) => ({
+    base: 'escudo',
+    fora: { t: 'imagem', img: n },
+    dentro: d ? { t: 'imagem', img: d } : { t: 'cor' },
+  });
+  const A = 'fundo-1732370000001.webp',
+    B = 'fundo-1732370000002.webp',
+    C = 'fundo-1732370000003.webp';
+  const antes = lerCards({ modelos: { m1: img(A), m2: img(A, C) } });
+  assert.deepEqual(imagensUsadas(antes).sort(), [A, C]);
+  // 01: troca A por B no m1 e salva; A continua no m2 (04), então só sobra nada de A; C também continua
+  const troca = lerCards({ modelos: { m1: img(B), m2: img(A, C) } });
+  assert.deepEqual(imagensParaApagar(antes, troca, [B]), []);
+  // 02: apaga o m2 e salva: A ainda está no m1 (04); C sai
+  const semM2 = lerCards({ modelos: { m1: img(A) } });
+  assert.deepEqual(imagensParaApagar(antes, semM2, []), [C]);
+  // 01 de novo: com o m1 só com B e o m2 apagado, saem A e C
+  assert.deepEqual(imagensParaApagar(antes, lerCards({ modelos: { m1: img(B) } }), [B]).sort(), [A, C]);
+  // 03: fechou sem salvar: a enviada agora sai, as de antes ficam
+  assert.deepEqual(imagensParaApagar(antes, null, [B, A]), [B]);
+  // nome inválido nunca vira caminho para apagar
+  assert.deepEqual(imagensParaApagar(antes, null, ['../logo-1.webp']), []);
+});
+
+test('CT-KAN-303-05: fundo pronto lido do banco: desenho conhecido, ou o primeiro da galeria', async () => {
+  const { FUNDOS_PRONTOS, limparModelo } = await import('../../src/dominio/cards.ts');
+  assert.ok(FUNDOS_PRONTOS.length >= 12);
+  const ok = limparModelo({ base: 'classico', fora: { t: 'pronto', p: 'quadra', c1: '#123456', c2: '#abcdef' } });
+  assert.deepEqual(ok.fora, { t: 'pronto', c1: '#123456', c2: '#abcdef', p: 'quadra' });
+  assert.equal(limparModelo({ base: 'classico', fora: { t: 'pronto', p: '<script>' } }).fora.p, FUNDOS_PRONTOS[0]);
+  assert.equal(limparModelo({ base: 'classico', dentro: { t: 'pronto' } }).dentro.p, FUNDOS_PRONTOS[0]);
+});

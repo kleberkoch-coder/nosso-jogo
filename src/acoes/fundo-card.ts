@@ -1,7 +1,7 @@
 /* Imagem de fundo dos cards (KAN-294, fase 2, pelada-v127): reduz no aparelho (lado maior até 1080 px, sem cortar),
    grava em WebP (sem WebP, JPEG) no Storage e devolve o nome do arquivo. Vem com a janela de cards. */
 import { caminhoFundo, chaveDemoFundo } from '../ui/cards-src';
-import { abrirImagem, paraBlob, subirArquivo } from './arquivos-storage';
+import { abrirImagem, apagarArquivo, paraBlob, subirArquivo } from './arquivos-storage';
 
 export const FUNDO_TIPOS = ['image/jpeg', 'image/png', 'image/webp'];
 export const FUNDO_MAX_MB = 8;
@@ -40,5 +40,12 @@ export async function subirFundo(gid: string, f: Blob): Promise<string | null> {
   if (!b || b.size > MAX_GRAVADO) return null;
   const nome = 'fundo-' + Date.now() + (b.type === 'image/webp' ? '.webp' : '.jpg');
   await subirArquivo(caminhoFundo(gid, nome), b, chaveDemoFundo(gid, nome));
+  enviadas.push(nome);
   return nome;
+}
+
+/* KAN-302 (v128): as imagens enviadas desde que a janela abriu (para apagar as que não forem salvas) e a limpeza. */
+export const enviadas: string[] = [];
+export function apagarFundos(gid: string, nomes: string[]): Promise<void[]> {
+  return Promise.all(nomes.map(n => apagarArquivo(caminhoFundo(gid, n), chaveDemoFundo(gid, n))));
 }

@@ -3,6 +3,7 @@
    Nosso Jogo. Sem HTML em texto: tudo em elementos do Preact. Vem sob demanda com a janela de cards. */
 import { coresDoMetal, type Fundo, type Modelo } from '../dominio/cards';
 import { APP } from '../dominio/esportes.js';
+import { FundoPronto } from './fundos-prontos';
 
 export type DadosCard = {
   nome: string;
@@ -40,6 +41,7 @@ type Src = (nome: string) => string;
 /* Fundo (cor, degradê, listras, pontos ou mármore) ocupando a área toda; o recorte vem de quem usa. */
 function Preenche({ f, id, src }: { f: Fundo; id: string; src?: Src }) {
   if (f.t === 'cor') return <rect width={W} height={H} fill={f.c1} />;
+  if (f.t === 'pronto') return <FundoPronto p={f.p} c1={f.c1} c2={f.c2} id={id} />;
   if (f.t === 'imagem') {
     const u = f.img && src ? src(f.img) : '';
     return (

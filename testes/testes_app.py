@@ -6110,6 +6110,86 @@ with sync_playwright() as pw:
            f'CT-KAN-269-06: no Colar lista, a abreviação entra e a linha longa aparece no aviso, como no sorteio sem conta ({e124})')
         ctx124.close()
 
+        # ---------- v125 (KAN-293): foto do jogador na ficha, com a autorização
+        import base64
+        ctx125 = b.new_context(viewport={'width': 360, 'height': 740}, service_workers='block', locale='pt-BR', timezone_id='America/Sao_Paulo')
+        p125 = ctx125.new_page(); p125.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p125, 'criar')
+        p125.fill('#le', 'v125@teste.com'); p125.fill('#lp', 'Jogo@2026'); p125.fill('#lp2', 'Jogo@2026'); p125.keyboard.press('Enter'); p125.wait_for_selector('#ngBox', timeout=12000)
+        p125.fill('#ngn', 'Foto FC'); p125.click('[data-a=pickSport][data-v=futebol]'); p125.click('[data-a=createGroup]')
+        p125.wait_for_function("location.hash.startsWith('#/g/')"); p125.wait_for_timeout(1500)
+        p125.click('[data-a=tab][data-v=jogadores]'); p125.wait_for_timeout(300); p125.click('[data-a=seed]'); p125.wait_for_timeout(1500)
+        # PNG de 1200 × 1600 com o canto transparente (como a foto recortada pelo celular)
+        png125 = p125.evaluate("(()=>{const c=document.createElement('canvas');c.width=1200;c.height=1600;const x=c.getContext('2d');"
+                               "x.fillStyle='#2a6';x.beginPath();x.arc(600,800,500,0,7);x.fill();return c.toDataURL('image/png').split(',')[1]})()")
+        arq125 = {'name': 'recortada.png', 'mimeType': 'image/png', 'buffer': base64.b64decode(png125)}
+        pid125 = p125.locator('[data-a=editPlayer]').first.get_attribute('data-p')
+        p125.locator('[data-a=editPlayer]').first.click(); p125.wait_for_selector('#fotoJogador', timeout=10000); p125.wait_for_timeout(300)
+        f125 = p125.evaluate("""(()=>{const e=document.getElementById('fotoEscolher'),a=document.getElementById('fotoAut'),r=e.getBoundingClientRect();
+          return {off:e.disabled,aut:!!a,txt:e.textContent,alt:Math.round(r.height),lim:document.getElementById('fotoLimites').textContent,
+          vazia:!!document.querySelector('#fotoJogador .foto-vazia'),rol:document.documentElement.scrollWidth>innerWidth}})()""")
+        ok(f125['off'] and f125['aut'] and f125['txt'] == 'Escolher foto' and f125['alt'] >= 44 and 'JPG, PNG ou WebP, até 5 MB' in f125['lim'] and f125['vazia'] and not f125['rol'],
+           f'CT-KAN-293-01: a ficha mostra "Foto" com "Escolher foto" desligado até marcar a autorização, os limites e 44px, sem rolagem lateral em 360px ({f125})')
+        p125.check('#fotoAut')
+        p125.set_input_files('#fotoArq', files=[{'name': 'anim.gif', 'mimeType': 'image/gif', 'buffer': b'GIF89a'}]); p125.wait_for_timeout(300)
+        e125 = p125.inner_text('#fotoErr')
+        ok('JPG, PNG ou WebP' in e125 and not p125.evaluate(f"!!S.jog['{pid125}'].foto"), f'CT-KAN-293-06: GIF é recusado com a mensagem ({e125!r})')
+        p125.set_input_files('#fotoArq', files=[arq125])
+        p125.wait_for_function(f"!!(S.jog['{pid125}']||{{}}).foto", timeout=15000); p125.wait_for_timeout(500)
+        g125 = p125.evaluate(f"""async()=>{{const pid='{pid125}',j=S.jog[pid],c=(S.cont||{{}})[pid]||{{}},i=document.querySelector('#fotoJogador img.foto-prev');
+          if(i)await new Promise(r=>{{if(i.complete)r();else{{i.onload=r;setTimeout(r,3000)}}}});
+          let canto=-1;if(i){{const k=document.createElement('canvas');k.width=i.naturalWidth;k.height=i.naturalHeight;const x=k.getContext('2d');x.drawImage(i,0,0);canto=x.getImageData(2,2,1,1).data[3]}}
+          return {{nome:j.foto,fa:!!c.fa,fp:c.fp===(S.user&&S.user.uid),w:i?i.naturalWidth:0,h:i?i.naturalHeight:0,canto,
+            guardada:!!localStorage.getItem('pelada-foto:'+S.gid+':'+pid+':'+j.foto),aut:!!document.getElementById('fotoAut'),
+            trocar:(document.getElementById('fotoEscolher')||{{}}).textContent,toast:document.getElementById('toast').textContent}}}}""")
+        ok(re.fullmatch(r'foto-\d{10,16}\.(webp|png)', g125['nome'] or '') is not None and g125['w'] == 600 and g125['h'] == 800 and g125['canto'] == 0 and g125['guardada'],
+           f'CT-KAN-293-01/02/07: a foto grava na hora, reduzida para 600 × 800 sem cortar, e o fundo transparente continua ({g125})')
+        ok(g125['fa'] and g125['fp'] and not g125['aut'] and g125['trocar'] == 'Trocar foto' and 'Foto salva.' in g125['toast'],
+           f'CT-KAN-293-01: a autorização fica registrada (quem e quando), não é pedida de novo e o botão vira "Trocar foto" ({g125})')
+        for tema in ['light', 'dark']:
+            p125.emulate_media(color_scheme=tema); p125.wait_for_timeout(150)
+            bd125 = [x for x in p125.evaluate(CHK) if 'foto' in str(x).lower() or 'JPG' in str(x)]
+            ok(not bd125, f'CT-KAN-293-05: contraste da foto na ficha no tema {tema} ({bd125[:3]})')
+        p125.emulate_media(color_scheme='light')
+        p125.screenshot(path=f'{OUT}/v125-foto-360.png')
+        # Salvar a ficha não apaga a foto nem a autorização; trocar apaga o arquivo antigo
+        antigo125 = g125['nome']
+        p125.click('#dlg [data-a=savePlayer]'); p125.wait_for_timeout(600)
+        s125 = p125.evaluate(f"[S.jog['{pid125}'].foto, !!((S.cont||{{}})['{pid125}']||{{}}).fa]")
+        ok(s125 == [antigo125, True], f'CT-KAN-293-01: salvar a ficha mantém a foto e a autorização ({s125})')
+        p125.wait_for_timeout(1100)
+        p125.click(f'[data-a=editPlayer][data-p="{pid125}"]'); p125.wait_for_selector('#fotoJogador img.foto-prev', timeout=10000)
+        p125.set_input_files('#fotoArq', files=[arq125])
+        p125.wait_for_function(f"S.jog['{pid125}'].foto !== '{antigo125}'", timeout=15000); p125.wait_for_timeout(500)
+        t125 = p125.evaluate(f"!!localStorage.getItem('pelada-foto:'+S.gid+':{pid125}:{antigo125}')")
+        ok(not t125, 'CT-KAN-293-01: trocar a foto apaga o arquivo antigo')
+        # Remover, com a confirmação do app
+        p125.click('#fotoTirar'); p125.wait_for_selector('#dlg .conf', timeout=5000)
+        rt125 = p125.inner_text('#confT')
+        p125.click('#dlg [data-a=confSim]'); p125.wait_for_function(f"!S.jog['{pid125}'].foto", timeout=10000); p125.wait_for_timeout(400)
+        r125 = p125.evaluate(f"[Object.keys(localStorage).filter(k=>k.startsWith('pelada-foto:')).length, !!document.querySelector('#fotoJogador .foto-vazia'), (document.getElementById('fotoEscolher')||{{}}).textContent]")
+        ok(rt125.startswith('Remover a foto de') and r125 == [0, True, 'Escolher foto'], f'CT-KAN-293-04: "Remover foto" pergunta, apaga o arquivo e a ficha volta sem foto ({rt125!r}, {r125})')
+        p125.click('#dlg [data-a=close]'); p125.wait_for_timeout(300)
+        # Jogador novo (sem cadastro ainda): sem o campo de foto
+        p125.click('[data-a=addPlayer]'); p125.wait_for_selector('#pnm', timeout=10000)
+        ok(p125.locator('#fotoJogador').count() == 0, 'CT-KAN-293-01: jogador novo, ainda sem cadastro, não mostra a foto (aparece depois de salvar)')
+        p125.keyboard.press('Escape'); p125.wait_for_timeout(300)
+        ctx125.close()
+        # Em English
+        ctx125e = b.new_context(viewport={'width': 360, 'height': 740}, service_workers='block', locale='en-US', timezone_id='America/Sao_Paulo')
+        p125e = ctx125e.new_page(); p125e.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p125e, 'criar')
+        p125e.fill('#le', 'v125en@teste.com'); p125e.fill('#lp', 'Jogo@2026'); p125e.fill('#lp2', 'Jogo@2026'); p125e.keyboard.press('Enter'); p125e.wait_for_selector('#ngBox', timeout=12000)
+        p125e.fill('#ngn', 'Photo FC'); p125e.click('[data-a=pickSport][data-v=futebol]'); p125e.click('[data-a=createGroup]')
+        p125e.wait_for_function("location.hash.startsWith('#/g/')"); p125e.wait_for_timeout(1500)
+        p125e.click('[data-a=tab][data-v=jogadores]'); p125e.wait_for_timeout(300); p125e.click('[data-a=seed]'); p125e.wait_for_timeout(1500)
+        p125e.locator('[data-a=editPlayer]').first.click(); p125e.wait_for_selector('#fotoJogador', timeout=10000); p125e.wait_for_timeout(500)
+        en125 = p125e.inner_text('#fotoJogador')
+        falta125 = p125e.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^foto\\./.test(k))")
+        ok('Choose photo' in en125 and "permission" in en125 and not re.search(r'\b(Escolher|autorização|Foto \()', en125) and not falta125,
+           f'CT-KAN-293-05: em English, a foto da ficha vem traduzida ({en125[:120]!r}, {falta125})')
+        ctx125e.close()
+
     if parte('b'):
         # ---------- v35 (KAN-142): "Continuar com o Google" na aba errada entra ou cria a conta e avisa (navegador separado)
         ctx3 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block'); p3 = ctx3.new_page()

@@ -682,6 +682,13 @@ describe('limites contra abuso (KAN-89)', () => {
     await assertFails(setDoc(doc(db.adm(), G + '/avulsos/a2'), { nome: longo }));
     await assertSucceeds(setDoc(doc(db.adm(), G + '/jogadores/j2'), { name: 'x'.repeat(40) }));
   });
+  test('CT-KAN-293-05: o jogador guarda só o nome do arquivo da foto', async () => {
+    await assertSucceeds(setDoc(doc(db.adm(), G + '/jogadores/j3'), { name: 'Ana', foto: 'foto-1732370000000.webp' }));
+    await assertSucceeds(setDoc(doc(db.adm(), G + '/jogadores/j3'), { name: 'Ana', foto: 'foto-1732370000001.png' }));
+    for (const ruim of ['https://x.com/a.png', 'foto-1.webp', 'logo-1732370000000.webp', 'foto-1732370000000.gif'])
+      await assertFails(setDoc(doc(db.adm(), G + '/jogadores/j3'), { name: 'Ana', foto: ruim }), ruim);
+    await assertFails(setDoc(doc(db.adm(), G + '/jogadores/j3'), { name: 'Ana', foto: 7 }));
+  });
 
   const criarGrupo = (f, uid, gid, extra = {}) => {
     const b = writeBatch(f);

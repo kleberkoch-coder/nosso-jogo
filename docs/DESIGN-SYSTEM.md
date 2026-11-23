@@ -74,6 +74,9 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo de toda janela (pelada-v106, KAN-250); **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v125)
+- **Foto do jogador** (KAN-293; `ui/FotoJogador.tsx`, CSS `estilos/foto.css`, na ficha do jogador logo abaixo do nome, só com Elenco e em jogador já cadastrado): rótulo `lbl` "Foto (para o card do jogador)"; a prévia (`foto-prev`: 72 × 90px, em pé, cantos de 12px, `object-fit: cover`, fundo `surface-2` e borda `line`; sem foto, 👤 em `foto-vazia`) e, ao lado, "Escolher foto" ou "Trocar foto" e "Remover foto" (`btn sm`, 44px, em `foto-acoes`, quebram para baixo; Remover abre a Janela de confirmação, coral). Na primeira foto, a caixa de marcar `chk-linha` (`foto-aut`) "Tenho a autorização do jogador…", e "Escolher foto" fica desligado até marcar. Embaixo, os limites em `small muted` e o erro em `err`.
+
 ## Registro de 19/11/2026 (KAN-285, só documentação)
 - Sem componente nem estilo novo (KAN-285): o registro de "Outros nomes de classe em uso" ganhou as 16 classes que faltavam (Sorteio sem conta, Avisos no celular, Colar lista, Material do grupo, Quadro do ano e Placar), mais `cab-longo` e `cab-curto` do Cabeçalho, e a nota de que `bolo` não tem visual próprio.
 

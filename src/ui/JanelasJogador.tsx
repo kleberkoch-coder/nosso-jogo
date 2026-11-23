@@ -10,6 +10,7 @@ import { $, today } from '../nucleo/util.js';
 import { openDlg } from './dialogos.js';
 import { CampoPosicao, Pos } from './componentes';
 import { CampoNota, CampoTelefone, CampoTipo, LinhaAfastamento } from './Campos';
+import { FotoJogador } from './FotoJogador';
 
 juntarTextos(textos);
 const st = S;
@@ -32,6 +33,8 @@ export function playerDlg(id: string | null, prefill?: any) {
         <span>{tx('jogador.nome')}</span>
         <input class="inp" id="pnm" value={p?.name || prefill?.name || ''} maxLength={40} />
       </label>
+      {/* KAN-293: foto do jogador (só em jogador já cadastrado, com a permissão de Elenco). */}
+      {p && id && posso('elenco') ? <FotoJogador pid={id} /> : null}
       <CampoPosicao id="ppos" valor={p?.pos || prefill?.pos} />
       {posso('notas') ? <CampoNota rotulo={tx('jogador.nota')} valor={nota} /> : null}
       {posso('caixa') && recurso('caixa') ? (

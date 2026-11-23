@@ -1,5 +1,21 @@
 /* Textos das janelas de jogador e de avulso (ui/JanelasJogador.tsx), que baixam só quando abertas (KAN-274). */
 export default {
+  'foto.titulo': 'Foto (para o card do jogador)',
+  'foto.atual': 'Foto de {nome}',
+  'foto.escolher': 'Escolher foto',
+  'foto.trocar': 'Trocar foto',
+  'foto.remover': 'Remover foto',
+  'foto.autorizacao': 'Tenho a autorização do jogador para usar a foto dele nos cards do grupo.',
+  'foto.limites':
+    'JPG, PNG ou WebP, até {mb} MB. Foto já recortada pelo celular (fundo transparente) fica sem fundo no card. O jogador pode pedir para tirar a foto a qualquer momento.',
+  'foto.tipoRuim': 'Esse tipo de arquivo não serve. Use JPG, PNG ou WebP.',
+  'foto.grande': 'A foto passa de {mb} MB. Escolha uma menor.',
+  'foto.naoAbriu': 'Não deu para abrir essa foto. Tente outra.',
+  'foto.naoSalvou': 'Não deu para salvar a foto. Confira a internet e tente de novo.',
+  'foto.salva': 'Foto salva.',
+  'foto.removida': 'Foto removida.',
+  'foto.removerTitulo': 'Remover a foto de {nome}?',
+  'foto.removerTexto': 'A foto sai do app e dos cards do grupo.',
   'contato.telRotulo': 'Telefone / WhatsApp',
   'contato.telOpcional': 'Telefone / WhatsApp (opcional)',
   'contato.telDica': 'Número de outro país? Troque o país ao lado.',

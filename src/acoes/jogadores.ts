@@ -154,6 +154,9 @@ const acoes: Record<string, (el: El) => unknown> = {
       }) !== 'sim'
     )
       return;
+    /* KAN-293: a foto sai junto (o arquivo no Storage). */
+    const foto = (S.jog[id] || {}).foto;
+    if (foto) import('./foto').then(m => m.apagarFoto(S.gid as string, id, foto)).catch(() => {});
     delete S.jog[id];
     w(GB.del('jogadores/' + id));
     editRat(a => {

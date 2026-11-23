@@ -93,7 +93,7 @@ function GaleriaFundos({ k, f, on }: { k: string; f: Fundo; on: (f: Fundo) => vo
           type="button"
           class="card-pronto"
           data-p={p}
-          aria-pressed={f.p === p}
+          aria-pressed={(f.p || FUNDOS_PRONTOS[0]) === p}
           aria-label={tx('card.pronto.' + p)}
           title={tx('card.pronto.' + p)}
           onClick={() => on({ ...f, p })}
@@ -115,7 +115,10 @@ export function FundoCampos({ k, f, on }: { k: string; f: Fundo; on: (f: Fundo) 
         class="sel"
         id={'cf' + k}
         aria-label={tx('card.fundo.' + k)}
-        onChange={e => on({ ...f, t: (e.currentTarget as HTMLSelectElement).value as Fundo['t'] })}
+        onChange={e => {
+          const t = (e.currentTarget as HTMLSelectElement).value as Fundo['t'];
+          on(t === 'pronto' && !f.p ? { ...f, t, p: FUNDOS_PRONTOS[0] } : { ...f, t });
+        }}
       >
         {TIPOS_FUNDO.map(t => (
           <option key={t} value={t} selected={t === f.t}>

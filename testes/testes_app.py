@@ -6424,6 +6424,8 @@ with sync_playwright() as pw:
             p128.click('[data-a=tab][data-v=jogadores]'); p128.wait_for_timeout(300); p128.click('[data-a=seed]'); p128.wait_for_timeout(1500)
             pid128 = p128.eval_on_selector('[data-a=editPlayer]', 'b=>b.dataset.p')
             p128.click(f'[data-a=editPlayer][data-p="{pid128}"]'); p128.wait_for_selector('#ptel', timeout=10000)
+            # a ficha põe o cursor no primeiro campo logo depois de abrir; espera isso antes de digitar
+            p128.wait_for_function("document.activeElement && document.activeElement.id === 'pnm'", timeout=5000); p128.wait_for_timeout(400)
             p128.fill('#ptel', '9876-54'); p128.click('#dlg [data-a=savePlayer]'); p128.wait_for_timeout(600)
             a128 = p128.evaluate(AVISO128)
             foco128 = p128.evaluate("document.activeElement && document.activeElement.id")

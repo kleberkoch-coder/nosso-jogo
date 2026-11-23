@@ -168,6 +168,11 @@ function migrarMensal() {
   if (((S.migr || {}).v || 0) < VERSAO_DADOS) return;
   return tarefas().then(m => m.migrarMensal());
 }
+/* KAN-295 (pelada-v129): uma vez por grupo, a cópia pública dos resumos que já existiam (os novos já vão juntos). */
+function migrarPublico() {
+  if (!S.dataOn || !S.loaded.migr || (S.migr || {}).pub || ((S.migr || {}).v || 0) < VERSAO_DADOS) return;
+  return tarefas().then(m => m.migrarPublico());
+}
 const recalcular = periodo => tarefas().then(m => m.recalcular(periodo));
 
 /* Aparelho com versão antiga ainda pode gravar partida dentro da ficha da rodada: move na hora. */
@@ -208,6 +213,7 @@ export {
   enviar,
   migrarCaixa,
   migrarMensal,
+  migrarPublico,
   opResumo,
   sem,
   aoLancar,

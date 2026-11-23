@@ -39,11 +39,13 @@ function gp(p: string) {
 type Op = { tipo: string; p: string; o?: unknown };
 const banco = (): any => (backend as any).B;
 /* Gravações dentro do grupo aberto: o caminho é relativo a grupos/{gid}. */
+const antesDoLote = { f: (ops: Op[]) => ops };
 const GB = {
   set: (p: string, o: unknown) => banco().set(gp(p), o),
   patch: (p: string, o: unknown) => banco().patch(gp(p), o),
   del: (p: string) => banco().del(gp(p)),
-  lote: (ops: Op[]) => banco().lote(ops.map(x => Object.assign({}, x, { p: gp(x.p) }))),
+  /* KAN-295: a gestão registra aqui a cópia pública dos resumos do mês (antesDoLote), que vai no mesmo lote. */
+  lote: (ops: Op[]) => banco().lote(antesDoLote.f(ops).map(x => Object.assign({}, x, { p: gp(x.p) }))),
 };
 type Abrir = (ok: (d: any) => void, erro: (e: any) => void) => Parar;
 /* Assinatura com nova tentativa (KAN-184): erro de rede repete depois de 1, 2 e 4 s antes de desistir.
@@ -111,4 +113,4 @@ function w<T>(p: T | Promise<T>): Promise<T> {
 }
 const clean = <T>(o: T): T => JSON.parse(JSON.stringify(o));
 
-export { GB, S, SUBS, clean, drop, dropAll, gp, sub, subQ, subRaw, w };
+export { GB, S, antesDoLote, SUBS, clean, drop, dropAll, gp, sub, subQ, subRaw, w };

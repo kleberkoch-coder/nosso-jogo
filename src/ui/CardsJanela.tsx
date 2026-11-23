@@ -44,6 +44,7 @@ import { srcFoto } from './foto-src';
 import { srcLogo } from './logo-src';
 import { srcFundo } from './cards-src';
 import { Cor, FundoCampos, MetalCampos } from './CardsCampos';
+import { curtoEstat, dadosDoCard } from './card-dados';
 import { apagarFundos, enviadas } from '../acoes/fundo-card';
 
 juntarTextos(textos);
@@ -61,14 +62,7 @@ const nomeModelo = (c: Cards, id: string) =>
   pronto(id)
     ? tx('card.base.' + (PRONTOS[id] || PRONTOS['p-classico']!).base)
     : modeloDe(c, id).n || tx('card.semNome');
-const palavra = () => String((sport() as { word?: string }).word || '');
-const rotEstat = (k: string) => tx('card.est.' + k, { ponto: palavra() });
-const curtoEstat = (k: string) => tx('card.curto.' + k, { PONTO: palavra().toUpperCase() });
-
-function iniciais(nome: string) {
-  const p = nome.split(/\s+/).filter(Boolean);
-  return ((p[0] || '?')[0]! + (p[1] ? p[1][0] : (p[0] || '')[1] || '')).toUpperCase();
-}
+const rotEstat = (k: string) => tx('card.est.' + k, { ponto: String((sport() as { word?: string }).word || '') });
 
 /* O jogador da prévia: o primeiro com foto (ou o primeiro do elenco, ou "Exemplo"). Números de exemplo. */
 function dadosPrevia(c: Cards, tipo: TipoCard, u: Uso): DadosCard {
@@ -76,21 +70,18 @@ function dadosPrevia(c: Cards, tipo: TipoCard, u: Uso): DadosCard {
     jog = (st().jog || {}) as Record<string, Obj>;
   const ps = players() as { id: string; name: string; pos?: string }[];
   const p = ps.find(x => jog[x.id] && jog[x.id]!.foto) || ps[0];
-  const m = modeloDe(c, u.m);
-  return {
-    nome: p ? p.name : tx('card.exemplo'),
-    pos: p && p.pos ? siglaTela(p.pos) : '',
-    foto: p ? srcFoto(gid, p.id, jog[p.id] && jog[p.id]!.foto) : '',
-    logo: srcLogo(gid, st().app && st().app.logo),
-    iniciais: iniciais(gname() || ''),
-    titulo: u.titulo || tx('card.tituloPadrao.' + tipo),
-    grande: valor(u.grande, EXEMPLO),
-    rotGrande: curtoEstat(u.grande),
-    campos: u.campos
-      .slice(0, ESPACOS[m.base])
-      .filter(Boolean)
-      .map(k => ({ r: curtoEstat(k), v: valor(k, EXEMPLO) })),
-  };
+  return dadosDoCard(
+    modeloDe(c, u.m),
+    u,
+    tipo,
+    {
+      nome: p ? p.name : tx('card.exemplo'),
+      pos: p && p.pos ? siglaTela(p.pos) : '',
+      foto: p ? srcFoto(gid, p.id, jog[p.id] && jog[p.id]!.foto) : '',
+    },
+    EXEMPLO,
+    { logo: srcLogo(gid, st().app && st().app.logo), nome: gname() || '' }
+  );
 }
 
 function Janela({ inicial }: { inicial: Cards }) {

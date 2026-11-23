@@ -249,6 +249,14 @@ with sync_playwright() as pw:
     ok(as13 and pa13 == [as13] and ra13 == 1 and nm13 and nm13 in pg.inner_text('#rankGarcom'),
        f'CT-KAN-170-P13d: (CT-KAN-66-08) a assistência continua na partida e no ranking depois de recarregar ({nm13}, {pa13}, {ra13})')
     pronto(pg, 'partida'); pg.wait_for_timeout(800)
+    # P46 números públicos do card (KAN-295): a partida salva também grava resumosPub/{mês}, que qualquer um lê (aqui,
+    # sem login, direto no emulador) e que só tem os números do card: nada de bagre, placar dos jogos ou caixa.
+    if EMU:
+        pub46 = J(pg, """async(g)=>{const h=(window.FIREBASE_EMULADOR||{}).firestore;const u='http://'+h+'/v1/projects/demo-nosso-jogo/databases/(default)/documents/grupos/'+g+'/resumosPub';
+          const r=await fetch(u);const j=await r.json();return [r.status,(j.documents||[]).map(d=>JSON.stringify(d.fields))]}""", gid)
+        txt46 = ' '.join(pub46[1])
+        ok(pub46[0] == 200 and pub46[1] and '"as"' in txt46 and '"j"' in txt46 and 'bagre' not in txt46 and '"jogos"' not in txt46 and '"cx"' not in txt46,
+           f'CT-KAN-170-P46: a partida salva grava os números públicos do card (lidos sem login), sem bagre, jogos ou caixa ({pub46[0]}, {txt46[:160]})')
 
     # P13b partida editada depois de salva (rodadas/{rid}/partidas com versão, resumos do mês) (KAN-176)
     ga13 = J(pg, "Object.values(S.parts||{})[0].ga")

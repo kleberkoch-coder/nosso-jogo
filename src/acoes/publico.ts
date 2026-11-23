@@ -89,6 +89,8 @@ const acoes: Record<string, (el: El) => unknown> = {
     const d = dadosAgenda();
     if (d) return janelasLink().then(m => m.janelaAgenda(d), semConexao);
   },
+  /* KAN-295 (pelada-v129): o card do jogador, sob demanda. */
+  pubMeuCard: el => import('../ui/CardJogador').then(m => m.abrirCardJogador(el.dataset.p || '', 'link'), semConexao),
   pubAgendaGerar: el => {
     const d = dadosAgenda();
     if (d) return janelasLink().then(m => m.baixarAgenda(d, el.dataset.v === 'semana'), semConexao);

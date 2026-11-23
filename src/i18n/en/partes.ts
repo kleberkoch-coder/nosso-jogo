@@ -912,6 +912,7 @@ export default {
   'foto.trocar': 'Change photo',
   'foto.remover': 'Remove photo',
   'foto.motivoAut': 'Tick the permission box to choose the photo.',
+  'foto.verCard': 'View card',
   'foto.autorizacao': 'I have the player’s permission to use their photo on the group’s cards.',
   'foto.limites':
     'JPG, PNG or WebP, up to {mb} MB. A photo already cut out by the phone (transparent background) shows without background on the card. The player can ask to remove the photo at any time.',

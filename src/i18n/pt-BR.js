@@ -186,6 +186,7 @@ export default {
   'zap.detalhes': 'Detalhes: {link}',
   'pwa.botao': '📲 Instalar app',
   /* KAN-124: botão de agenda no link (a janela e o arquivo chegam com ui/JanelasLink.tsx) */
+  'publico.meuCard': 'Meu card',
   'agenda.botao': 'Pôr na minha agenda',
   'agenda.rotulo': 'Pôr o jogo na minha agenda',
   'agenda.ajuda':

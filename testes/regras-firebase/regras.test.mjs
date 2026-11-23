@@ -1615,3 +1615,24 @@ describe('cards do grupo (KAN-294)', () => {
     await assertFails(updateDoc(doc(db.adm(), G), { 'cfg.cards': cards(1) }));
   });
 });
+
+describe('números públicos do card (KAN-295)', () => {
+  const R = G + '/resumosPub/2026-11';
+  test('CT-KAN-295-07: qualquer um lê os números públicos, inclusive sem login; o resumo privado continua fechado', async () => {
+    await env.withSecurityRulesDisabled(ctx =>
+      setDoc(doc(ctx.firestore(), R), { mes: '2026-11', jog: { a: { j: 1, g: 2 } } })
+    );
+    await assertSucceeds(getDoc(doc(db.semLogin(), R)));
+    await assertSucceeds(getDoc(doc(db.anon(), R)));
+    await assertFails(getDoc(doc(db.anon(), G + '/resumos/2026-11')));
+  });
+  test('CT-KAN-295-08: só administrador grava, só com mes, at e jog, e no mês certo', async () => {
+    await assertSucceeds(setDoc(doc(db.adm(), R), { mes: '2026-11', at: 1, jog: { a: { j: 1, g: 2, mvp: 1 } } }));
+    await assertFails(setDoc(doc(db.anon(), R), { mes: '2026-11', jog: {} }));
+    await assertFails(setDoc(doc(db.outro(), R), { mes: '2026-11', jog: {} }));
+    await assertFails(setDoc(doc(db.adm(), R), { mes: '2026-11', jog: {}, jogos: {} }));
+    await assertFails(setDoc(doc(db.adm(), R), { mes: '2026-11', jog: {}, cx: { ent: 1 } }));
+    await assertFails(setDoc(doc(db.adm(), R), { mes: '2026-10', jog: {} }));
+    await assertFails(setDoc(doc(db.adm(), R), { mes: '2026-11', jog: 'texto' }));
+  });
+});

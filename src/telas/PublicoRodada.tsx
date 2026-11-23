@@ -147,6 +147,20 @@ function Linha({ id, r, me }: { id: string; r: Rodada; me: string | null }) {
         <p class="small muted">{tx('agenda.ajuda')}</p>
       </li>
     ) : null;
+  /* KAN-295 (pelada-v129): quem tem foto vê "Meu card" na própria linha (cards do grupo: Plano A ou B, pelo espelho
+     do plano no grupo). */
+  const pl = ((S.app || {}).pl || {}) as { id?: string; ate?: number | null };
+  const card =
+    id === me &&
+    ((S.jog || {})[id] || {}).foto &&
+    (pl.id === 'A' || pl.id === 'B') &&
+    (pl.ate == null || pl.ate > Date.now()) ? (
+      <li class="agenda-linha" id="meuCardLinha">
+        <button class="btn sm agenda-btn" data-a="pubMeuCard" data-p={id}>
+          <span aria-hidden="true">🃏</span> {tx('publico.meuCard')}
+        </button>
+      </li>
+    ) : null;
   /* KAN-190: quem guarda material do grupo vê o lembrete, ao confirmar ou ao dizer que não vai. */
   const meu = id === me && s ? comPessoa(((S.app || {}).cfg || {}).mat, id) : [];
   const lembrete = meu.length ? (
@@ -200,6 +214,7 @@ function Linha({ id, r, me }: { id: string; r: Rodada; me: string | null }) {
       </li>
       {lembrete}
       {agenda}
+      {card}
     </>
   );
 }

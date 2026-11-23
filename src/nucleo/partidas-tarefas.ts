@@ -2,6 +2,7 @@
    gravar, apagar e editar partidas e a artilharia (aba Partida), recalcular os totais (Ranking) e as migrações de
    dados antigos (D10, D11, KAN-207, KAN-212). O lote de cada gravação continua levando o ajuste do resumo do mês. */
 import * as resumos from '../dominio/resumos';
+import { espelhoPublico } from '../dominio/resumo-publico';
 import { isOwnerMe, posso, rodById } from '../dominio/grupo.js';
 import { tx } from '../i18n/index.js';
 import * as backend from './backend.js';
@@ -245,6 +246,29 @@ export async function migrarMensal() {
     console.warn('resumo das mensalidades', e);
   } finally {
     migrandoMensal = false;
+  }
+}
+
+/* KAN-295 (pelada-v129): a cópia pública dos resumos que já existiam, uma vez por grupo (qualquer administrador). */
+let migrandoPublico = false;
+export async function migrarPublico() {
+  if (migrandoPublico || !S.dataOn || !S.loaded.migr || (S.migr || {}).pub) return;
+  if (((S.migr || {}).v || 0) < VERSAO_DADOS) return;
+  migrandoPublico = true;
+  try {
+    const todos = (await ler('resumos')) as Record<string, Obj>;
+    const ops: Obj[] = [];
+    for (const [mes, d] of Object.entries(todos)) {
+      const e = espelhoPublico({ tipo: 'set', p: 'resumos/' + mes, o: d });
+      if (e) ops.push(e);
+    }
+    ops.push({ tipo: 'patch', p: 'privado/migracao', o: { pub: 1 } });
+    await enviar(ops);
+    S.migr = Object.assign({}, S.migr, { pub: 1 });
+  } catch (e) {
+    console.warn('números públicos do card', e);
+  } finally {
+    migrandoPublico = false;
   }
 }
 

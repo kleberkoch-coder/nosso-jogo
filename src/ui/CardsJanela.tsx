@@ -16,6 +16,7 @@ import {
   apagar,
   copiar,
   estatsDe,
+  imagensParaApagar,
   lerCards,
   modeloDe,
   paraGravar,
@@ -43,6 +44,7 @@ import { srcFoto } from './foto-src';
 import { srcLogo } from './logo-src';
 import { srcFundo } from './cards-src';
 import { Cor, FundoCampos, MetalCampos } from './CardsCampos';
+import { apagarFundos, enviadas } from '../acoes/fundo-card';
 
 juntarTextos(textos);
 usarEstilo('cards', estilo);
@@ -312,19 +314,45 @@ function Janela({ inicial }: { inicial: Cards }) {
   );
 }
 
+/* KAN-302 (v128): o que estava gravado ao abrir, para apagar do Storage as imagens que deixaram de ser usadas. */
+let sessao: { antes: Cards; gid: string; salvo: boolean } | null = null;
+function limpar(s: { antes: Cards; gid: string }, depois: Cards | null) {
+  const sobras = imagensParaApagar(s.antes, depois, enviadas.splice(0));
+  if (sobras.length) apagarFundos(s.gid, sobras);
+}
+
 export function abrir() {
   const c = lerCards(((st().app || {}).cfg || {}).cards, temAst());
+  enviadas.splice(0);
+  const s = (sessao = { antes: c, gid: st().gid as string, salvo: false });
   openDlg(<Janela inicial={c} />);
+  const dlg = document.getElementById('dlg');
+  if (dlg)
+    dlg.addEventListener(
+      'close',
+      () => {
+        if (sessao === s && !s.salvo) limpar(s, null);
+      },
+      { once: true }
+    );
 }
 
 export const acoes: Record<string, (el: El) => unknown> = {
   cardsAbrir: () => abrir(),
   cardsSalvar: () => {
     if (!atual) return;
-    const n = paraGravar(atual.cards);
+    const n = paraGravar(atual.cards),
+      depois = atual.cards,
+      s = sessao;
+    if (s) s.salvo = true;
     const p = editApp(a => {
       a.cfg.cards = n;
     });
+    if (s)
+      Promise.resolve(p).then(
+        () => limpar(s, depois),
+        () => undefined
+      );
     closeDlg();
     toast(tx('card.salvo'));
     return p;

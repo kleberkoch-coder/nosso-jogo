@@ -6,9 +6,10 @@
    formato básico e o Plano A; aqui o app limpa tudo o que lê (o documento do grupo é público). */
 
 export type Base = 'classico' | 'destaque' | 'escudo' | 'metalico';
-export type TipoFundo = 'cor' | 'grad' | 'listras' | 'pontos' | 'marmore' | 'imagem';
-/* img: nome do arquivo no Storage (grupos/{gid}/cards/fundo-{momento}.webp), só no tipo "imagem" (v127). */
-export type Fundo = { t: TipoFundo; c1: string; c2: string; img?: string };
+export type TipoFundo = 'cor' | 'grad' | 'listras' | 'pontos' | 'marmore' | 'pronto' | 'imagem';
+/* img: nome do arquivo no Storage (grupos/{gid}/cards/fundo-{momento}.webp), só no tipo "imagem" (v127).
+   p: qual desenho da galeria de fundos prontos, só no tipo "pronto" (KAN-303, v128). */
+export type Fundo = { t: TipoFundo; c1: string; c2: string; img?: string; p?: string };
 /* Clássico metálico (v127): o acabamento da moldura, o formato do escudo e, no "metal na cor do time", a cor base. */
 export type Metal = 'ouro' | 'prata' | 'bronze' | 'time';
 export type Forma = 'coroa' | 'reto' | 'arco';
@@ -32,7 +33,25 @@ export type Uso = { m: string; titulo: string; grande: string; campos: string[];
 export type Cards = { modelos: Record<string, Modelo>; usos: Partial<Record<TipoCard, Uso>> };
 
 export const BASES: Base[] = ['classico', 'metalico', 'destaque', 'escudo'];
-export const TIPOS_FUNDO: TipoFundo[] = ['cor', 'grad', 'listras', 'pontos', 'marmore', 'imagem'];
+export const TIPOS_FUNDO: TipoFundo[] = ['cor', 'grad', 'listras', 'pontos', 'marmore', 'pronto', 'imagem'];
+/* Galeria de fundos prontos (KAN-303, v128): desenhos próprios do Nosso Jogo, gerados pelo app nas duas cores do
+   modelo (ui/fundos-prontos.tsx). Sem imagem de terceiros e sem arquivo para baixar. */
+export const FUNDOS_PRONTOS = [
+  'gramado',
+  'quadra',
+  'rede',
+  'faixas',
+  'raios',
+  'holofotes',
+  'hexagonos',
+  'ondas',
+  'velocidade',
+  'xadrez',
+  'concreto',
+  'confete',
+  'radar',
+  'triangulos',
+] as const;
 export const METAIS: Metal[] = ['ouro', 'prata', 'bronze', 'time'];
 export const FORMAS: Forma[] = ['coroa', 'reto', 'arco'];
 export const nomeFundoValido = (n: unknown): n is string =>
@@ -149,7 +168,24 @@ function fundo(v: unknown, padrao: Fundo): Fundo {
   if (t === 'imagem' && !nomeFundoValido(o.img)) t = 'cor';
   const f: Fundo = { t, c1: cor(o.c1, padrao.c1), c2: cor(o.c2, padrao.c2) };
   if (t === 'imagem') f.img = o.img as string;
+  if (t === 'pronto')
+    f.p = (FUNDOS_PRONTOS as readonly string[]).includes(o.p as string) ? (o.p as string) : FUNDOS_PRONTOS[0];
   return f;
+}
+
+/* KAN-302 (v128): imagens enviadas que cada versão dos cards usa, para apagar do Storage as que sobraram. */
+export function imagensUsadas(c: Cards | null | undefined): string[] {
+  const r = new Set<string>();
+  for (const m of Object.values((c && c.modelos) || {}))
+    for (const f of [m.fora, m.dentro]) if (f && f.t === 'imagem' && nomeFundoValido(f.img)) r.add(f.img);
+  return [...r];
+}
+/* Ao salvar (depois = o que vai ser gravado): as de antes e as enviadas agora que ninguém usa mais. Ao fechar sem
+   salvar (depois = null): só as enviadas agora que não estavam em uso antes. */
+export function imagensParaApagar(antes: Cards, depois: Cards | null, enviadas: string[]): string[] {
+  const ficam = new Set(imagensUsadas(depois || antes));
+  const candidatas = depois ? [...imagensUsadas(antes), ...enviadas] : enviadas;
+  return [...new Set(candidatas)].filter(n => nomeFundoValido(n) && !ficam.has(n));
 }
 
 /* Um modelo lido do banco: tudo conferido, com o pronto da mesma base como padrão. */

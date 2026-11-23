@@ -125,7 +125,7 @@ export function FotoJogador({ pid }: { pid: string }) {
   const podeEscolher = jaAutorizou || aut;
 
   return (
-    <div class="f foto-jog" id="fotoJogador">
+    <div class="f foto-jog" id="fotoJogador" data-sem-descarte="">
       <span class="lbl">{tx('foto.titulo')}</span>
       <div class="foto-linha">
         {src ? (
@@ -141,6 +141,7 @@ export function FotoJogador({ pid }: { pid: string }) {
             id="fotoEscolher"
             {...busy('subir')}
             disabled={!!ocupado || !podeEscolher}
+            aria-describedby={podeEscolher ? undefined : 'fotoMotivo'}
             onClick={() => arq.current?.click()}
           >
             {tx(src ? 'foto.trocar' : 'foto.escolher')}
@@ -195,6 +196,11 @@ export function FotoJogador({ pid }: { pid: string }) {
           />
           <span>{tx('foto.autorizacao')}</span>
         </label>
+      )}
+      {podeEscolher ? null : (
+        <p class="small muted" id="fotoMotivo">
+          {tx('foto.motivoAut')}
+        </p>
       )}
       <p class="small muted" id="fotoLimites">
         {tx('foto.limites', { mb: FOTO_MAX_MB })}

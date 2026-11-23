@@ -135,6 +135,16 @@ function renderCore() {
     'aria-label',
     tx('conta.idiomaAtual', { nome: (IDIOMAS.find(i => i.id === LOCAL) || IDIOMAS[0]).nome })
   );
+  /* KAN-286 (pelada-v128): o nome do 🌓 para o leitor de tela no idioma da tela e com o tema atual (o HTML inicial
+     vem em português, antes do idioma carregar). */
+  let tk = null;
+  try {
+    tk = localStorage.getItem('nj-tema');
+  } catch (e) {}
+  const tb = $('#themeBtn'),
+    trot = tx('tema.rotulo', { tema: tx(tk === 'light' ? 'tema.claro' : tk === 'dark' ? 'tema.escuro' : 'tema.auto') });
+  tb.setAttribute('aria-label', trot);
+  tb.title = trot;
   $('#installBtn').textContent = tx('pwa.botao');
   if (R.n !== 'r') desmontarPublico();
   if (R.n === 'r') return renderPublicRodada();

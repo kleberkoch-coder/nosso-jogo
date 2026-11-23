@@ -5,6 +5,7 @@ export default {
   'foto.escolher': 'Escolher foto',
   'foto.trocar': 'Trocar foto',
   'foto.remover': 'Remover foto',
+  'foto.motivoAut': 'Marque a autorização para escolher a foto.',
   'foto.autorizacao': 'Tenho a autorização do jogador para usar a foto dele nos cards do grupo.',
   'foto.limites':
     'JPG, PNG ou WebP, até {mb} MB. Foto já recortada pelo celular (fundo transparente) fica sem fundo no card. O jogador pode pedir para tirar a foto a qualquer momento.',

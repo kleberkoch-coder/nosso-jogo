@@ -1110,6 +1110,7 @@ dialog::backdrop {
   pointer-events: none;
   transition: opacity 0.2s;
   z-index: 50;
+  width: max-content;
   max-width: 90vw;
 }
 #toast.on {

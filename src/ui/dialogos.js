@@ -71,22 +71,25 @@ const marcarAlterada = () => {
   alterada = true;
 };
 function valoresForm() {
-  return [
-    ...document.querySelectorAll(
-      '#dlgBody input,#dlgBody select,#dlgBody textarea,#dlgBody [aria-pressed],#dlgBody [data-sp],#dlgBody [data-freq]'
-    ),
-  ]
-    .filter(e => !e.closest('#dlgGuardado,.conf'))
-    .map(e =>
-      e.tagName === 'BUTTON'
-        ? e.getAttribute('aria-pressed')
-        : e.type === 'checkbox' || e.type === 'radio'
-          ? e.checked
-          : 'value' in e && e.tagName !== 'DIV'
-            ? e.value
-            : (e.dataset.sp || '') + '|' + (e.dataset.freq || '')
-    )
-    .join('\u0001');
+  return (
+    [
+      ...document.querySelectorAll(
+        '#dlgBody input,#dlgBody select,#dlgBody textarea,#dlgBody [aria-pressed],#dlgBody [data-sp],#dlgBody [data-freq]'
+      ),
+    ]
+      /* KAN-298: o que grava na hora (a foto e a autorização) não conta como "algo preenchido" */
+      .filter(e => !e.closest('#dlgGuardado,.conf,[data-sem-descarte],#toast'))
+      .map(e =>
+        e.tagName === 'BUTTON'
+          ? e.getAttribute('aria-pressed')
+          : e.type === 'checkbox' || e.type === 'radio'
+            ? e.checked
+            : 'value' in e && e.tagName !== 'DIV'
+              ? e.value
+              : (e.dataset.sp || '') + '|' + (e.dataset.freq || '')
+      )
+      .join('\u0001')
+  );
 }
 function fecharPerguntando() {
   if (conf) {

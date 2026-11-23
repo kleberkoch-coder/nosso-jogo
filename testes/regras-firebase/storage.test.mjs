@@ -150,3 +150,72 @@ describe('logotipo: quem só vê e conta bloqueada (KAN-281)', () => {
     );
   });
 });
+
+describe('foto do jogador no Storage (KAN-293)', () => {
+  const F = G + '/jogadores/p1/';
+  const subirFoto = (uid, nome, dados = img(), meta = WEBP) =>
+    st(uid)
+      .ref(F + nome)
+      .put(dados, meta);
+  test('CT-KAN-293-09: qualquer um lê a foto (o card vai aparecer no link); só nomes de foto', async () => {
+    await env.withSecurityRulesDisabled(ctx =>
+      ctx
+        .storage(BALDE)
+        .ref(F + 'foto-1732370000000.webp')
+        .put(img(), WEBP)
+    );
+    await assertSucceeds(
+      st(null)
+        .ref(F + 'foto-1732370000000.webp')
+        .getMetadata()
+    );
+    await assertSucceeds(
+      st('anon')
+        .ref(F + 'foto-1732370000000.webp')
+        .getMetadata()
+    );
+  });
+  test('CT-KAN-293-03: organizador e administrador com Elenco gravam; sem Elenco, anônimo ou de fora, não', async () => {
+    await assertSucceeds(subirFoto('dono', 'foto-1732370000001.webp'));
+    await assertSucceeds(subirFoto('conv', 'foto-1732370000002.png', img(), { contentType: 'image/png' }));
+    await assertSucceeds(subirFoto('adm', 'foto-1732370000003.jpg', img(), { contentType: 'image/jpeg' }));
+    await assertFails(subirFoto('cfg', 'foto-1732370000004.webp'));
+    await assertFails(subirFoto('outro', 'foto-1732370000005.webp'));
+    await assertFails(subirFoto('anon', 'foto-1732370000006.webp'));
+    await assertFails(subirFoto(null, 'foto-1732370000007.webp'));
+  });
+  test('CT-KAN-293-10: só WebP, PNG ou JPEG até 600 KB, com nome de foto e sem gravar por cima', async () => {
+    await assertFails(subirFoto('dono', 'foto-1732370000008.webp', img(), { contentType: 'image/gif' }));
+    await assertFails(subirFoto('dono', 'foto-1732370000009.webp', img(610 * 1024)));
+    await assertSucceeds(subirFoto('dono', 'foto-1732370000010.png', img(500 * 1024), { contentType: 'image/png' }));
+    await assertFails(subirFoto('dono', 'logo-1732370000011.webp'));
+    await assertFails(subirFoto('dono', 'foto-1732370000010.png', img(), { contentType: 'image/png' }));
+    await assertFails(
+      st('dono')
+        .ref(F + 'sub/foto-1732370000012.webp')
+        .put(img(), WEBP)
+    );
+  });
+  test('CT-KAN-293-04: apagar só com Elenco; grupo bloqueado não grava', async () => {
+    await env.withSecurityRulesDisabled(ctx =>
+      ctx
+        .storage(BALDE)
+        .ref(F + 'foto-1732370000000.webp')
+        .put(img(), WEBP)
+    );
+    await assertFails(
+      st('cfg')
+        .ref(F + 'foto-1732370000000.webp')
+        .delete()
+    );
+    await assertSucceeds(
+      st('conv')
+        .ref(F + 'foto-1732370000000.webp')
+        .delete()
+    );
+    await env.withSecurityRulesDisabled(ctx =>
+      setDoc(doc(ctx.firestore(), G), { name: 'G1', owner: 'dono', ativo: true, createdAt: 1, bloq: true })
+    );
+    await assertFails(subirFoto('dono', 'foto-1732370000013.webp'));
+  });
+});

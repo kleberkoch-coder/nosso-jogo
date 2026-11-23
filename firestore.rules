@@ -556,7 +556,10 @@ service cloud.firestore {
       // KAN-201: elenco só com a permissão de elenco. Quem tem a de caixa ajusta só a marca de vaga (KAN-63), que segue o tipo.
       match /jogadores/{id} {
         allow read: if true;
-        allow create, update: if pode(gid, 'elenco') && nomeOk('name');
+        // KAN-293 (pelada-v125): foto = só o nome do arquivo no Storage (foto-{momento}.webp, .png ou .jpg).
+        allow create, update: if pode(gid, 'elenco') && nomeOk('name')
+          && (!('foto' in request.resource.data) || (request.resource.data.foto is string
+              && request.resource.data.foto.matches('foto-[0-9]{10,16}[.](webp|png|jpg)')));
         allow update: if pode(gid, 'caixa') && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['vaga']);
         allow delete: if pode(gid, 'elenco');
       }

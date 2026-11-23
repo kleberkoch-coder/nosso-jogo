@@ -1134,6 +1134,41 @@ with sync_playwright() as pw:
     p42.goto(URL + '#/g/' + g42); pronto(p42); p42.wait_for_timeout(1500)
     r42b, r43b = J(p42, ler42), J(p42, ler43)
     ok(r42b == r42 and r43b == r43, f'CT-KAN-170-P42/P43: e também depois de sair e entrar ({r42b}, {r43b})')
+    # P44 foto do jogador (KAN-293): PNG com fundo transparente no Storage do emulador, o nome no jogador (campo foto) e
+    # a autorização em privado/contatos (fa). Confere depois de recarregar e de sair e entrar.
+    png44 = J(p42, "(()=>{const c=document.createElement('canvas');c.width=300;c.height=400;const x=c.getContext('2d');"
+                   "x.fillStyle='#c33';x.beginPath();x.arc(150,200,120,0,7);x.fill();return c.toDataURL('image/png').split(',')[1]})()")
+    import base64
+    p42.click('[data-a=tab][data-v=jogadores]'); p42.wait_for_timeout(500)
+    pid44 = J(p42, "Object.keys(S.jog).find(k=>S.jog[k].name==='Aniversariante')")
+    p42.click(f'[data-a=editPlayer][data-p="{pid44}"]'); p42.wait_for_selector('#fotoArq', state='attached', timeout=20000)
+    p42.check('#fotoAut')
+    p42.set_input_files('#fotoArq', files=[{'name': 'recortada.png', 'mimeType': 'image/png', 'buffer': base64.b64decode(png44)}])
+    p42.wait_for_function("!!((S.jog[" + json.dumps(pid44) + "]||{}).foto) || !!(document.getElementById('fotoErr')||{}).textContent", timeout=30000)
+    err44 = J(p42, "(document.getElementById('fotoErr')||{}).textContent||''")
+    p42.click('#dlg [data-a=close]'); p42.wait_for_timeout(300)
+    gravou(p42); pronto(p42)
+    r44 = p42.evaluate("(pid)=>{const j=S.jog[pid]||{};return [j.foto||null, (((S.cont||{})[pid]||{}).fa||0)>0]}", pid44)
+    # A imagem no Storage: abre a ficha e espera a prévia carregar (largura e transparência do canto).
+    def foto44():
+        p42.click('[data-a=tab][data-v=jogadores]'); p42.wait_for_timeout(500)
+        p42.click(f'[data-a=editPlayer][data-p="{pid44}"]'); p42.wait_for_selector('#fotoJogador', timeout=20000)
+        v = p42.evaluate("""async()=>{const i=document.querySelector('#fotoJogador img.foto-prev');if(!i)return [0,-1];
+          await new Promise(r=>{if(i.complete)r();else{i.onload=r;i.onerror=r;setTimeout(r,8000)}});
+          try{const c=document.createElement('canvas');c.width=i.naturalWidth;c.height=i.naturalHeight;const x=c.getContext('2d');x.drawImage(i,0,0);
+          return [i.naturalWidth,x.getImageData(2,2,1,1).data[3]]}catch(e){return [i.naturalWidth,-2]}}""")
+        p42.click('#dlg [data-a=close]'); p42.wait_for_timeout(300)
+        return v
+    i44 = foto44()
+    ok(r44[0] is not None and re.fullmatch(r'foto-\d{10,16}\.(webp|png|jpg)', r44[0]) is not None and r44[1] and i44[0] == 300 and i44[1] in (0, -2),
+       f'CT-KAN-170-P44: a foto (no Storage, transparente) e a autorização continuam depois de recarregar ({r44}, {i44}, {err44!r})')
+    sair_e_esperar(p42)
+    p42.goto(URL + '#/entrar'); p42.wait_for_selector('#le', timeout=20000); p42.wait_for_timeout(300)
+    p42.fill('#le', E42); p42.fill('#lp', SENHA); p42.keyboard.press('Enter'); p42.wait_for_timeout(2500)
+    p42.goto(URL + '#/g/' + g42); pronto(p42); p42.wait_for_timeout(1500)
+    r44b = p42.evaluate("(pid)=>{const j=S.jog[pid]||{};return [j.foto||null, (((S.cont||{})[pid]||{}).fa||0)>0]}", pid44)
+    i44b = foto44()
+    ok(r44b == r44 and i44b[0] == 300, f'CT-KAN-170-P44: e também depois de sair e entrar ({r44b}, {i44b})')
     c42.close()
 
     ok(not errs,'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))

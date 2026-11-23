@@ -1,0 +1,35 @@
+/* KAN-293 (pelada-v125): foto do jogador na ficha. */
+.foto-linha {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.foto-prev {
+  flex: none;
+  width: 72px;
+  height: 90px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.foto-vazia {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+}
+.foto-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.foto-acoes .btn {
+  min-height: var(--touch-min);
+}
+.foto-aut {
+  margin-top: 8px;
+}
+.foto-jog .small {
+  margin: 6px 0 0;
+}

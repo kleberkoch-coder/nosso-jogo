@@ -72,7 +72,13 @@ function saveContato(id: string, tel: string, email: string, nasc?: string) {
     o = c[id] || {},
     n = nasc === undefined ? o.nasc || '' : nasc;
   if ((o.tel || '') === (tel || '') && (o.email || '') === (email || '') && (o.nasc || '') === n) return;
-  if (tel || email || n) c[id] = Object.assign({ tel: tel || '', email: email || '' }, n ? { nasc: n } : {});
+  /* KAN-293: a autorização da foto (fa, fp) fica junto e não se perde ao salvar o contato. */
+  const resto = Object.assign({}, o);
+  delete resto.tel;
+  delete resto.email;
+  delete resto.nasc;
+  if (tel || email || n || Object.keys(resto).length)
+    c[id] = Object.assign(resto, { tel: tel || '', email: email || '' }, n ? { nasc: n } : {});
   else delete c[id];
   st().cont = c;
   return w(GB.set('privado/contatos', clean(c)));

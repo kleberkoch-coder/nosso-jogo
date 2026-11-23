@@ -106,4 +106,8 @@ export default {
   'grupo.partidas': 'Partidas',
   // Permissões dos administradores convidados (KAN-201)
   // Planos no app (KAN-119)
+  // Cards do grupo (KAN-294)
+  'cardg.titulo': 'Cards do grupo',
+  'cardg.ajuda': 'Monte os cards dos jogadores e da rodada com as cores do grupo.',
+  'cardg.abrir': 'Montar cards',
 };

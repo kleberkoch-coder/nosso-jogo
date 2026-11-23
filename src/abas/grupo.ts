@@ -12,4 +12,6 @@ export { vGrupo as ver, montarGrupo as montar } from '../telas/GrupoTela';
 import { acoes as pc } from '../acoes/partidas-caixa';
 /* KAN-190 (pelada-v109): as ações do material do grupo também vêm com a aba. */
 import { acoes as mat } from '../acoes/material';
-export const ACOES = Object.assign({}, pc, mat);
+/* KAN-294 (pelada-v126): a janela dos cards do grupo baixa ao abrir. */
+import { acoes as cards } from '../acoes/cards';
+export const ACOES = Object.assign({}, pc, mat, cards);

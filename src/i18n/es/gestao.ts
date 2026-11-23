@@ -229,6 +229,7 @@ export default {
   'plano.rec.listaEspera': 'Lista de espera (control de cupos)',
   'plano.rec.cobrarPendentes': 'Avisar a quien no respondió',
   'plano.rec.campeonato': 'Campeonato en la jornada',
+  'plano.rec.cards': 'Tarjetas del grupo',
   'plano.desc.caixa': 'Cuota mensual, cuota por partido, Pix, registros, quién falta pagar y el cobro.',
   'plano.desc.votacao': 'Destacados y troncos de la jornada, votados por el enlace, que entran en el ranking.',
   'plano.desc.historico': 'Todas las jornadas que ya se jugaron, con equipos y marcadores.',

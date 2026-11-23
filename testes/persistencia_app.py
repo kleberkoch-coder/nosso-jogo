@@ -1162,6 +1162,20 @@ with sync_playwright() as pw:
     i44 = foto44()
     ok(r44[0] is not None and re.fullmatch(r'foto-\d{10,16}\.(webp|png|jpg)', r44[0]) is not None and r44[1] and i44[0] == 300 and i44[1] in (0, -2),
        f'CT-KAN-170-P44: a foto (no Storage, transparente) e a autorização continuam depois de recarregar ({r44}, {i44}, {err44!r})')
+    # P45 cards do grupo (KAN-294): um modelo copiado e editado (fundo de fora azul) e o card do craque com outro número
+    # grande, gravados em grupos/{gid}.cfg.cards (as regras conferem o Plano A). Depois de recarregar e de sair e entrar.
+    p42.click('[data-a=tab][data-v=grupo]'); p42.wait_for_selector('#cardsPainel [data-a=cardsAbrir]', timeout=20000)
+    p42.click('#cardsPainel [data-a=cardsAbrir]'); p42.wait_for_selector('#cardsJanela', timeout=20000)
+    p42.click('#cardCopiar'); p42.wait_for_selector('#cardModeloEd', timeout=10000)
+    p42.select_option('#cffora', 'cor')
+    p42.evaluate("(()=>{const i=document.getElementById('cffora1');i.value='#0b2a5b';i.dispatchEvent(new Event('input',{bubbles:true}))})()")
+    p42.click('.card-tipos [data-tipo=craque]'); p42.wait_for_timeout(200); p42.select_option('#cardGrande', 'votos')
+    p42.click('#dlg [data-a=cardsSalvar]'); p42.wait_for_timeout(1200)
+    gravou(p42); pronto(p42)
+    ler45 = ("(()=>{const c=(S.app.cfg||{}).cards||{};const ms=Object.values(c.modelos||{});const u=c.usos||{};"
+             "return [ms.length, ms[0]&&ms[0].fora&&ms[0].fora.c1, ms[0]&&ms[0].fora&&ms[0].fora.t, (u.perfil||{}).m in (c.modelos||{}), (u.craque||{}).grande]})()")
+    r45 = J(p42, ler45)
+    ok(r45 == [1, '#0b2a5b', 'cor', True, 'votos'], f'CT-KAN-170-P45: os cards do grupo (modelo copiado e editado, número grande do craque) continuam depois de recarregar ({r45})')
     sair_e_esperar(p42)
     p42.goto(URL + '#/entrar'); p42.wait_for_selector('#le', timeout=20000); p42.wait_for_timeout(300)
     p42.fill('#le', E42); p42.fill('#lp', SENHA); p42.keyboard.press('Enter'); p42.wait_for_timeout(2500)
@@ -1169,6 +1183,8 @@ with sync_playwright() as pw:
     r44b = p42.evaluate("(pid)=>{const j=S.jog[pid]||{};return [j.foto||null, (((S.cont||{})[pid]||{}).fa||0)>0]}", pid44)
     i44b = foto44()
     ok(r44b == r44 and i44b[0] == 300, f'CT-KAN-170-P44: e também depois de sair e entrar ({r44b}, {i44b})')
+    r45b = J(p42, ler45)
+    ok(r45b == r45, f'CT-KAN-170-P45: e também depois de sair e entrar ({r45b})')
     c42.close()
 
     ok(not errs,'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))

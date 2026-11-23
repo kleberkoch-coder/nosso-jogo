@@ -6190,6 +6190,119 @@ with sync_playwright() as pw:
            f'CT-KAN-293-05: em English, a foto da ficha vem traduzida ({en125[:120]!r}, {falta125})')
         ctx125e.close()
 
+        # ---------- v126 (KAN-294): cards do grupo (modelos prontos, copiar e editar, o que cada card leva)
+        import base64
+        ctx126 = b.new_context(viewport={'width': 360, 'height': 740}, service_workers='block', locale='pt-BR', timezone_id='America/Sao_Paulo')
+        p126 = ctx126.new_page(); p126.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p126, 'criar')
+        p126.fill('#le', 'v126@teste.com'); p126.fill('#lp', 'Jogo@2026'); p126.fill('#lp2', 'Jogo@2026'); p126.keyboard.press('Enter'); p126.wait_for_selector('#ngBox', timeout=12000)
+        p126.fill('#ngn', 'Racha Azul'); p126.click('[data-a=pickSport][data-v=futebol]'); p126.click('[data-a=createGroup]')
+        p126.wait_for_function("location.hash.startsWith('#/g/')"); p126.wait_for_timeout(1500)
+        p126.click('[data-a=tab][data-v=jogadores]'); p126.wait_for_timeout(300); p126.click('[data-a=seed]'); p126.wait_for_timeout(1500)
+        # Um jogador com foto e nome de 30 letras (a prévia usa o primeiro com foto)
+        png126 = p126.evaluate("(()=>{const c=document.createElement('canvas');c.width=600;c.height=800;const x=c.getContext('2d');"
+                               "x.fillStyle='#2a6';x.beginPath();x.arc(300,400,250,0,7);x.fill();return c.toDataURL('image/png').split(',')[1]})()")
+        pid126 = p126.locator('[data-a=editPlayer]').first.get_attribute('data-p')
+        p126.locator('[data-a=editPlayer]').first.click(); p126.wait_for_selector('#fotoJogador', timeout=10000)
+        p126.fill('#pnm', 'Maximiliano Bernardes Ferreira'); p126.check('#fotoAut')
+        p126.set_input_files('#fotoArq', files=[{'name': 'r.png', 'mimeType': 'image/png', 'buffer': base64.b64decode(png126)}])
+        p126.wait_for_function(f"!!(S.jog['{pid126}']||{{}}).foto", timeout=15000); p126.wait_for_timeout(300)
+        p126.click('#dlg [data-a=savePlayer]'); p126.wait_for_timeout(1200)
+        p126.click('[data-a=tab][data-v=grupo]'); p126.wait_for_selector('#cardsPainel', timeout=15000)
+        a126 = p126.evaluate("(()=>{const b=document.querySelector('#cardsPainel [data-a=cardsAbrir]');return [!!b, b?Math.round(b.getBoundingClientRect().height):0, !!document.getElementById('cardsJanela')]})()")
+        ok(a126[0] and a126[1] >= 36 and not a126[2], f'CT-KAN-294-01: a aba Grupo mostra "Cards do grupo" com "Montar cards" (36px), antes de abrir a janela ({a126})')
+        p126.click('#cardsPainel [data-a=cardsAbrir]'); p126.wait_for_selector('#cardsJanela svg.card-svg', timeout=15000); p126.wait_for_timeout(500)
+        def caixa126():
+            return p126.evaluate("""(()=>{const s=document.querySelector('#cardsJanela svg.card-svg');const fora=[...s.querySelectorAll('text')].filter(t=>{const b=t.getBBox();return b.x<0||b.x+b.width>400||b.y<0||b.y+b.height>500}).map(t=>t.textContent);
+              return {fora, nome:[...s.querySelectorAll('text')].some(t=>t.textContent==='Maximiliano Bernardes Ferreira'), foto:!!s.querySelector('image[href^="data:"]'),
+                tipos:[...document.querySelectorAll('.card-tipos [data-tipo]')].map(b=>b.textContent), rol:document.getElementById('dlg').scrollWidth>document.getElementById('dlg').clientWidth+1}})()""")
+        c126 = caixa126()
+        ok(c126['nome'] and c126['foto'] and not c126['fora'] and c126['tipos'] == ['Jogador', 'Craque', 'Artilheiro', 'Garçom'] and not c126['rol'],
+           f'CT-KAN-294-01/02: a prévia mostra o jogador com foto e nome de 30 letras sem nada sair do card; 4 tipos no futebol; sem rolagem lateral em 360px ({c126})')
+        for mod in ['p-destaque', 'p-escudo']:
+            p126.select_option('#cardModelo', mod); p126.wait_for_timeout(250)
+            cm126 = caixa126()
+            ok(not cm126['fora'] and cm126['nome'], f'CT-KAN-294-02: no modelo {mod}, nome longo e números dentro do card ({cm126["fora"]})')
+        p126.select_option('#cardModelo', 'p-classico'); p126.wait_for_timeout(200)
+        ok(p126.locator('#cardModeloEd').count() == 0 and 'Copiar e editar' in p126.inner_text('#cardsJanela'), 'CT-KAN-294-01: modelo pronto não se edita direto: orienta "Copiar e editar"')
+        # Número grande e estatísticas mudam a prévia na hora
+        p126.select_option('#cardGrande', 'premios'); p126.wait_for_timeout(200)
+        g126 = p126.evaluate("[...document.querySelectorAll('#cardsJanela svg.card-svg text')].map(t=>t.textContent)")
+        ok('5x' in g126 and 'PRÊMIOS' in g126, f'CT-KAN-294-01: trocar o número grande muda a prévia na hora ({g126[:6]})')
+        p126.select_option('[data-espaco="5"]', ''); p126.wait_for_timeout(200)
+        n126 = p126.evaluate("[...document.querySelectorAll('#cardsJanela svg.card-svg text')].filter(t=>/^(GOLS|ASSIST\\.|JOGOS|VITÓRIAS|APROV\\.|PRÊMIOS)$/.test(t.textContent)).length")
+        ok(n126 == 6, f'CT-KAN-294-01: tirar uma estatística deixa 5 espaços e o rótulo do número grande ({n126})')
+        # Copiar e editar: o modelo do grupo, com fundo de fora azul, letras e linhas
+        p126.click('#cardCopiar'); p126.wait_for_selector('#cardModeloEd', timeout=5000); p126.wait_for_timeout(200)
+        cp126 = p126.evaluate("[document.getElementById('cardNome').value, document.activeElement&&document.activeElement.id, document.getElementById('cardModelo').value.startsWith('p-')]")
+        ok(cp126[0] == 'Clássico (cópia)' and cp126[1] == 'cardNome' and not cp126[2], f'CT-KAN-294-01: "Copiar e editar" cria "Clássico (cópia)" com o cursor no nome ({cp126})')
+        p126.fill('#cardNome', 'Azul do racha')
+        p126.select_option('#cffora', 'cor')
+        def cor126(id_, v):
+            p126.evaluate("(a)=>{const i=document.getElementById(a[0]);i.value=a[1];i.dispatchEvent(new Event('input',{bubbles:true}))}", [id_, v])
+            p126.wait_for_timeout(150)
+        cor126('cffora1', '#0b2a5b')
+        f126 = p126.evaluate("document.querySelector('#cardsJanela svg.card-svg > rect').getAttribute('fill')")
+        ok(f126 == '#0b2a5b', f'CT-KAN-294-01: o fundo de fora muda na prévia na hora ({f126})')
+        # Contraste: letras quase da cor do fundo de dentro avisam
+        p126.select_option('#cfdentro', 'cor'); cor126('cfdentro1', '#ffffff'); cor126('ccLetra', '#eeeeee')
+        ok(p126.locator('#cardContraste').count() == 1, 'CT-KAN-294-04: letras com pouco contraste mostram o aviso')
+        cor126('ccLetra', '#0b2a5b')
+        ok(p126.locator('#cardContraste').count() == 0, 'CT-KAN-294-04: com contraste bom, o aviso some')
+        alt126 = p126.evaluate("[...document.querySelectorAll('#cardsJanela .card-cor, #cardsJanela .sel, #cardsJanela .card-tipos .opt, #cardsJanela .card-botoes .btn')].map(e=>Math.round(e.getBoundingClientRect().height)).filter(h=>h<44)")
+        ok(not alt126, f'CT-KAN-294-06: combos, cores, tipos e botões da janela com 44px ({alt126})')
+        for tema in ['light', 'dark']:
+            p126.emulate_media(color_scheme=tema); p126.wait_for_timeout(150)
+            bd126 = [x for x in p126.evaluate(CHK) if 'card' in str(x).lower()]
+            ok(not bd126, f'CT-KAN-294-06: contraste da janela de cards no tema {tema} ({bd126[:3]})')
+        p126.emulate_media(color_scheme='light')
+        p126.screenshot(path=f'{OUT}/v126-cards-360.png')
+        # O card do craque com outro número grande; o do jogador continua com o modelo copiado
+        p126.click('.card-tipos [data-tipo=craque]'); p126.wait_for_timeout(200)
+        k126 = p126.evaluate("[document.getElementById('cardModelo').value, [...document.querySelectorAll('#cardsJanela svg.card-svg text')].map(t=>t.textContent).includes('CRAQUE')]")
+        ok(k126 == ['p-destaque', True], f'CT-KAN-294-01: o card do craque usa o Destaque com o título "CRAQUE" ({k126})')
+        p126.fill('#cardTitulo', 'MELHOR DA NOITE'); p126.select_option('#cardGrande', 'votos'); p126.wait_for_timeout(150)
+        p126.click('#dlg [data-a=cardsSalvar]'); p126.wait_for_timeout(1000)
+        p126.reload(); p126.wait_for_function("window.S && S.loaded && S.loaded.app", timeout=20000); p126.wait_for_timeout(800)
+        s126 = p126.evaluate("""(()=>{const c=(S.app.cfg||{}).cards||{};const ids=Object.keys(c.modelos||{});const m=c.modelos[ids[0]]||{};const u=c.usos||{};
+          return [ids.length, m.n, m.fora&&m.fora.c1, m.letra, (u.perfil||{}).m===ids[0], (u.perfil||{}).grande, (u.perfil||{}).campos, (u.craque||{}).titulo, (u.craque||{}).grande]})()""")
+        ok(s126[:6] == [1, 'Azul do racha', '#0b2a5b', '#0b2a5b', True, 'premios'] and s126[6][:5] == ['gols', 'as', 'jogos', 'vit', 'aprov'] and s126[7:] == ['MELHOR DA NOITE', 'votos'],
+           f'CT-KAN-294-01: "Salvar" grava os cards do grupo e eles continuam depois de recarregar ({s126})')
+        p126.click('[data-a=tab][data-v=grupo]'); p126.wait_for_selector('#cardsPainel [data-a=cardsAbrir]', timeout=15000)
+        p126.click('#cardsPainel [data-a=cardsAbrir]'); p126.wait_for_selector('#cardsJanela', timeout=15000); p126.wait_for_timeout(300)
+        r126 = p126.evaluate("[document.getElementById('cardModelo').selectedOptions[0].textContent, !!document.querySelector('#cardModelo optgroup[label=\"Meus modelos\"]')]")
+        ok(r126 == ['Azul do racha', True], f'CT-KAN-294-01: ao abrir de novo, o card do jogador vem com o modelo do grupo em "Meus modelos" ({r126})')
+        # Apagar o modelo do grupo: o card do jogador volta ao pronto (só grava ao salvar)
+        p126.click('#cardApagar'); p126.wait_for_timeout(200)
+        ap126 = p126.evaluate("document.getElementById('cardModelo').value")
+        ok(ap126 == 'p-classico', f'CT-KAN-294-09: apagar o modelo do grupo devolve o card ao Clássico pronto ({ap126})')
+        p126.keyboard.press('Escape'); p126.wait_for_timeout(300)
+        if p126.locator('#dlg .conf [data-a=confSim]').count(): p126.click('#dlg .conf [data-a=confSim]'); p126.wait_for_timeout(300)
+        ok(p126.evaluate("Object.keys(((S.app.cfg||{}).cards||{}).modelos||{}).length") == 1, 'CT-KAN-294-09: fechar sem salvar não apaga o modelo')
+        # Esporte sem assistência (vôlei): sem Garçom, e o ponto vem do esporte
+        p126.evaluate("S.app.sport='volei'")
+        p126.click('#cardsPainel [data-a=cardsAbrir]'); p126.wait_for_selector('#cardsJanela', timeout=15000); p126.wait_for_timeout(300)
+        v126 = p126.evaluate("[[...document.querySelectorAll('.card-tipos [data-tipo]')].map(b=>b.dataset.tipo), [...document.querySelectorAll('#cardGrande option')].map(o=>o.textContent)]")
+        ok(v126[0] == ['perfil', 'craque', 'artilheiro'] and 'Pontos na temporada' in v126[1] and 'Assistências' not in v126[1],
+           f'CT-KAN-294-03: no vôlei, sem Garçom e sem assistências, e "Pontos" no lugar de "Gols" ({v126})')
+        p126.keyboard.press('Escape'); p126.wait_for_timeout(200)
+        ctx126.close()
+        # Em English
+        ctx126e = b.new_context(viewport={'width': 360, 'height': 740}, service_workers='block', locale='en-US', timezone_id='America/Sao_Paulo')
+        p126e = ctx126e.new_page(); p126e.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p126e, 'criar')
+        p126e.fill('#le', 'v126en@teste.com'); p126e.fill('#lp', 'Jogo@2026'); p126e.fill('#lp2', 'Jogo@2026'); p126e.keyboard.press('Enter'); p126e.wait_for_selector('#ngBox', timeout=12000)
+        p126e.fill('#ngn', 'Blue FC'); p126e.click('[data-a=pickSport][data-v=futebol]'); p126e.click('[data-a=createGroup]')
+        p126e.wait_for_function("location.hash.startsWith('#/g/')"); p126e.wait_for_timeout(1500)
+        p126e.click('[data-a=tab][data-v=grupo]'); p126e.wait_for_selector('#cardsPainel [data-a=cardsAbrir]', timeout=15000)
+        p126e.click('#cardsPainel [data-a=cardsAbrir]'); p126e.wait_for_selector('#cardsJanela svg.card-svg', timeout=15000); p126e.wait_for_timeout(300)
+        p126e.click('#cardCopiar'); p126e.wait_for_selector('#cardModeloEd', timeout=5000); p126e.wait_for_timeout(200)
+        en126 = p126e.inner_text('#cardsJanela') + ' ' + p126e.evaluate("[...document.querySelectorAll('#cardsJanela svg text')].map(t=>t.textContent).join(' ')")
+        falta126 = p126e.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^card/.test(k))")
+        ok('Group cards' in en126 and 'Copy and edit' in en126 and 'GOALS' in en126 and not re.search(r'\b(Cards do grupo|Copiar|Fundo|Modelo|Salvar|GOLS)\b', en126) and not falta126,
+           f'CT-KAN-294-06: em English, a janela de cards e o card vêm traduzidos ({en126[:120]!r}, {falta126})')
+        ctx126e.close()
+
     if parte('b'):
         # ---------- v35 (KAN-142): "Continuar com o Google" na aba errada entra ou cria a conta e avisa (navegador separado)
         ctx3 = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block'); p3 = ctx3.new_page()

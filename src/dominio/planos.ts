@@ -27,6 +27,7 @@ const PLANO_A = BASICO.concat([
   'listaEspera',
   'cobrarPendentes',
   'campeonato',
+  'cards',
 ]);
 export const PLANOS_PADRAO: Catalogo = {
   gratis: { nome: 'Grátis', grupos: 1, admins: 1, recursos: BASICO },

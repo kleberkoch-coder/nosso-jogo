@@ -16,6 +16,7 @@ import { brl, diaSemana } from '../nucleo/util.js';
 import { numeroVersao } from '../nucleo/versao.js';
 import { THEMES, effTheme, getTheme } from '../ui/tema.js';
 import { srcLogo } from '../ui/logo-src';
+import { Trava } from '../ui/Plano';
 
 const st = () => estado;
 type Fixo = { dow: number; ini: string; fim?: string; place?: string };
@@ -326,8 +327,27 @@ function GrupoTela() {
         <Administradores />
       </div>
       <PainelMaterial />
+      {posso('config') ? <PainelCards /> : null}
       <Aparencia />
       <p class="versao small muted">{tx('comum.versao', { n: numeroVersao() })}</p>
+    </div>
+  );
+}
+
+/* Cards do grupo (KAN-294, pelada-v126): só com Configurações; no Grátis, a trava do Plano A. A janela baixa ao abrir. */
+function PainelCards() {
+  return (
+    <div class="panel" id="cardsPainel">
+      <div class="row between">
+        <h3 style="margin:0">{tx('cardg.titulo')}</h3>
+        {recurso('cards') ? (
+          <button class="btn sm" data-a="cardsAbrir">
+            {tx('cardg.abrir')}
+          </button>
+        ) : null}
+      </div>
+      <p class="small muted">{tx('cardg.ajuda')}</p>
+      {recurso('cards') ? null : <Trava r="cards" />}
     </div>
   );
 }

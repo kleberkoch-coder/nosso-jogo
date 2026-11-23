@@ -1,0 +1,128 @@
+/* Janela "Cards do grupo" (KAN-294, pelada-v126). Chega com a janela (ui/CardsJanela.tsx). */
+.card-tipos {
+  display: flex;
+  width: 100%;
+  flex-wrap: nowrap;
+  gap: 0;
+  margin: 8px 0 12px;
+}
+.card-tipos .opt {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: var(--touch-min, 44px);
+  padding: 0 4px;
+  font-size: 14px;
+}
+.card-grade {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+@media (min-width: 640px) {
+  .card-grade {
+    grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+    align-items: start;
+  }
+  .card-previa {
+    position: sticky;
+    top: 0;
+  }
+}
+.card-previa {
+  text-align: center;
+}
+/* No celular, a prévia fica presa no alto da janela enquanto se mexe nas cores e nos campos. */
+@media (max-width: 639px) {
+  .card-previa {
+    position: sticky;
+    top: -18px;
+    z-index: 2;
+    background: var(--surface);
+    padding: 6px 0 4px;
+    border-bottom: 1px solid var(--line);
+  }
+  .card-previa .card-svg {
+    max-width: 180px;
+  }
+  .card-previa p {
+    display: none;
+  }
+}
+.card-previa .card-svg {
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  margin: 0 auto 6px;
+  border-radius: 10px;
+}
+.card-campos {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.card-campos .lbl {
+  margin-top: 6px;
+}
+.card-botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.card-botoes .btn {
+  min-height: var(--touch-min, 44px);
+}
+.card-modelo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin-top: 6px;
+}
+.card-fundo,
+.card-espacos {
+  border: 0;
+  padding: 0;
+  margin: 6px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.card-cores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.card-cor {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--touch-min, 44px);
+  padding: 0 10px 0 4px;
+  border: 1px solid var(--field-border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  cursor: pointer;
+}
+.card-cor input[type='color'] {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.card-svg text {
+  font-family: var(--display);
+}
+/* No computador, a janela de cards fica mais larga: a prévia ao lado dos campos. */
+dialog:has(#cardsJanela) {
+  width: min(820px, 94vw);
+}

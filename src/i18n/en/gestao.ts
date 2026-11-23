@@ -227,6 +227,7 @@ export default {
   'plano.rec.listaEspera': 'Waiting list (spot control)',
   'plano.rec.cobrarPendentes': "Remind who hasn't answered",
   'plano.rec.campeonato': 'Championship on game day',
+  'plano.rec.cards': 'Group cards',
   'plano.desc.caixa': 'Monthly fee, per-game fee, Pix, payments, who still owes and reminders.',
   'plano.desc.votacao': "The game day's best and worst, voted through the link, which go into the ranking.",
   'plano.desc.historico': 'Every game day that has happened, with teams and scores.',

@@ -1581,3 +1581,37 @@ describe('logotipo do grupo no documento (KAN-273)', () => {
     await assertFails(updateDoc(doc(db.adm(), G), { logo: 'logo-1731600000002.webp' }));
   });
 });
+
+describe('cards do grupo (KAN-294)', () => {
+  const semRegras = fn => env.withSecurityRulesDisabled(async ctx => fn(ctx.firestore()));
+  const fimDaTransicao = () => semRegras(f => setDoc(doc(f, 'sistema/planos'), { transicaoAte: 1 }));
+  const modelo = { n: 'Azul', base: 'classico', fora: { t: 'cor', c1: '#0b2a5b', c2: '#ffffff' } };
+  const cards = n => ({
+    modelos: Object.fromEntries(Array.from({ length: n }, (_, i) => ['m' + i, modelo])),
+    usos: { perfil: { m: 'm0', grande: 'gols', campos: ['gols'], per: 'ano', titulo: '' } },
+  });
+  test('CT-KAN-294-11: com o Plano A, o administrador com Configurações grava os cards (até 12 modelos)', async () => {
+    await assertSucceeds(updateDoc(doc(db.dono(), G), { 'cfg.cards': cards(12) }));
+    await assertFails(updateDoc(doc(db.dono(), G), { 'cfg.cards': cards(13) }));
+    await assertFails(updateDoc(doc(db.dono(), G), { 'cfg.cards': { modelos: {}, usos: {}, extra: 1 } }));
+    await assertFails(updateDoc(doc(db.dono(), G), { 'cfg.cards': { modelos: {}, usos: { outro: {} } } }));
+    await assertFails(updateDoc(doc(db.dono(), G), { 'cfg.cards': 'texto' }));
+  });
+  test('CT-KAN-294-05: no Grátis, não grava cards; o que já estava fica e o resto do grupo continua mudando', async () => {
+    await semRegras(f => updateDoc(doc(f, G), { 'cfg.cards': cards(1) }));
+    await fimDaTransicao();
+    await assertFails(updateDoc(doc(db.dono(), G), { 'cfg.cards': cards(2) }));
+    await assertSucceeds(updateDoc(doc(db.dono(), G), { name: 'Outro nome' }));
+    await assertSucceeds(updateDoc(doc(db.dono(), G), { 'cfg.place': 'Arena' }));
+  });
+  test('CT-KAN-294-12: convidado sem a permissão de Configurações não muda os cards', async () => {
+    await semRegras(f =>
+      setDoc(doc(f, G + '/membros/adm'), {
+        uid: 'adm',
+        role: 'admin',
+        perm: { caixa: false, notas: false, elenco: true, config: false },
+      })
+    );
+    await assertFails(updateDoc(doc(db.adm(), G), { 'cfg.cards': cards(1) }));
+  });
+});

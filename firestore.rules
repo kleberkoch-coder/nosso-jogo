@@ -320,6 +320,17 @@ service cloud.firestore {
       return !('pl' in request.resource.data) || (request.resource.data.pl is map
         && request.resource.data.pl.keys().hasOnly(['id', 'ate', 'o', 't']));
     }
+    // KAN-294 (pelada-v126): cards do grupo em cfg.cards = {modelos (até 12), usos (por tipo de card)}. Mudar só com o
+    // Plano A; o que já estava gravado continua (o grupo que voltou ao Grátis não perde nada).
+    function cardsOk(gid) {
+      let novo = request.resource.data.get('cfg', {}).get('cards', null);
+      let velho = resource.data.get('cfg', {}).get('cards', null);
+      return novo == velho || novo == null || (pago(gid) && novo is map
+        && novo.keys().hasOnly(['modelos', 'usos'])
+        && novo.get('modelos', {}) is map && novo.get('modelos', {}).size() <= 12
+        && novo.get('usos', {}) is map
+        && novo.get('usos', {}).keys().hasOnly(['perfil', 'craque', 'artilheiro', 'garcom']));
+    }
     function nomeOk(campo) {
       return !(campo in request.resource.data) || (request.resource.data[campo] is string && request.resource.data[campo].size() <= 40);
     }
@@ -475,7 +486,9 @@ service cloud.firestore {
         && !('bloq' in request.resource.data.diff(resource.data).affectedKeys())
         // KAN-273 (pelada-v118): logotipo = só o nome do arquivo no Storage (logo-{momento}.webp ou .jpg).
         && (!('logo' in request.resource.data) || (request.resource.data.logo is string
-            && request.resource.data.logo.matches('logo-[0-9]{10,16}[.](webp|jpg)')));
+            && request.resource.data.logo.matches('logo-[0-9]{10,16}[.](webp|jpg)')))
+        // KAN-294 (pelada-v126): cards do grupo (cfg.cards) só mudam com o Plano A, no formato conhecido.
+        && cardsOk(gid);
       // KAN-117 (pelada-v101): o administrador do portal bloqueia e desbloqueia os grupos de uma conta (só o campo bloq).
       allow update: if adminPortal() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bloq'])
         && request.resource.data.get('bloq', false) is bool;

@@ -219,3 +219,40 @@ describe('foto do jogador no Storage (KAN-293)', () => {
     await assertFails(subirFoto('dono', 'foto-1732370000013.webp'));
   });
 });
+
+describe('imagem de fundo dos cards no Storage (KAN-294, fase 2)', () => {
+  const C = G + '/cards/';
+  const comPlano = pl =>
+    env.withSecurityRulesDisabled(ctx =>
+      setDoc(doc(ctx.firestore(), G), { name: 'G1', owner: 'dono', ativo: true, createdAt: 1, pl })
+    );
+  const subirFundo = (uid, nome, dados = img(), meta = WEBP) =>
+    st(uid)
+      .ref(C + nome)
+      .put(dados, meta);
+  test('CT-KAN-294-13: com o Plano A, organizador e quem tem Configurações gravam; sem Configurações, anônimo ou de fora, não', async () => {
+    await comPlano({ id: 'A', ate: Date.now() + 864e5 });
+    await assertSucceeds(subirFundo('dono', 'fundo-1732370000001.webp'));
+    await assertSucceeds(subirFundo('cfg', 'fundo-1732370000002.jpg', img(), { contentType: 'image/jpeg' }));
+    await assertFails(subirFundo('conv', 'fundo-1732370000003.webp'));
+    await assertFails(subirFundo('outro', 'fundo-1732370000004.webp'));
+    await assertFails(subirFundo('anon', 'fundo-1732370000005.webp'));
+    await assertSucceeds(
+      st(null)
+        .ref(C + 'fundo-1732370000001.webp')
+        .getMetadata()
+    );
+  });
+  test('CT-KAN-294-14: no Grátis ou com o plano vencido, não grava; tamanho, tipo e nome conferidos; sem gravar por cima', async () => {
+    await comPlano({ id: 'gratis', ate: null });
+    await assertFails(subirFundo('dono', 'fundo-1732370000006.webp'));
+    await comPlano({ id: 'A', ate: Date.now() - 864e5 });
+    await assertFails(subirFundo('dono', 'fundo-1732370000007.webp'));
+    await comPlano({ id: 'B', ate: null });
+    await assertFails(subirFundo('dono', 'fundo-1732370000008.webp', img(910 * 1024)));
+    await assertFails(subirFundo('dono', 'fundo-1732370000009.webp', img(), { contentType: 'image/gif' }));
+    await assertFails(subirFundo('dono', 'outro-1732370000010.webp'));
+    await assertSucceeds(subirFundo('dono', 'fundo-1732370000011.webp'));
+    await assertFails(subirFundo('dono', 'fundo-1732370000011.webp'));
+  });
+});

@@ -1,5 +1,5 @@
 rules_version = '2';
-// Regras do Firebase Storage (KAN-273, pelada-v118; foto do jogador, KAN-293, pelada-v125): o logotipo do grupo, em grupos/{gid}/logo-{momento}.webp
+// Regras do Firebase Storage (KAN-273, pelada-v118; foto do jogador, KAN-293, pelada-v125; fundo dos cards, KAN-294, pelada-v127): o logotipo do grupo, em grupos/{gid}/logo-{momento}.webp
 // (ou .jpg). Publicadas pela automação "Publicar regras do Firebase" quando este arquivo muda na main.
 // - Ler: qualquer um (o logotipo aparece no link do jogador e no da votação, que não têm conta).
 // - Gravar: administrador do grupo com a permissão Configurações (o organizador sempre), em grupo não bloqueado,
@@ -49,6 +49,28 @@ service firebase.storage {
         && (g.owner == request.auth.uid
             || (dentroDoLimite(g)
                 && (m.get('perm', null) == null || m.get('perm', {}).get('elenco', false) == true)));
+    }
+    // KAN-294, fase 2 (pelada-v127): imagem de fundo dos cards do grupo. Como o logotipo (Configurações), e só com o
+    // Plano A pelo espelho do plano no grupo (pl: A ou B, dentro da validade). Mesmas 2 leituras.
+    function podeCards(gid) {
+      let g = firestore.get(grupo(gid)).data;
+      let m = firestore.get(membro(gid)).data;
+      let p = g.get('pl', {});
+      return request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous'
+        && firestore.exists(membro(gid))
+        && g.get('bloq', false) != true && m.get('bloq', false) != true
+        && p.get('id', '') in ['A', 'B']
+        && (p.get('ate', null) == null || p.get('ate', 0) > request.time.toMillis())
+        && (g.owner == request.auth.uid
+            || (dentroDoLimite(g)
+                && (m.get('perm', null) == null || m.get('perm', {}).get('config', false) == true)));
+    }
+    match /grupos/{gid}/cards/{arq} {
+      allow get: if arq.matches('fundo-[0-9]{10,16}[.](webp|png|jpg)');
+      allow create: if resource == null && arq.matches('fundo-[0-9]{10,16}[.](webp|png|jpg)') && podeCards(gid)
+        && request.resource.size < 900 * 1024
+        && request.resource.contentType.matches('image/(webp|png|jpeg)');
+      allow delete: if arq.matches('fundo-[0-9]{10,16}[.](webp|png|jpg)') && podeCards(gid);
     }
     match /grupos/{gid}/jogadores/{pid}/{arq} {
       allow get: if arq.matches('foto-[0-9]{10,16}[.](webp|png|jpg)');

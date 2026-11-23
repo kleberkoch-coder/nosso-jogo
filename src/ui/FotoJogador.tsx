@@ -55,9 +55,37 @@ export function FotoJogador({ pid }: { pid: string }) {
     src = srcFoto(gid, pid, j.foto),
     jaAutorizou = !!((st().cont || {})[pid] || {}).fa;
 
+  /* KAN-301: com fundo liso, a janela mostra antes e depois e pergunta antes de gravar. */
+  const [proposta, setProposta] = useState<{ normal: Blob; sem: Blob; antes: string; depois: string } | null>(null);
+  const fecharProposta = () => {
+    if (proposta) {
+      URL.revokeObjectURL(proposta.antes);
+      URL.revokeObjectURL(proposta.depois);
+    }
+    setProposta(null);
+  };
+  const gravar = async (b: Blob) => {
+    setOcupado('subir');
+    try {
+      const m = await acoes();
+      const antes = j.foto,
+        nome = await m.subirFoto(gid, pid, b as Blob & { type: string });
+      if (!jaAutorizou) await gravarAutorizacao(pid);
+      await gravarNome(pid, nome);
+      if (antes && antes !== nome) m.apagarFoto(gid, pid, antes);
+      toast(tx('foto.salva'));
+      redesenhar(n => n + 1);
+    } catch (e) {
+      console.warn('foto', e);
+      setErro(tx('foto.naoSalvou'));
+    } finally {
+      setOcupado('');
+    }
+  };
   const escolher = async (f: File | undefined) => {
     if (!f) return;
     setErro('');
+    fecharProposta();
     const ruim = arquivoFoto(f);
     if (ruim) {
       setErro(tx(ruim === 'tipo' ? 'foto.tipoRuim' : 'foto.grande', { mb: FOTO_MAX_MB }));
@@ -69,22 +97,29 @@ export function FotoJogador({ pid }: { pid: string }) {
       const b = await m.prepararFoto(f);
       if (!b) {
         setErro(tx('foto.naoAbriu'));
+        setOcupado('');
         return;
       }
-      const antes = j.foto,
-        nome = await m.subirFoto(gid, pid, b);
-      if (!jaAutorizou) await gravarAutorizacao(pid);
-      await gravarNome(pid, nome);
-      if (antes && antes !== nome) m.apagarFoto(gid, pid, antes);
-      toast(tx('foto.salva'));
-      redesenhar(n => n + 1);
+      const sem = await m.semFundoLiso(f);
+      if (sem) {
+        setOcupado('');
+        setProposta({ normal: b, sem, antes: URL.createObjectURL(b), depois: URL.createObjectURL(sem) });
+        return;
+      }
+      await gravar(b);
     } catch (e) {
       console.warn('foto', e);
       setErro(tx('foto.naoSalvou'));
-    } finally {
       setOcupado('');
+    } finally {
       if (arq.current) arq.current.value = '';
     }
+  };
+  const decidir = async (semFundo: boolean) => {
+    if (!proposta) return;
+    const b = semFundo ? proposta.sem : proposta.normal;
+    fecharProposta();
+    await gravar(b);
   };
   const busy = (k: string) => ({ class: ocupado === k ? 'btn sm busy' : 'btn sm', 'aria-busy': ocupado === k });
   const podeEscolher = jaAutorizou || aut;
@@ -125,6 +160,31 @@ export function FotoJogador({ pid }: { pid: string }) {
           onChange={e => escolher((e.currentTarget as HTMLInputElement).files?.[0])}
         />
       </div>
+      {proposta ? (
+        <div class="foto-semfundo" id="fotoSemFundo" role="group" aria-labelledby="fotoSemFundoT">
+          <p class="small" id="fotoSemFundoT">
+            <b>{tx('foto.semFundoTitulo')}</b> {tx('foto.semFundoTexto')}
+          </p>
+          <div class="foto-par">
+            <figure>
+              <img class="foto-prev" src={proposta.antes} alt={tx('foto.antes')} />
+              <figcaption class="small muted">{tx('foto.antes')}</figcaption>
+            </figure>
+            <figure>
+              <img class="foto-prev foto-xadrez" src={proposta.depois} alt={tx('foto.depois')} />
+              <figcaption class="small muted">{tx('foto.depois')}</figcaption>
+            </figure>
+          </div>
+          <div class="foto-acoes">
+            <button type="button" class="btn sm primary" id="fotoUsarSem" onClick={() => decidir(true)}>
+              {tx('foto.usarSemFundo')}
+            </button>
+            <button type="button" class="btn sm" id="fotoManter" onClick={() => decidir(false)}>
+              {tx('foto.manter')}
+            </button>
+          </div>
+        </div>
+      ) : null}
       {jaAutorizou ? null : (
         <label class="chk-linha foto-aut">
           <input

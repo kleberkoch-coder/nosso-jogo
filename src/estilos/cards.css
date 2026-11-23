@@ -126,3 +126,18 @@
 dialog:has(#cardsJanela) {
   width: min(820px, 94vw);
 }
+.card-img {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.card-img .btn {
+  min-height: var(--touch-min, 44px);
+}
+.card-metal {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}

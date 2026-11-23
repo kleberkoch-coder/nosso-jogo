@@ -12,7 +12,6 @@ import {
   MAX_TITULO,
   PERIODOS,
   PRONTOS,
-  TIPOS_FUNDO,
   EXEMPLO,
   apagar,
   copiar,
@@ -25,7 +24,6 @@ import {
   tiposDe,
   valor,
   type Cards,
-  type Fundo,
   type Modelo,
   type TipoCard,
   type Uso,
@@ -43,6 +41,8 @@ import { closeDlg, marcarAlterada, openDlg } from './dialogos.js';
 import { usarEstilo } from './estilo';
 import { srcFoto } from './foto-src';
 import { srcLogo } from './logo-src';
+import { srcFundo } from './cards-src';
+import { Cor, FundoCampos, MetalCampos } from './CardsCampos';
 
 juntarTextos(textos);
 usarEstilo('cards', estilo);
@@ -91,44 +91,6 @@ function dadosPrevia(c: Cards, tipo: TipoCard, u: Uso): DadosCard {
   };
 }
 
-function Cor({ id, rot, v, on }: { id: string; rot: string; v: string; on: (v: string) => void }) {
-  return (
-    <label class="card-cor" for={id}>
-      <input id={id} type="color" value={v} onInput={e => on((e.currentTarget as HTMLInputElement).value)} />
-      <span>{rot}</span>
-    </label>
-  );
-}
-
-function FundoCampos({ k, f, on }: { k: string; f: Fundo; on: (f: Fundo) => void }) {
-  return (
-    <fieldset class="card-fundo">
-      <legend class="lbl">{tx('card.fundo.' + k)}</legend>
-      <select
-        class="sel"
-        id={'cf' + k}
-        aria-label={tx('card.fundo.' + k)}
-        onChange={e => on({ ...f, t: (e.currentTarget as HTMLSelectElement).value as Fundo['t'] })}
-      >
-        {TIPOS_FUNDO.map(t => (
-          <option key={t} value={t} selected={t === f.t}>
-            {tx('card.tipoFundo.' + t)}
-          </option>
-        ))}
-      </select>
-      <div class="card-cores">
-        <Cor
-          id={'cf' + k + '1'}
-          rot={tx(f.t === 'cor' ? 'card.cor' : 'card.cor1')}
-          v={f.c1}
-          on={c1 => on({ ...f, c1 })}
-        />
-        {f.t !== 'cor' ? <Cor id={'cf' + k + '2'} rot={tx('card.cor2')} v={f.c2} on={c2 => on({ ...f, c2 })} /> : null}
-      </div>
-    </fieldset>
-  );
-}
-
 function Janela({ inicial }: { inicial: Cards }) {
   const [c, setC] = useState<Cards>(inicial);
   const [tipo, setTipo] = useState<TipoCard>('perfil');
@@ -172,7 +134,12 @@ function Janela({ inicial }: { inicial: Cards }) {
       </div>
       <div class="card-grade">
         <div class="card-previa">
-          <CardDesenho m={m} d={dados} rotulo={tx('card.previaRot', { tipo: tx('card.tipo.' + tipo) })} />
+          <CardDesenho
+            m={m}
+            d={dados}
+            rotulo={tx('card.previaRot', { tipo: tx('card.tipo.' + tipo) })}
+            src={n => srcFundo(st().gid as string, n)}
+          />
           <p class="small muted">{tx('card.previaAjuda')}</p>
         </div>
         <div class="card-campos">
@@ -234,6 +201,7 @@ function Janela({ inicial }: { inicial: Cards }) {
               />
               <FundoCampos k="fora" f={m.fora} on={fora => mudarModelo({ fora })} />
               <FundoCampos k="dentro" f={m.dentro} on={dentro => mudarModelo({ dentro })} />
+              {m.base === 'metalico' ? <MetalCampos m={m} on={mudarModelo} /> : null}
               <div class="card-cores">
                 <Cor id="ccLinha" rot={tx('card.linha')} v={m.linha} on={linha => mudarModelo({ linha })} />
                 <Cor id="ccLetra" rot={tx('card.letra')} v={m.letra} on={letra => mudarModelo({ letra })} />

@@ -33,3 +33,22 @@
 .foto-jog .small {
   margin: 6px 0 0;
 }
+.foto-semfundo {
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.foto-par {
+  display: flex;
+  gap: 12px;
+  margin: 6px 0 8px;
+}
+.foto-par figure {
+  margin: 0;
+  text-align: center;
+}
+/* Quadriculado atrás da foto sem fundo, para ver a transparência. */
+.foto-xadrez {
+  background: repeating-conic-gradient(#d9d9d9 0% 25%, #ffffff 0% 50%) 0 0 / 12px 12px;
+}

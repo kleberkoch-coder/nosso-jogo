@@ -6636,6 +6636,9 @@ with sync_playwright() as pw:
         q129.screenshot(path=f'{OUT}/v129-meucard-360.png')
         ctx129b.close()
 
+    # v130: a parte c passou de 12 min com o bloco novo; ele vai para a parte a, a mais curta.
+    if parte('a'):
+        import base64
         # ---------- v130 (KAN-304, KAN-305): cores dos cards no quadro de cor do app; acabamento metálico em todos os modelos
         ctx130 = b.new_context(viewport={'width': 360, 'height': 740}, service_workers='block', locale='pt-BR', timezone_id='America/Sao_Paulo')
         p130 = ctx130.new_page(); p130.on('pageerror', lambda e: errs.append(str(e)))

@@ -131,6 +131,9 @@
 .card-paleta .paleta {
   height: 150px;
 }
+.card-paleta-fim .btn {
+  min-height: var(--touch-min, 44px);
+}
 .card-paleta-fim {
   display: flex;
   gap: 10px;

@@ -1,15 +1,21 @@
 /* Quem marcou numa partida, em texto (KAN-249 e KAN-66, pelada-v107). Regra pura, testada em
    testes/regras/partida-texto.test.mjs. Usada na linha da partida (aba Partida, Histórico, link) e na mensagem do
    WhatsApp: "Marcão (Caio), Japa, Léo (3, Caio)". Entre parênteses, os pontos (quando o ponto vale mais de 1) e
-   quem deu a assistência. Gol contra não entra; a assistência do próprio autor é ignorada. */
+   quem deu a assistência. A assistência do próprio autor é ignorada. Gol contra aparece com a marca do idioma
+   ("Japa (contra)", pelada-v130) mas não soma para ninguém (resumos.ts); sem autor, fica de fora. */
 export type GolTexto = { pid?: string | null; og?: boolean; pts?: number; as?: string | null };
 
 export const assistenciaValida = (g: GolTexto) => !!(g.as && g.pid && !g.og && g.as !== g.pid);
 
-export function autoresTexto(goals: GolTexto[] | null | undefined, nome: (pid: string) => string): string {
+export function autoresTexto(
+  goals: GolTexto[] | null | undefined,
+  nome: (pid: string) => string,
+  marcaContra: string
+): string {
   return (goals || [])
-    .filter(g => g.pid && !g.og)
+    .filter(g => g.pid)
     .map(g => {
+      if (g.og) return nome(g.pid as string) + ' ' + marcaContra;
       const extra = [(g.pts || 1) > 1 ? String(g.pts) : '', assistenciaValida(g) ? nome(g.as as string) : '']
         .filter(Boolean)
         .join(', ');

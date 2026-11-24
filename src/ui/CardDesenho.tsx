@@ -174,12 +174,34 @@ function Foto({ d, x, y, w, h }: { d: DadosCard; x: number; y: number; w: number
   );
 }
 
-export function CardDesenho({ m, d, rotulo, src }: { m: Modelo; d: DadosCard; rotulo: string; src?: Src }) {
+export function CardDesenho({ m: m0, d, rotulo, src }: { m: Modelo; d: DadosCard; rotulo: string; src?: Src }) {
   const k = 'cd' + ++seq,
+    /* KAN-305 (v130): Clássico, Destaque e Escudo com acabamento metálico: a moldura ganha o degradê do metal (no lugar
+       da cor da linha) e uma borda de metal por trás, como no Clássico metálico. */
+    comMetal = m0.base !== 'metalico' && !!m0.metal,
+    m = comMetal ? { ...m0, linha: `url(#${k}m)` } : m0,
     forma = m.base === 'metalico' ? FORMA_METAL[m.forma || 'coroa']! : FORMA[m.base]!;
   const fundoFora = <Preenche f={m.fora} id={k + 'f'} src={src} />;
+  const moldura = comMetal ? (
+    <>
+      <defs>
+        <linearGradient id={k + 'm'} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2={W} y2={H}>
+          {coresDoMetal(m0).map((c, i, a) => (
+            <stop key={i} offset={i / (a.length - 1)} stop-color={c} />
+          ))}
+        </linearGradient>
+        <filter id={k + 's'}>
+          <feDropShadow dx="0" dy="6" stdDeviation="8" flood-opacity=".35" />
+        </filter>
+      </defs>
+      <g filter={`url(#${k}s)`}>
+        <path d={forma} fill={m.linha} transform="translate(200 258) scale(1.045) translate(-200 -258)" />
+      </g>
+    </>
+  ) : null;
   const dentro = (
     <>
+      {moldura}
       <defs>
         <clipPath id={k + 'c'}>
           <path d={forma} />

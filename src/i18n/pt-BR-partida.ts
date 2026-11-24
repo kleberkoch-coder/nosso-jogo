@@ -4,7 +4,6 @@ export default {
   'partida.quemMarcou': 'Quem marcou?',
   'partida.contra': 'Contra (jogador do adversário)',
   'partida.semAutor': 'Sem autor',
-  'partida.contraMarca': '(contra)',
   'partida.tempoEsgotado': 'Tempo esgotado',
   'partida.pausar': 'Pausar',
   'partida.iniciar': 'Iniciar',

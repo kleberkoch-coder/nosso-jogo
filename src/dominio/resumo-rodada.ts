@@ -22,6 +22,12 @@ export function autores(m: PartidaResumo): [string, number][] {
   return (m.goals || []).filter(g => g.pid && !g.og).map(g => [g.pid as string, g.pts || 1]);
 }
 
+/* Todos os lances com autor, na ordem, para o texto (pelada-v130): o gol contra vem marcado e não entra na
+   artilharia. */
+export function lances(m: PartidaResumo): [string, number, boolean][] {
+  return (m.goals || []).filter(g => g.pid).map(g => [g.pid as string, g.pts || 1, !!g.og]);
+}
+
 /* Artilharia da rodada: soma das partidas e do que foi lançado só como total (KAN-178). Do maior para o menor;
    empate em ordem alfabética do nome. */
 export function artilharia(

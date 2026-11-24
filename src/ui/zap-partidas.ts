@@ -5,7 +5,7 @@
    (rotuloFase) também aparece na lista da aba Partida e no Histórico. */
 import { lerCamp, type Jogo } from '../dominio/campeonato';
 import { chave, type Chave } from '../dominio/mata-mata';
-import { artilharia, autores, tabela, type PartidaResumo } from '../dominio/resumo-rodada';
+import { artilharia, lances, tabela, type PartidaResumo } from '../dominio/resumo-rodada';
 import { assistencias } from '../dominio/partida-texto';
 import { artNome, col, sport, timeDoJogo, tn, tnJogo } from '../dominio/esportes.js';
 import { pname } from '../dominio/grupo.js';
@@ -60,7 +60,9 @@ export function txtPartidas(
   const linha = (m: Partida, i: number) => {
     cor[nomeTime(m, 'a')] = m.ca;
     cor[nomeTime(m, 'b')] = m.cb;
-    const quem = autores(m).map(([p, n]) => nome(p) + (n > 1 ? ` (${n})` : '')),
+    const quem = lances(m).map(
+        ([p, n, og]) => nome(p) + (og ? ' ' + tx('partida.contraMarca') : n > 1 ? ` (${n})` : '')
+      ),
       f = k ? k.fases[i] : null,
       s = k && f && f !== 'g' ? k.slots.find(x => x.id === f) : null,
       dec = s && s.dec;

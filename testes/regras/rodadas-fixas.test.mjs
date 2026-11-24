@@ -1,7 +1,7 @@
 /* Regra "rodadas fixas: próxima data" (uma das 5 da D12). Roda com: npm run regras */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { endTs, fixId, proximasFixas } from '../../src/dominio/rodadas-fixas.ts';
+import { chaveDoId, chavesFixos, endTs, fixId, proximasFixas } from '../../src/dominio/rodadas-fixas.ts';
 
 // 2026-10-05 é segunda-feira (dow 1)
 const SEG = { dow: 1, ini: '20:00', fim: '22:00', place: 'Quadra' };
@@ -53,4 +53,23 @@ test('dois dias fixos geram uma próxima rodada cada', () => {
     proximasFixas([SEG, qua], {}, em('2026-10-05T10:00')).map(r => r.date),
     ['2026-10-05', '2026-10-07']
   );
+});
+
+test('CT-KAN-199-05: chaves dos jogos fixos (dia 1 a 7, como no Firebase) e a chave de cada rodada fixa', () => {
+  assert.deepEqual(
+    chavesFixos('fixo', [
+      { dow: 3, ini: '20:00' },
+      { dow: 0, ini: '09:30' },
+      { dow: '3', ini: '20:00' },
+      { dow: 5, ini: '' },
+    ]),
+    ['3-2000', '7-0930']
+  );
+  assert.deepEqual(chavesFixos('esporadico', [{ dow: 3, ini: '20:00' }]), []);
+  assert.deepEqual(chavesFixos(undefined, null), []);
+  // 2026-10-07 é quarta; 2026-10-11, domingo
+  assert.equal(chaveDoId('f-2026-10-07-2000'), '3-2000');
+  assert.equal(chaveDoId('f-2026-10-11-0930'), '7-0930');
+  assert.equal(chaveDoId(fixId('2026-10-05', '19:00')), '1-1900');
+  assert.equal(chaveDoId('r123'), null);
 });

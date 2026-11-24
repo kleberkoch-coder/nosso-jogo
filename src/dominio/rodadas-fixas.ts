@@ -59,3 +59,18 @@ export function proximasFixas(fixos: Fixo[], docs: Record<string, Partial<Rodada
   });
   return out;
 }
+
+/* KAN-199 (pelada-v130): as chaves dos jogos fixos que as regras do Firebase conferem antes de aceitar presença numa
+   rodada fixa que ainda não existe: "dia-HHMM", com o dia de 1 (segunda) a 7 (domingo), como no Firebase. Grupo
+   esporádico não tem chave (nenhuma rodada fixa inventada entra). Gravadas em cfg.fixosChave do grupo. */
+export function chavesFixos(freq: string | undefined, fixos: Fixo[] | null | undefined): string[] {
+  if (freq === 'esporadico') return [];
+  const ch = (fixos || []).filter(f => f && f.ini).map(f => (+f.dow || 7) + '-' + String(f.ini).replace(':', ''));
+  return [...new Set(ch)].sort();
+}
+/* A chave de um identificador de rodada fixa ("f-2026-11-25-2000" → "3-2000"), ou null se não for um. */
+export function chaveDoId(rid: string): string | null {
+  const m = /^f-(\d{4})-(\d{2})-(\d{2})-(\d{4})$/.exec(rid || '');
+  if (!m) return null;
+  return (new Date(Date.UTC(+m[1]!, +m[2]! - 1, +m[3]!)).getUTCDay() || 7) + '-' + m[4];
+}

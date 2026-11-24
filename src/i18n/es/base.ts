@@ -638,6 +638,7 @@ export default {
   'agenda.dias.5': 'viernes',
   'agenda.dias.6': 'sábados',
   'partida.jogoN': 'Partido {n}',
+  'partida.contraMarca': '(en contra)',
   /* KAN-246 (pelada-v109): hora e número do sorteio */
   'sortinfo.feito': 'Sorteado a las {hora} · sorteo n.º {n}',
   'sortinfo.duplas': 'Parejas sorteadas a las {hora} · sorteo n.º {n}',

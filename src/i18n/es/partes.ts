@@ -497,7 +497,6 @@ export default {
   'partida.quemMarcou': '¿Quién marcó?',
   'partida.contra': 'En contra (jugador del rival)',
   'partida.semAutor': 'Sin autor',
-  'partida.contraMarca': '(en contra)',
   'partida.tempoEsgotado': 'Tiempo cumplido',
   'partida.pausar': 'Pausar',
   'partida.iniciar': 'Iniciar',

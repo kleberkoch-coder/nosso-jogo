@@ -2,7 +2,7 @@
    Roda com: npm run regras */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { artilharia, autores, tabela } from '../../src/dominio/resumo-rodada.ts';
+import { artilharia, autores, lances, tabela } from '../../src/dominio/resumo-rodada.ts';
 
 /* As 8 partidas da foto do Kleber (05/11), com os times como nome e os gols por jogador. */
 const g = (t, pid, n = 1) => Array.from({ length: n }, () => ({ t, pid }));
@@ -54,4 +54,13 @@ test('CT-KAN-232-02: gol contra não conta para ninguém; pontos de cesta valem 
     ['x', 3],
     ['z', 2],
   ]);
+});
+
+test('CT-KAN-306-02: o texto das partidas lista o gol contra marcado, mas a artilharia continua sem ele', () => {
+  const m = { ga: 2, gb: 0, goals: [{ t: 'a', pid: 'x' }, { t: 'a', pid: 'y', og: true }, { t: 'a' }] };
+  assert.deepEqual(lances(m), [
+    ['x', 1, false],
+    ['y', 1, true],
+  ]);
+  assert.deepEqual(artilharia([m], nome), [['x', 1]]);
 });

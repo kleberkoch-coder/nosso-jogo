@@ -29,9 +29,9 @@ export function Confronto(o: {
     </span>
   );
 }
-/* "gols: Marcão (Caio), Japa" (a palavra vem do catálogo do esporte). */
+/* "gols: Marcão (Caio), Japa, Léo (contra)" (a palavra vem do catálogo do esporte). */
 export function apoioGols(goals: GolTexto[] | null | undefined): string {
-  const a = autoresTexto(goals, pname);
+  const a = autoresTexto(goals, pname, tx('partida.contraMarca'));
   return a ? String((sport() as { word: string }).word).toLowerCase() + ': ' + a : '';
 }
 /* Linha da partida (KAN-249): em cima, a fase (com campeonato), o confronto e os botões, que descem para uma linha

@@ -132,7 +132,9 @@ test('CT-KAN-294-15: Clássico metálico: acabamento e formato conferidos; metal
   assert.equal(m.metal, 'ouro');
   assert.equal(m.forma, 'coroa');
   assert.equal(m.corMetal, PRONTOS['p-metalico'].corMetal);
-  assert.equal(limparModelo({ base: 'classico', metal: 'ouro' }).metal, undefined);
+  /* KAN-305 (v130): os outros modelos também aceitam o acabamento; sem metal válido, ficam sem. */
+  assert.equal(limparModelo({ base: 'classico', metal: 'ouro' }).metal, 'ouro');
+  assert.equal(limparModelo({ base: 'classico' }).metal, undefined);
   const t = coresDoMetal({ ...m, metal: 'time', corMetal: '#0e3b82' });
   assert.equal(t.length, 5);
   assert.equal(t[2], '#0e3b82');
@@ -181,4 +183,16 @@ test('CT-KAN-303-05: fundo pronto lido do banco: desenho conhecido, ou o primeir
   assert.deepEqual(ok.fora, { t: 'pronto', c1: '#123456', c2: '#abcdef', p: 'quadra' });
   assert.equal(limparModelo({ base: 'classico', fora: { t: 'pronto', p: '<script>' } }).fora.p, FUNDOS_PRONTOS[0]);
   assert.equal(limparModelo({ base: 'classico', dentro: { t: 'pronto' } }).dentro.p, FUNDOS_PRONTOS[0]);
+});
+
+test('CT-KAN-305-01: acabamento metálico em qualquer modelo; sem metal, nada muda', () => {
+  const d = limparModelo({ ...PRONTOS['p-destaque'], metal: 'prata' });
+  assert.equal(d.metal, 'prata');
+  assert.equal(d.corMetal, '#3e72d0');
+  assert.equal(d.forma, undefined);
+  const e = limparModelo({ ...PRONTOS['p-escudo'], metal: 'time', corMetal: '#aa0000' });
+  assert.deepEqual([e.metal, e.corMetal], ['time', '#aa0000']);
+  const c = limparModelo({ ...PRONTOS['p-classico'], metal: 'platina' });
+  assert.equal('metal' in c, false);
+  assert.equal(limparModelo({ ...PRONTOS['p-metalico'], metal: undefined }).metal, 'ouro');
 });

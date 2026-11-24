@@ -103,7 +103,7 @@
   align-items: center;
   gap: 8px;
   min-height: var(--touch-min, 44px);
-  padding: 0 10px 0 4px;
+  padding: 0 10px 0 6px;
   border: 1px solid var(--field-border);
   border-radius: 10px;
   background: var(--surface);
@@ -111,13 +111,32 @@
   font-size: 14px;
   cursor: pointer;
 }
-.card-cor input[type='color'] {
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
+.card-cor {
+  font-family: inherit;
+}
+.card-cor-amostra {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--field-border);
+}
+/* KAN-304: o quadro de cor abre embaixo dos botões de cor, na largura toda. */
+.card-paleta {
+  flex: 1 0 100%;
+  padding: 10px;
+  border: 1px solid var(--field-border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.card-paleta .paleta {
+  height: 150px;
+}
+.card-paleta-fim {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
 }
 .card-svg text {
   font-family: var(--display);

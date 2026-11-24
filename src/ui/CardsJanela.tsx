@@ -194,7 +194,7 @@ function Janela({ inicial }: { inicial: Cards }) {
               />
               <FundoCampos k="fora" f={m.fora} on={fora => mudarModelo({ fora })} />
               <FundoCampos k="dentro" f={m.dentro} on={dentro => mudarModelo({ dentro })} />
-              {m.base === 'metalico' ? <MetalCampos m={m} on={mudarModelo} /> : null}
+              <MetalCampos m={m} on={mudarModelo} />
               <div class="card-cores">
                 <Cor id="ccLinha" rot={tx('card.linha')} v={m.linha} on={linha => mudarModelo({ linha })} />
                 <Cor id="ccLetra" rot={tx('card.letra')} v={m.letra} on={letra => mudarModelo({ letra })} />

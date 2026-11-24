@@ -5127,6 +5127,7 @@ with sync_playwright() as pw:
         ok(p107.inner_text('.sc') == '3' and gs66[1:] == [[autor66, None], [autor66, None]], f'CT-KAN-66-03: Esc e "Sem assistência" (dois toques) contam o gol uma vez, sem assistência ({gs66})')
         # gol contra: fecha direto
         p107.locator('[data-a=goal][data-v=a]').first.click(); p107.wait_for_selector('[data-a=addGoal][data-og]', timeout=5000)
+        og306 = p107.eval_on_selector('#dlg [data-a=addGoal][data-og]', 'b=>b.dataset.p')
         p107.locator('#dlg [data-a=addGoal][data-og]').first.click(); p107.wait_for_timeout(400)
         ok(not p107.evaluate("document.getElementById('dlg').open") and p107.locator('#astOpcoes').count() == 0, 'CT-KAN-66-04: gol contra fecha a janela direto, sem o passo da assistência')
         p107.click('[data-a=saveMatch]'); p107.wait_for_timeout(800)
@@ -5146,6 +5147,10 @@ with sync_playwright() as pw:
         p107.emulate_media(color_scheme='light')
         ok(l249 and l249['apoio'].startswith('Jogo 1 · gols: ') and f'{nome(autor66)} ({nome(as66)})' in l249['apoio'],
            f'CT-KAN-249-02: embaixo, "Jogo 1 · gols: Autor (Colega), …" ({l249 and l249["apoio"]!r})')
+        # KAN-306 (v130): o gol contra aparece na linha, com quem fez e "(contra)", mas não soma para ele na artilharia
+        art306 = p107.evaluate("id=>{const r=S.rod[S.rid]||{};return (r.art||{})[id]||0}", og306)
+        ok(l249 and l249['apoio'].endswith(f'{nome(og306)} (contra)') and not art306,
+           f'CT-KAN-306-03: o gol contra aparece na linha da partida como "Nome (contra)" e não conta na artilharia ({l249 and l249["apoio"]!r}, {art306})')
         p107.screenshot(path=f'{OUT}/107-partida-360.png', full_page=True)
         # Ranking: coluna e Garçom
         p107.click('[data-a=tab][data-v=ranking]'); p107.wait_for_timeout(1500);  p107.wait_for_selector('#rankRaiz table', timeout=8000); p107.wait_for_timeout(500)
@@ -6361,15 +6366,21 @@ with sync_playwright() as pw:
         p127.click('#cardCopiar'); p127.wait_for_selector('#cardMetal', timeout=5000)
         def svg127():
             return p127.evaluate("""(()=>{const s=document.querySelector('#cardsJanela svg.card-svg');return {stops:[...s.querySelectorAll('linearGradient stop')].map(x=>x.getAttribute('stop-color')),
+              metal:[...s.querySelectorAll('linearGradient[id$="m"] stop')].map(x=>x.getAttribute('stop-color')),
               caminho:(s.querySelector('clipPath path')||{getAttribute:()=>''}).getAttribute('d'),fora:[...s.querySelectorAll('text')].filter(t=>{const b=t.getBBox();return b.x<0||b.x+b.width>400}).length,
               img:!!s.querySelector(':scope > image[href^="data:"]')}})()""")
         ouro127 = svg127()
         p127.select_option('#cardMetal', 'time'); p127.wait_for_selector('#ccMetal', timeout=3000)
-        p127.evaluate("(()=>{const i=document.getElementById('ccMetal');i.value='#0e3b82';i.dispatchEvent(new Event('input',{bubbles:true}))})()"); p127.wait_for_timeout(200)
+        # v130 (KAN-304): a cor do metal vem do quadro de cor (o mesmo da cor livre do colete), não mais do seletor nativo
+        p127.click('#ccMetal'); p127.wait_for_selector('#ccMetalQuadro', timeout=3000)
+        qb127 = p127.locator('#ccMetalQuadro').bounding_box()
+        p127.mouse.click(qb127['x'] + qb127['width'] * 0.62, qb127['y'] + qb127['height'] * 0.15); p127.wait_for_timeout(200)
+        p127.click('#ccMetalPronto'); p127.wait_for_timeout(200)
         time127 = svg127()
+        cor127 = time127['metal'][2] if len(time127['metal']) > 2 else ''
         p127.select_option('#cardForma', 'arco'); p127.wait_for_timeout(200)
         arco127 = svg127()
-        ok('#f6e3a1' in ouro127['stops'] and '#0e3b82' in time127['stops'] and arco127['caminho'] != time127['caminho'] and arco127['fora'] == 0,
+        ok('#f6e3a1' in ouro127['stops'] and re.match(r'^#[0-9a-f]{6}$', cor127) and cor127 != '#3e72d0' and arco127['caminho'] != time127['caminho'] and arco127['fora'] == 0,
            f'CT-KAN-294-15: o acabamento (ouro, metal na cor do time) e o formato (Arco) mudam a prévia na hora, sem texto fora ({ouro127["stops"][:2]}, {time127["stops"][:3]})')
         # Imagem de fundo enviada
         p127.select_option('#cffora', 'imagem'); p127.wait_for_selector('#cfforaImg', timeout=3000)
@@ -6392,7 +6403,7 @@ with sync_playwright() as pw:
         p127.click('#dlg [data-a=cardsSalvar]'); p127.wait_for_timeout(1000)
         p127.reload(); p127.wait_for_function("window.S && S.loaded && S.loaded.app", timeout=20000); p127.wait_for_timeout(800)
         g127 = p127.evaluate("(()=>{const m=Object.values(((S.app.cfg||{}).cards||{}).modelos||{})[0]||{};return [m.base,m.metal,m.corMetal,m.forma,m.fora&&m.fora.t,/^fundo-\\d+\\.(webp|jpg)$/.test((m.fora||{}).img||''),!!localStorage.getItem('pelada-fundo:'+S.gid+':'+(m.fora||{}).img)]})()")
-        ok(g127 == ['metalico', 'time', '#0e3b82', 'arco', 'imagem', True, True], f'CT-KAN-294-16: o metálico e a imagem de fundo continuam depois de recarregar ({g127})')
+        ok(g127 == ['metalico', 'time', cor127, 'arco', 'imagem', True, True], f'CT-KAN-294-16: o metálico e a imagem de fundo continuam depois de recarregar ({g127})')
         ctx127.close()
         # Em English
         ctx127e = b.new_context(viewport={'width': 360, 'height': 740}, service_workers='block', locale='en-US', timezone_id='America/Sao_Paulo')
@@ -6624,6 +6635,73 @@ with sync_playwright() as pw:
            f'CT-KAN-295-02: o jogador abre o próprio card pelo link, em English e em 360px ({falta129})')
         q129.screenshot(path=f'{OUT}/v129-meucard-360.png')
         ctx129b.close()
+
+        # ---------- v130 (KAN-304, KAN-305): cores dos cards no quadro de cor do app; acabamento metálico em todos os modelos
+        ctx130 = b.new_context(viewport={'width': 360, 'height': 740}, service_workers='block', locale='pt-BR', timezone_id='America/Sao_Paulo')
+        p130 = ctx130.new_page(); p130.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p130, 'criar')
+        p130.fill('#le', 'v130@teste.com'); p130.fill('#lp', 'Jogo@2026'); p130.fill('#lp2', 'Jogo@2026'); p130.keyboard.press('Enter'); p130.wait_for_selector('#ngBox', timeout=12000)
+        p130.fill('#ngn', 'Paleta FC'); p130.click('[data-a=pickSport][data-v=futebol]'); p130.click('[data-a=createGroup]')
+        p130.wait_for_function("location.hash.startsWith('#/g/')"); p130.wait_for_timeout(1500)
+        ch130 = p130.evaluate("(S.app.cfg||{}).fixosChave")
+        ok(isinstance(ch130, list), f'CT-KAN-199-06: o grupo novo já nasce com as chaves dos jogos fixos para as regras do Firebase ({ch130})')
+        p130.click('[data-a=tab][data-v=grupo]'); p130.wait_for_selector('#cardsPainel [data-a=cardsAbrir]', timeout=15000)
+        p130.click('#cardsPainel [data-a=cardsAbrir]'); p130.wait_for_selector('#cardsJanela svg.card-svg', timeout=15000); p130.wait_for_timeout(300)
+        p130.select_option('#cardModelo', 'p-destaque'); p130.wait_for_timeout(200)
+        p130.click('#cardCopiar'); p130.wait_for_selector('#cardMetal', timeout=5000); p130.wait_for_timeout(200)
+        nativo130 = p130.locator('#cardsJanela input[type=color]').count()
+        SV130 = "(()=>{const s=document.querySelector('#cardsJanela svg.card-svg');return s.innerHTML})()"
+        antes130 = p130.evaluate(SV130)
+        p130.click('#cffora1'); p130.wait_for_selector('#cffora1Quadro', timeout=3000); p130.wait_for_timeout(200)
+        a130 = p130.evaluate("""(()=>{const b=document.getElementById('cffora1'),q=document.getElementById('cffora1Quadro');return {exp:b.getAttribute('aria-expanded'),
+          foco:document.activeElement===q,alt:Math.round(b.getBoundingClientRect().height),brilho:!!document.getElementById('cffora1Brilho'),
+          pronto:Math.round(document.getElementById('cffora1Pronto').getBoundingClientRect().height)}})()""")
+        qb130 = p130.locator('#cffora1Quadro').bounding_box()
+        p130.mouse.click(qb130['x'] + qb130['width'] * 0.3, qb130['y'] + qb130['height'] * 0.2); p130.wait_for_timeout(200)
+        p130.keyboard.press('ArrowRight'); p130.wait_for_timeout(150)
+        depois130 = p130.evaluate(SV130)
+        ok(nativo130 == 0 and a130['exp'] == 'true' and a130['foco'] and a130['brilho'] and a130['alt'] >= 44 and a130['pronto'] >= 44 and depois130 != antes130,
+           f'CT-KAN-304-01/02: as cores dos cards abrem o quadro de cor do app (sem o seletor do navegador), com foco no quadro, 44px, e a prévia muda na hora ({nativo130}, {a130})')
+        bd130 = []
+        for tema in ['light', 'dark']:
+            p130.emulate_media(color_scheme=tema); p130.wait_for_timeout(150)
+            bd130 += [x for x in p130.evaluate(CHK) if 'card' in str(x).lower() or 'paleta' in str(x).lower()]
+        p130.emulate_media(color_scheme='light')
+        rol130 = p130.evaluate("document.getElementById('dlg').scrollWidth>document.getElementById('dlg').clientWidth+1")
+        ok(not bd130 and not rol130, f'CT-KAN-304-03: o quadro de cor no editor tem contraste nos dois temas e cabe em 360px ({bd130[:3]})')
+        p130.screenshot(path=f'{OUT}/v130-paleta-cards-360.png')
+        p130.keyboard.press('Escape'); p130.wait_for_timeout(200)
+        esc130 = [p130.evaluate("document.getElementById('dlg').open"), p130.locator('#cffora1Quadro').count(), p130.evaluate("document.activeElement&&document.activeElement.id")]
+        ok(esc130 == [True, 0, 'cffora1'], f'CT-KAN-304-04: Esc fecha só o quadro de cor (a janela de cards fica) e o foco volta ao botão da cor ({esc130})')
+        # Acabamento metálico no Destaque
+        op130 = p130.eval_on_selector_all('#cardMetal option', 'os=>os.map(o=>o.value)')
+        p130.select_option('#cardMetal', 'ouro'); p130.wait_for_timeout(200)
+        m130 = p130.evaluate("""(()=>{const s=document.querySelector('#cardsJanela svg.card-svg');return {stops:[...s.querySelectorAll('linearGradient[id$="m"] stop')].map(x=>x.getAttribute('stop-color')),
+          moldura:[...s.querySelectorAll('path')].some(p=>/url\\(#cd\\d+m\\)/.test(p.getAttribute('stroke')||'')),forma:document.querySelectorAll('#cardForma').length}})()""")
+        ok(op130[:2] == ['', 'ouro'] and '#f6e3a1' in m130['stops'] and m130['moldura'] and m130['forma'] == 0,
+           f'CT-KAN-305-02: o Destaque ganha "Acabamento da moldura" (começa em Sem metal); com Ouro, a moldura fica dourada na prévia ({op130}, {m130})')
+        p130.screenshot(path=f'{OUT}/v130-destaque-ouro-360.png')
+        p130.click('#dlg [data-a=cardsSalvar]'); p130.wait_for_timeout(1000)
+        p130.reload(); p130.wait_for_function("window.S && S.loaded && S.loaded.app", timeout=20000); p130.wait_for_timeout(800)
+        g130 = p130.evaluate("(()=>{const m=Object.values(((S.app.cfg||{}).cards||{}).modelos||{})[0]||{};return [m.base,m.metal,/^#[0-9a-f]{6}$/.test((m.fora||{}).c1||'')]})()")
+        ok(g130 == ['destaque', 'ouro', True], f'CT-KAN-305-03: o Destaque dourado e a cor escolhida no quadro continuam depois de recarregar ({g130})')
+        ctx130.close()
+        # Em English
+        ctx130e = b.new_context(viewport={'width': 360, 'height': 740}, service_workers='block', locale='en-US', timezone_id='America/Sao_Paulo')
+        p130e = ctx130e.new_page(); p130e.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p130e, 'criar')
+        p130e.fill('#le', 'v130en@teste.com'); p130e.fill('#lp', 'Jogo@2026'); p130e.fill('#lp2', 'Jogo@2026'); p130e.keyboard.press('Enter'); p130e.wait_for_selector('#ngBox', timeout=12000)
+        p130e.fill('#ngn', 'Palette FC'); p130e.click('[data-a=pickSport][data-v=futebol]'); p130e.click('[data-a=createGroup]')
+        p130e.wait_for_function("location.hash.startsWith('#/g/')"); p130e.wait_for_timeout(1500)
+        p130e.click('[data-a=tab][data-v=grupo]'); p130e.wait_for_selector('#cardsPainel [data-a=cardsAbrir]', timeout=15000)
+        p130e.click('#cardsPainel [data-a=cardsAbrir]'); p130e.wait_for_selector('#cardsJanela', timeout=15000)
+        p130e.select_option('#cardModelo', 'p-escudo'); p130e.click('#cardCopiar'); p130e.wait_for_selector('#cardMetal', timeout=5000)
+        p130e.click('#cffora1'); p130e.wait_for_selector('#cffora1Quadro', timeout=3000)
+        en130 = p130e.inner_text('#cardsJanela')
+        falta130 = p130e.evaluate("(window.__njSemTraducao&&window.__njSemTraducao()||[]).filter(k=>/^(card|paleta)/.test(k))")
+        ok('No metal' in en130 and 'Done' in en130 and not re.search(r'\b(Sem metal|Pronto|Claro e escuro)\b', en130) and not falta130,
+           f'CT-KAN-305-04: em English, o acabamento e o quadro de cor vêm traduzidos ({falta130})')
+        ctx130e.close()
 
     if parte('b'):
         # ---------- v35 (KAN-142): "Continuar com o Google" na aba errada entra ou cria a conta e avisa (navegador separado)

@@ -15,24 +15,39 @@ test('CT-KAN-66-02: autor com a assistência entre parênteses; pontos e assist�
         { t: 'b', pid: 'l', pts: 3, as: 'c' },
         { t: 'b', pid: 'j', pts: 2 },
       ],
-      nome
+      nome,
+      '(contra)'
     ),
     'Marcão (Caio), Japa, Léo (3, Caio), Japa (2)'
   );
 });
-test('CT-KAN-66-10: gol contra, sem autor e "Caio (Caio)" ficam de fora', () => {
+test('CT-KAN-66-10: sem autor e "Caio (Caio)" ficam de fora', () => {
   assert.equal(
     autoresTexto(
       [
         { t: 'a', pid: 'c', as: 'c' },
-        { t: 'a', pid: 'm', og: true, as: 'c' },
         { t: 'a', pid: null, as: 'c' },
+        { t: 'a', pid: null, og: true },
       ],
-      nome
+      nome,
+      '(contra)'
     ),
     'Caio'
   );
-  assert.equal(autoresTexto(null, nome), '');
+  assert.equal(autoresTexto(null, nome, '(contra)'), '');
+});
+test('CT-KAN-306-01: gol contra aparece com a marca, sem pontos nem assistência', () => {
+  assert.equal(
+    autoresTexto(
+      [
+        { t: 'a', pid: 'm', as: 'c' },
+        { t: 'a', pid: 'j', og: true, as: 'c', pts: 2 },
+      ],
+      nome,
+      '(own goal)'
+    ),
+    'Marcão (Caio), Japa (own goal)'
+  );
 });
 test('CT-KAN-66-07: assistências somadas por jogador, uma por ponto', () => {
   assert.deepEqual(

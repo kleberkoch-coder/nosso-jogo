@@ -2,7 +2,7 @@
    acoes/administradores.ts). Fazem parte de ACT (src/acoes.js). */
 import { CAIXA_K, cfg, ptipo } from '../dominio/caixa.js';
 import { SPORTS, porTime, porTimePadrao, sport } from '../dominio/esportes.js';
-import { dupName, fdia, fixos, freq, gname, grpAtivo, lvl, normName, players } from '../dominio/grupo.js';
+import { chavesFixos, dupName, fdia, fixos, freq, gname, grpAtivo, lvl, normName, players } from '../dominio/grupo.js';
 import { tp, tx } from '../i18n/index.js';
 import { B, op } from '../nucleo/backend.js';
 import { gruposEsgotados, limite } from '../dominio/limites.ts';
@@ -44,10 +44,10 @@ function avisoGrupos(sel, n) {
     e.scrollIntoView({ block: 'center' });
   } else toast(m);
 }
-/* Cria o documento do grupo junto com +1 no contador da conta: ou entram os dois, ou nenhum. */
+/* Cria o grupo (já com as chaves dos jogos fixos, KAN-199) e +1 no contador da conta: ou entram os dois, ou nenhum. */
 const gravarGrupo = (gid, o) =>
   B.lote([
-    { tipo: 'set', p: 'grupos/' + gid, o },
+    { tipo: 'set', p: 'grupos/' + gid, o: { ...o, cfg: { ...o.cfg, fixosChave: chavesFixos(o.freq, o.cfg.fixos) } } },
     { tipo: 'patch', p: 'contas/' + S.user.uid, o: { ng: op.somar(1), ult: gid, ativos: op.uniao([gid]) } },
   ]);
 /* KAN-217: o formulário do grupo (telas/GrupoForm.tsx, com país, moeda, fuso e dias fixos) baixa só quando

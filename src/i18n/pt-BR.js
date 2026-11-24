@@ -90,6 +90,7 @@ export default {
   'publico.partidas': 'Partidas',
   /* KAN-249: linha da partida (aba Partida, Histórico e link) */
   'partida.jogoN': 'Jogo {n}',
+  'partida.contraMarca': '(contra)',
   /* KAN-246: hora e número do sorteio (link, aba Rodada e WhatsApp dos times) */
   'sortinfo.feito': 'Sorteado às {hora} · {n}º sorteio',
   'sortinfo.duplas': 'Duplas sorteadas às {hora} · {n}º sorteio',

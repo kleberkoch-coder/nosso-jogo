@@ -770,6 +770,35 @@ describe('segurança do link (KAN-77, KAN-78, KAN-79)', () => {
     await assertFails(setDoc(doc(db.anon(), G + '/rodadas/' + longe + '/presencas/j1'), base()));
     await assertFails(setDoc(doc(db.anon(), G + '/rodadas/' + passado + '/presencas/j1'), base()));
   });
+  /* KAN-199 (pelada-v130): rodada fixa sem documento só no dia e horário dos jogos fixos do grupo. */
+  const proximo = (iso, d0 = new Date()) => {
+    const d = new Date(Date.UTC(d0.getUTCFullYear(), d0.getUTCMonth(), d0.getUTCDate() + 1));
+    while ((d.getUTCDay() || 7) !== iso) d.setUTCDate(d.getUTCDate() + 1);
+    return d.toISOString().slice(0, 10);
+  };
+  const grupoFixo = o => env.withSecurityRulesDisabled(ctx => updateDoc(doc(ctx.firestore(), G), o));
+  test('CT-KAN-199-01: grupo frequente com jogo às quartas 20h aceita a próxima quarta 20h', async () => {
+    await grupoFixo({ freq: 'fixo', cfg: { fixos: [{ dow: 3, ini: '20:00' }], fixosChave: ['3-2000'] } });
+    const qua = proximo(3);
+    await assertSucceeds(setDoc(doc(db.anon(), G + '/rodadas/f-' + qua + '-2000/presencas/j1'), base()));
+  });
+  test('CT-KAN-199-02: horário ou dia que não é do grupo é recusado', async () => {
+    await grupoFixo({ freq: 'fixo', cfg: { fixos: [{ dow: 3, ini: '20:00' }], fixosChave: ['3-2000'] } });
+    const qua = proximo(3),
+      qui = proximo(4);
+    await assertFails(setDoc(doc(db.anon(), G + '/rodadas/f-' + qua + '-2001/presencas/j1'), base()));
+    await assertFails(setDoc(doc(db.anon(), G + '/rodadas/f-' + qui + '-2000/presencas/j1'), base()));
+  });
+  test('CT-KAN-199-03: grupo esporádico não aceita rodada fixa inventada; domingo é o dia 7', async () => {
+    await grupoFixo({ freq: 'esporadico', cfg: { fixosChave: [] } });
+    await assertFails(setDoc(doc(db.anon(), G + '/rodadas/f-' + proximo(3) + '-2000/presencas/j1'), base()));
+    await grupoFixo({ freq: 'fixo', cfg: { fixos: [{ dow: 0, ini: '09:30' }], fixosChave: ['7-0930'] } });
+    await assertSucceeds(setDoc(doc(db.anon(), G + '/rodadas/f-' + proximo(7) + '-0930/presencas/j1'), base()));
+  });
+  test('CT-KAN-199-04: a rodada já criada pelo administrador continua aceitando, mesmo fora da lista', async () => {
+    await grupoFixo({ freq: 'esporadico', cfg: { fixosChave: [] } });
+    await assertSucceeds(setDoc(doc(db.anon(), G + '/rodadas/r1/presencas/j1'), base()));
+  });
   test('KAN-79: mensalidade e diária novas no documento público do grupo são recusadas', async () => {
     await assertFails(updateDoc(doc(db.adm(), G), { cfg: { mensal: 90 } }));
     await assertFails(updateDoc(doc(db.adm(), G), { cfg: { diaria: 25 } }));

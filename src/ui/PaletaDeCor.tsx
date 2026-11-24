@@ -3,23 +3,19 @@
    com o tom (da esquerda para a direita) e a intensidade (de cima para baixo), a barra de claro e escuro, a amostra e
    o nome sugerido pela cor, que a pessoa pode trocar. Baixa só quando alguém toca no colete (gestão mais leve). */
 import { render } from 'preact';
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useState } from 'preact/hooks';
 import { ehCorLivre, lerCorLivre } from '../dominio/cores';
-import { corLivre, familia, hsl, hsvParaHex } from '../dominio/cores-paleta';
+import { corLivre, familia, hsvParaHex } from '../dominio/cores-paleta';
 import { COL, col, corClara, tn } from '../dominio/esportes.js';
 import { recentes } from '../dominio/cores-recentes';
 import { S } from '../nucleo/estado.js';
-import estilo from '../estilos/paleta.css' with { type: 'text' };
 import { juntarTextos, tx } from '../i18n/index.js';
 import textos from '../i18n/pt-BR-cores';
 import { toast } from '../nucleo/util.js';
 import { dlg, openDlg } from './dialogos.js';
-import { usarEstilo } from './estilo';
+import { QuadroDeCor, hexParaHsv, type Hsv } from './QuadroDeCor';
 
 juntarTextos(textos);
-usarEstilo('paleta', estilo);
-
-type Hsv = { h: number; s: number; v: number };
 type Rodada = { id: string; times?: { c: number | string }[] | null };
 
 /* Cor do colete (v60): escolha livre entre as cores; se outro time já usa, os dois trocam. */
@@ -74,15 +70,11 @@ export function montarColetes(r: Rodada, ti: number) {
   if (el) render(<Coletes r={r} ti={ti} />, el);
 }
 
-const limitar = (x: number, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const nomeSugerido = (hex: string) => tx('cor.' + familia(hex));
 
 /* Ponto de partida: a cor livre do time (se já tiver) ou um rosa médio, longe das 8 de sempre. */
 function inicio(c: unknown): Hsv {
-  if (!ehCorLivre(c)) return { h: 330, s: 0.55, v: 0.9 };
-  const [h, s, l] = hsl(c.slice(0, 7)),
-    v = l + s * Math.min(l, 1 - l);
-  return { h, s: v ? 2 * (1 - l / v) : 0, v };
+  return ehCorLivre(c) ? hexParaHsv(c) : { h: 330, s: 0.55, v: 0.9 };
 }
 
 /* O que está na janela, para a ação "usarCor" ler. */
@@ -93,65 +85,17 @@ function Paleta({ ti, c }: { ti: number; c: unknown }) {
   const [hsv, setHsv] = useState<Hsv>(() => inicio(c)),
     hex = hsvParaHex(hsv.h, hsv.s, hsv.v),
     [nome, setNome] = useState(() => (ehCorLivre(c) ? lerCorLivre(c).n : nomeSugerido(hex))),
-    [editou, setEditou] = useState(ehCorLivre(c)),
-    quadro = useRef<HTMLDivElement>(null);
+    [editou, setEditou] = useState(ehCorLivre(c));
   atual = { ti, valor: corLivre(hex, nome) };
   const mudar = (n: Hsv) => {
     setHsv(n);
     if (!editou) setNome(nomeSugerido(hsvParaHex(n.h, n.s, n.v)));
   };
-  const doPonto = (e: PointerEvent) => {
-    const r = quadro.current!.getBoundingClientRect();
-    mudar({
-      ...hsv,
-      h: limitar((e.clientX - r.left) / r.width) * 359.9,
-      s: 1 - limitar((e.clientY - r.top) / r.height),
-    });
-  };
-  useEffect(() => quadro.current?.focus(), []);
   return (
     <>
       <h3 id="paletaTitulo">{tx('paleta.titulo', { time: tn(ti) })}</h3>
       <p class="small muted">{tx('paleta.ajuda')}</p>
-      <div
-        ref={quadro}
-        class="paleta"
-        id="paletaQuadro"
-        tabIndex={0}
-        role="slider"
-        aria-label={tx('paleta.quadro')}
-        aria-valuetext={nome}
-        onPointerDown={e => {
-          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-          doPonto(e);
-        }}
-        onPointerMove={e => {
-          if (e.buttons) doPonto(e);
-        }}
-        onKeyDown={e => {
-          const passo = { ArrowLeft: [-6, 0], ArrowRight: [6, 0], ArrowUp: [0, 0.05], ArrowDown: [0, -0.05] }[e.key];
-          if (!passo) return;
-          e.preventDefault();
-          mudar({ ...hsv, h: (hsv.h + passo[0]! + 360) % 360, s: limitar(hsv.s + passo[1]!) });
-        }}
-      >
-        <span
-          class="paleta-mira"
-          style={{ left: (hsv.h / 360) * 100 + '%', top: (1 - hsv.s) * 100 + '%', background: hex }}
-        ></span>
-      </div>
-      <label class="f" style="margin-top:8px">
-        <span>{tx('paleta.brilho')}</span>
-        <input
-          type="range"
-          class="paleta-brilho"
-          id="paletaBrilho"
-          min="8"
-          max="100"
-          value={Math.round(hsv.v * 100)}
-          onInput={e => mudar({ ...hsv, v: +(e.currentTarget as HTMLInputElement).value / 100 })}
-        />
-      </label>
+      <QuadroDeCor hsv={hsv} mudar={mudar} id="paleta" rotulo={nome} focar min={8} />
       <div class="paleta-fim">
         <span
           class="paleta-amostra"

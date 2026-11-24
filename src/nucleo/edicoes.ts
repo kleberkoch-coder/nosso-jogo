@@ -2,6 +2,7 @@ import { linkWhatsApp } from '../dominio/contato';
 import { isAdmin, posso, rodById } from '../dominio/grupo.js';
 import { GB, S as estado, clean, w } from './estado.js';
 import { cl, toast } from './util.js';
+import { chavesFixos } from '../dominio/rodadas-fixas';
 import { respostaDePresenca, type Presenca } from '../dominio/presenca';
 import { tx } from '../i18n/index.js';
 import * as banco from './backend.js';
@@ -61,9 +62,19 @@ function editApp(fn: (a: Obj & { cfg: Obj }) => void) {
   const a = cl(st().app) || { name: 'Pelada', cfg: {} };
   a.cfg = a.cfg || {};
   fn(a);
+  /* KAN-199: as chaves dos jogos fixos acompanham os dias fixos (só quem pode mudar as configurações grava). */
+  if (posso('config')) a.cfg.fixosChave = chavesFixos(a.freq, a.cfg.fixos);
   st().app = a;
   changed();
   return w(GB.set('config/app', clean(a)));
+}
+/* KAN-199 (pelada-v130): grupo criado antes da v130 (ou com os dias mudados por um aparelho antigo) ganha as chaves
+   dos jogos fixos na primeira vez que alguém com Configurações abre a gestão. */
+function acertarFixos() {
+  const a = st().app;
+  if (!a || !st().dataOn || !posso('config')) return;
+  const ch = chavesFixos(a.freq, (a.cfg || {}).fixos);
+  if (JSON.stringify(ch) !== JSON.stringify((a.cfg || {}).fixosChave)) editApp(() => {});
 }
 /* KAN-272: nasc (data de nascimento) só muda quando vem; sem ela (janela do avulso), fica a que estava. */
 function saveContato(id: string, tel: string, email: string, nasc?: string) {
@@ -143,4 +154,4 @@ function presAlterada(id: string) {
   return !!(p && p.dev && p.by && p.by !== p.dev && !(st().membros || {})[p.by]);
 }
 
-export { editApp, editRat, editRod, presAlterada, saveContato, setPres, waUrl };
+export { acertarFixos, editApp, editRat, editRod, presAlterada, saveContato, setPres, waUrl };

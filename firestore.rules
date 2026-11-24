@@ -114,7 +114,8 @@ service cloud.firestore {
     // Rodada aceitando confirmações: grupo ativo e lista aberta (ou jogo fixo ainda sem documento).
     function presencaAberta(gid, rid) {
       return signed() && grpAtivo(gid) && (
-        (!exists(rod(gid, rid)) && rid.matches('f-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{4}') && dataProxima(rid))
+        (!exists(rod(gid, rid)) && rid.matches('f-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{4}') && dataProxima(rid)
+          && fixoDoGrupo(gid, rid))
         || (exists(rod(gid, rid))
           && get(rod(gid, rid)).data.get('locked', false) == false
           && get(rod(gid, rid)).data.get('cancelada', false) == false)
@@ -124,6 +125,15 @@ service cloud.firestore {
     function dataDoFixo(rid) { return timestamp.date(int(rid.split('-')[1]), int(rid.split('-')[2]), int(rid.split('-')[3])); }
     function dataProxima(rid) {
       return dataDoFixo(rid) > request.time - duration.value(2, 'd') && dataDoFixo(rid) < request.time + duration.value(15, 'd');
+    }
+    // KAN-199 (pelada-v130): rodada fixa ainda sem documento só num dia e horário dos jogos fixos do grupo. O app grava
+    // cfg.fixosChave = ["dia-HHMM"] (dia de 1, segunda, a 7, domingo). Grupo esporádico nunca. Grupo antigo, ainda sem a
+    // lista, segue como antes até alguém com Configurações abrir a gestão (o app grava a lista na hora).
+    function fixoDoGrupo(gid, rid) {
+      let g = get(grp(gid)).data;
+      let ch = g.get('cfg', {}).get('fixosChave', null);
+      return g.get('freq', '') != 'esporadico'
+        && (ch == null || (string(dataDoFixo(rid).dayOfWeek()) + '-' + rid.split('-')[4]) in ch);
     }
     // KAN-228: extra ligado numa rodada que existe e não foi cancelada.
     function extraAberto(gid, rid) {

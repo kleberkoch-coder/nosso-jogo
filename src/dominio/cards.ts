@@ -10,7 +10,8 @@ export type TipoFundo = 'cor' | 'grad' | 'listras' | 'pontos' | 'marmore' | 'pro
 /* img: nome do arquivo no Storage (grupos/{gid}/cards/fundo-{momento}.webp), só no tipo "imagem" (v127).
    p: qual desenho da galeria de fundos prontos, só no tipo "pronto" (KAN-303, v128). */
 export type Fundo = { t: TipoFundo; c1: string; c2: string; img?: string; p?: string };
-/* Clássico metálico (v127): o acabamento da moldura, o formato do escudo e, no "metal na cor do time", a cor base. */
+/* Clássico metálico (v127): o acabamento da moldura, o formato do escudo e, no "metal na cor do time", a cor base.
+   KAN-305 (v130): os outros modelos também aceitam o acabamento; sem "metal", a moldura é a cor da linha. */
 export type Metal = 'ouro' | 'prata' | 'bronze' | 'time';
 export type Forma = 'coroa' | 'reto' | 'arco';
 export type Modelo = {
@@ -210,7 +211,9 @@ export function limparModelo(v: unknown): Modelo | null {
           forma: FORMAS.includes(o.forma as Forma) ? (o.forma as Forma) : p.forma!,
           corMetal: cor(o.corMetal, p.corMetal!),
         }
-      : {}),
+      : METAIS.includes(o.metal as Metal)
+        ? { metal: o.metal as Metal, corMetal: cor(o.corMetal, '#3e72d0') }
+        : {}),
   };
 }
 

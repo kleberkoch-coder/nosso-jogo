@@ -49,6 +49,7 @@ export { montarHome, vHome } from './telas/Grupos';
 export { guardarOrdemJogadores, montarJogadores, vJogadores } from './telas/Jogadores';
 export { montarRodada, vRodada } from './telas/Rodada';
 export { migrar, migrarCaixa, migrarMensal, migrarPublico, verificarRodadas } from './nucleo/partidas.js';
+export { acertarFixos } from './nucleo/edicoes';
 export { drawPreview } from './ui/JanelasGestao';
 export { contaRegiao, listaPais, paisAparelho, preencher } from './ui/regiao.ts';
 export { trocarPaisTelefone } from './ui/contato-form';

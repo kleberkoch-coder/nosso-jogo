@@ -628,6 +628,7 @@ export default {
   'agenda.dias.5': 'Fridays',
   'agenda.dias.6': 'Saturdays',
   'partida.jogoN': 'Game {n}',
+  'partida.contraMarca': '(own goal)',
   /* KAN-246 (pelada-v109): hora e número do sorteio */
   'sortinfo.feito': 'Drawn at {hora} · draw #{n}',
   'sortinfo.duplas': 'Pairs drawn at {hora} · draw #{n}',

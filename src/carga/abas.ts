@@ -15,6 +15,7 @@ type Gestao = GestaoCaixa & {
   migrarCaixa: () => void;
   migrarMensal: () => void;
   migrarPublico: () => void;
+  acertarFixos: () => void;
   verificarRodadas: () => void;
   abaPronta: (aba: string) => Aba | null;
 };
@@ -94,6 +95,7 @@ export function ensureExtras() {
   A.migrarCaixa(); // KAN-207: totais do caixa saem do resumo do ranking (uma vez, pelo organizador)
   A.migrarMensal(); // KAN-212: mensalidades pagas por competência, para o Quadro do ano (uma vez, quem tem Caixa)
   A.migrarPublico(); // KAN-295: números públicos do card dos meses que já existiam (uma vez, qualquer administrador)
+  A.acertarFixos(); // KAN-199: chaves dos jogos fixos para as regras do Firebase (quem tem Configurações)
   A.verificarRodadas();
   ranking(A);
   partidas();

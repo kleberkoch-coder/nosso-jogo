@@ -495,7 +495,6 @@ export default {
   'partida.quemMarcou': 'Who scored?',
   'partida.contra': 'Own goal (opposing player)',
   'partida.semAutor': 'No scorer',
-  'partida.contraMarca': '(own goal)',
   'partida.tempoEsgotado': "Time's up",
   'partida.pausar': 'Pause',
   'partida.iniciar': 'Start',

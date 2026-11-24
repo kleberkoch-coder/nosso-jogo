@@ -4,7 +4,7 @@ import { S } from '../nucleo/estado.js';
 import { diaSemana } from '../nucleo/util.js';
 import { FORMATO, LOCAL, agora } from '../i18n/formatos.js';
 import { tx } from '../i18n/index.js';
-import { endTs, proximasFixas, virtualOf, ymd } from './rodadas-fixas.ts';
+import { chavesFixos, endTs, proximasFixas, virtualOf, ymd } from './rodadas-fixas.ts';
 import { pode } from './permissoes';
 import { faixaTexto } from './rodadas.js';
 
@@ -198,6 +198,7 @@ function attendance() {
 }
 
 export {
+  chavesFixos,
   comCores,
   ULTIMAS,
   attendance,

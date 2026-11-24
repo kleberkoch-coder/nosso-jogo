@@ -74,6 +74,12 @@ Coletes em pastel (`team-*`): laranja #F4B183, azul #9DBBF0, amarelo #F5DC7E, ve
   - 36px (`touch-compact`) para botões pequenos, de altura **e** de largura (⇄, ✕), e para os chips do cabeçalho.
 - **Loading** em todo botão que grava, cria, exclui, abre ou faz login. Cursor no primeiro campo de toda janela (pelada-v106, KAN-250); **Enter envia em toda janela** (pelada-v29, KAN-74): Enter num campo de texto aciona o botão principal do rodapé (`primary` ou `bib`), e o teclado do celular mostra "Concluir". Ficam de fora a área de texto, as listas de escolha e as caixas de marcar.
 
+## Componentes (pelada-v130)
+- **Quadro de cor** (KAN-304; `ui/QuadroDeCor.tsx`, estilos em `paleta.css`): o quadro de tom (da esquerda para a direita) e intensidade (de cima para baixo), com a mira de 22px, foco visível de 3px `brand` e setas do teclado, mais a barra "Claro e escuro" de 44px. É o mesmo na cor livre do colete (brilho mínimo 8%, com nome da cor) e nas cores dos cards (brilho até o preto, sem nome).
+- **Botão de cor dos cards** (KAN-304; `.card-cor` em `cards.css`): botão de 44px com a amostra de 32px (cantos de 8px, borda `field-border`) e o nome do campo; `aria-expanded`. Tocar abre logo abaixo, na largura toda, o painel `.card-paleta` (fundo `surface`, borda `field-border`, cantos de 10px, padding de 10px) com o quadro de cor (150px de altura), a amostra e **Pronto** (`btn`, 44px). Esc ou Pronto fecham só o painel e devolvem o foco ao botão.
+- **Acabamento da moldura em todos os cards** (KAN-305): o combo "Acabamento da moldura" (44px) aparece em todos os modelos; fora do Clássico metálico começa em **Sem metal**. Com metal, as linhas do card (contornos, faixas e o escudinho) ficam no degradê de 5 tons e entra a borda de metal com sombra leve por trás, como no Clássico metálico.
+- **Gol contra na linha da partida** (KAN-306): "Jogo 1 · gols: Marcão (Caio), Japa (contra)", no mesmo `small muted`.
+
 ## Componentes (pelada-v129)
 - **Card do jogador** (KAN-295; `ui/CardJogador.tsx`, janela `#cardJogador.card-jog`): título "Card de Bruno" (h3), a linha `small muted` com o período ("Números da temporada 2026", ou "Carregando os números…", ou "Ainda sem números neste período.", `aria-live`), o card (`CardDesenho`, o mesmo do editor, largura toda) e o rodapé "Fechar" (`btn`) e "Mandar no WhatsApp" (`btn primary`, 44px, com carregando enquanto gera a imagem; desligado até os números chegarem).
 - **Imagem do card**: PNG de 1080 × 1350 (4:5), o mesmo desenho, com a foto, o logotipo, o fundo e a fonte dos títulos dentro.

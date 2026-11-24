@@ -6374,7 +6374,7 @@ with sync_playwright() as pw:
         # v130 (KAN-304): a cor do metal vem do quadro de cor (o mesmo da cor livre do colete), não mais do seletor nativo
         p127.click('#ccMetal'); p127.wait_for_selector('#ccMetalQuadro', timeout=3000)
         qb127 = p127.locator('#ccMetalQuadro').bounding_box()
-        p127.mouse.click(qb127['x'] + qb127['width'] * 0.62, qb127['y'] + qb127['height'] * 0.15); p127.wait_for_timeout(200)
+        p127.locator('#ccMetalQuadro').click(position={'x': qb127['width'] * 0.62, 'y': qb127['height'] * 0.15}); p127.wait_for_timeout(200)
         p127.click('#ccMetalPronto'); p127.wait_for_timeout(200)
         time127 = svg127()
         cor127 = time127['metal'][2] if len(time127['metal']) > 2 else ''
@@ -6657,7 +6657,7 @@ with sync_playwright() as pw:
           foco:document.activeElement===q,alt:Math.round(b.getBoundingClientRect().height),brilho:!!document.getElementById('cffora1Brilho'),
           pronto:Math.round(document.getElementById('cffora1Pronto').getBoundingClientRect().height)}})()""")
         qb130 = p130.locator('#cffora1Quadro').bounding_box()
-        p130.mouse.click(qb130['x'] + qb130['width'] * 0.3, qb130['y'] + qb130['height'] * 0.2); p130.wait_for_timeout(200)
+        p130.locator('#cffora1Quadro').click(position={'x': qb130['width'] * 0.3, 'y': qb130['height'] * 0.2}); p130.wait_for_timeout(200)
         p130.keyboard.press('ArrowRight'); p130.wait_for_timeout(150)
         depois130 = p130.evaluate(SV130)
         ok(nativo130 == 0 and a130['exp'] == 'true' and a130['foco'] and a130['brilho'] and a130['alt'] >= 44 and a130['pronto'] >= 44 and depois130 != antes130,

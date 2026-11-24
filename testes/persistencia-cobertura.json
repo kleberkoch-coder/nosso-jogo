@@ -23,6 +23,7 @@
   "rodadas/partidas/art": ["P13c"],
   "resumos": ["P13", "P13d", "P14"],
   "resumosCaixa": ["P14", "P28"],
+  "resumosPub": ["P46"],
   "caixa": ["P14", "P20", "P27", "P28", "P29", "P31"],
   "votacoes": ["P15", "P35"],
   "avaliacoes": ["P30"],

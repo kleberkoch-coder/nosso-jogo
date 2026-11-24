@@ -3,6 +3,8 @@
    não baixa nada daqui, e o app abre mais rápido com sinal fraco. */
 import textosGestao from './i18n/pt-BR-gestao.js';
 import { juntarTextos } from './i18n/index.js';
+import { antesDoLote } from './nucleo/estado';
+import { comEspelho } from './dominio/resumo-publico';
 import { acoes as grupo } from './acoes/grupo';
 import { acoes as rodada } from './acoes/rodada.js';
 import { acoes as avulsos } from './acoes/avulsos';
@@ -46,7 +48,7 @@ export { inicioDaJanela } from './dominio/caixa-regras';
 export { montarHome, vHome } from './telas/Grupos';
 export { guardarOrdemJogadores, montarJogadores, vJogadores } from './telas/Jogadores';
 export { montarRodada, vRodada } from './telas/Rodada';
-export { migrar, migrarCaixa, migrarMensal, verificarRodadas } from './nucleo/partidas.js';
+export { migrar, migrarCaixa, migrarMensal, migrarPublico, verificarRodadas } from './nucleo/partidas.js';
 export { drawPreview } from './ui/JanelasGestao';
 export { contaRegiao, listaPais, paisAparelho, preencher } from './ui/regiao.ts';
 export { trocarPaisTelefone } from './ui/contato-form';
@@ -56,6 +58,8 @@ export { renderGestao } from './ui/render-gestao';
 export { montarAvisosPlano, montarCadeado, vCadeado } from './ui/Plano';
 /* Os textos da gestão entram no dicionário assim que esta parte chega (KAN-159). */
 juntarTextos(textosGestao);
+/* KAN-295 (pelada-v129): toda gravação no resumo do mês leva, no mesmo lote, a cópia com os números públicos do card. */
+antesDoLote.f = comEspelho;
 
 /* KAN-245: "Salvar como meu grupo" do sorteio sem conta (baixa só quando há um sorteio guardado). */
 export const grupoDoSorteio = () => import('./acoes/grupo-do-sorteio').then(m => m.abrir());

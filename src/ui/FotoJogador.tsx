@@ -10,6 +10,7 @@ import * as banco from '../nucleo/backend.js';
 import { GB, S as estado, clean, w } from '../nucleo/estado.js';
 import { cl, toast } from '../nucleo/util.js';
 import { ACT } from '../acoes.js';
+import { recurso } from '../dominio/grupo.js';
 import { confirmou } from './dialogos.js';
 import { srcFoto } from './foto-src';
 import { changed } from './render.js';
@@ -44,7 +45,7 @@ function gravarAutorizacao(pid: string) {
 }
 
 export function FotoJogador({ pid }: { pid: string }) {
-  const [ocupado, setOcupado] = useState<'' | 'subir'>('');
+  const [ocupado, setOcupado] = useState<'' | 'subir' | 'card'>('');
   const [erro, setErro] = useState('');
   const [, redesenhar] = useState(0);
   aoMudar = () => redesenhar(n => n + 1);
@@ -123,6 +124,17 @@ export function FotoJogador({ pid }: { pid: string }) {
   };
   const busy = (k: string) => ({ class: ocupado === k ? 'btn sm busy' : 'btn sm', 'aria-busy': ocupado === k });
   const podeEscolher = jaAutorizou || aut;
+  /* KAN-295 (pelada-v129): o card de verdade, com os números do jogador (sob demanda). */
+  const verCard = () => {
+    setOcupado('card');
+    import('./CardJogador').then(
+      m => m.abrirCardJogador(pid, 'ficha'),
+      () => {
+        setOcupado('');
+        setErro(tx('comum.naoCarregou'));
+      }
+    );
+  };
 
   return (
     <div class="f foto-jog" id="fotoJogador" data-sem-descarte="">
@@ -149,6 +161,11 @@ export function FotoJogador({ pid }: { pid: string }) {
           {src ? (
             <button type="button" class="btn sm" id="fotoTirar" data-a="fotoTirar" data-p={pid} disabled={!!ocupado}>
               {tx('foto.remover')}
+            </button>
+          ) : null}
+          {src && recurso('cards') ? (
+            <button type="button" id="fotoCard" {...busy('card')} disabled={!!ocupado} onClick={verCard}>
+              {tx('foto.verCard')}
             </button>
           ) : null}
         </div>

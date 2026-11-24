@@ -14,6 +14,7 @@ type Gestao = GestaoCaixa & {
   migrar: () => void;
   migrarCaixa: () => void;
   migrarMensal: () => void;
+  migrarPublico: () => void;
   verificarRodadas: () => void;
   abaPronta: (aba: string) => Aba | null;
 };
@@ -92,6 +93,7 @@ export function ensureExtras() {
   A.migrar();
   A.migrarCaixa(); // KAN-207: totais do caixa saem do resumo do ranking (uma vez, pelo organizador)
   A.migrarMensal(); // KAN-212: mensalidades pagas por competência, para o Quadro do ano (uma vez, quem tem Caixa)
+  A.migrarPublico(); // KAN-295: números públicos do card dos meses que já existiam (uma vez, qualquer administrador)
   A.verificarRodadas();
   ranking(A);
   partidas();

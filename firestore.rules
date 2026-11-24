@@ -695,6 +695,20 @@ service cloud.firestore {
                 || (pode(gid, 'caixa') && !('cx' in request.resource.data))));
       }
 
+      // KAN-295 (pelada-v129, decisão do Kleber de 23/11/2026): números públicos do card do jogador, copiados do resumo
+      // do mês no mesmo lote (dominio/resumo-publico.ts): só jogos, vitórias, empates, derrotas, gols, assistências e
+      // vezes eleito melhor jogador. Nunca o bagre, a nota, o caixa ou o placar de cada jogo. Qualquer um lê (o card
+      // aparece no link do jogador, sem conta); só administradores gravam, e só com estes campos.
+      match /resumosPub/{mes} {
+        allow read: if true;
+        allow write: if adminAtivo(gid)
+          && mes.matches('[0-9]{4}-[0-9]{2}')
+          && request.resource.data.keys().hasOnly(['mes', 'at', 'jog'])
+          && request.resource.data.mes == mes
+          && (!('jog' in request.resource.data) || request.resource.data.jog is map);
+        allow delete: if adminAtivo(gid);
+      }
+
       // Totais do caixa por mês (KAN-207, pelada-v74): entradas e saídas, só para quem tem a permissão de Caixa.
       // KAN-212 (pelada-v78): mens = mensalidade paga por jogador na competência (centavos), para o Quadro do ano.
       match /resumosCaixa/{mes} {

@@ -64,6 +64,7 @@ export function CardsRodada(o: {
               type="button"
               class={abrindo === k ? 'btn sm busy' : 'btn sm'}
               aria-busy={abrindo === k}
+              style="min-height:var(--touch-min, 44px)"
               data-card-rod={d.tipo}
               data-p={d.pid}
               aria-label={tx('cardr.abrir', { tipo, nome: n })}

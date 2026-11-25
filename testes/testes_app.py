@@ -2563,6 +2563,9 @@ with sync_playwright() as pw:
         p23.click('[data-a=tab][data-v=jogadores]'); p23.wait_for_timeout(300); p23.click('[data-a=seed]'); p23.wait_for_timeout(1500)
         conta23 = p23.evaluate(LER, f'contas/{u23}') or {}
         ok(conta23.get('ativos') == [g23], f'CT-KAN-119-01: o grupo novo entra na lista de grupos ativos da conta ({conta23.get("ativos")})')
+        # A transição de verdade acaba em 28/11/2026: a 3 dias do fim o aviso muda para "acaba em…". Para o caso valer em
+        # qualquer data, a transição deste grupo vai para daqui a 30 dias.
+        p23.evaluate(PUT, {'sistema/planos': {'transicaoAte': p23.evaluate("Date.now()+30*864e5")}}); p23.reload(); p23.wait_for_timeout(1500)
         p23.click('[data-a=tab][data-v=rodada]'); p23.wait_for_timeout(500)
         ok(p23.locator('#avisoNovidade').count() == 1 and 'agora tem planos' in p23.inner_text('#avisoNovidade'), 'CT-KAN-119-02: na transição, o organizador vê o aviso da novidade com a data')
         ok(p23.locator('.tab-trava').count() == 0, 'CT-KAN-119-02: na transição, nenhuma aba tem cadeado (Plano A)')
@@ -6321,7 +6324,7 @@ with sync_playwright() as pw:
         p126.evaluate("S.app.sport='volei'")
         p126.click('#cardsPainel [data-a=cardsAbrir]'); p126.wait_for_selector('#cardsJanela', timeout=15000); p126.wait_for_timeout(300)
         v126 = p126.evaluate("[[...document.querySelectorAll('.card-tipos [data-tipo]')].map(b=>b.dataset.tipo), [...document.querySelectorAll('#cardGrande option')].map(o=>o.textContent)]")
-        ok(v126[0] == ['perfil', 'craque', 'artilheiro'] and 'Pontos na temporada' in v126[1] and 'Assistências' not in v126[1],
+        ok(v126[0] == ['perfil', 'craque', 'artilheiro', 'campeao'] and 'Pontos na temporada' in v126[1] and 'Assistências' not in v126[1],
            f'CT-KAN-294-03: no vôlei, sem Garçom e sem assistências, e "Pontos" no lugar de "Gols" ({v126})')
         p126.keyboard.press('Escape'); p126.wait_for_timeout(200)
         ctx126.close()

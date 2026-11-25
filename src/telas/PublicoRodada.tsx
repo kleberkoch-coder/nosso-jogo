@@ -26,7 +26,7 @@ import { myLocal } from './publico-rodada.js';
 import { partidasDe } from '../nucleo/partidas-lista.js';
 import { ComoChegar, NomeNaLista, Pos, PorPosicao, TextoCortado } from '../ui/componentes';
 import { avulsosEsgotados } from '../dominio/limites';
-import { DEMORA_MS } from '../nucleo/carga';
+import { DEMORA_MS, avisarDemora } from '../nucleo/carga';
 import { precisaVaga, situacao } from '../dominio/vagas';
 import { ACT } from '../acoes.js';
 import { comPessoa } from '../dominio/material-link';
@@ -98,7 +98,9 @@ function Carregando() {
       if (desde && st().route.n === 'r') montarPublico();
     }, DEMORA_MS + 50);
   }
-  return Date.now() - desde >= DEMORA_MS ? (
+  const demorou = Date.now() - desde >= DEMORA_MS;
+  if (demorou) avisarDemora('r');
+  return demorou ? (
     <div class="panel empty" id="cargaDemorada">
       <p class="muted">{tx('carga.demorando')}</p>
       <button class="btn primary" data-a="recarregar">

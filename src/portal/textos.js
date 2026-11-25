@@ -73,7 +73,7 @@ const T = {
   /* KAN-239 */
   'falhas.titulo': 'Falhas no uso (últimos 30 dias)',
   'falhas.ajuda':
-    'O app grava sozinho quando o comprovante do App Check não vem, quando dá erro de código e quando o Firebase recusa uma gravação, com o navegador e o aparelho. O servidor grava as falhas dos avisos no celular (tipo Aviso). Sem nome, e-mail, telefone ou IP.',
+    'O app grava sozinho quando o comprovante do App Check não vem, quando dá erro de código, quando o Firebase recusa uma gravação, quando uma tela passa de 12 s carregando (Demora) e quando uma parte do app não baixa (Parte), com o navegador e o aparelho. O servidor grava as falhas dos avisos no celular (tipo Aviso). Sem nome, e-mail, telefone ou IP. Registros com mais de 90 dias são apagados sozinhos.',
   'falhas.nenhuma': 'Nenhuma falha nos últimos 30 dias.',
   'falhas.vezes': '{n}×',
   'falhas.quando': 'de {a} a {b}',
@@ -83,6 +83,13 @@ const T = {
   'falhas.tipo.gravacao': 'Gravação',
   /* KAN-242: falhas dos avisos no celular, registradas pelo servidor (funcoes/). */
   'falhas.tipo.aviso': 'Aviso',
+  /* KAN-263 (pelada-v131): tela que passou do tempo, parte que não baixou, pilha legível e limpeza de 90 dias. */
+  'falhas.tipo.demora': 'Demora',
+  'falhas.tipo.parte': 'Parte',
+  'falhas.verCodigo': 'Ver no código',
+  'falhas.codigoTitulo': 'Onde aconteceu (código original)',
+  'falhas.semMapa': 'Sem o mapa desta versão: o ponto ficou como no código compactado.',
+  'falhas.apagadas': '{n} registros com mais de 90 dias foram apagados.',
   'falhas.tela.servidor': 'servidor',
   'falhas.tela.r': 'link da rodada',
   'falhas.tela.v': 'link da votação',

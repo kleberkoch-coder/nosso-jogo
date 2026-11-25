@@ -27,7 +27,7 @@ import {
   type Motivo,
 } from '../dominio/planos.ts';
 import { PADRAO as LIMITES_PADRAO, limite, type Chave } from '../dominio/limites.ts';
-import { agrupar, type Grupo as GrupoFalha, type Registro } from '../dominio/falhas.ts';
+import { agrupar, velhos, type Grupo as GrupoFalha, type Registro } from '../dominio/falhas.ts';
 import { tx } from './textos.js';
 import { LOCAL } from '../i18n/formatos.js';
 import { today } from '../nucleo/util.js';
@@ -74,6 +74,9 @@ const P = {
   /* KAN-239: falhas no uso dos últimos 30 dias, agrupadas. */
   falhas: [] as GrupoFalha[],
   falhasTotal: 0,
+  /* KAN-263: registros antigos apagados nesta abertura e a pilha legível de cada grupo aberto. */
+  falhasApagadas: 0,
+  pilhas: {} as Record<string, string[] | 'carregando'>,
 };
 const $ = (s: string) => document.querySelector(s) as HTMLElement | null;
 const dia = (ts: number | null | undefined) =>
@@ -109,6 +112,14 @@ async function carregar() {
     }
     P.falhas = agrupar(regs);
     P.falhasTotal = Object.keys(regs).length;
+    /* KAN-263: os registros com mais de 90 dias saem do banco (de 400 em 400, abaixo do limite de 500 do lote). */
+    const todos: Record<string, { em?: unknown }> = {};
+    for (const [k, x] of Object.entries((falhas || {}) as Record<string, any>))
+      todos[k] = { em: x && x.em && typeof x.em.toMillis === 'function' ? x.em.toMillis() : x && x.em };
+    const apagar = velhos(todos, Date.now());
+    for (let i = 0; i < apagar.length; i += 400)
+      await B.lote(apagar.slice(i, i + 400).map(k => ({ tipo: 'del', p: 'falhas/' + k }))).catch(() => {});
+    P.falhasApagadas = apagar.length;
     P.grupos = grupos || {};
     P.limites = lims;
     const donos = [
@@ -360,6 +371,52 @@ function Limites() {
   );
 }
 
+/* KAN-263 (pelada-v131): "Ver no código" troca a pilha compactada pelos arquivos e linhas do código original. */
+function Codigo({ chave, pilha }: { chave: string; pilha: string }) {
+  const r = P.pilhas[chave];
+  if (!r)
+    return (
+      <button
+        type="button"
+        class="btn sm"
+        onClick={() => {
+          P.pilhas[chave] = 'carregando';
+          desenhar();
+          import('./pilha')
+            .then(m => m.pilhaLegivel(pilha))
+            .then(
+              l => (P.pilhas[chave] = l),
+              () => (P.pilhas[chave] = [])
+            )
+            .then(desenhar);
+        }}
+      >
+        {tx('falhas.verCodigo')}
+      </button>
+    );
+  if (r === 'carregando')
+    return (
+      <button type="button" class="btn sm busy" aria-busy="true" disabled>
+        {tx('falhas.verCodigo')}
+      </button>
+    );
+  return (
+    <div class="falha-codigo">
+      <p class="small" style="margin:6px 0 4px;font-weight:700">
+        {tx('falhas.codigoTitulo')}
+      </p>
+      <ol class="small falha-navs">
+        {r.map((l, i) => (
+          <li key={i}>
+            <code>{l}</code>
+          </li>
+        ))}
+      </ol>
+      {r.some(l => /\.js:\d+:\d+$/.test(l)) ? <p class="small muted">{tx('falhas.semMapa')}</p> : null}
+    </div>
+  );
+}
+
 /* Falhas no uso (KAN-239): agrupadas por tipo e mensagem, com as vezes, as versões, as telas e os navegadores. */
 const quando = (ms: number | null) =>
   ms
@@ -376,6 +433,11 @@ function Falhas() {
       <p class="small muted" style="margin:0 0 10px">
         {tx('falhas.ajuda')}
       </p>
+      {P.falhasApagadas ? (
+        <p class="small" id="falhasApagadas" role="status">
+          {tx('falhas.apagadas', { n: P.falhasApagadas })}
+        </p>
+      ) : null}
       {P.falhas.length ? (
         <ul class="plist falhas-lista">
           {P.falhas.map((g, i) => (
@@ -394,6 +456,7 @@ function Falhas() {
                     <li key={n}>{tx('falhas.nav', { nav: n, n: k })}</li>
                   ))}
                 </ul>
+                {g.p ? <Codigo chave={g.t + '|' + g.m} pilha={g.p} /> : null}
               </details>
             </li>
           ))}

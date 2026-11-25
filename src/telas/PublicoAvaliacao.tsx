@@ -8,7 +8,7 @@ import { FORMATO, FUSO, LOCAL } from '../i18n/formatos.js';
 import { juntarTextos, tx } from '../i18n/index.js';
 import textos from '../i18n/pt-BR-aval';
 import textosVoto from '../i18n/pt-BR-voto';
-import { DEMORA_MS } from '../nucleo/carga';
+import { DEMORA_MS, avisarDemora } from '../nucleo/carga';
 import { S as estado } from '../nucleo/estado.js';
 import { $, main } from '../nucleo/util.js';
 import { NotasAvaliacao } from '../ui/NotasAvaliacao';
@@ -61,6 +61,7 @@ function Pagina() {
   const carregou = S.loaded.av && S.loaded.app;
   if ((S.falhou || {}).av || (S.falhou || {}).app)
     return <Aviso titulo={tx('comum.naoCarregouTitulo')} texto={tx('carga.falhouTexto')} tentar />;
+  if (!carregou && Date.now() - (desde || Date.now()) >= DEMORA_MS) avisarDemora('a');
   if (!carregou)
     return Date.now() - (desde || Date.now()) >= DEMORA_MS ? (
       <Aviso texto={tx('carga.demorando')} tentar />

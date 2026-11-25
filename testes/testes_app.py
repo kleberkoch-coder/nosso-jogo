@@ -2056,6 +2056,15 @@ with sync_playwright() as pw:
         l3.close()
         l4 = link_com(0, segurar=True, espera=13000)
         ok(l4.locator('#cargaDemorada').count() == 1 and 'demorando' in l4.inner_text('main'), 'CT-KAN-184-04: carregando há mais de 12 s, avisa que está demorando e oferece tentar de novo')
+        # KAN-263 (v131): a demora vira um registro de falha; uma parte que não baixa também
+        l4.evaluate("setTimeout(()=>import('./chunks/nao-existe-263.js'),0)")
+        l4.wait_for_timeout(4500)
+        f263 = l4.evaluate("(()=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2')||'{}');return Object.entries(s).filter(([k])=>/^falhas\\/[^/]+$/.test(k)).map(([,v])=>v)})()")
+        d263 = [x for x in f263 if x.get('t') == 'demora']
+        p263 = [x for x in f263 if x.get('t') == 'parte']
+        ok(len(d263) == 1 and d263[0].get('r') == 'r' and re.match(r'pelada-v\d+$', str(d263[0].get('v'))) and d263[0].get('m') == '12000ms',
+           f'CT-KAN-263-01: a tela que passou de 12 s carregando vira um registro "demora", com a tela e a versão, uma vez só ({d263})')
+        ok(len(p263) == 1 and 'nao-existe-263' in p263[0].get('m', ''), f'CT-KAN-263-02: uma parte do app que não baixou vira um registro "parte" ({p263})')
         l4.close(); ctx14.close()
 
         # ---------- v63 (KAN-183): o link do jogador não baixa a tela de entrar nem a votação
@@ -4786,6 +4795,16 @@ with sync_playwright() as pw:
         p105.evaluate("localStorage.setItem('nj-falhas-dia',JSON.stringify({d:JSON.parse(localStorage.getItem('nj-falhas-dia')).d,n:20}))")
         p105.evaluate("document.dispatchEvent(new CustomEvent('nj-appcheck-falhou',{detail:'outra'}))"); p105.wait_for_timeout(4000)
         ok(len(p105.evaluate(FALHAS)) == 3, 'CT-KAN-239-06: o 21º registro do dia no mesmo aparelho não é gravado')
+        # KAN-263 (v131): um registro com a pilha num pedaço de verdade do site (para o portal achar o mapa de origem) e um
+        # registro com mais de 90 dias (o portal apaga sozinho)
+        pedaco263 = p105.evaluate("performance.getEntriesByType('resource').map(e=>e.name).find(n=>/\\/chunks\\/chunk-[^/]+\\.js$/.test(n))||''")
+        if pedaco263:
+            agora263 = p105.evaluate("Date.now()")
+            p105.evaluate(PUT, {
+                'falhas/teste263_1_1': {'v': 'pelada-v131', 't': 'erro', 'm': 'Teste KAN-263: pilha', 'r': 'g', 'n': 1, 'em': agora263 - 3600000,
+                                        'p': f'TypeError: x at abrir ({pedaco263}:1:200)', 'd': '2026-11-25'},
+                'falhas/teste263_1_2': {'v': 'pelada-v105', 't': 'erro', 'm': 'Teste KAN-263: antigo', 'r': 'g', 'n': 1, 'em': agora263 - 91 * 864e5, 'd': '2026-08-20'},
+            })
         # Portal: lista agrupada
         if TEM_PORTAL:
             p105.goto(URL.rsplit('/', 1)[0] + '/portal.html'); p105.wait_for_timeout(600)
@@ -4800,6 +4819,17 @@ with sync_playwright() as pw:
             for tema in ['light', 'dark']:
                 p105.emulate_media(color_scheme=tema); p105.wait_for_timeout(150); contraste(p105, f'falhas no portal ({tema})')
             p105.emulate_media(color_scheme='light')
+            if pedaco263:
+                ap263 = [p105.evaluate(LER, 'falhas/teste263_1_2'), p105.inner_text('#falhasApagadas') if p105.locator('#falhasApagadas').count() else '']
+                ok(ap263[0] is None and '1 registros com mais de 90 dias' in ap263[1] and 'antigo' not in p105.inner_text('#falhasPainel'),
+                   f'CT-KAN-263-04: o portal apaga sozinho o registro com mais de 90 dias e avisa ({ap263[1]!r})')
+                li263 = p105.locator('#falhasPainel li.falha', has_text='Teste KAN-263: pilha')
+                li263.locator('summary').click(); p105.wait_for_timeout(200)
+                li263.get_by_role('button', name='Ver no código').click()
+                p105.wait_for_function("[...document.querySelectorAll('.falha-codigo code')].length>0", timeout=10000)
+                cod263 = p105.eval_on_selector_all('.falha-codigo code', 'cs=>cs.map(c=>c.textContent)')
+                ok(cod263 and not re.search(r'\.js:\d+:\d+$', cod263[0]) and re.search(r'\.(ts|tsx|js|mjs):\d+', cod263[0]),
+                   f'CT-KAN-263-03: "Ver no código" mostra o arquivo e a linha do código original, pelo mapa de origem ({cod263})')
         ctx105.close()
 
         # ---------- v106 (KAN-262, KAN-248, KAN-250, KAN-251): link mais leve; nome inteiro na lista do link; janelas
@@ -6225,8 +6255,8 @@ with sync_playwright() as pw:
               return {fora, nome:[...s.querySelectorAll('text')].some(t=>t.textContent==='Maximiliano Bernardes Ferreira'), foto:!!s.querySelector('image[href^="data:"]'),
                 tipos:[...document.querySelectorAll('.card-tipos [data-tipo]')].map(b=>b.textContent), rol:document.getElementById('dlg').scrollWidth>document.getElementById('dlg').clientWidth+1}})()""")
         c126 = caixa126()
-        ok(c126['nome'] and c126['foto'] and not c126['fora'] and c126['tipos'] == ['Jogador', 'Craque', 'Artilheiro', 'Garçom'] and not c126['rol'],
-           f'CT-KAN-294-01/02: a prévia mostra o jogador com foto e nome de 30 letras sem nada sair do card; 4 tipos no futebol; sem rolagem lateral em 360px ({c126})')
+        ok(c126['nome'] and c126['foto'] and not c126['fora'] and c126['tipos'] == ['Jogador', 'Craque', 'Artilheiro', 'Garçom', 'Campeão'] and not c126['rol'],
+           f'CT-KAN-294-01/02: a prévia mostra o jogador com foto e nome de 30 letras sem nada sair do card; 5 tipos no futebol (Campeão desde a v131); sem rolagem lateral em 360px ({c126})')
         for mod in ['p-destaque', 'p-escudo']:
             p126.select_option('#cardModelo', mod); p126.wait_for_timeout(250)
             cm126 = caixa126()
@@ -6581,6 +6611,19 @@ with sync_playwright() as pw:
         if p129.locator('#astOpcoes [data-a=addAssist][data-p=""]').count(): p129.click('#astOpcoes [data-a=addAssist][data-p=""]')
         elif p129.locator('#astOpcoes [data-a=addAssist]').count(): p129.locator('#astOpcoes [data-a=addAssist]').first.click()
         p129.wait_for_timeout(300); p129.click('[data-a=saveMatch]'); p129.wait_for_timeout(1500)
+        # ---------- v131 (KAN-295, 2ª parte): cards da rodada na aba Partida
+        p129.wait_for_selector('[data-card-rod=artilheiro]', timeout=8000)
+        cr131 = p129.evaluate("""(()=>{const bs=[...document.querySelectorAll('[data-card-rod]')];return {tipos:bs.map(b=>b.dataset.cardRod),
+          art:(bs.find(b=>b.dataset.cardRod==='artilheiro')||{}).dataset, alt:Math.min(...bs.map(b=>Math.round(b.getBoundingClientRect().height))),
+          rol:document.documentElement.scrollWidth>360}})()""")
+        ok('artilheiro' in cr131['tipos'] and cr131['art'] and cr131['art'].get('p') == aut129 and 'craque' not in cr131['tipos'] and cr131['alt'] >= 44 and not cr131['rol'],
+           f'CT-KAN-295-13: depois da partida salva, a aba Partida tem os cards da rodada (artilheiro = quem marcou; sem votação, sem craque), 44px e 360px ({cr131})')
+        p129.click(f'[data-card-rod=artilheiro][data-p="{aut129}"]'); p129.wait_for_selector('#cardJogador svg.card-svg', timeout=15000)
+        p129.wait_for_function("/rodada/.test(document.getElementById('cardJogPer').textContent)", timeout=10000)
+        t131 = p129.evaluate("[document.getElementById('cardJogPer').textContent,[...document.querySelectorAll('#cardJogador svg text')].map(t=>t.textContent)]")
+        ok(t131[0].startswith('Números da rodada de') and 'ARTILHEIRO' in t131[1] and '1' in t131[1],
+           f'CT-KAN-295-14: o card do artilheiro abre com o título, os números da rodada e a data ({t131})')
+        p129.click('#dlg [data-a=close]'); p129.wait_for_timeout(300)
         p129.click('[data-a=tab][data-v=jogadores]'); p129.wait_for_timeout(500)
         foto129(aut129)
         p129.click('#fotoCard'); p129.wait_for_selector('#cardJogador svg.card-svg', timeout=15000)

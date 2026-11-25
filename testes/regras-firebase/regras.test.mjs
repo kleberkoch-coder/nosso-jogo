@@ -474,6 +474,12 @@ describe('falhas no uso (KAN-239, pelada-v105)', () => {
     await assertSucceeds(setDoc(doc(db.adm(), id('adm', 1)), falha({ t: 'erro', m: 'x is null', p: 'at a (x.js:1)' })));
     await assertFails(setDoc(doc(db.semLogin(), id('anon1', 2)), falha()));
   });
+  test('CT-KAN-263-08: os tipos novos "demora" e "parte" (v131) são aceitos', async () => {
+    await assertSucceeds(setDoc(doc(db.anon(), id('anon1', 5)), falha({ t: 'demora', m: '12000ms' })));
+    await assertSucceeds(
+      setDoc(doc(db.anon(), id('anon1', 6)), falha({ t: 'parte', m: 'aba caixa: Failed to fetch' }))
+    );
+  });
   test('fora do formato é recusado: tipo, campo a mais, texto grande, hora do aparelho, contagem, id', async () => {
     await assertFails(setDoc(doc(db.anon(), id('anon1', 3)), falha({ t: 'outro' })));
     await assertFails(setDoc(doc(db.anon(), id('anon1', 3)), falha({ email: 'a@b.com' })));
@@ -1625,6 +1631,13 @@ describe('cards do grupo (KAN-294)', () => {
     await assertFails(updateDoc(doc(db.dono(), G), { 'cfg.cards': { modelos: {}, usos: {}, extra: 1 } }));
     await assertFails(updateDoc(doc(db.dono(), G), { 'cfg.cards': { modelos: {}, usos: { outro: {} } } }));
     await assertFails(updateDoc(doc(db.dono(), G), { 'cfg.cards': 'texto' }));
+  });
+  test('CT-KAN-295-12: o card de campeão (v131) entra na lista de tipos aceitos', async () => {
+    await assertSucceeds(
+      updateDoc(doc(db.dono(), G), {
+        'cfg.cards': { modelos: {}, usos: { campeao: { m: 'p-metalico', titulo: '', grande: 'vitRod', campos: [] } } },
+      })
+    );
   });
   test('CT-KAN-294-05: no Grátis, não grava cards; o que já estava fica e o resto do grupo continua mudando', async () => {
     await semRegras(f => updateDoc(doc(f, G), { 'cfg.cards': cards(1) }));

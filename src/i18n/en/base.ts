@@ -697,6 +697,7 @@ export default {
   'card.tituloPadrao.craque': 'MVP',
   'card.tituloPadrao.artilheiro': 'TOP SCORER',
   'card.tituloPadrao.garcom': 'PLAYMAKER',
+  'card.tituloPadrao.campeao': 'CHAMPION',
   'card.curto.gols': '{PONTO}',
   'card.curto.as': 'ASSISTS',
   'card.curto.jogos': 'GAMES',
@@ -721,4 +722,10 @@ export default {
   'cardj.baixou': 'Image downloaded. Send it on WhatsApp.',
   'cardj.rotulo': '{nome}’s card',
   'cardj.semNumeros': 'No numbers in this period yet.',
+  'cardj.rodada': 'Game day numbers, {data}',
+  'cardj.zap.craque': '🏆 {nome} is the {titulo} of {data} at {grupo}!',
+  'cardj.zap.artilheiro': '{e} {nome} is the {titulo} of {data} at {grupo}: {n} {ponto}!',
+  'cardj.zap.garcom': '🍽️ {nome} is the {titulo} of {data} at {grupo}: {n} assists!',
+  'cardj.zap.garcom1': '🍽️ {nome} is the {titulo} of {data} at {grupo}: 1 assist!',
+  'cardj.zap.campeao': '🏆 {nome} is the {titulo} of {data} at {grupo}!',
 };

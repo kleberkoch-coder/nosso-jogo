@@ -5,6 +5,7 @@ export default {
   'card.tituloPadrao.craque': 'CRAQUE',
   'card.tituloPadrao.artilheiro': 'ARTILHEIRO',
   'card.tituloPadrao.garcom': 'GARÇOM',
+  'card.tituloPadrao.campeao': 'CAMPEÃO',
   'card.curto.gols': '{PONTO}',
   'card.curto.as': 'ASSIST.',
   'card.curto.jogos': 'JOGOS',
@@ -29,4 +30,10 @@ export default {
   'cardj.baixou': 'Imagem baixada. Mande pelo WhatsApp.',
   'cardj.rotulo': 'Card de {nome}',
   'cardj.semNumeros': 'Ainda sem números neste período.',
+  'cardj.rodada': 'Números da rodada de {data}',
+  'cardj.zap.craque': '🏆 {nome} é {titulo} da rodada de {data} no {grupo}!',
+  'cardj.zap.artilheiro': '{e} {nome} é {titulo} da rodada de {data} no {grupo}: {n} {ponto}!',
+  'cardj.zap.garcom': '🍽️ {nome} é {titulo} da rodada de {data} no {grupo}: {n} assistências!',
+  'cardj.zap.garcom1': '🍽️ {nome} é {titulo} da rodada de {data} no {grupo}: 1 assistência!',
+  'cardj.zap.campeao': '🏆 {nome} é {titulo} da rodada de {data} no {grupo}!',
 };

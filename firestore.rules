@@ -330,7 +330,8 @@ service cloud.firestore {
       return !('pl' in request.resource.data) || (request.resource.data.pl is map
         && request.resource.data.pl.keys().hasOnly(['id', 'ate', 'o', 't']));
     }
-    // KAN-294 (pelada-v126): cards do grupo em cfg.cards = {modelos (até 12), usos (por tipo de card)}. Mudar só com o
+    // KAN-294 (pelada-v126): cards do grupo em cfg.cards = {modelos (até 12), usos (por tipo de card; "campeao" desde a
+    // pelada-v131, KAN-295)}. Mudar só com o
     // Plano A; o que já estava gravado continua (o grupo que voltou ao Grátis não perde nada).
     function cardsOk(gid) {
       let novo = request.resource.data.get('cfg', {}).get('cards', null);
@@ -339,7 +340,7 @@ service cloud.firestore {
         && novo.keys().hasOnly(['modelos', 'usos'])
         && novo.get('modelos', {}) is map && novo.get('modelos', {}).size() <= 12
         && novo.get('usos', {}) is map
-        && novo.get('usos', {}).keys().hasOnly(['perfil', 'craque', 'artilheiro', 'garcom']));
+        && novo.get('usos', {}).keys().hasOnly(['perfil', 'craque', 'artilheiro', 'garcom', 'campeao']));
     }
     function nomeOk(campo) {
       return !(campo in request.resource.data) || (request.resource.data[campo] is string && request.resource.data[campo].size() <= 40);
@@ -440,6 +441,7 @@ service cloud.firestore {
       return p.size() == 3 && p[0] == request.auth.uid && p[1].matches('[0-9]{5,6}')
         && int(p[1]) >= hoje - 1 && int(p[1]) <= hoje + 1 && p[2].matches('([1-9]|1[0-9]|20)');
     }
+    // KAN-263 (pelada-v131): também "demora" (tela que passou do tempo) e "parte" (parte do app que não baixou).
     match /falhas/{id} {
       allow read, delete: if adminPortal();
       allow update: if false;
@@ -449,7 +451,7 @@ service cloud.firestore {
       allow create: if signed() && falhaIdOk(id)
         && request.resource.data.keys().hasOnly(['v', 't', 'm', 'p', 'r', 'g', 'nav', 'so', 'disp', 'inst', 'lang', 'n', 'em', 'd'])
         && request.resource.data.keys().hasAll(['v', 't', 'm', 'n', 'em', 'd'])
-        && request.resource.data.t in ['appcheck', 'erro', 'gravacao']
+        && request.resource.data.t in ['appcheck', 'erro', 'gravacao', 'demora', 'parte']
         && request.resource.data.v is string && request.resource.data.v.size() <= 20
         && request.resource.data.m is string && request.resource.data.m.size() <= 300
         && request.resource.data.get('p', '') is string && request.resource.data.get('p', '').size() <= 1500

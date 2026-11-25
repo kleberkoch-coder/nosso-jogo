@@ -6,8 +6,10 @@
    - Dados de navegação, sem nada pessoal: navegador e versão, sistema e versão, tipo de aparelho, se o app está
      instalado, idioma, versão do app e tela. Nunca nome, e-mail, telefone, IP, notas ou caixa.
    - No máximo 20 registros por aparelho por dia; a mesma falha na mesma visita vira um registro só, com a contagem. */
-export type Tipo = 'appcheck' | 'erro' | 'gravacao';
-export const TIPOS: Tipo[] = ['appcheck', 'erro', 'gravacao'];
+/* KAN-263 (pelada-v131): "demora" (a tela passou de 12 s carregando) e "parte" (uma parte sob demanda não baixou). */
+export type Tipo = 'appcheck' | 'erro' | 'gravacao' | 'demora' | 'parte';
+export const TIPOS: Tipo[] = ['appcheck', 'erro', 'gravacao', 'demora', 'parte'];
+
 export const MAX_DIA = 20;
 export type Navegacao = { nav: string; so: string; disp: 'celular' | 'tablet' | 'computador' };
 
@@ -95,6 +97,7 @@ export type Registro = {
   v?: string;
   t?: string;
   m?: string;
+  p?: string;
   r?: string;
   nav?: string;
   so?: string;
@@ -113,7 +116,19 @@ export type Grupo = {
   ultima: number | null;
   navs: [string, number][];
   telas: string[];
+  /* KAN-263: uma pilha do grupo (a mais recente), para o portal mostrar o código original. */
+  p?: string;
+  pEm?: number;
 };
+
+/* KAN-263 (pelada-v131): o portal apaga sozinho os registros com mais de 90 dias (só o portal lê e apaga). */
+export const DIAS_GUARDA = 90;
+export function velhos(regs: Record<string, { em?: unknown } | null | undefined>, agora: number): string[] {
+  const limite = agora - DIAS_GUARDA * 864e5;
+  return Object.entries(regs || {})
+    .filter(([, x]) => x && typeof x.em === 'number' && x.em < limite)
+    .map(([k]) => k);
+}
 
 /* Portal: falhas agrupadas por tipo e mensagem, da que mais aconteceu para a que menos aconteceu. */
 export function agrupar(regs: Record<string, Registro | null | undefined>): Grupo[] {
@@ -142,6 +157,10 @@ export function agrupar(regs: Record<string, Registro | null | undefined>): Grup
     }
     a.n += n;
     a.registros++;
+    if (x.p && (a.pEm == null || (x.em || 0) >= a.pEm)) {
+      a.p = x.p;
+      a.pEm = x.em || 0;
+    }
     if (x.v) a._v.add(x.v);
     if (x.r) a._t.add(x.r);
     const nav = [x.nav, x.so, x.disp, x.inst ? 'instalado' : ''].filter(Boolean).join(' · ') || 'desconhecido';

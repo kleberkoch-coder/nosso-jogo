@@ -1457,7 +1457,8 @@ with sync_playwright() as pw:
             n_antes = pp.locator('li.cli').count()
             ld = pp.evaluate("""(()=>{const b=document.querySelector('[data-p=atualizar]');b.click();
               return {busy:b.classList.contains('busy')&&b.disabled&&b.getAttribute('aria-busy')==='true',lista:document.querySelectorAll('#pmain li.cli').length}})()""")
-            try: pp.wait_for_selector('li.cli', timeout=8000)
+            # v132: espera o botão sair do carregando (o portal também lê o uso do app), em vez de um tempo fixo
+            try: pp.wait_for_selector('[data-p=atualizar]:not(.busy):not([disabled])', timeout=8000)
             except Exception: pass
             pp.wait_for_timeout(300)
             ok(ld['busy'] and ld['lista'] == n_antes and pp.locator('li.cli').count() == n_antes and pp.locator('[data-p=atualizar]:not(.busy):not([disabled])').count() == 1,
@@ -6469,7 +6470,8 @@ with sync_playwright() as pw:
         ctx127e.close()
 
     # v128: a parte b passou de 12 min com o bloco novo; os blocos novos com navegador próprio vão para a parte c.
-    if parte('c'):
+    # v132: a parte c passou de 12 min (a parte a levava 6,5); estes blocos (v128, v129, v131) vão para a parte a.
+    if parte('a'):
         # ---------- v128 (KAN-297, KAN-298, KAN-286, KAN-302, KAN-303)
         import base64
         AVISO128 = """(()=>{const t=document.getElementById('toast'),r=t.getBoundingClientRect(),d=document.querySelector('dialog[open]');

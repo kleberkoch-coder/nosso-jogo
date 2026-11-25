@@ -25,8 +25,11 @@ async function todos(B: Banco, q: { campo: string; de?: number; ate?: number; li
 export async function carregarUso(B: Banco, eu: string): Promise<Uso> {
   try {
     const hoje = diaUso(Date.now()),
-      regs = await todos(B, { campo: 'dia', de: hoje - DIAS_USO + 1, limite: 1000 }),
-      velhos = Object.keys(await todos(B, { campo: 'dia', de: 1, ate: hoje - GUARDA_USO - 1, limite: 400 }));
+      [regs, antigos] = await Promise.all([
+        todos(B, { campo: 'dia', de: hoje - DIAS_USO + 1, limite: 1000 }),
+        todos(B, { campo: 'dia', de: 1, ate: hoje - GUARDA_USO - 1, limite: 400 }),
+      ]),
+      velhos = Object.keys(antigos);
     for (let i = 0; i < velhos.length; i += 400)
       await B.lote(velhos.slice(i, i + 400).map(k => ({ tipo: 'del', p: 'uso/' + k }))).catch(() => {});
     return { dias: resumoDoUso(regs, eu), apagados: velhos.length, erro: false };

@@ -1227,7 +1227,9 @@ with sync_playwright() as pw:
     ok(u47.get('n', 0) > 0 and 'link' in (u47.get('onde') or []) and gid in (u47.get('grupos') or []) and str(u47.get('v', '')).startswith('pelada-')
        and (u47.get('conta') is not True if EMU else True),
        f'CT-KAN-170-P47: o link grava o uso do dia (onde "link", o grupo, os pedidos e a versão; sem conta) ({id47}, {u47})')
+    # vai ao início e volta ao link: abre escutas de novo (pedidos novos) e junta "inicio" a "link"
     p47.evaluate("location.hash='#/'"); p47.wait_for_timeout(1500)
+    p47.evaluate("(g)=>{location.hash='#/p/'+g}", gid); p47.wait_for_timeout(2000)
     p47.evaluate("dispatchEvent(new Event('pagehide'))"); p47.wait_for_timeout(2500)
     u47b = J(p47, LER47, id47) or {}
     ok(u47b.get('n', 0) > u47.get('n', 0) and 'inicio' in (u47b.get('onde') or []) and 'link' in (u47b.get('onde') or []),

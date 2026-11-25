@@ -145,9 +145,22 @@ with sync_playwright() as pw:
     b = pw.chromium.launch()
     # KAN-164: o app segue o idioma do navegador. O roteiro roda em português, salvo onde o caso pede outro idioma.
     _contexto = b.new_context
-    def _em_portugues(*a, **k):
+    # KAN-309: a transição de verdade acaba em 28/11/2026 e o roteiro assume o Plano A dela. Todo navegador do roteiro
+    # grava sistema/planos.transicaoAte em 2100 (só se o caso ainda não gravou outra data), e grava de novo depois de cada
+    # script do próprio caso, que pode trocar o banco inteiro. Os casos que conferem as datas de verdade passam
+    # transicao_real=True.
+    TRANSICAO_LONGE = ("try{const K='pelada-demo-v2',s=JSON.parse(localStorage.getItem(K)||'{}');"
+                       "if(!s['sistema/planos']){s['sistema/planos']={transicaoAte:4102444800000};localStorage.setItem(K,JSON.stringify(s))}}catch(e){}")
+    def _em_portugues(*a, transicao_real=False, **k):
         k.setdefault('locale', 'pt-BR')
-        return _contexto(*a, **k)
+        c = _contexto(*a, **k)
+        if not transicao_real:
+            _script = c.add_init_script
+            def _com_transicao(*sa, **sk):
+                r = _script(*sa, **sk); _script(TRANSICAO_LONGE); return r
+            c.add_init_script = _com_transicao
+            _script(TRANSICAO_LONGE)
+        return c
     b.new_context = _em_portugues
     # Fuso de São Paulo (KAN-162): o país da conta nova é sugerido pelo fuso do aparelho; assim o roteiro dá o mesmo resultado em qualquer máquina.
     ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2, has_touch=True, color_scheme='light', service_workers='block', timezone_id='America/Sao_Paulo')
@@ -3544,7 +3557,7 @@ with sync_playwright() as pw:
         ctx37.close()
         # ---------- v88 (KAN-223/224, 222-09, 210, 211, 221): trocas sem repetição, caixa sem negativo, datas dos planos e prazo no fuso do grupo
         BRT88 = datetime.timezone(datetime.timedelta(hours=-3))
-        ctx38 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+        ctx38 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo', transicao_real=True)
         p38 = ctx38.new_page(); p38.on('pageerror', lambda e: errs.append(str(e)))
         dlg38 = []; p38.on('dialog', lambda d: (dlg38.append(d.message), d.dismiss()))
         p38.clock.install(time=datetime.datetime(2026, 11, 4, 12, 0, 0, tzinfo=BRT88))
@@ -3655,7 +3668,7 @@ with sync_playwright() as pw:
            f'CT-KAN-221-05: em Lisboa, às 23:30 de Brasília ainda recebe notas; às 00:01 avisa que terminou em 06/11 ({ab1}, {ab2}, {t2[:80]!r})')
         # KAN-211: aviso 3 dias antes, em dias do calendário
         for dia, esp in [(27, 'acaba em 1 dia, em 28/11/2026'), (28, 'acaba hoje, 28/11/2026')]:
-            c = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo', storage_state=est38)
+            c = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo', storage_state=est38, transicao_real=True)
             q = c.new_page(); q.on('pageerror', lambda e: errs.append(str(e)))
             q.clock.install(time=datetime.datetime(2026, 11, dia, 10, 0, 0, tzinfo=BRT88))
             q.goto(URL + '#/g/' + g38); q.wait_for_timeout(1500)
@@ -6751,6 +6764,85 @@ with sync_playwright() as pw:
         ok('No metal' in en130 and 'Done' in en130 and not re.search(r'\b(Sem metal|Pronto|Claro e escuro)\b', en130) and not falta130,
            f'CT-KAN-305-04: em English, o acabamento e o quadro de cor vêm traduzidos ({falta130})')
         ctx130e.close()
+
+        # ---------- v132 (KAN-313, KAN-309): uso do app por dia (portal); o roteiro continua no Plano A da transição
+        USO132 = "(u)=>{const s=JSON.parse(localStorage.getItem('pelada-demo-v2')||'{}');return Object.entries(s).filter(([k])=>k.startsWith('uso/')&&(!u||k.endsWith('_'+u))).map(([k,v])=>[k,v])}"
+        ctx132 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo')
+        ctx132.add_init_script("window.__njUsoEspera=400;window.__njUsoIntervalo=0")
+        p132 = ctx132.new_page(); p132.on('pageerror', lambda e: errs.append(str(e)))
+        abrir_entrada(p132, 'criar')
+        p132.fill('#le', 'v132@teste.com'); p132.fill('#lp', 'Jogo@2026'); p132.fill('#lp2', 'Jogo@2026'); p132.keyboard.press('Enter'); p132.wait_for_selector('#ngBox', timeout=12000)
+        p132.fill('#ngn', 'Uso FC'); p132.click('[data-a=pickSport][data-v=futebol]'); p132.click('[data-a=createGroup]')
+        p132.wait_for_function("location.hash.startsWith('#/g/')"); p132.wait_for_timeout(1500)
+        g132 = p132.url.split('#/g/')[1]
+        tr132 = (p132.evaluate(LER, 'sistema/planos') or {}).get('transicaoAte')
+        ok(tr132 == 4102444800000, f'CT-KAN-309-01: o navegador do roteiro grava a transição dos planos em 2100, para os casos não dependerem da data de hoje ({tr132})')
+        uid132 = p132.evaluate("S.user.uid")
+        # A 1ª gravação do dia sai logo depois de entrar (ainda no início); a gestão e o grupo entram ao sair da página
+        p132.wait_for_timeout(1800); p132.evaluate("dispatchEvent(new Event('pagehide'))"); p132.wait_for_timeout(500)
+        ges132 = p132.evaluate(USO132, uid132)
+        v132 = ges132[0][1] if ges132 else {}
+        ok(len(ges132) == 1 and v132.get('conta') is True and 'gestao' in (v132.get('onde') or []) and g132 in (v132.get('grupos') or [])
+           and (v132.get('n') or 0) > 0 and re.match(r'pelada-v\d+$', str(v132.get('v'))) and isinstance(v132.get('em'), (int, float)),
+           f'CT-KAN-313-09: a gestão grava o uso do dia com "conta: sim", onde "gestao", o grupo, os pedidos e a versão ({ges132})')
+        ok(set(v132) <= {'dia', 'd', 'onde', 'grupos', 'conta', 'n', 'e', 'v', 'em'} and ges132 and ges132[0][0] == f'uso/{v132.get("dia")}_{uid132}',
+           f'CT-KAN-313-09: o registro é uso/{{dia}}_{{login}} e não leva nome, e-mail ou telefone ({sorted(v132)})')
+        est132 = ctx132.storage_state()
+        # O jogador abre o link num aparelho sem conta: um registro do dia, mesmo abrindo de novo
+        c132 = b.new_context(viewport={'width': 360, 'height': 740}, has_touch=True, service_workers='block', timezone_id='America/Sao_Paulo', storage_state=est132)
+        c132.add_init_script("if(!sessionStorage.getItem('saiu')){localStorage.removeItem('pelada-demo-v2-u');sessionStorage.setItem('saiu','1')}")
+        c132.add_init_script("window.__njUsoEspera=400;window.__njUsoIntervalo=0")
+        q132 = c132.new_page(); q132.on('pageerror', lambda e: errs.append(str(e)))
+        q132.goto(URL + '#/p/' + g132); q132.wait_for_function("!!(window.S&&S.user&&S.user.anon)", timeout=15000); q132.wait_for_timeout(1500)
+        an132 = q132.evaluate("S.user.uid")
+        l132 = q132.evaluate(USO132, an132)
+        n132 = (l132[0][1].get('n') or 0) if l132 else 0
+        ok(len(l132) == 1 and l132[0][1].get('conta') is False and 'link' in (l132[0][1].get('onde') or []) and g132 in (l132[0][1].get('grupos') or []) and n132 > 0,
+           f'CT-KAN-313-08: abrir o link grava o uso do dia do aparelho, "conta: não", onde "link" e o grupo ({l132})')
+        q132.reload(); q132.wait_for_function("!!(window.S&&S.user&&S.user.anon)", timeout=15000); q132.wait_for_timeout(1500)
+        q132.evaluate("dispatchEvent(new Event('pagehide'))"); q132.wait_for_timeout(500)
+        l132b = q132.evaluate(USO132, an132)
+        ok(q132.evaluate("S.user.uid") == an132 and len(l132b) == 1 and (l132b[0][1].get('n') or 0) > n132,
+           f'CT-KAN-313-08: abrir de novo no mesmo dia não cria outro registro; ao sair, os pedidos novos são somados ({n132} → {l132b[0][1].get("n") if l132b else None})')
+        c132.close()
+        # Portal: o painel "Uso do app" por dia, e o registro com mais de 90 dias sai do banco
+        if TEM_PORTAL:
+            dia132 = p132.evaluate("Math.floor(Date.now()/864e5)")
+            hoje132 = p132.evaluate("(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')})()")
+            p132.evaluate(PUT, {
+                f'uso/{dia132}_teste132a': {'dia': dia132, 'd': hoje132, 'onde': ['voto'], 'grupos': ['gx132'], 'conta': False, 'n': 1000, 'e': 3, 'v': 'pelada-v132', 'em': 1},
+                f'uso/{dia132 - 95}_teste132b': {'dia': dia132 - 95, 'd': '2026-08-20', 'onde': ['link'], 'grupos': [], 'conta': False, 'n': 7, 'v': 'pelada-v120', 'em': 1},
+            })
+            # O portal abre noutra aba (a gestão continua aberta e não grava de novo no meio da conta)
+            pp132 = ctx132.new_page(); pp132.on('pageerror', lambda e: errs.append(str(e)))
+            pp132.goto(URL.rsplit('/', 1)[0] + '/portal.html'); pp132.wait_for_timeout(600)
+            if pp132.locator('[data-p=google]').count(): pp132.click('[data-p=google]')
+            pp132.wait_for_selector('#usoPainel', timeout=8000); pp132.wait_for_selector('#usoTab', timeout=8000); pp132.wait_for_timeout(300)
+            linha132 = pp132.eval_on_selector(f'#usoTab tr[data-d="{hoje132}"]', "tr=>[...tr.querySelectorAll('td')].map(t=>t.textContent)")
+            todos132 = pp132.evaluate(USO132, '')
+            esp132 = [x for x in todos132 if x[1].get('d') == hoje132]
+            p132 = pp132
+            # Neste navegador: o registro da gestão (com conta) e o de outro aparelho que votou pelo link
+            esp132n = [len(esp132), sum(1 for x in esp132 if set(x[1].get('onde') or []) & {'link', 'voto', 'aval'}),
+                       sum(1 for x in esp132 if x[1].get('conta')), len({g for x in esp132 for g in (x[1].get('grupos') or [])}),
+                       sum(int(x[1].get('n') or 0) for x in esp132)]
+            # Os aparelhos da conta que está no portal ficam na última coluna ("1 · 29 pedidos"), fora dos outros números
+            num132 = [int(re.sub(r'\D', '', t) or 0) for t in (linha132 or [])[:5]]
+            meus132 = [int(re.sub(r'\D', '', x) or 0) for x in linha132[5].split('·')] if linha132 and '·' in linha132[5] else [0, 0]
+            ok(linha132 and esp132n[0] == 2 and num132[0] + meus132[0] == esp132n[0] and num132[4] + meus132[1] == esp132n[4]
+               and num132[1] == 1 and esp132n[4] > 1000,
+               f'CT-KAN-313-10: o portal mostra o uso de hoje: aparelhos, pelo link, com conta, grupos e pedidos, os seus à parte ({linha132} x {esp132n})')
+            ap132 = [p132.evaluate(LER, f'uso/{dia132 - 95}_teste132b'), p132.inner_text('#usoApagados') if p132.locator('#usoApagados').count() else '']
+            ok(ap132[0] is None and '1 registros de uso com mais de 90 dias' in ap132[1] and '20/08' not in p132.inner_text('#usoPainel'),
+               f'CT-KAN-313-11: o portal apaga sozinho o registro de uso com mais de 90 dias e avisa ({ap132[1]!r})')
+            for larg in [390, 360]:
+                p132.set_viewport_size({'width': larg, 'height': 740}); p132.wait_for_timeout(150)
+                lg132 = p132.evaluate("[document.documentElement.scrollWidth, innerWidth]")
+                ok(lg132[0] <= lg132[1], f'CT-KAN-313-10: em {larg}px a página não rola para o lado; só a tabela rola ({lg132})')
+            for tema in ['light', 'dark']:
+                p132.emulate_media(color_scheme=tema); p132.wait_for_timeout(150); contraste(p132, f'uso do app no portal ({tema})')
+            p132.emulate_media(color_scheme='light')
+        ctx132.close()
 
     if parte('b'):
         # ---------- v35 (KAN-142): "Continuar com o Google" na aba errada entra ou cria a conta e avisa (navegador separado)

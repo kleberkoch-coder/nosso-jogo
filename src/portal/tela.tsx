@@ -29,6 +29,7 @@ import {
 import { PADRAO as LIMITES_PADRAO, limite, type Chave } from '../dominio/limites.ts';
 import { agrupar, velhos, type Grupo as GrupoFalha, type Registro } from '../dominio/falhas.ts';
 import { tx } from './textos.js';
+import { UsoPainel, carregarUso, type Uso } from './uso.tsx';
 import { LOCAL } from '../i18n/formatos.js';
 import { today } from '../nucleo/util.js';
 
@@ -77,6 +78,8 @@ const P = {
   /* KAN-263: registros antigos apagados nesta abertura e a pilha legível de cada grupo aberto. */
   falhasApagadas: 0,
   pilhas: {} as Record<string, string[] | 'carregando'>,
+  /* KAN-313: uso do app por dia (portal/uso.tsx). */
+  uso: null as Uso | null,
 };
 const $ = (s: string) => document.querySelector(s) as HTMLElement | null;
 const dia = (ts: number | null | undefined) =>
@@ -96,13 +99,15 @@ async function carregar() {
     desenhar();
   }
   try {
-    const [contas, grupos, cfg, lims, falhas] = await Promise.all([
+    const [contas, grupos, cfg, lims, falhas, uso] = await Promise.all([
       B.get('contas'),
       B.get('grupos'),
       B.get('sistema/planos').catch(() => null),
       B.get('sistema/limites').catch(() => null),
       B.get('falhas').catch(() => ({})),
+      carregarUso(B, (P.user && P.user.uid) || ''),
     ]);
+    P.uso = uso;
     /* KAN-239: a hora do servidor chega como Timestamp no Firebase e como número no modo demonstração. */
     const desde = Date.now() - 30 * 864e5,
       regs: Record<string, Registro> = {};
@@ -313,6 +318,7 @@ function Lista() {
         </ul>
       </div>
       <Limites />
+      <UsoPainel uso={P.uso} />
       <Falhas />
       <p class="small muted">{tx('portal.atualizado', { d: new Date(P.em).toLocaleString(LOCAL) })}</p>
     </div>

@@ -100,9 +100,15 @@ with sync_playwright() as pw:
     b = pw.chromium.launch()
     # KAN-164: o app segue o idioma do navegador. O roteiro roda em português, salvo onde o caso pede outro idioma.
     _contexto = b.new_context
+    # KAN-309: a transição de verdade acaba em 28/11/2026 e o roteiro assume o Plano A dela. No modo demonstração, todo
+    # navegador grava sistema/planos.transicaoAte em 2100; no emulador, a automação grava o mesmo antes de começar.
+    TRANSICAO_LONGE = ("try{const K='pelada-demo-v2',s=JSON.parse(localStorage.getItem(K)||'{}');"
+                       "if(!s['sistema/planos']){s['sistema/planos']={transicaoAte:4102444800000};localStorage.setItem(K,JSON.stringify(s))}}catch(e){}")
     def _em_portugues(*a, **k):
         k.setdefault('locale', 'pt-BR')
-        return _contexto(*a, **k)
+        c = _contexto(*a, **k)
+        c.add_init_script(TRANSICAO_LONGE)
+        return c
     b.new_context = _em_portugues
     def novo():
         c = b.new_context(viewport={'width': 390, 'height': 844}, service_workers='block', timezone_id='America/Sao_Paulo')
@@ -1202,6 +1208,42 @@ with sync_playwright() as pw:
     r45b = J(p42, ler45)
     ok(r45b == r45, f'CT-KAN-170-P45: e também depois de sair e entrar ({r45b})')
     c42.close()
+
+    # P47 uso do app por dia (KAN-313): o aparelho do link grava uso/{dia}_{login} com onde "link", o grupo e os pedidos;
+    # ao sair da página, soma os pedidos novos (as regras só deixam subir). Com conta, a gestão grava "conta: sim".
+    # No emulador, lido direto do banco (Bearer owner passa por cima das regras, que só deixam o portal ler).
+    LER47 = """async(id)=>{const h=(window.FIREBASE_EMULADOR||{}).firestore;
+      if(!h){const s=JSON.parse(localStorage.getItem('pelada-demo-v2')||'{}');return s['uso/'+id]||null}
+      const r=await fetch('http://'+h+'/v1/projects/demo-nosso-jogo/databases/(default)/documents/uso/'+id,{headers:{Authorization:'Bearer owner'}});
+      if(r.status!==200)return null;const f=(await r.json()).fields||{};
+      return {conta:f.conta&&f.conta.booleanValue,n:+((f.n||{}).integerValue||0),onde:((f.onde||{}).arrayValue||{}).values?f.onde.arrayValue.values.map(x=>x.stringValue):[],
+        grupos:((f.grupos||{}).arrayValue||{}).values?f.grupos.arrayValue.values.map(x=>x.stringValue):[],v:(f.v||{}).stringValue,em:!!(f.em||{}).timestampValue}}"""
+    ID47 = "Math.floor(Date.now()/864e5)+'_'+S.user.uid"
+    c47 = novo() if EMU else pg.context
+    c47.add_init_script("window.__njUsoEspera=300;window.__njUsoIntervalo=0")
+    p47 = c47.new_page(); p47.on('pageerror', lambda e: errs.append(str(e)))
+    p47.goto(URL + '#/p/' + gid); p47.wait_for_function("!!(window.S&&S.user&&S.user.uid)", timeout=20000); p47.wait_for_timeout(2500)
+    id47 = J(p47, ID47); u47 = J(p47, LER47, id47) or {}
+    ok(u47.get('n', 0) > 0 and 'link' in (u47.get('onde') or []) and gid in (u47.get('grupos') or []) and str(u47.get('v', '')).startswith('pelada-')
+       and (u47.get('conta') is not True if EMU else True),
+       f'CT-KAN-170-P47: o link grava o uso do dia (onde "link", o grupo, os pedidos e a versão; sem conta) ({id47}, {u47})')
+    p47.evaluate("location.hash='#/'"); p47.wait_for_timeout(1500)
+    p47.evaluate("dispatchEvent(new Event('pagehide'))"); p47.wait_for_timeout(2500)
+    u47b = J(p47, LER47, id47) or {}
+    ok(u47b.get('n', 0) > u47.get('n', 0) and 'inicio' in (u47b.get('onde') or []) and 'link' in (u47b.get('onde') or []),
+       f'CT-KAN-170-P47: ao sair da página, soma os pedidos novos e junta onde usou, no mesmo registro ({u47.get("n")} → {u47b.get("n")}, {u47b.get("onde")})')
+    if EMU:
+        p47b = c47.new_page(); p47b.on('pageerror', lambda e: errs.append(str(e)))
+        p47b.goto(URL + '#/entrar'); p47b.wait_for_selector('#le', timeout=20000); p47b.wait_for_timeout(300)
+        p47b.fill('#le', EMAIL); p47b.fill('#lp', SENHA); p47b.keyboard.press('Enter'); p47b.wait_for_timeout(2500)
+        p47b.goto(URL + '#/g/' + gid); pronto(p47b); p47b.wait_for_timeout(2500)
+        p47b.evaluate("dispatchEvent(new Event('pagehide'))"); p47b.wait_for_timeout(2500)
+        id47b = J(p47b, ID47); u47c = J(p47b, LER47, id47b) or {}
+        ok(id47b != id47 and u47c.get('conta') is True and 'gestao' in (u47c.get('onde') or []) and u47c.get('em'),
+           f'CT-KAN-170-P47: na gestão, com conta, o registro do dia diz "conta: sim" e a hora é a do servidor ({id47b}, {u47c})')
+        c47.close()
+    else:
+        p47.close()
 
     ok(not errs,'nenhum erro de JavaScript' + (': ' + '; '.join(errs[:3]) if errs else ''))
     b.close()

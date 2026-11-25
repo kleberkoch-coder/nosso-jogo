@@ -467,6 +467,39 @@ service cloud.firestore {
         && request.resource.data.d is string && request.resource.data.d.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}');
     }
 
+    // KAN-313 (pelada-v132): uso do app por dia, para comparar com o App Check. Identificador {dia}_{login}: o dia (em
+    // UTC, contado desde 1970) é o de hoje pela hora do servidor (um de folga para cada lado) e o login é quem grava.
+    // Cada login só grava o próprio registro; "conta" tem de ser verdade só para quem tem conta; os pedidos só sobem.
+    // Só o administrador do portal lê e apaga. Sem nada pessoal; a hora é a do servidor.
+    function usoIdOk(id) {
+      let p = id.split('_');
+      let hoje = math.floor(request.time.toMillis() / 86400000);
+      return p.size() == 2 && p[1] == request.auth.uid && p[0].matches('[0-9]{5,6}')
+        && int(p[0]) >= hoje - 1 && int(p[0]) <= hoje + 1;
+    }
+    function usoOk(id) {
+      let d = request.resource.data;
+      return signed() && usoIdOk(id)
+        && d.keys().hasOnly(['dia', 'd', 'onde', 'grupos', 'conta', 'n', 'e', 'v', 'em'])
+        && d.keys().hasAll(['dia', 'd', 'conta', 'n', 'v', 'em'])
+        && d.dia is int && string(d.dia) == id.split('_')[0]
+        && d.d is string && d.d.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+        && d.get('onde', []) is list && d.get('onde', []).size() <= 6
+        && d.get('onde', []).toSet().difference(['link', 'voto', 'aval', 'gestao', 'inicio', 'outro'].toSet()).size() == 0
+        && d.get('grupos', []) is list && d.get('grupos', []).size() <= 50
+        && d.conta == realUser()
+        && d.n is int && d.n >= 0 && d.n <= 1000000
+        && d.get('e', 0) is int && d.get('e', 0) >= 0 && d.get('e', 0) <= 1000000
+        && d.v is string && d.v.size() <= 20
+        && d.em == request.time;
+    }
+    match /uso/{id} {
+      allow read, delete: if adminPortal();
+      allow create: if usoOk(id);
+      allow update: if usoOk(id) && request.resource.data.dia == resource.data.dia
+        && request.resource.data.n >= resource.data.n && request.resource.data.get('e', 0) >= resource.data.get('e', 0);
+    }
+
     match /grupos/{gid} {
       // Nome e configurações do grupo aparecem nos links públicos (ler UM grupo).
       // Listar todos os grupos, só o administrador do portal (KAN-133).

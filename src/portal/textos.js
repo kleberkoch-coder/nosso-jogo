@@ -123,6 +123,23 @@ const T = {
   'lim.salvar': 'Salvar limites',
   'lim.erro': 'Use números inteiros de 1 a 500.',
   'lim.salvo': 'Limites salvos: {a} avulsos por rodada e {g} grupos por conta.',
+  /* KAN-313 (pelada-v132) */
+  'uso.titulo': 'Uso do app (últimos {n} dias)',
+  'uso.ajuda':
+    'Cada aparelho grava uma vez por dia onde usou o app, os grupos, se tem conta e quantos pedidos ao banco fez (aproximado: o Firebase faz pedidos internos que o app não vê). Compare a coluna Pedidos com o gráfico do App Check do mesmo dia: se o App Check mostrar muito mais, há pedidos vindos de fora do app. Os seus aparelhos (desta conta do portal) ficam na última coluna, fora dos outros números. Sem nome, e-mail ou telefone. Registros com mais de 90 dias são apagados sozinhos.',
+  'uso.total': 'No período: {a} aparelhos por dia somados e {p} pedidos dos clientes; {m} pedidos dos seus aparelhos.',
+  'uso.dia': 'Dia',
+  'uso.aparelhos': 'Aparelhos',
+  'uso.link': 'Pelo link',
+  'uso.contas': 'Com conta',
+  'uso.grupos': 'Grupos',
+  'uso.pedidos': 'Pedidos',
+  'uso.meus': 'Seus aparelhos',
+  'uso.meusN': '{a} · {p} pedidos',
+  'uso.rolar': 'Tabela do uso por dia; role para o lado para ver todas as colunas',
+  'uso.nenhum': 'Nenhum uso registrado ainda. O registro começou na pelada-v132.',
+  'uso.erro': 'Não foi possível carregar o uso. Toque em Atualizar para tentar de novo.',
+  'uso.apagados': '{n} registros de uso com mais de 90 dias foram apagados.',
 };
 function tx(chave, vars) {
   let s = T[chave];

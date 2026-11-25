@@ -260,7 +260,8 @@ jobs:
         run: |
           (cd /tmp/emu && python -m http.server 8765 >/dev/null 2>&1 &)
           sleep 2
-          npx firebase emulators:exec --only firestore,auth,storage --project demo-nosso-jogo "python testes/persistencia_app.py http://127.0.0.1:8765/index.html"
+          # KAN-309: a transição de verdade acaba em 28/11/2026; o roteiro continua no Plano A dela (transicaoAte em 2100).
+          npx firebase emulators:exec --only firestore,auth,storage --project demo-nosso-jogo "bash testes/persistencia-emulador.sh http://127.0.0.1:8765/index.html"
       - name: Guardar o resultado
         if: always()
         uses: actions/upload-artifact@v4

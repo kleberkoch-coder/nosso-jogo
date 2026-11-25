@@ -284,6 +284,13 @@ function LocalBackend() {
       localStorage.setItem(K, JSON.stringify(store));
     } catch (e) {}
   };
+  const salvarSo = p => {
+    try {
+      const o = JSON.parse(localStorage.getItem(K) || '{}');
+      o[p] = store[p];
+      localStorage.setItem(K, JSON.stringify(o));
+    } catch (e) {}
+  };
   const read = path => {
     const n = path.split('/').length;
     if (n % 2) {
@@ -433,6 +440,9 @@ function LocalBackend() {
     patch: async (p, campos) => {
       recusarComoFirestore(campos);
       aplicarLocal(p, campos);
+      /* KAN-313: o registro de uso (nucleo/uso.ts) grava sozinho, inclusive ao recarregar; regravar o banco inteiro
+         desfaria o que os testes acabaram de pôr nele. Grava só o próprio documento, sem avisar as telas. */
+      if (p.startsWith('uso/')) return void salvarSo(p);
       save();
       notify();
       await sleep(250);

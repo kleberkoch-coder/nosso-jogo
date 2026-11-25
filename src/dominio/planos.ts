@@ -164,7 +164,7 @@ export function resumoPorPlano(cs: Cliente[]): Record<string, number> {
 export const TESTE_DIAS = 14;
 export const AVISO_DIAS = 3;
 /* Fim da transição se o Firebase não tiver outra data: fim do dia 28/11/2026 em Brasília (30 dias depois do Merge). */
-export const TRANSICAO_PADRAO = Date.UTC(2026, 10, 29, 3);
+export const TRANSICAO_PADRAO = Date.UTC(2026, 10, 18, 3);
 
 export type ContaPlano = { plano?: string; planoAte?: number | null; teste?: number } | null | undefined;
 export type Origem = 'pago' | 'teste' | 'transicao' | 'gratis';

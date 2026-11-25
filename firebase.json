@@ -88,6 +88,15 @@
               "value": "public, max-age=604800"
             }
           ]
+        },
+        {
+          "source": "**/*.map",
+          "headers": [
+            {
+              "key": "Access-Control-Allow-Origin",
+              "value": "https://nosso-jogo-portal.web.app"
+            }
+          ]
         }
       ],
       "site": "nosso-jogo-f4762"

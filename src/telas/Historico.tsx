@@ -17,6 +17,7 @@ import { $, fdate, fmonth, toast, today } from '../nucleo/util.js';
 import { changed } from '../ui/render.js';
 import { Pos } from '../ui/componentes';
 import { LinhaPartida } from '../ui/LinhaPartida';
+import { CardsRodada } from '../ui/CardsRodada';
 
 juntarTextos(textosCampeao);
 juntarTextos(textosHist);
@@ -425,6 +426,18 @@ function Detalhe({ h }: { h: Hist }) {
           <p class="muted small">{tx('hist.semPartidas')}</p>
         )}
       </div>
+      {h.parts ? (
+        <CardsRodada
+          rid={id}
+          data={r.date}
+          ms={ms as never}
+          lancada={h.art || null}
+          votacoes={vs.map(([, v]) => v) as never}
+          times={r.times as never}
+          campeao={ko ? ko.campeao : null}
+          nome={nomeP}
+        />
+      ) : null}
       <div class="panel">
         <h3>{tx('hist.votacaoTitulo')}</h3>
         {vs.length ? (

@@ -1,6 +1,7 @@
 /* Carrega a parte de gestão do app (src/admin.js) na primeira vez que ela é necessária (KAN-149).
    Depois de carregada, as ações de gestão entram no mesmo mapa de botões (ACT). */
 import { ACT } from '../acoes.js';
+import { avisarParte } from './carga';
 import { LOCAL } from '../i18n/formatos.js';
 import { carregarIdioma } from '../i18n/idiomas';
 
@@ -34,6 +35,7 @@ function carregarAdmin() {
       })
       .catch(e => {
         carregando = null;
+        avisarParte('gestao', e); // KAN-263
         throw e;
       }))
   );

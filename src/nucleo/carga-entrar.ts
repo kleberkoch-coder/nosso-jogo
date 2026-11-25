@@ -1,5 +1,6 @@
 /* Carrega a tela de entrar na primeira vez que precisa (KAN-183), como a gestão (carga-admin.js). */
 import { ACT } from '../acoes.js';
+import { avisarParte } from './carga';
 
 type Entrar = typeof import('../entrar');
 let E: Entrar | null = null,
@@ -16,6 +17,7 @@ function carregarEntrar() {
       })
       .catch(e => {
         baixando = null;
+        avisarParte('entrar', e); // KAN-263
         throw e;
       }))
   );

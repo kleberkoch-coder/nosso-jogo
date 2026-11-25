@@ -28,7 +28,7 @@ export type Modelo = {
   forma?: Forma;
   corMetal?: string;
 };
-export type TipoCard = 'perfil' | 'craque' | 'artilheiro' | 'garcom';
+export type TipoCard = 'perfil' | 'craque' | 'artilheiro' | 'garcom' | 'campeao'; // campeao: v131, KAN-295
 export type Periodo = 'ano' | 'mes' | 'tudo';
 export type Uso = { m: string; titulo: string; grande: string; campos: string[]; per: Periodo };
 export type Cards = { modelos: Record<string, Modelo>; usos: Partial<Record<TipoCard, Uso>> };
@@ -57,7 +57,7 @@ export const METAIS: Metal[] = ['ouro', 'prata', 'bronze', 'time'];
 export const FORMAS: Forma[] = ['coroa', 'reto', 'arco'];
 export const nomeFundoValido = (n: unknown): n is string =>
   typeof n === 'string' && /^fundo-\d{10,16}\.(webp|png|jpg)$/.test(n);
-export const TIPOS: TipoCard[] = ['perfil', 'craque', 'artilheiro', 'garcom'];
+export const TIPOS: TipoCard[] = ['perfil', 'craque', 'artilheiro', 'garcom', 'campeao'];
 export const PERIODOS: Periodo[] = ['ano', 'mes', 'tudo'];
 export const MAX_MODELOS = 12;
 export const MAX_NOME = 30;
@@ -147,6 +147,13 @@ export const USO_PADRAO: Record<TipoCard, Uso> = {
   craque: { m: 'p-destaque', titulo: '', grande: 'votosPct', campos: ['golsRod', 'votos'], per: 'ano' },
   artilheiro: { m: 'p-destaque', titulo: '', grande: 'golsRod', campos: ['gols', 'premios'], per: 'ano' },
   garcom: { m: 'p-destaque', titulo: '', grande: 'asRod', campos: ['as', 'golsRod'], per: 'ano' },
+  campeao: {
+    m: 'p-metalico',
+    titulo: '',
+    grande: 'vitRod',
+    campos: ['golsRod', 'asRod', 'gols', 'jogos', 'vit', 'premios'],
+    per: 'ano',
+  },
 };
 
 const COR = /^#[0-9a-f]{6}$/;

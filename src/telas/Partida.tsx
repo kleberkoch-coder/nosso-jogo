@@ -11,6 +11,7 @@ import { S as estado } from '../nucleo/estado.js';
 import { artilhariaDe, partidasDe } from '../nucleo/partidas-lista.js';
 import { SeletorRodada } from '../ui/componentes';
 import { LinhaPartida } from '../ui/LinhaPartida';
+import { CardsRodada } from '../ui/CardsRodada';
 import { marcarAlterada } from '../ui/dialogos.js';
 import { rodadasProntas } from './rodada-partes.js';
 import { sumPts } from '../ui/placar';
@@ -300,6 +301,24 @@ function Salvas({ r }: { r: Rodada }) {
     </div>
   );
 }
+/* KAN-295 (v131): cards da rodada (craque, artilheiro, garçom e campeão), prontos para o WhatsApp. */
+function CardsDaRodada({ r }: { r: Rodada }) {
+  const S = st(),
+    a = artilhariaDe(r.id) as { gols?: Record<string, number> } | null,
+    k = chaveDe(r),
+    vs = Object.values((S.vot || {}) as Record<string, { rid?: string }>).filter(v => v.rid === r.id);
+  return (
+    <CardsRodada
+      rid={r.id}
+      data={(r as { date?: string }).date || ''}
+      ms={partidasDe(r.id) as Partida[]}
+      lancada={(a && a.gols) || null}
+      votacoes={vs as never}
+      times={r.times as { players: string[] }[] | null}
+      campeao={k ? k.campeao : null}
+    />
+  );
+}
 
 /* Artilharia da rodada (KAN-178): para quem lança só o total de gols de cada jogador, sem partida a partida. */
 function Artilharia({ r }: { r: Rodada }) {
@@ -444,6 +463,7 @@ function PartidaTela() {
       {parado && !fora ? null : <Ajustes r={r} />}
       <PainelCampeonato r={r} />
       <Salvas r={r} />
+      <CardsDaRodada r={r} />
       <Artilharia r={r} />
     </div>
   );

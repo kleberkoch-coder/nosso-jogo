@@ -97,8 +97,10 @@ test('CT-KAN-294-04: contraste: letra branca sobre azul-marinho passa; cinza cla
 });
 
 test('CT-KAN-294-03: esporte sem assistência não oferece Garçom nem assistências; o card do jogador não tem números da rodada', () => {
-  assert.deepEqual(tiposDe(false), ['perfil', 'craque', 'artilheiro']);
-  assert.deepEqual(tiposDe(true), ['perfil', 'craque', 'artilheiro', 'garcom']);
+  assert.deepEqual(tiposDe(false), ['perfil', 'craque', 'artilheiro', 'campeao']);
+  assert.deepEqual(tiposDe(true), ['perfil', 'craque', 'artilheiro', 'garcom', 'campeao']);
+  /* KAN-295 (v131): o campeão sem assistência no esporte perde só os campos de assistência. */
+  assert.ok(!lerCards({}, false).usos.campeao.campos.includes('asRod'));
   assert.ok(!estatsDe('craque', false).includes('as'));
   assert.ok(!estatsDe('craque', false).includes('asRod'));
   assert.ok(!estatsDe('perfil', true).includes('votos'));

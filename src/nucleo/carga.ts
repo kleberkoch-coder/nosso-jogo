@@ -19,3 +19,23 @@ export function proximaTentativa(codigo: string | undefined, tentativa: number):
 
 /* Carregando há mais que isso: a tela mostra "Está demorando mais que o normal" e "Tentar de novo". */
 export const DEMORA_MS = 12000;
+/* KAN-263 (pelada-v131): a tela que passou do tempo vira um registro de falha ("demora"), uma vez por tela na visita. */
+const demoras = new Set<string>();
+export function avisarDemora(tela: string) {
+  if (demoras.has(tela)) return;
+  demoras.add(tela);
+  try {
+    document.dispatchEvent(new CustomEvent('nj-demora', { detail: DEMORA_MS + 'ms' }));
+  } catch (e) {
+    /* nunca atrapalha a tela */
+  }
+}
+/* KAN-263: a parte sob demanda que não baixou vira um registro de falha ("parte"). */
+export function avisarParte(nome: string, e: unknown) {
+  try {
+    const m = (e && (e as { message?: string }).message) || String(e);
+    document.dispatchEvent(new CustomEvent('nj-parte-falhou', { detail: nome + ': ' + m }));
+  } catch (x) {
+    /* nunca atrapalha a tela */
+  }
+}

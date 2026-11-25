@@ -2,7 +2,9 @@
    - "appcheck": o comprovante do App Check não veio (backend.js avisa com o evento nj-appcheck-falhou), para achar o
      aparelho dos picos de "solicitações inválidas" (KAN-88);
    - "erro": erro de código (window.onerror e promessas recusadas sem tratamento);
-   - "gravacao": o Firebase recusou uma gravação (evento nj-gravacao-falhou, de nucleo/estado.ts).
+   - "gravacao": o Firebase recusou uma gravação (evento nj-gravacao-falhou, de nucleo/estado.ts);
+   - "demora" e "parte" (KAN-263, v131): a tela passou de 12 s carregando (nj-demora) e uma parte sob demanda não baixou
+     (nj-parte-falhou, ou o erro de importação que escapou).
    Leva os dados de navegação (dominio/falhas.ts) e a tela, nunca dados pessoais. A mesma falha na mesma visita vira um
    registro só, com a contagem; no máximo 20 por aparelho por dia. Nunca atrapalha o app: tudo aqui ignora os próprios
    erros. Sem sinal, a gravação fica na fila do Firebase e sobe quando a conexão volta.
@@ -11,16 +13,19 @@ import * as backend from './backend.js';
 import { S } from './estado';
 import { today } from './util.js';
 
-type Tipo = 'appcheck' | 'erro' | 'gravacao';
+type Tipo = 'appcheck' | 'erro' | 'gravacao' | 'demora' | 'parte';
+/* KAN-263: a parte que não baixou vira "parte" (mesma conta de dominio/falhas.ts, ehParte, que só baixa depois). */
+const PARTE = /dynamically imported module|Importing a module script failed|error loading dynamically imported/i;
 /* A versão vem direto da montagem (como em nucleo/versao.js): importar aquele arquivo daqui o separaria num pedaço a
    mais, que o link baixaria à toa. */
 declare const __VERSAO__: string;
 const VERSAO = typeof __VERSAO__ !== 'undefined' ? __VERSAO__ : 'dev';
 const vistas = new Map<string, number>();
 
-export function registrarFalha(t: Tipo, mensagem: unknown, pilha?: unknown) {
+export function registrarFalha(t0: Tipo, mensagem: unknown, pilha?: unknown) {
   try {
     const m = String(mensagem == null ? '' : mensagem).slice(0, 400),
+      t: Tipo = t0 === 'erro' && PARTE.test(m) ? 'parte' : t0,
       k = t + '|' + m;
     if (vistas.has(k)) return void vistas.set(k, vistas.get(k)! + 1);
     vistas.set(k, 1);
@@ -67,4 +72,7 @@ export function ligarColetor() {
   });
   document.addEventListener('nj-gravacao-falhou', e => registrarFalha('gravacao', (e as CustomEvent).detail || '?'));
   document.addEventListener('nj-appcheck-falhou', e => registrarFalha('appcheck', (e as CustomEvent).detail || '?'));
+  /* KAN-263 (pelada-v131): tela que passou do tempo (nucleo/carga.ts) e parte do app que não baixou. */
+  document.addEventListener('nj-demora', e => registrarFalha('demora', (e as CustomEvent).detail || '?'));
+  document.addEventListener('nj-parte-falhou', e => registrarFalha('parte', (e as CustomEvent).detail || '?'));
 }

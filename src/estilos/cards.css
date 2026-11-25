@@ -13,6 +13,14 @@
   padding: 0 4px;
   font-size: 14px;
 }
+/* KAN-295 (v131): com o Campeão são 5 tipos; no celular, a letra fica um pouco menor para todos caberem numa linha. */
+@media (max-width: 420px) {
+  .card-tipos .opt {
+    padding: 0 2px;
+    font-size: 12.5px;
+    overflow-wrap: anywhere;
+  }
+}
 .card-grade {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

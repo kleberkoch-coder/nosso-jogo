@@ -706,6 +706,7 @@ export default {
   'card.tituloPadrao.craque': 'FIGURA',
   'card.tituloPadrao.artilheiro': 'GOLEADOR',
   'card.tituloPadrao.garcom': 'ASISTIDOR',
+  'card.tituloPadrao.campeao': 'CAMPEÓN',
   'card.curto.gols': '{PONTO}',
   'card.curto.as': 'ASIST.',
   'card.curto.jogos': 'PARTIDOS',
@@ -730,4 +731,10 @@ export default {
   'cardj.baixou': 'Imagen descargada. Envíala por WhatsApp.',
   'cardj.rotulo': 'Tarjeta de {nome}',
   'cardj.semNumeros': 'Aún no hay números en este período.',
+  'cardj.rodada': 'Números de la jornada del {data}',
+  'cardj.zap.craque': '🏆 ¡{nome} es {titulo} de la jornada del {data} en {grupo}!',
+  'cardj.zap.artilheiro': '{e} ¡{nome} es {titulo} de la jornada del {data} en {grupo}: {n} {ponto}!',
+  'cardj.zap.garcom': '🍽️ ¡{nome} es {titulo} de la jornada del {data} en {grupo}: {n} asistencias!',
+  'cardj.zap.garcom1': '🍽️ ¡{nome} es {titulo} de la jornada del {data} en {grupo}: 1 asistencia!',
+  'cardj.zap.campeao': '🏆 ¡{nome} es {titulo} de la jornada del {data} en {grupo}!',
 };

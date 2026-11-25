@@ -11,7 +11,7 @@ import textosVoto from '../i18n/pt-BR-voto';
 import { S as estado } from '../nucleo/estado.js';
 import { $, fdate, main } from '../nucleo/util.js';
 import { myLocal } from './publico-rodada.js';
-import { DEMORA_MS } from '../nucleo/carga';
+import { DEMORA_MS, avisarDemora } from '../nucleo/carga';
 
 juntarTextos(textosVoto);
 
@@ -55,6 +55,7 @@ function Pagina() {
   const carregou = S.loaded.v && S.loaded.app;
   if ((S.falhou || {}).v || (S.falhou || {}).app)
     return <Aviso titulo={tx('comum.naoCarregouTitulo')} texto={tx('carga.falhouTexto')} tentar />;
+  if (!carregou && Date.now() - desde >= DEMORA_MS) avisarDemora('v');
   if (!carregou)
     return Date.now() - desde >= DEMORA_MS ? (
       <Aviso texto={tx('carga.demorando')} tentar />

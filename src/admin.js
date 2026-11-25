@@ -4,6 +4,7 @@
 import textosGestao from './i18n/pt-BR-gestao.js';
 import { juntarTextos } from './i18n/index.js';
 import { antesDoLote } from './nucleo/estado';
+import { avisarParte } from './nucleo/carga';
 import { comEspelho } from './dominio/resumo-publico';
 import { acoes as grupo } from './acoes/grupo';
 import { acoes as rodada } from './acoes/rodada.js';
@@ -107,6 +108,7 @@ export function carregarAba(k) {
       })
       .catch(e => {
         delete baixandoAba[k];
+        avisarParte('aba ' + k, e); // KAN-263
         throw e;
       }))
   );
@@ -127,6 +129,7 @@ export function carregarPartida() {
       })
       .catch(e => {
         baixandoPartida = null;
+        avisarParte('partida', e); // KAN-263
         throw e;
       }))
   );

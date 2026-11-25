@@ -104,3 +104,22 @@ test('CT-KAN-239-04: o portal agrupa por tipo e mensagem, soma as vezes e mostra
   ]);
   assert.deepEqual(g[1].versoes, ['pelada-v104']);
 });
+
+test('CT-KAN-263-07: o portal apaga só os registros com mais de 90 dias; o grupo guarda a pilha mais recente', async () => {
+  const { velhos, agrupar } = await import('../../src/dominio/falhas.ts');
+  const agora = Date.UTC(2026, 10, 25);
+  const regs = {
+    a: { em: agora - 91 * 864e5 },
+    b: { em: agora - 89 * 864e5 },
+    c: { em: null },
+    d: null,
+  };
+  assert.deepEqual(velhos(regs, agora), ['a']);
+  const g = agrupar({
+    x: { t: 'erro', m: 'm', em: 1, p: 'velha' },
+    y: { t: 'erro', m: 'm', em: 5, p: 'nova' },
+    z: { t: 'demora', m: '12000ms', em: 3 },
+  });
+  assert.equal(g.find(a => a.t === 'erro').p, 'nova');
+  assert.equal(g.find(a => a.t === 'demora').p, undefined);
+});

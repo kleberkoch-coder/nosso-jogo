@@ -8,6 +8,7 @@ export default {
   'card.tipo.craque': 'Craque',
   'card.tipo.artilheiro': 'Artilheiro',
   'card.tipo.garcom': 'Garçom',
+  'card.tipo.campeao': 'Campeão',
   'card.previaRot': 'Prévia do card {tipo}',
   'card.previaAjuda': 'Prévia com números de exemplo. No card de verdade entram os números do jogador.',
   'card.modelo': 'Modelo',

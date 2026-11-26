@@ -512,6 +512,72 @@ describe('falhas no uso (KAN-239, pelada-v105)', () => {
   });
 });
 
+describe('uso do app por dia (KAN-313, pelada-v132)', () => {
+  const DIA = Math.floor(Date.now() / 864e5);
+  const id = (conta, dia = DIA) => 'uso/' + dia + '_' + conta;
+  const uso = (extra = {}) => ({
+    dia: DIA,
+    d: '2026-11-25',
+    onde: arrayUnion('link'),
+    grupos: arrayUnion('g1'),
+    conta: false,
+    n: increment(12),
+    e: increment(3),
+    v: 'pelada-v132',
+    em: serverTimestamp(),
+    ...extra,
+  });
+  test('CT-KAN-313-05: o aparelho do link grava o próprio registro do dia e depois soma os pedidos', async () => {
+    await assertSucceeds(setDoc(doc(db.anon(), id('anon1')), uso(), { merge: true }));
+    await assertSucceeds(
+      setDoc(doc(db.anon(), id('anon1')), uso({ onde: arrayUnion('inicio'), n: increment(5) }), { merge: true })
+    );
+    await assertSucceeds(
+      setDoc(doc(db.adm(), id('adm')), uso({ conta: true, onde: arrayUnion('gestao') }), { merge: true })
+    );
+  });
+  test('CT-KAN-313-06: outro login, outro dia, "conta" falsa, pedidos que descem, campo a mais e hora do aparelho são recusados', async () => {
+    await assertFails(setDoc(doc(db.anon(), id('adm')), uso(), { merge: true }), 'registro de outro login');
+    await assertFails(setDoc(doc(db.semLogin(), id('anon1')), uso(), { merge: true }), 'sem login');
+    await assertFails(
+      setDoc(doc(db.anon(), id('anon1', DIA - 5)), uso({ dia: DIA - 5 }), { merge: true }),
+      'outro dia'
+    );
+    await assertFails(
+      setDoc(doc(db.anon(), id('anon1')), uso({ dia: DIA - 1 }), { merge: true }),
+      'dia diferente do identificador'
+    );
+    await assertFails(
+      setDoc(doc(db.anon(), id('anon1')), uso({ conta: true }), { merge: true }),
+      'o link dizendo que tem conta'
+    );
+    await assertFails(
+      setDoc(doc(db.adm(), id('adm')), uso({ conta: false }), { merge: true }),
+      'a conta dizendo que não tem'
+    );
+    await assertFails(
+      setDoc(doc(db.anon(), id('anon1')), uso({ n: increment(-1) }), { merge: true }),
+      'pedidos descendo'
+    );
+    await assertFails(setDoc(doc(db.anon(), id('anon1')), uso({ email: 'a@b.com' }), { merge: true }), 'campo a mais');
+    await assertFails(setDoc(doc(db.anon(), id('anon1')), uso({ em: 5 }), { merge: true }), 'hora do aparelho');
+    await assertFails(
+      setDoc(doc(db.anon(), id('anon1')), uso({ onde: ['xss'] }), { merge: true }),
+      'onde fora da lista'
+    );
+    await assertFails(setDoc(doc(db.anon(), 'uso/x'), uso(), { merge: true }), 'identificador solto');
+  });
+  test('CT-KAN-313-07: só o portal lê e apaga', async () => {
+    await assertSucceeds(setDoc(doc(db.anon(), id('anon1')), uso(), { merge: true }));
+    await assertFails(getDoc(doc(db.anon(), id('anon1'))));
+    await assertFails(getDoc(doc(db.dono(), id('anon1'))));
+    await assertFails(deleteDoc(doc(db.anon(), id('anon1'))));
+    await assertSucceeds(getDoc(doc(db.portal(), id('anon1'))));
+    await assertSucceeds(getDocs(collection(db.portal(), 'uso')));
+    await assertSucceeds(deleteDoc(doc(db.portal(), id('anon1'))));
+  });
+});
+
 describe('vagas para diaristas e avulsos (KAN-63)', () => {
   const R = G + '/rodadas/r1',
     CV = R + '/limites/vagas',

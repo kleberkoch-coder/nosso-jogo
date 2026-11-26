@@ -88,6 +88,8 @@ async function preparar() {
     await s(G + '/membros/dono', { uid: 'dono', role: 'owner', email: 'dono@x.com' });
     await s(G + '/membros/adm', { uid: 'adm', role: 'admin', email: 'adm@x.com' });
     await s('sistema/limites', { avulsosPorRodada: LIMITE, gruposPorConta: 20 });
+    // KAN-309: a transição de verdade acaba em 28/11/2026; a carga continua no Plano A dela.
+    await s('sistema/planos', { transicaoAte: Date.UTC(2100, 0, 1) });
     await s(R, { date: new Date().toISOString().slice(0, 10), locked: false });
     for (let i = 1; i <= N_CONF; i++) await s(`${G}/jogadores/j${i}`, { name: 'Jogador ' + i });
     await s(V, { open: true, cats: [{ id: 'mvp' }], createdAt: 1 });

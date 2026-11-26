@@ -284,6 +284,13 @@ function LocalBackend() {
       localStorage.setItem(K, JSON.stringify(store));
     } catch (e) {}
   };
+  const salvarSo = p => {
+    try {
+      const o = JSON.parse(localStorage.getItem(K) || '{}');
+      o[p] = store[p];
+      localStorage.setItem(K, JSON.stringify(o));
+    } catch (e) {}
+  };
   const read = path => {
     const n = path.split('/').length;
     if (n % 2) {
@@ -433,6 +440,9 @@ function LocalBackend() {
     patch: async (p, campos) => {
       recusarComoFirestore(campos);
       aplicarLocal(p, campos);
+      /* KAN-313: o registro de uso (nucleo/uso.ts) grava sozinho, inclusive ao recarregar; regravar o banco inteiro
+         desfaria o que os testes acabaram de pôr nele. Grava só o próprio documento, sem avisar as telas. */
+      if (p.startsWith('uso/')) return void salvarSo(p);
       save();
       notify();
       await sleep(250);
@@ -459,6 +469,10 @@ function LocalBackend() {
 }
 let B = null;
 let CAP = null;
+/* KAN-313 (pelada-v132): pedidos ao banco feitos por esta página (n: leituras, escutas abertas, respostas das escutas
+   e gravações; e: escutas abertas), para o registro de uso do dia (nucleo/uso.ts). É aproximado: o Firebase faz
+   pedidos internos que o app não vê. */
+const USO = { n: 0, e: 0 };
 function track(pr) {
   if (CAP && pr && pr.then) CAP.push(pr);
   return pr;
@@ -488,7 +502,22 @@ function wrapBackend(b) {
     );
   ['set', 'patch', 'lote', 'del', 'login', 'signup', 'reset', 'logout', 'google'].forEach(k => {
     const f = b[k];
-    b[k] = (...a) => track(f.apply(b, a));
+    const grava = ['set', 'patch', 'lote', 'del'].includes(k);
+    b[k] = (...a) => (grava && USO.n++, track(f.apply(b, a)));
+  });
+  ['sub', 'query'].forEach(k => {
+    const f = b[k];
+    b[k] = (p, q, ...r) => {
+      USO.n++;
+      USO.e++;
+      return k === 'sub'
+        ? f.call(b, p, (...x) => (USO.n++, q(...x)), ...r)
+        : f.call(b, p, q, (...x) => (USO.n++, r[0](...x)), ...r.slice(1));
+    };
+  });
+  ['get', 'pagina', 'getServidor'].forEach(k => {
+    const f = b[k];
+    b[k] = (...a) => (USO.n++, f.apply(b, a));
   });
   return b;
 }
@@ -525,4 +554,4 @@ function setCAP(v) {
   CAP = v;
 }
 
-export { B, CAP, FirebaseBackend, LocalBackend, applyBusy, op, setB, setBusy, setCAP, sleep, wrapBackend };
+export { B, CAP, FirebaseBackend, LocalBackend, USO, applyBusy, op, setB, setBusy, setCAP, sleep, wrapBackend };

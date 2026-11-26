@@ -23,6 +23,7 @@ import { S } from './nucleo/estado.js';
 import { boot } from './inicio.js';
 import { ligarColetor } from './nucleo/falhas';
 import { ligarVigia } from './nucleo/conexao';
+import { ligarUso } from './nucleo/uso';
 
 /* Em modo demonstração (sem Firebase), o estado fica visível para os testes automáticos. */
 // Também nos testes contra o emulador do Firebase (KAN-170), que nunca usam os dados reais.
@@ -32,4 +33,6 @@ if (!(window.FIREBASE_CONFIG || {}).apiKey || window.FIREBASE_EMULADOR) window.S
 ligarColetor();
 /* KAN-276 e KAN-277: vigia da conexão (comprovante do App Check e cópia local do banco). */
 ligarVigia();
+/* KAN-313: registro do uso do dia (só o portal lê). */
+ligarUso();
 boot();
